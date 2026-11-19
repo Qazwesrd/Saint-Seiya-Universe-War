@@ -143,7 +143,8 @@ func attack() -> void:
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
     var multipliers := [0.85, 1.0, 1.45]
-    var damages := 8.0 + attack_stat * float(multipliers[basic_combo_step - 1])
+    var passive_multiplier := SkillSystem.get_skill_damage_multiplier(class_id)
+    var damages := (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier
     var push_forces := [1.8, 2.8, float(skill_data.get("knockback", 3.5)) * 1.7]
     var lift_forces := [0.0, 0.0, float(skill_data.get("launch", 1.2)) * 1.5]
     var basic_names: Array = skill_data.get("basic_attacks", ["第一段", "第二段", "第三段"])
@@ -161,7 +162,7 @@ func skill() -> void:
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08)
+    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
     game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, float(skill_data.get("range", 7.0)), float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)), float(skill_data.get("launch", 1.2)), float(skill_data.get("stagger", 0.55)))
@@ -220,7 +221,8 @@ func toggle_lock() -> void:
 func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
-    var final_damage := maxf(1.0, amount - defense * 0.25)
+    var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
+    var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction))
     health = maxf(0.0, health - final_damage)
     ArmorSystem.damage_random_part(1)
     _flash(Color(1.0, 0.12, 0.12))
