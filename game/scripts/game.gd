@@ -95,6 +95,28 @@ func update_hud() -> void:
                 boss_max = enemy.get("max_health")
                 break
         hud.call("set_boss_status", boss_hp, boss_max)
+func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
+    var effect := MeshInstance3D.new()
+    var sphere := SphereMesh.new()
+    sphere.radius = 0.5
+    sphere.height = 1.0
+    effect.mesh = sphere
+    effect.position = at
+    effect.scale = Vector3.ONE * 0.15
+    var material := StandardMaterial3D.new()
+    material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    material.albedo_color = Color(effect_color.r, effect_color.g, effect_color.b, 0.48)
+    material.emission_enabled = true
+    material.emission = effect_color
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    effect.material_override = material
+    add_child(effect)
+    var tween := create_tween()
+    tween.tween_property(effect, "scale", Vector3.ONE * radius, 0.22)
+    get_tree().create_timer(0.32).timeout.connect(func():
+        if is_instance_valid(effect):
+            effect.queue_free()
+    )
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
         hud.call("set_notice", message)
