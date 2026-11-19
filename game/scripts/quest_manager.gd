@@ -102,7 +102,7 @@ func load_progress() -> void:
     if int(parsed.get("version", 0)) != 1 or str(parsed.get("quest_id", "")) != QUEST_ID:
         return
     var loaded_status := str(parsed.get("status", "not_started"))
-    if loaded_status not in ["not_started", "active", "ready_to_return", "completed"]:
+    if not (loaded_status in ["not_started", "active", "ready_to_return", "completed"]):
         return
     status = loaded_status
     defeated_normal = clampi(int(parsed.get("defeated_normal", 0)), 0, 2)
