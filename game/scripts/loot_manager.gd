@@ -20,6 +20,7 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 	var table: Array = DROP_TABLES["boss" if is_boss else "normal"]
 	var level_bonus := clampf(float(maxi(1, enemy_level) - 1) * 0.002, 0.0, 0.12)
 	var awarded: Array[Dictionary] = []
+	var batch: Dictionary = {}
 	for entry in table:
 		var item_id := str(entry.get("item_id", ""))
 		if not RPGState.ITEM_DATA.has(item_id):
@@ -28,13 +29,16 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 		if randf() > chance:
 			continue
 		var quantity := randi_range(maxi(1, int(entry.get("min", 1))), maxi(1, int(entry.get("max", 1))))
-		if grant_drop(item_id, quantity):
-			awarded.append({
+		batch[item_id] = int(batch.get(item_id, 0)) + quantity
+		awarded.append({
 				"item_id": item_id,
 				"name": str(RPGState.ITEM_DATA[item_id].get("name", item_id)),
 				"quantity": quantity
 			})
 	if not awarded.is_empty():
+		if not RPGState.add_items(batch):
+			SystemHealthManager.report_error("loot", "战利品入账失败", JSON.stringify(batch))
+			return []
 		loot_awarded.emit(awarded)
 		EventBus.inventory_changed.emit(RPGState.profile.get("inventory", {}).duplicate(true))
 	return awarded
