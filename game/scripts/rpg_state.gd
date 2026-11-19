@@ -37,25 +37,32 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"pegasus_bracer":1,"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"created_at":Time.get_datetime_string_from_system()}
+ profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"created_at":Time.get_datetime_string_from_system()}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
   result.append({"id":class_id,"name":CLASS_DATA[class_id]["name"],"stats":CLASS_DATA[class_id].duplicate(true)})
  return result
 func select_class(class_id: String) -> bool:
- if not CLASS_DATA.has(class_id): return false
+ if not CLASS_DATA.has(class_id):
+  return false
+ var equipment: Dictionary = profile.get("equipment",{})
+ var inventory: Dictionary = profile.get("inventory",{})
+ var old_arm: String = str(equipment.get("arms",""))
+ if old_arm != "":
+  inventory[old_arm] = int(inventory.get(old_arm,0)) + 1
+ var starter: String = str(CLASS_DATA[class_id]["starter"])
+ equipment["arms"] = starter
  profile["class_id"] = class_id
- var starter: String = CLASS_DATA[class_id]["starter"]
- profile["inventory"] = {starter:1,"cosmos_potion":3}
- profile["equipment"] = {"head":"","chest":"","arms":starter,"legs":""}
+ profile["inventory"] = inventory
+ profile["equipment"] = equipment
  _emit_change()
  save_slot(active_slot)
  return true
 func get_combat_stats() -> Dictionary:
  var base: Dictionary = CLASS_DATA.get(str(profile.get("class_id","pegasus")),CLASS_DATA["pegasus"])
  var level: int = int(profile.get("level",1))
- var stats := {"max_health":float(base["hp"]+(level-1)*8),"attack":float(base["attack"]+(level-1)*2),"defense":float(base["defense"]+(level-1)),"speed":float(base["speed"])}
+ var stats := {"max_health":float(base["hp"]+(level-1)*8),"attack":float(base["attack"]+(level-1)*2),"defense":float(base["defense"]+(level-1)),"speed":float(base["speed"]),"max_cosmos":float(100 + (int(profile.get("cosmos_level",1))-1)*10)}
  for slot in profile.get("equipment",{}):
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
