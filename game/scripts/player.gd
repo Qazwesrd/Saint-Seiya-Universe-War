@@ -22,6 +22,9 @@ var pivot: Node3D
 var body_mat: StandardMaterial3D
 var is_mounted := false
 var mount_indicator: MeshInstance3D
+var temporary_damage_bonus := 0.0
+var temporary_damage_reduction := 0.0
+var temporary_buff_timer := 0.0
 func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
@@ -98,6 +101,10 @@ func _physics_process(delta: float) -> void:
     burst_cd = maxf(0.0, burst_cd - delta)
     dodge_time = maxf(0.0, dodge_time - delta)
     invulnerable = maxf(0.0, invulnerable - delta)
+    temporary_buff_timer = maxf(0.0, temporary_buff_timer - delta)
+    if temporary_buff_timer <= 0.0:
+        temporary_damage_bonus = 0.0
+        temporary_damage_reduction = 0.0
     cosmos = minf(max_cosmos, cosmos + delta * 3.0)
     var input_vec := move_input
     if input_vec.length() < 0.05:
@@ -144,7 +151,7 @@ func attack() -> void:
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
     var multipliers := [0.85, 1.0, 1.45]
     var passive_multiplier := SkillSystem.get_skill_damage_multiplier(class_id)
-    var damages := (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier
+    var damages := (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier * (1.0 + temporary_damage_bonus)
     var push_forces := [1.8, 2.8, float(skill_data.get("knockback", 3.5)) * 1.7]
     var lift_forces := [0.0, 0.0, float(skill_data.get("launch", 1.2)) * 1.5]
     var basic_names: Array = skill_data.get("basic_attacks", ["第一段", "第二段", "第三段"])
@@ -162,10 +169,11 @@ func skill() -> void:
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id)
+    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
     game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, float(skill_data.get("range", 7.0)), float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)), float(skill_data.get("launch", 1.2)), float(skill_data.get("stagger", 0.55)))
+    game.call("apply_class_skill_effect", class_id, float(skill_data.get("range", 7.0)))
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
 func combo_skill() -> void:
@@ -182,7 +190,7 @@ func combo_skill() -> void:
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1)
+    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
     _flash(Color(1.0, 0.9, 0.55))
     game.call("damage_nearby_combat", damage, float(skill_data.get("combo_range", 8.5)), 180.0, float(skill_data.get("combo_knockback", 9.0)), float(skill_data.get("combo_launch", 3.8)), float(skill_data.get("stagger", 0.85)) * 1.2)
@@ -222,7 +230,7 @@ func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
-    var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction))
+    var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     health = maxf(0.0, health - final_damage)
     ArmorSystem.damage_random_part(1)
     _flash(Color(1.0, 0.12, 0.12))
@@ -230,6 +238,11 @@ func receive_damage(amount: float) -> void:
         health = max_health
         global_position = Vector3(0, 0.2, 7)
         game.call("show_notice", "角色倒地，已在训练场复位")
+func apply_temporary_buff(damage_bonus: float, damage_reduction: float, duration: float) -> void:
+    temporary_damage_bonus = maxf(temporary_damage_bonus, damage_bonus)
+    temporary_damage_reduction = maxf(temporary_damage_reduction, damage_reduction)
+    temporary_buff_timer = maxf(temporary_buff_timer, duration)
+
 func _flash(color: Color) -> void:
     body_mat.albedo_color = color
     get_tree().create_timer(0.16).timeout.connect(func():
