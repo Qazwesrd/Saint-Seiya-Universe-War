@@ -86,7 +86,7 @@ func attack() -> void:
     if attack_cd > 0.0: return
     attack_cd = 0.42
     _flash(Color(1.0, 0.82, 0.35))
-    game.call("damage_nearby", 12.0, 2.8, 120.0)
+    game.call("damage_nearby", 8.0 + float(RPGState.get_combat_stats().get("attack", 14.0)), 2.8, 120.0)
     game.call("show_notice", "普通攻击！")
 func skill() -> void:
     if skill_cd > 0.0 or cosmos < 18.0:
@@ -95,7 +95,7 @@ func skill() -> void:
     cosmos -= 18.0
     skill_cd = 3.0
     _flash(Color(0.2, 0.8, 1.0))
-    game.call("damage_nearby", 28.0, 7.0, 150.0)
+    game.call("damage_nearby", 18.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 1.5, 7.0, 150.0)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, Color(0.18, 0.72, 1.0), 2.8)
     game.call("show_notice", "天马流星拳！")
 func cosmos_burst() -> void:
@@ -105,7 +105,7 @@ func cosmos_burst() -> void:
     cosmos -= 35.0
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
-    game.call("damage_nearby", 42.0, 5.0, 360.0)
+    game.call("damage_nearby", 24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0, 5.0, 360.0)
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", "小宇宙爆发！")
 func dodge() -> void:
