@@ -393,6 +393,21 @@ func _open_character(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(upgrade)
+    var skill_upgrade := Button.new()
+    var current_class_id := str(profile.get("class_id","pegasus"))
+    skill_upgrade.text = "升级职业技能（当前 Lv.%d，消耗 %d 星币）" % [SkillSystem.get_skill_level(current_class_id), SkillSystem.get_skill_level(current_class_id)*350]
+    skill_upgrade.pressed.connect(func():
+        var success: bool = SkillSystem.upgrade_skill(current_class_id)
+        set_notice("职业技能升级成功" if success else "星币不足或技能已达 10 级")
+        popup.queue_free()
+    )
+    box.add_child(skill_upgrade)
+
+    var armor_info := Label.new()
+    var armor_state: Dictionary = ArmorSystem.get_state()
+    var armor_durability: Dictionary = armor_state.get("durability",{})
+    armor_info.text = "当前圣衣：" + ArmorSystem.get_current_stage_name() + "\n耐久：头盔 %d / 胸甲 %d / 护腕 %d / 腰甲 %d / 腿甲 %d" % [int(armor_durability.get("head",100)),int(armor_durability.get("chest",100)),int(armor_durability.get("arms",100)),int(armor_durability.get("waist",100)),int(armor_durability.get("legs",100))]
+    box.add_child(armor_info)
 
     var inventory_title := Label.new()
     inventory_title.text = "背包与装备（点击装备即可穿戴）"
