@@ -308,6 +308,7 @@ func refresh_player_stats() -> void:
     var stats: Dictionary = RPGState.get_combat_stats()
     player.max_health = float(stats.get("max_health", player.max_health))
     player.max_cosmos = float(stats.get("max_cosmos", player.max_cosmos))
+    player.cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", player.cosmos_regen_rate))
     player.health = minf(player.health, player.max_health)
     player.cosmos = minf(player.cosmos, player.max_cosmos)
 
