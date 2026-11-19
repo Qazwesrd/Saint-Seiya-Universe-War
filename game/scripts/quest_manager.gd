@@ -32,7 +32,7 @@ func interact_with_guide() -> Dictionary:
         RPGState.add_currency(300)
         RPGState.add_item("bronze_helmet", 1)
         quest_changed.emit()
-        return {"speaker": GUIDE_NAME, "text": "做得很好！你已经完成银河竞技场试炼。奖励已发放：250 经验、300 星币和青铜头盔。下一段圣域任务已经解锁。", "action": "complete"}
+        return {"speaker": GUIDE_NAME, "text": "做得很好！你已经完成银河竞技场试炼。奖励已发放：250 经验、300 星币和青铜头盔。下一段圣域任务入口将在后续章节开放。", "action": "complete"}
     if status == "completed":
         return {"speaker": GUIDE_NAME, "text": "试炼记录已经保存。下一段圣域剧情将在后续章节开放。", "action": "completed"}
     return {"speaker": GUIDE_NAME, "text": "欢迎来到银河竞技场。", "action": "none"}
@@ -60,7 +60,7 @@ func get_tracker_text() -> String:
         return "主线：银河竞技场试炼\n目标：返回训练引导员"
     if status == "ready_to_return":
         return "主线：银河竞技场试炼\n目标：返回训练引导员领取奖励"
-    return "主线：银河竞技场试炼\n状态：已完成 · 下一段圣域任务已解锁"
+    return "主线：银河竞技场试炼\n状态：已完成 · 下一段圣域任务：后续章节开放"
 
 func get_map_objective() -> String:
     if status == "not_started" or status == "ready_to_return":
