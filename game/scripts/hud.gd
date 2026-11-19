@@ -168,9 +168,9 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     cosmos_bar.max_value = cosmos_max
     cosmos_bar.value = cosmos
     if is_instance_valid(skill_button):
-        skill_button.text = "流星拳\\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
+        skill_button.text = "流星拳\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
-        burst_button.text = "小宇宙\\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
+        burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
 func set_boss_status(hp: float, hp_max: float) -> void:
