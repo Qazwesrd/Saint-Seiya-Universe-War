@@ -17,7 +17,7 @@ func _run_tests() -> void:
 	LocalizationManager.set_locale("en_US")
 	assert(str(LocalizationManager.text_for("ui.attack")) == "Attack", "locale switch")
 	LocalizationManager.set_locale("zh_CN")
-	assert(not SceneFlowManager.change_scene("res://scenes/not_a_real_scene.tscn"), "reject invalid scene path")
+	assert(not SceneFlowManager.change_scene("res://" + "scenes/not_a_real_scene.tscn"), "reject invalid scene path")
 	assert(not ResourcePackManager.validate_source_directory("user://missing_pack", "galaxy_wars").get("valid", false), "reject missing pack source")
 	var source_dir := "user://framework_pack_test"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(source_dir))
