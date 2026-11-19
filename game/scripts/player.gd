@@ -94,7 +94,8 @@ func _physics_process(delta: float) -> void:
             auto_moving = false
         else:
             direction = target_offset.normalized()
-    var speed := 6.2 * (2.2 if dodge_time > 0.0 else 1.0)
+    var base_speed := float(RPGState.get_combat_stats().get("speed",12.0)) * 0.52
+    var speed := base_speed * (2.2 if dodge_time > 0.0 else 1.0)
     velocity.x = direction.x * speed
     velocity.z = direction.z * speed
     velocity.y -= 22.0 * delta
