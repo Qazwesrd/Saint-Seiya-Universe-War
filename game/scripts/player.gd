@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const CombatTargeting = preload("res://scripts/combat_targeting.gd")
 var game: Variant
 var move_input := Vector2.ZERO
 var auto_move_target := Vector3.ZERO
@@ -186,17 +187,15 @@ func dodge() -> void:
     velocity = direction.normalized() * 15.0
     game.call("show_notice", "闪避！短暂无敌")
 func toggle_lock() -> void:
-    if is_instance_valid(locked_target):
+    var next_target: Node3D = CombatTargeting.select_target(self, locked_target, true)
+    if not is_instance_valid(next_target):
         locked_target = null
-        game.call("show_notice", "已解除锁定")
+        game.call("show_notice", "附近没有可锁定目标")
         return
-    var best := 999.0
-    for target in get_tree().get_nodes_in_group("enemies"):
-        var distance: float = global_position.distance_to(target.global_position)
-        if distance < best:
-            best = distance
-            locked_target = target
-    game.call("show_notice", "已锁定最近目标" if is_instance_valid(locked_target) else "附近没有目标")
+    locked_target = next_target
+    var target_name := str(locked_target.get("display_name")) if locked_target.get("display_name") != null else "敌人"
+    game.call("show_notice", "已锁定：" + target_name)
+
 func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
