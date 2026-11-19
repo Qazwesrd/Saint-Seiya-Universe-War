@@ -163,13 +163,24 @@ func add_currency(amount: int) -> void:
  _emit_change()
  save_slot(active_slot)
 func add_item(item_id: String, quantity: int = 1) -> bool:
- if not ITEM_DATA.has(item_id) or quantity <= 0: return false
- var inventory: Dictionary = profile.get("inventory",{})
- inventory[item_id] = int(inventory.get(item_id,0))+quantity
- profile["inventory"] = inventory
- _emit_change()
- save_slot(active_slot)
- return true
+	return add_items({item_id: quantity})
+
+func add_items(items: Dictionary) -> bool:
+	if items.is_empty():
+		return false
+	for item_id in items.keys():
+		if not ITEM_DATA.has(str(item_id)) or int(items[item_id]) <= 0:
+			return false
+	var previous_inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+	var inventory: Dictionary = previous_inventory.duplicate(true)
+	for item_id in items.keys():
+		inventory[str(item_id)] = int(inventory.get(str(item_id), 0)) + int(items[item_id])
+	profile["inventory"] = inventory
+	if not save_slot(active_slot):
+		profile["inventory"] = previous_inventory
+		return false
+	_emit_change()
+	return true
 func equip_item(item_id: String) -> bool:
  if not ITEM_DATA.has(item_id): return false
  var inventory: Dictionary = profile.get("inventory",{})
