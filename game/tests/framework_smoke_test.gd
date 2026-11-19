@@ -19,6 +19,34 @@ func _run_tests() -> void:
 	LocalizationManager.set_locale("zh_CN")
 	assert(not SceneFlowManager.change_scene("res://scenes/not_a_real_scene.tscn"), "reject invalid scene path")
 	assert(not ResourcePackManager.validate_source_directory("user://missing_pack", "galaxy_wars").get("valid", false), "reject missing pack source")
+	var source_dir := "user://framework_pack_test"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(source_dir))
+	var payload_path := source_dir.path_join("payload.txt")
+	var payload := FileAccess.open(payload_path, FileAccess.WRITE)
+	assert(payload != null, "create package payload")
+	payload.store_string("offline package test")
+	payload.close()
+	var payload_size := int(FileAccess.get_length(payload_path))
+	var manifest := {
+		"id": "galaxy_wars",
+		"manifest_version": 1,
+		"version": 1,
+		"size_bytes": payload_size,
+		"dependencies": [],
+		"files": [{"path": "payload.txt", "size_bytes": payload_size, "sha256": FileAccess.get_sha256(payload_path)}]
+	}
+	var manifest_file := FileAccess.open(source_dir.path_join("pack.json"), FileAccess.WRITE)
+	assert(manifest_file != null, "create package manifest")
+	manifest_file.store_string(JSON.stringify(manifest))
+	manifest_file.close()
+	assert(bool(ResourcePackManager.preflight_install(source_dir, "galaxy_wars").get("allowed", false)), "resource package preflight")
+	assert(ResourcePackManager.install_from_directory(source_dir, "galaxy_wars"), "resource package staged install")
+	assert(bool(ResourcePackManager.validate_pack("galaxy_wars").get("valid", false)), "resource package installed validation")
+	assert(ResourcePackManager.remove_pack("galaxy_wars"), "resource package safe removal")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(payload_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(source_dir.path_join("pack.json")))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(source_dir))
+
 	assert(int(ResourcePackManager.get_storage_summary().get("installed_count", -1)) >= 0, "pack storage summary")
 	SystemHealthManager.report_error("smoke_test", "诊断日志测试")
 	assert(not SystemHealthManager.get_recent_errors().is_empty(), "diagnostic error record")
