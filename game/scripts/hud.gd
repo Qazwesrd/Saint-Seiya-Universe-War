@@ -964,3 +964,57 @@ func _open_sanctuary(root: Control) -> void:
  box.add_child(close)
  root.add_child(popup)
  popup.popup_centered()
+
+
+func show_battle_result(summary: Dictionary, rewards: Dictionary = {}) -> void:
+    var root := get_child(0) as Control
+    var panel := Panel.new()
+    panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    panel.offset_left = -270
+    panel.offset_right = 270
+    panel.offset_top = -230
+    panel.offset_bottom = 230
+    panel.z_index = 30
+    _style_panel(panel, Color(0.012, 0.02, 0.065, 0.98), Color(0.9, 0.68, 0.22))
+    root.add_child(panel)
+    var box := VBoxContainer.new()
+    box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    box.add_theme_constant_override("separation", 12)
+    panel.add_child(box)
+    var title := Label.new()
+    title.text = "战斗结算"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 30)
+    title.add_theme_color_override("font_color", Color(1.0, 0.82, 0.38))
+    box.add_child(title)
+    var grade := Label.new()
+    grade.text = "战斗评价：%s" % str(summary.get("grade", "未完成"))
+    grade.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    grade.add_theme_font_size_override("font_size", 26)
+    box.add_child(grade)
+    var stats := Label.new()
+    stats.text = "造成伤害：%.0f\n承受伤害：%.0f\n击败敌人：%d（Boss：%d）\n技能释放：%d    连招：%d\n战斗时长：%d 秒" % [
+        float(summary.get("damage_dealt", 0.0)),
+        float(summary.get("damage_taken", 0.0)),
+        int(summary.get("enemies_defeated", 0)),
+        int(summary.get("bosses_defeated", 0)),
+        int(summary.get("skills_cast", 0)),
+        int(summary.get("combos_used", 0)),
+        int(summary.get("duration_seconds", 0))
+    ]
+    stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    stats.add_theme_font_size_override("font_size", 18)
+    box.add_child(stats)
+    var reward := Label.new()
+    reward.text = "本场奖励：经验 %d    星币 %d" % [int(rewards.get("exp", 0)), int(rewards.get("coins", 0))]
+    reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    reward.add_theme_font_size_override("font_size", 18)
+    box.add_child(reward)
+    var close := Button.new()
+    close.text = "返回竞技场"
+    close.custom_minimum_size = Vector2(180, 48)
+    close.pressed.connect(func():
+        if is_instance_valid(panel):
+            panel.queue_free()
+    )
+    box.add_child(close)
