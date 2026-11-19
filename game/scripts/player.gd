@@ -8,6 +8,7 @@ var health := 100.0
 var max_health := 100.0
 var cosmos := 100.0
 var max_cosmos := 100.0
+var cosmos_regen_rate := 3.0
 var attack_cd := 0.0
 var basic_combo_step := 0
 var basic_combo_reset := 0.0
@@ -30,6 +31,7 @@ func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
     max_cosmos = float(rpg_stats.get("max_cosmos", 100.0))
+    cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", 3.0))
     health = max_health
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
@@ -108,7 +110,7 @@ func _physics_process(delta: float) -> void:
     if temporary_buff_timer <= 0.0:
         temporary_damage_bonus = 0.0
         temporary_damage_reduction = 0.0
-    cosmos = minf(max_cosmos, cosmos + delta * 3.0)
+    cosmos = minf(max_cosmos, cosmos + delta * cosmos_regen_rate)
     var input_vec := move_input
     if input_vec.length() < 0.05:
         input_vec = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -172,7 +174,7 @@ func skill() -> void:
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + temporary_damage_bonus)
+    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
     game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, float(skill_data.get("range", 7.0)), float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)), float(skill_data.get("launch", 1.2)), float(skill_data.get("stagger", 0.55)))
