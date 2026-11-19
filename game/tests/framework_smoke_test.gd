@@ -109,6 +109,7 @@ func _run_tests() -> void:
 	QuestManager.defeated_normal = 1
 	QuestManager._save_progress()
 	var first_mission_id := CampaignDatabase.get_first_mission_id()
+	assert(not CampaignManager.accept_mission("gw_002"), "cannot skip the first story mission")
 	assert(CampaignManager.accept_mission(first_mission_id), "save campaign progress to character slot")
 	assert(RPGState.create_new_slot(2), "create second isolated character slot")
 	assert(QuestManager.status == "not_started", "quest state isolated on new slot")
