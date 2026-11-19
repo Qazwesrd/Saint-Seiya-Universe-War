@@ -71,6 +71,20 @@ func _run_tests() -> void:
 	assert(RPGState.save_slot(3), "save created slot")
 	assert(not RPGState.create_new_slot(3), "do not overwrite occupied slot")
 	assert(RPGState.load_slot(3) and int(RPGState.profile.get("currency", 0)) == 9876, "occupied slot data preserved")
+	QuestManager.status = "active"
+	QuestManager.defeated_normal = 1
+	QuestManager._save_progress()
+	var first_mission_id := CampaignDatabase.get_first_mission_id()
+	assert(CampaignManager.accept_mission(first_mission_id), "save campaign progress to character slot")
+	assert(RPGState.create_new_slot(2), "create second isolated character slot")
+	assert(QuestManager.status == "not_started", "quest state isolated on new slot")
+	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "campaign defaults on new slot")
+	assert(RPGState.load_slot(3), "switch back to first character slot")
+	assert(QuestManager.status == "active" and QuestManager.defeated_normal == 1, "restore quest progress from selected slot")
+	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "restore campaign progress from selected slot")
+	assert(RPGState.delete_slot(2), "remove second isolated slot")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://backup_slot_2.json"))
+
 	assert(RPGState.backup_slot(3) and RPGState.has_backup_slot(3), "backup character slot")
 	assert(RPGState.delete_slot(3) and not RPGState.has_slot(3), "delete slot after backup")
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
