@@ -163,7 +163,7 @@ func add_currency(amount: int) -> void:
  _emit_change()
  save_slot(active_slot)
 func add_item(item_id: String, quantity: int = 1) -> bool:
-	return add_items({item_id: quantity})
+  return add_items({item_id: quantity})
 
 func add_items(items: Dictionary) -> bool:
 	if items.is_empty():
