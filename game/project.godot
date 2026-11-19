@@ -6,6 +6,8 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 RPGState="*res://scripts/rpg_state.gd"
 QuestManager="*res://scripts/quest_manager.gd"
+SkillSystem="*res://scripts/skill_system.gd"
+GMManager="*res://scripts/gm_manager.gd"
 
 [display]
 window/size/viewport_width=1280
