@@ -187,7 +187,7 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
     for enemy in enemies.duplicate():
         if not is_instance_valid(enemy) or enemy.get("health") <= 0.0:
             continue
-        var distance := enemy.global_position.distance_to(player.global_position)
+        var distance: float = enemy.global_position.distance_to(player.global_position)
         if distance > reach + 1.5:
             continue
         match class_id:
@@ -199,7 +199,7 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
                 enemy.call("apply_status_effect", "freeze", 1.8, 0.0)
                 enemy.call("apply_status_effect", "slow", 3.0, 0.4)
             "andromeda":
-                var pull_direction := player.global_position - enemy.global_position
+                var pull_direction: Vector3 = player.global_position - enemy.global_position
                 pull_direction.y = 0.0
                 enemy.call("apply_hit_reaction", pull_direction.normalized(), 5.5, 0.0, 0.45)
                 enemy.call("apply_status_effect", "slow", 2.0, 0.25)
@@ -455,13 +455,13 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
             impacted = true
 
         if "牵引" in ability_type or "拉拽" in ability_name:
-            var pull := player.global_position - enemy.global_position
+            var pull: Vector3 = player.global_position - enemy.global_position
             pull.y = 0.0
             if enemy.has_method("apply_hit_reaction"):
                 enemy.call("apply_hit_reaction", pull.normalized(), 6.0, 0.0, 0.45)
                 impacted = true
         elif "击退" in ability_type or "冲击" in ability_type or "震地" in ability_type:
-            var push := enemy.global_position - player.global_position
+            var push: Vector3 = enemy.global_position - player.global_position
             push.y = 0.0
             if enemy.has_method("apply_hit_reaction"):
                 enemy.call("apply_hit_reaction", push.normalized(), 7.0, 1.2, 0.5)
