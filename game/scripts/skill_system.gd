@@ -130,7 +130,7 @@ const CLASS_SKILLS := {
         "resource_name": "次元",
     },
     "tenmou": {
-        "class_name": "天猛", "style": "重型近战压制",
+        "class_name": "天猛", "faction": "冥界·哈迪斯军", "faction_id": "hades_specters", "canon_status": "原作明确", "style": "重型近战压制",
         "basic_attacks": ["钢铁重拳", "猛击追打", "天猛碎地击"],
         "name": "天猛重击", "combo": "钢铁冲击", "burst_name": "天猛陨星破",
         "description": "重型打击拥有较强硬直和击退，攻击节奏偏沉稳。",
@@ -151,7 +151,7 @@ const CLASS_SKILLS := {
         "resource_name": "怒气",
     },
     "lyra": {
-        "class_name": "天琴", "style": "音波中距离牵制",
+        "class_name": "天琴", "faction": "圣域·雅典娜军", "faction_id": "athena_sanctuary", "canon_status": "原作明确", "style": "音波中距离牵制",
         "basic_attacks": ["音刃拨弦", "旋律连击", "终曲震荡"],
         "name": "弦乐幻境", "combo": "死亡交响曲", "burst_name": "黄金弦乐终章",
         "description": "音波攻击拥有较宽范围与较长硬直，适合控场。",
@@ -172,7 +172,7 @@ const CLASS_SKILLS := {
         "resource_name": "音律",
     },
     "sea_swallow": {
-        "class_name": "海燕", "style": "高速机动突袭",
+        "class_name": "海燕", "faction": "待核实（暂不归属）", "faction_id": "unverified", "canon_status": "尚未确认对应原作角色", "style": "高速机动突袭",
         "basic_attacks": ["旋流快拳", "疾风连刺", "海燕回旋击"],
         "name": "海燕疾风", "combo": "旋流突袭", "burst_name": "海燕龙卷风",
         "description": "高速短冷却攻击，适合快速切入和连续追击。",
