@@ -5,7 +5,7 @@
 - **主引擎：Godot 4（稳定版系列）**
 - **目标平台：Android 手机，横屏**
 - **首要测试设备：魅族 21 Pro（Snapdragon 8 Gen 3、Adreno 750、16GB RAM）**
-- **渲染方向：优先采用 Mobile 渲染器**，以实际真机测试结果决定是否调整个别效果或兼容性设置。
+- **首期渲染器：Compatibility（OpenGL）**，降低开发电脑与不同 Android 设备的图形接口门槛；完成魅族 21 Pro 真机性能测试后，再评估是否切换 Mobile（Vulkan）渲染器。
 - **脚本方向：优先使用 GDScript**，避免首期引入不必要的 C# Android 导出复杂度。
 
 ## 选型依据
@@ -16,7 +16,7 @@
 - RAM：16GB
 - OS：Windows 11
 
-Godot 4 能满足本项目 3D 即时动作玩法和 Android 导出需求，编辑器资源负担通常比 Unreal Engine 5 更适合当前开发电脑。Godot 官方文档列出 Android 导出流程，并提供 Mobile、Compatibility 等渲染器选项。
+Godot 4 能满足本项目 3D 即时动作玩法和 Android 导出需求，编辑器资源负担通常比 Unreal Engine 5 更适合当前开发电脑。首期工程使用 Compatibility 渲染器作为兼容性基线，不能据此推断最终画质上限。Godot 官方文档列出 Android 导出流程，并提供 Mobile、Compatibility 等渲染器选项。
 
 这项决定是以开发效率、Android 单机交付和当前硬件条件作出的务实选择，不代表 Godot 没有大型 3D 项目的性能边界。复杂场景、角色数量、阴影、粒子和后处理都必须通过真机逐步验证。
 
