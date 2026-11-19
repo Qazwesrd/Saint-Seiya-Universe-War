@@ -149,6 +149,7 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             enemy.call("take_damage", damage)
 func on_enemy_defeated(enemy: Node3D) -> void:
     QuestManager.on_enemy_defeated(bool(enemy.get("is_boss")))
+    CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     enemies.erase(enemy)
     var exp_reward := 90 if enemy.get("is_boss") else 30
     var coin_reward := 120 if enemy.get("is_boss") else 40
