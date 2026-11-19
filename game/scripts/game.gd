@@ -423,10 +423,20 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_duration = 3.5
         status_power = 0.32
 
+    # 天猛：冥斗士重击压制；天琴：以音律迟缓并打断敌人。
+    if class_id == "tenmou":
+        status = "weaken"
+        status_duration = maxf(status_duration, 2.8)
+        status_power = maxf(status_power, 0.18)
+    elif class_id == "lyra":
+        status = "slow"
+        status_duration = maxf(status_duration, 3.0)
+        status_power = maxf(status_power, 0.22)
+
     var is_area := "范围" in ability_role or "群体" in ability_role or "领域" in ability_type or "震地" in ability_type or "奥义" in ability_type
     var max_distance := reach + (1.5 if is_area else 0.5)
     for enemy in enemies.duplicate():
-        if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
+        if not is_instance_valid(enemy) or float(enemy.get("health", 0.0)) <= 0.0:
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
         var distance := offset.length()
@@ -436,31 +446,42 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
             var forward := -player.global_transform.basis.z
             if forward.dot(offset.normalized()) < -0.05:
                 continue
+
+        var impacted := false
         if status != "" and enemy.has_method("apply_status_effect"):
             enemy.call("apply_status_effect", status, status_duration, status_power)
-            affected += 1
+            impacted = true
 
         if "牵引" in ability_type or "拉拽" in ability_name:
             var pull := player.global_position - enemy.global_position
             pull.y = 0.0
             if enemy.has_method("apply_hit_reaction"):
                 enemy.call("apply_hit_reaction", pull.normalized(), 6.0, 0.0, 0.45)
-            affected += 1
+                impacted = true
         elif "击退" in ability_type or "冲击" in ability_type or "震地" in ability_type:
             var push := enemy.global_position - player.global_position
             push.y = 0.0
             if enemy.has_method("apply_hit_reaction"):
                 enemy.call("apply_hit_reaction", push.normalized(), 7.0, 1.2, 0.5)
-            affected += 1
-        elif "打断" in ability_type and enemy.has_method("apply_hit_reaction"):
-            enemy.call("apply_hit_reaction", offset.normalized(), 2.0, 0.0, 0.9)
+                impacted = true
+        elif ("打断" in ability_type or class_id == "lyra") and enemy.has_method("apply_hit_reaction"):
+            var stagger := 0.9 if "打断" in ability_type else 0.55
+            enemy.call("apply_hit_reaction", offset.normalized(), 1.5, 0.0, stagger)
+            impacted = true
+        elif class_id == "tenmou" and enemy.has_method("apply_hit_reaction"):
+            enemy.call("apply_hit_reaction", offset.normalized(), 2.8, 0.0, 0.65)
+            impacted = true
+
+        if impacted:
             affected += 1
 
-    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type:
-        player.call("apply_temporary_buff", 0.0, 0.42, 5.0)
+    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type:
+        player.call("apply_temporary_buff", 0.0, 0.42 if "霸体" not in ability_type else 0.28, 5.0)
     if "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type:
         player.health = minf(player.max_health, player.health + player.max_health * 0.32)
         player.cosmos = minf(player.max_cosmos, player.cosmos + 15.0)
+    if "回能" in ability_type or "资源" in ability_type:
+        player.cosmos = minf(player.max_cosmos, player.cosmos + 28.0)
     if "增益" in ability_type or "狂怒" in ability_type or "召唤" in ability_type or "被动强化" in ability_type:
         player.call("apply_temporary_buff", 0.25, 0.0, 5.5)
     if "闪避" in ability_type or "替身" in ability_type:
@@ -472,5 +493,5 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
 
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
-    elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "闪避" in ability_type or "突进" in ability_type or "位移" in ability_type:
+    elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "闪避" in ability_type or "突进" in ability_type or "位移" in ability_type or "回能" in ability_type or "资源" in ability_type or "霸体" in ability_type:
         show_notice(ability_name + "：自身效果已生效")
