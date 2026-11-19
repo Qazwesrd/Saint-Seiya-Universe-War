@@ -194,6 +194,190 @@ const CLASS_SKILLS := {
     }
 }
 
+# Advanced class skill branches: 18 additional skills per class, in three six-skill branches.
+const ADVANCED_CLASS_SKILLS := {
+    "pegasus": [
+        {"id":"pegasus_advanced_1","name":"彗星突刺","description":"向目标高速穿刺，命中后追加追击拳。","branch":"进攻","type":"突进","role":"突进","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"pegasus_advanced_2","name":"流星散华","description":"向扇形区域连续轰出密集拳影。","branch":"进攻","type":"群攻","role":"群攻","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"pegasus_advanced_3","name":"天马冲天击","description":"上勾拳挑飞目标，可衔接空中追击。","branch":"进攻","type":"挑空","role":"挑空","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"pegasus_advanced_4","name":"音速回旋踢","description":"旋身踢击周围目标并拉开距离。","branch":"进攻","type":"击退","role":"击退","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"pegasus_advanced_5","name":"彗星爆裂","description":"消耗斗志强化下一次重击，提升破防能力。","branch":"进攻","type":"强化","role":"强化","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"pegasus_advanced_6","name":"天马幻影连袭","description":"留下残影连续攻击锁定目标。","branch":"进攻","type":"多段","role":"多段","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"pegasus_advanced_7","name":"疾风闪避","description":"快速侧移并短暂获得闪避窗口。","branch":"机动","type":"闪避","role":"闪避","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"pegasus_advanced_8","name":"星云追猎","description":"锁定目标后快速贴近并造成硬直。","branch":"机动","type":"追击","role":"追击","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"pegasus_advanced_9","name":"天马翔跃","description":"跃向空中躲避地面攻击并发动下劈。","branch":"机动","type":"位移","role":"位移","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"pegasus_advanced_10","name":"斗志昂扬","description":"短时间提高攻击速度与连击伤害。","branch":"机动","type":"增益","role":"增益","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"pegasus_advanced_11","name":"不屈反击","description":"成功闪避后下一击获得额外伤害。","branch":"机动","type":"反击","role":"反击","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"pegasus_advanced_12","name":"彗星步法","description":"连续移动后强化下一次突进距离。","branch":"机动","type":"强化","role":"强化","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"pegasus_advanced_13","name":"天马守势","description":"短暂降低正面受到的伤害。","branch":"守护","type":"减伤","role":"减伤","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"pegasus_advanced_14","name":"逆境爆发","description":"生命较低时回复少量小宇宙并提高韧性。","branch":"守护","type":"恢复","role":"恢复","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"pegasus_advanced_15","name":"星辰护体","description":"生成短暂护盾抵挡一次轻型攻击。","branch":"守护","type":"护盾","role":"护盾","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"pegasus_advanced_16","name":"流星反击","description":"受到近战攻击后快速反击周围敌人。","branch":"守护","type":"反制","role":"反制","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"pegasus_advanced_17","name":"天马意志","description":"提高连击窗口持续时间。","branch":"守护","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"pegasus_advanced_18","name":"银河彗星终结","description":"聚集斗志发动直线终结冲击。","branch":"守护","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "dragon": [
+        {"id":"dragon_advanced_1","name":"龙牙破阵","description":"以盾击破开敌方防御并造成硬直。","branch":"攻防","type":"破防","role":"破防","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"dragon_advanced_2","name":"升龙连破","description":"连续上挑后以重拳击落目标。","branch":"攻防","type":"挑空","role":"挑空","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"dragon_advanced_3","name":"庐山崩拳","description":"集中力量轰击单体并降低其防御。","branch":"攻防","type":"破甲","role":"破甲","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"dragon_advanced_4","name":"苍龙裂地","description":"盾拳砸地形成直线冲击波。","branch":"攻防","type":"范围","role":"范围","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"dragon_advanced_5","name":"龙尾旋击","description":"转身横扫周围敌人。","branch":"攻防","type":"群攻","role":"群攻","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"dragon_advanced_6","name":"逆鳞重击","description":"消耗龙魂强化下一次攻击与击退。","branch":"攻防","type":"强化","role":"强化","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"dragon_advanced_7","name":"龙盾壁垒","description":"举盾大幅降低正面伤害。","branch":"守护","type":"格挡","role":"格挡","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"dragon_advanced_8","name":"苍龙守护阵","description":"为自身生成持续护盾。","branch":"守护","type":"护盾","role":"护盾","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"dragon_advanced_9","name":"不动如山","description":"短时间免疫普通击退与硬直。","branch":"守护","type":"霸体","role":"霸体","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"dragon_advanced_10","name":"龙之反震","description":"格挡成功后释放震荡反击。","branch":"守护","type":"反击","role":"反击","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"dragon_advanced_11","name":"守护誓约","description":"短时间吸引附近敌人注意。","branch":"守护","type":"牵制","role":"牵制","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"dragon_advanced_12","name":"龙魂复苏","description":"恢复生命并提升防御，长冷却。","branch":"守护","type":"恢复","role":"恢复","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"dragon_advanced_13","name":"飞龙在天","description":"向前跃进并以升龙击开路。","branch":"机动","type":"突进","role":"突进","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"dragon_advanced_14","name":"苍龙摆尾","description":"快速横移后扫击敌人。","branch":"机动","type":"位移","role":"位移","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"dragon_advanced_15","name":"龙翔九天","description":"跃空后向地面发动俯冲攻击。","branch":"机动","type":"空袭","role":"空袭","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"dragon_advanced_16","name":"龙行步","description":"短时间提高移动速度。","branch":"机动","type":"增益","role":"增益","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"dragon_advanced_17","name":"龙鳞韧性","description":"受到连续攻击时逐步提高减伤。","branch":"机动","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"dragon_advanced_18","name":"庐山真龙奥义","description":"凝聚龙魂释放贯穿前方的终极龙击。","branch":"机动","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "cygnus": [
+        {"id":"cygnus_advanced_1","name":"冰晶飞刃","description":"凝结冰刃远程穿刺单体目标。","branch":"冰霜输出","type":"远程","role":"远程","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"cygnus_advanced_2","name":"寒冰连射","description":"连续发射冰晶造成多段伤害。","branch":"冰霜输出","type":"多段","role":"多段","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"cygnus_advanced_3","name":"冰河冲击","description":"释放直线冻气击退敌人。","branch":"冰霜输出","type":"击退","role":"击退","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"cygnus_advanced_4","name":"极光冰爆","description":"引爆目标身上的寒霜标记。","branch":"冰霜输出","type":"爆发","role":"爆发","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"cygnus_advanced_5","name":"冰棱穿心","description":"集中冰枪攻击单体弱点。","branch":"冰霜输出","type":"单体","role":"单体","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"cygnus_advanced_6","name":"寒霜风暴","description":"召唤环形冰风暴持续伤害。","branch":"冰霜输出","type":"范围","role":"范围","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"cygnus_advanced_7","name":"绝对零度领域","description":"扩大寒气领域并持续减速敌人。","branch":"冻结控制","type":"领域","role":"领域","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"cygnus_advanced_8","name":"冰封枷锁","description":"冻结普通敌人并打断其动作。","branch":"冻结控制","type":"冻结","role":"冻结","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"cygnus_advanced_9","name":"寒冰地牢","description":"在指定区域形成冰牢限制敌人移动。","branch":"冻结控制","type":"禁锢","role":"禁锢","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"cygnus_advanced_10","name":"冰镜反射","description":"短暂生成冰镜抵挡正面攻击。","branch":"冻结控制","type":"反制","role":"反制","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"cygnus_advanced_11","name":"霜冻标记","description":"标记目标，使其受到更多冰霜伤害。","branch":"冻结控制","type":"易伤","role":"易伤","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"cygnus_advanced_12","name":"永冻连锁","description":"将寒霜效果扩散至附近敌人。","branch":"冻结控制","type":"扩散","role":"扩散","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"cygnus_advanced_13","name":"冰晶铠甲","description":"凝结冰甲降低受到的伤害。","branch":"寒冰守护","type":"减伤","role":"减伤","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"cygnus_advanced_14","name":"寒气屏障","description":"生成冰墙阻挡敌方接近。","branch":"寒冰守护","type":"屏障","role":"屏障","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"cygnus_advanced_15","name":"冰雪回息","description":"恢复少量生命与小宇宙。","branch":"寒冰守护","type":"恢复","role":"恢复","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"cygnus_advanced_16","name":"冰步闪身","description":"向后滑步并短暂提高闪避。","branch":"寒冰守护","type":"闪避","role":"闪避","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"cygnus_advanced_17","name":"冻气共鸣","description":"提高对减速与冻结目标的伤害。","branch":"寒冰守护","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"cygnus_advanced_18","name":"极光终焉","description":"凝聚极寒冻气发动终极范围攻击。","branch":"寒冰守护","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "andromeda": [
+        {"id":"andromeda_advanced_1","name":"锁链穿星","description":"锁链直线突刺并穿透多个目标。","branch":"锁链攻击","type":"穿透","role":"穿透","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"andromeda_advanced_2","name":"旋转锁链阵","description":"环绕自身高速旋转锁链攻击。","branch":"锁链攻击","type":"范围","role":"范围","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"andromeda_advanced_3","name":"雷霆锁链·追击","description":"锁链自动追踪标记目标。","branch":"锁链攻击","type":"追踪","role":"追踪","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"andromeda_advanced_4","name":"星云飞瀑","description":"向前方释放多段锁链打击。","branch":"锁链攻击","type":"多段","role":"多段","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"andromeda_advanced_5","name":"锁链绞杀","description":"束缚单体目标并持续造成伤害。","branch":"锁链攻击","type":"束缚","role":"束缚","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"andromeda_advanced_6","name":"星云爆裂链","description":"引爆锁链标记造成范围伤害。","branch":"锁链攻击","type":"爆发","role":"爆发","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"andromeda_advanced_7","name":"圆锁反制","description":"锁链形成防御圆环，反弹轻型攻击。","branch":"守护辅助","type":"反制","role":"反制","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"andromeda_advanced_8","name":"星云结界","description":"为自身与附近友方提供防护效果。","branch":"守护辅助","type":"护盾","role":"护盾","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"andromeda_advanced_9","name":"生命链接","description":"将部分受到的伤害转化为小宇宙消耗。","branch":"守护辅助","type":"减伤","role":"减伤","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"andromeda_advanced_10","name":"治愈星云","description":"恢复自身生命并清除轻微异常状态。","branch":"守护辅助","type":"治疗","role":"治疗","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"andromeda_advanced_11","name":"守护之链","description":"短时间降低附近敌人的攻击能力。","branch":"守护辅助","type":"削弱","role":"削弱","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"andromeda_advanced_12","name":"星云庇护","description":"生命危急时自动触发一次护盾。","branch":"守护辅助","type":"保命","role":"保命","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"andromeda_advanced_13","name":"锁链牵引","description":"将自身拉向目标或将普通敌人拉近。","branch":"控制机动","type":"牵引","role":"牵引","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"andromeda_advanced_14","name":"星云回环步","description":"快速绕到目标侧面。","branch":"控制机动","type":"位移","role":"位移","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"andromeda_advanced_15","name":"锁链封路","description":"在地面布置锁链区域限制敌人。","branch":"控制机动","type":"陷阱","role":"陷阱","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"andromeda_advanced_16","name":"雷电束缚","description":"电击并短暂打断目标动作。","branch":"控制机动","type":"打断","role":"打断","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"andromeda_advanced_17","name":"星云感知","description":"扩大锁定与索敌距离。","branch":"控制机动","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"andromeda_advanced_18","name":"银河锁链审判","description":"召唤多重锁链覆盖战场。","branch":"控制机动","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "phoenix": [
+        {"id":"phoenix_advanced_1","name":"烈焰连环拳","description":"连续火焰拳击并叠加灼烧。","branch":"烈焰爆发","type":"多段","role":"多段","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"phoenix_advanced_2","name":"凤凰火羽","description":"向扇形区域发射火羽。","branch":"烈焰爆发","type":"远程","role":"远程","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"phoenix_advanced_3","name":"赤炎冲天","description":"火柱从地面爆发击飞敌人。","branch":"烈焰爆发","type":"挑空","role":"挑空","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"phoenix_advanced_4","name":"焚天烈火","description":"在前方留下持续燃烧区域。","branch":"烈焰爆发","type":"持续","role":"持续","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"phoenix_advanced_5","name":"炎爆印记","description":"标记目标并在数秒后引爆。","branch":"烈焰爆发","type":"延迟爆发","role":"延迟爆发","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"phoenix_advanced_6","name":"凤凰焚世","description":"引爆附近所有灼烧效果。","branch":"烈焰爆发","type":"引爆","role":"引爆","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"phoenix_advanced_7","name":"幻魔侵袭","description":"精神冲击使普通敌人短暂混乱。","branch":"幻魔控制","type":"混乱","role":"混乱","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"phoenix_advanced_8","name":"梦魇火牢","description":"制造幻象火牢限制目标行动。","branch":"幻魔控制","type":"禁锢","role":"禁锢","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"phoenix_advanced_9","name":"暗黑幻影","description":"召唤凤凰幻影协同攻击。","branch":"幻魔控制","type":"召唤","role":"召唤","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"phoenix_advanced_10","name":"心神震荡","description":"打断目标蓄力并造成硬直。","branch":"幻魔控制","type":"打断","role":"打断","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"phoenix_advanced_11","name":"涅槃印记","description":"记录当前生命，短时间内获得复苏机会。","branch":"幻魔控制","type":"复苏","role":"复苏","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"phoenix_advanced_12","name":"不灭意志","description":"短暂免疫一次致命伤害，长冷却。","branch":"幻魔控制","type":"保命","role":"保命","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"phoenix_advanced_13","name":"浴火护身","description":"生成火焰护盾并灼烧近身敌人。","branch":"不死重生","type":"护盾","role":"护盾","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"phoenix_advanced_14","name":"凤凰回生","description":"恢复生命并清除控制效果。","branch":"不死重生","type":"治疗","role":"治疗","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"phoenix_advanced_15","name":"焚身反击","description":"受击后向周围释放火焰冲击。","branch":"不死重生","type":"反击","role":"反击","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"phoenix_advanced_16","name":"不死鸟之翼","description":"向后跃开并留下火焰轨迹。","branch":"不死重生","type":"闪避","role":"闪避","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"phoenix_advanced_17","name":"不灭火种","description":"击败敌人后恢复少量生命。","branch":"不死重生","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"phoenix_advanced_18","name":"凤凰涅槃·天火","description":"化身烈焰凤凰发动终极俯冲。","branch":"不死重生","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "sea_dragon": [
+        {"id":"sea_dragon_advanced_1","name":"次元裂斩","description":"撕开空间对直线敌人造成斩击。","branch":"次元炮击","type":"直线","role":"直线","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"sea_dragon_advanced_2","name":"异界光矛","description":"发射穿透空间的能量矛。","branch":"次元炮击","type":"穿透","role":"穿透","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"sea_dragon_advanced_3","name":"空间坍缩","description":"压缩指定区域并造成爆炸。","branch":"次元炮击","type":"范围","role":"范围","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"sea_dragon_advanced_4","name":"次元连爆","description":"连续开启小型裂隙轰击目标。","branch":"次元炮击","type":"多段","role":"多段","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"sea_dragon_advanced_5","name":"海龙吐息","description":"释放海潮能量冲击前方敌人。","branch":"次元炮击","type":"击退","role":"击退","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"sea_dragon_advanced_6","name":"黄金三角·崩坏","description":"扩大次元裂隙造成强力终结伤害。","branch":"次元炮击","type":"终结","role":"终结","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"sea_dragon_advanced_7","name":"幻胧迷阵","description":"制造幻象干扰敌人索敌。","branch":"精神次元","type":"干扰","role":"干扰","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"sea_dragon_advanced_8","name":"精神锁定","description":"压制目标，使其短时间攻击下降。","branch":"精神次元","type":"削弱","role":"削弱","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"sea_dragon_advanced_9","name":"异次元放逐","description":"将普通敌人短暂困入次元裂隙。","branch":"精神次元","type":"控制","role":"控制","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"sea_dragon_advanced_10","name":"空间封锁","description":"封闭区域限制敌人移动。","branch":"精神次元","type":"禁锢","role":"禁锢","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"sea_dragon_advanced_11","name":"次元标记","description":"标记目标，后续空间技能追踪增强。","branch":"精神次元","type":"标记","role":"标记","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"sea_dragon_advanced_12","name":"幻影替身","description":"制造替身吸引一次攻击。","branch":"精神次元","type":"替身","role":"替身","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"sea_dragon_advanced_13","name":"空间跃迁","description":"瞬间短距离位移。","branch":"机动生存","type":"位移","role":"位移","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"sea_dragon_advanced_14","name":"次元闪避","description":"短暂进入无敌闪避状态。","branch":"机动生存","type":"闪避","role":"闪避","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"sea_dragon_advanced_15","name":"深海护体","description":"海流形成护盾吸收伤害。","branch":"机动生存","type":"护盾","role":"护盾","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"sea_dragon_advanced_16","name":"潮汐回能","description":"恢复小宇宙并缩短突袭技能冷却。","branch":"机动生存","type":"恢复","role":"恢复","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"sea_dragon_advanced_17","name":"空间掌控","description":"提高对被控制目标的伤害。","branch":"机动生存","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"sea_dragon_advanced_18","name":"异次元海皇裁决","description":"展开黄金三角次元终极领域。","branch":"机动生存","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "tenmou": [
+        {"id":"tenmou_advanced_1","name":"碎骨重拳","description":"强力重拳降低目标防御。","branch":"重装破坏","type":"破甲","role":"破甲","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"tenmou_advanced_2","name":"地裂冲锋","description":"冲锋撞击路径上的所有敌人。","branch":"重装破坏","type":"冲锋","role":"冲锋","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"tenmou_advanced_3","name":"崩山连砸","description":"连续砸击地面造成震荡。","branch":"重装破坏","type":"多段","role":"多段","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"tenmou_advanced_4","name":"陨石坠击","description":"跃起砸向目标区域。","branch":"重装破坏","type":"范围","role":"范围","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"tenmou_advanced_5","name":"钢铁碎颅","description":"蓄力后对单体发动高硬直重击。","branch":"重装破坏","type":"蓄力","role":"蓄力","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"tenmou_advanced_6","name":"毁灭震波","description":"向四周释放环形冲击波。","branch":"重装破坏","type":"击退","role":"击退","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"tenmou_advanced_7","name":"铁壁防御","description":"架起防御姿态，大幅降低伤害。","branch":"铁壁狂怒","type":"格挡","role":"格挡","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"tenmou_advanced_8","name":"不屈钢躯","description":"短时间获得霸体抵抗控制。","branch":"铁壁狂怒","type":"霸体","role":"霸体","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"tenmou_advanced_9","name":"反震护甲","description":"受到近战攻击时反弹部分伤害。","branch":"铁壁狂怒","type":"反伤","role":"反伤","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"tenmou_advanced_10","name":"战吼威慑","description":"降低周围敌人的攻击与移动速度。","branch":"铁壁狂怒","type":"削弱","role":"削弱","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"tenmou_advanced_11","name":"怒意回流","description":"受到伤害时积累怒气。","branch":"铁壁狂怒","type":"资源","role":"资源","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"tenmou_advanced_12","name":"钢铁意志","description":"生命较低时获得额外防御。","branch":"铁壁狂怒","type":"被动强化","role":"被动强化","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"tenmou_advanced_13","name":"狂战突进","description":"向目标冲锋并造成撞击。","branch":"狂战突击","type":"突进","role":"突进","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"tenmou_advanced_14","name":"旋风重锤","description":"旋转身体攻击周围敌人。","branch":"狂战突击","type":"范围","role":"范围","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"tenmou_advanced_15","name":"血怒爆发","description":"消耗生命换取短时间攻击提升。","branch":"狂战突击","type":"增益","role":"增益","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"tenmou_advanced_16","name":"震地追击","description":"击倒目标后追加地面重击。","branch":"狂战突击","type":"追击","role":"追击","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"tenmou_advanced_17","name":"狂暴连打","description":"短时间连续挥拳压制目标。","branch":"狂战突击","type":"连击","role":"连击","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"tenmou_advanced_18","name":"天猛终极粉碎","description":"凝聚怒气发动毁灭性砸地攻击。","branch":"狂战突击","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "lyra": [
+        {"id":"lyra_advanced_1","name":"弦刃飞音","description":"发射高速音刃攻击远处目标。","branch":"音律攻击","type":"远程","role":"远程","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"lyra_advanced_2","name":"黄金音波","description":"释放扇形音波造成多段伤害。","branch":"音律攻击","type":"范围","role":"范围","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"lyra_advanced_3","name":"弦音穿刺","description":"集中音束穿透直线敌人。","branch":"音律攻击","type":"穿透","role":"穿透","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"lyra_advanced_4","name":"破军协奏","description":"连续音波打击并打断敌人。","branch":"音律攻击","type":"打断","role":"打断","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"lyra_advanced_5","name":"终曲震荡","description":"高频音波造成范围硬直。","branch":"音律攻击","type":"控制","role":"控制","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"lyra_advanced_6","name":"死亡乐章","description":"持续演奏造成范围音波伤害。","branch":"音律攻击","type":"持续","role":"持续","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"lyra_advanced_7","name":"镇魂安魂曲","description":"降低敌人攻击与移动速度。","branch":"控制辅助","type":"削弱","role":"削弱","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"lyra_advanced_8","name":"催眠旋律","description":"使普通敌人短暂陷入迟缓状态。","branch":"控制辅助","type":"控制","role":"控制","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"lyra_advanced_9","name":"封音结界","description":"形成音障阻挡敌人接近。","branch":"控制辅助","type":"屏障","role":"屏障","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"lyra_advanced_10","name":"破魔和弦","description":"驱散自身控制并短暂提高抗性。","branch":"控制辅助","type":"净化","role":"净化","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"lyra_advanced_11","name":"共鸣标记","description":"标记敌人，使其受到音波伤害提高。","branch":"控制辅助","type":"易伤","role":"易伤","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"lyra_advanced_12","name":"终止音符","description":"打断敌方蓄力并造成硬直。","branch":"控制辅助","type":"打断","role":"打断","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"lyra_advanced_13","name":"治愈小夜曲","description":"恢复自身生命。","branch":"黄金协奏","type":"治疗","role":"治疗","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"lyra_advanced_14","name":"回能前奏","description":"恢复小宇宙。","branch":"黄金协奏","type":"回能","role":"回能","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"lyra_advanced_15","name":"守护交响","description":"生成音律护盾。","branch":"黄金协奏","type":"护盾","role":"护盾","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"lyra_advanced_16","name":"战意协奏","description":"短时间提高攻击与移动速度。","branch":"黄金协奏","type":"增益","role":"增益","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"lyra_advanced_17","name":"和弦共鸣","description":"控制技能命中后缩短其他技能冷却。","branch":"黄金协奏","type":"被动强化","role":"被动强化","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"lyra_advanced_18","name":"黄金终章·安魂","description":"奏响终极乐章震荡全场。","branch":"黄金协奏","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ],
+    "sea_swallow": [
+        {"id":"sea_swallow_advanced_1","name":"疾风刺","description":"快速突刺目标并穿过其身侧。","branch":"疾风连击","type":"突刺","role":"突刺","unlock_level":45,"cost":38,"cooldown":7},
+        {"id":"sea_swallow_advanced_2","name":"双旋风刃","description":"释放两道交叉风刃。","branch":"疾风连击","type":"远程","role":"远程","unlock_level":48,"cost":38,"cooldown":9},
+        {"id":"sea_swallow_advanced_3","name":"海燕连环踢","description":"快速连续踢击单体目标。","branch":"疾风连击","type":"多段","role":"多段","unlock_level":51,"cost":38,"cooldown":11},
+        {"id":"sea_swallow_advanced_4","name":"旋风破阵","description":"旋身冲入敌群造成范围伤害。","branch":"疾风连击","type":"范围","role":"范围","unlock_level":54,"cost":45,"cooldown":13},
+        {"id":"sea_swallow_advanced_5","name":"疾风追猎","description":"连续追击锁定目标。","branch":"疾风连击","type":"追击","role":"追击","unlock_level":57,"cost":45,"cooldown":15},
+        {"id":"sea_swallow_advanced_6","name":"风暴终结踢","description":"跃起后发动强力下劈。","branch":"疾风连击","type":"终结","role":"终结","unlock_level":60,"cost":45,"cooldown":17},
+        {"id":"sea_swallow_advanced_7","name":"潮汐闪身","description":"快速侧移并获得短暂闪避。","branch":"身法游击","type":"闪避","role":"闪避","unlock_level":63,"cost":52,"cooldown":7},
+        {"id":"sea_swallow_advanced_8","name":"风行步","description":"短时间大幅提高移动速度。","branch":"身法游击","type":"增益","role":"增益","unlock_level":66,"cost":52,"cooldown":9},
+        {"id":"sea_swallow_advanced_9","name":"回旋脱身","description":"击退近身敌人并向后撤离。","branch":"身法游击","type":"脱身","role":"脱身","unlock_level":69,"cost":52,"cooldown":11},
+        {"id":"sea_swallow_advanced_10","name":"空中翻越","description":"跃过敌人并在落地时反击。","branch":"身法游击","type":"位移","role":"位移","unlock_level":72,"cost":59,"cooldown":13},
+        {"id":"sea_swallow_advanced_11","name":"残影替身","description":"留下残影诱导敌人攻击落空。","branch":"身法游击","type":"替身","role":"替身","unlock_level":75,"cost":59,"cooldown":15},
+        {"id":"sea_swallow_advanced_12","name":"疾风连势","description":"连续命中提高下一次技能伤害。","branch":"身法游击","type":"被动强化","role":"被动强化","unlock_level":78,"cost":59,"cooldown":17},
+        {"id":"sea_swallow_advanced_13","name":"风刃乱舞","description":"向前方扇形发射密集风刃。","branch":"风暴控制","type":"范围","role":"范围","unlock_level":81,"cost":66,"cooldown":7},
+        {"id":"sea_swallow_advanced_14","name":"龙卷束缚","description":"小型龙卷牵引并限制敌人。","branch":"风暴控制","type":"牵引","role":"牵引","unlock_level":84,"cost":66,"cooldown":9},
+        {"id":"sea_swallow_advanced_15","name":"旋流屏障","description":"风流环绕自身抵挡轻型攻击。","branch":"风暴控制","type":"护盾","role":"护盾","unlock_level":87,"cost":66,"cooldown":11},
+        {"id":"sea_swallow_advanced_16","name":"海潮震荡","description":"释放气浪打断敌人蓄力。","branch":"风暴控制","type":"打断","role":"打断","unlock_level":90,"cost":73,"cooldown":13},
+        {"id":"sea_swallow_advanced_17","name":"风压领域","description":"持续降低领域内敌人的移动速度。","branch":"风暴控制","type":"领域","role":"领域","unlock_level":93,"cost":73,"cooldown":15},
+        {"id":"sea_swallow_advanced_18","name":"海燕风神击","description":"化作龙卷高速穿梭战场。","branch":"风暴控制","type":"终结","role":"终结","unlock_level":96,"cost":73,"cooldown":17}
+    ]
+}
+
 const ARMOR_STAGES := ["青铜圣衣", "白银圣衣", "黄金圣衣", "海界鳞衣", "冥衣", "神圣衣", "主神圣衣"]
 const ARMOR_PARTS := ["头盔", "胸甲", "护腕", "腰甲", "腿甲"]
 
@@ -248,7 +432,17 @@ func get_armor_catalog() -> Array:
 
 func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
-    return data.get("abilities", []).duplicate(true)
+    var result: Array = data.get("abilities", []).duplicate(true)
+    result.append_array(ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"]).duplicate(true))
+    return result
+
+func get_skill_branches(class_id: String) -> Array:
+    var branches: Array = []
+    for ability in get_ability_catalog(class_id):
+        var branch := str(ability.get("branch", "基础技能"))
+        if not branches.has(branch):
+            branches.append(branch)
+    return branches
 
 func get_passive(class_id: String) -> Dictionary:
     return get_class_skill(class_id).get("passive", {}).duplicate(true)
