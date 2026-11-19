@@ -9,6 +9,7 @@ QuestManager="*res://scripts/quest_manager.gd"
 SkillSystem="*res://scripts/skill_system.gd"
 GMManager="*res://scripts/gm_manager.gd"
 ArmorSystem="*res://scripts/armor_system.gd"
+CollectionSystem="*res://scripts/collection_system.gd"
 
 [display]
 window/size/viewport_width=1280
