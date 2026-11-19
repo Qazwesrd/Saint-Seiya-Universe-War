@@ -343,3 +343,6 @@ func delete_slot(slot: int) -> bool:
 		_ensure_profile()
 		_emit_change()
 	return result
+
+func has_backup_slot(slot: int) -> bool:
+	return slot >= 1 and slot <= 3 and FileAccess.file_exists("user://backup_slot_%d.json" % slot)
