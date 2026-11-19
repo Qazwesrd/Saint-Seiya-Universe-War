@@ -471,3 +471,91 @@ func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
         if str(ability.get("id", "")) == ability_id:
             return int(ability.get("unlock_level", 1))
     return 999
+
+func reset_skill_tree(class_id: String) -> bool:
+    if not CLASS_SKILLS.has(class_id) or int(RPGState.profile.get("currency", 0)) < 500:
+        return false
+    var learned: Dictionary = RPGState.profile.get("learned_skills", {})
+    var current: Array = learned.get(class_id, [class_id + "_skill_1"])
+    learned[class_id] = [class_id + "_skill_1"]
+    RPGState.profile["learned_skills"] = learned
+    RPGState.profile["skill_points"] = int(RPGState.profile.get("skill_points", 0)) + maxi(0, current.size() - 1)
+    var branches: Dictionary = RPGState.profile.get("skill_branches", {})
+    branches.erase(class_id)
+    RPGState.profile["skill_branches"] = branches
+    var slots: Dictionary = RPGState.profile.get("skill_slots", {})
+    slots[class_id] = [class_id + "_skill_1", "", "", ""]
+    RPGState.profile["skill_slots"] = slots
+    RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - 500
+    RPGState.state_changed.emit()
+    RPGState.save_slot(RPGState.active_slot)
+    return true
+func get_ability_data(class_id: String, ability_id: String) -> Dictionary:
+    for ability in get_ability_catalog(class_id):
+        if str(ability.get("id", "")) == ability_id:
+            return ability.duplicate(true)
+    return {}
+func get_learned_skills(class_id: String) -> Array:
+    var learned: Dictionary = RPGState.profile.get("learned_skills", {})
+    return learned.get(class_id, [class_id + "_skill_1"]).duplicate()
+func is_ability_learned(class_id: String, ability_id: String) -> bool:
+    return get_learned_skills(class_id).has(ability_id)
+func get_selected_branch(class_id: String) -> String:
+    var branches: Dictionary = RPGState.profile.get("skill_branches", {})
+    return str(branches.get(class_id, ""))
+func choose_skill_branch(class_id: String, branch: String) -> bool:
+    if not CLASS_SKILLS.has(class_id) or not get_skill_branches(class_id).has(branch):
+        return false
+    var selected := get_selected_branch(class_id)
+    if selected != "" and selected != branch:
+        return false
+    var choices: Dictionary = RPGState.profile.get("skill_branches", {})
+    choices[class_id] = branch
+    RPGState.profile["skill_branches"] = choices
+    RPGState.state_changed.emit()
+    RPGState.save_slot(RPGState.active_slot)
+    return true
+func learn_ability(class_id: String, ability_id: String) -> bool:
+    if is_ability_learned(class_id, ability_id):
+        return false
+    var ability := get_ability_data(class_id, ability_id)
+    if ability.is_empty() or int(RPGState.profile.get("level", 1)) < int(ability.get("unlock_level", 1)):
+        return false
+    if int(RPGState.profile.get("skill_points", 0)) < 1:
+        return false
+    var branch := str(ability.get("branch", "基础技能"))
+    if branch != "基础技能":
+        var selected := get_selected_branch(class_id)
+        if selected == "" or selected != branch:
+            return false
+    var learned: Dictionary = RPGState.profile.get("learned_skills", {})
+    var class_learned: Array = learned.get(class_id, [class_id + "_skill_1"])
+    class_learned.append(ability_id)
+    learned[class_id] = class_learned
+    RPGState.profile["learned_skills"] = learned
+    RPGState.profile["skill_points"] = int(RPGState.profile.get("skill_points", 0)) - 1
+    RPGState.state_changed.emit()
+    RPGState.save_slot(RPGState.active_slot)
+    return true
+func equip_ability(class_id: String, ability_id: String, slot_index: int) -> bool:
+    if slot_index < 0 or slot_index > 3 or not is_ability_learned(class_id, ability_id):
+        return false
+    var all_slots: Dictionary = RPGState.profile.get("skill_slots", {})
+    var slots: Array = all_slots.get(class_id, [class_id + "_skill_1", "", "", ""])
+    while slots.size() < 4:
+        slots.append("")
+    for i in range(4):
+        if i != slot_index and str(slots[i]) == ability_id:
+            slots[i] = ""
+    slots[slot_index] = ability_id
+    all_slots[class_id] = slots
+    RPGState.profile["skill_slots"] = all_slots
+    RPGState.state_changed.emit()
+    RPGState.save_slot(RPGState.active_slot)
+    return true
+func get_equipped_abilities(class_id: String) -> Array:
+    var all_slots: Dictionary = RPGState.profile.get("skill_slots", {})
+    var slots: Array = all_slots.get(class_id, [class_id + "_skill_1", "", "", ""]).duplicate()
+    while slots.size() < 4:
+        slots.append("")
+    return slots
