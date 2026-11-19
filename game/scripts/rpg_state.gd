@@ -37,7 +37,7 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"created_at":Time.get_datetime_string_from_system()}
+ profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system()}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
@@ -56,6 +56,12 @@ func select_class(class_id: String) -> bool:
  var starter: String = str(CLASS_DATA[class_id]["starter"])
  equipment["arms"] = starter
  profile["class_id"] = class_id
+ var learned: Dictionary = profile.get("learned_skills", {})
+ if not learned.has(class_id): learned[class_id] = [class_id + "_skill_1"]
+ profile["learned_skills"] = learned
+ var slots: Dictionary = profile.get("skill_slots", {})
+ if not slots.has(class_id): slots[class_id] = [class_id + "_skill_1", "", "", ""]
+ profile["skill_slots"] = slots
  profile["inventory"] = inventory
  profile["equipment"] = equipment
  _emit_change()
@@ -93,6 +99,7 @@ func add_exp(amount: int) -> int:
  while int(profile.get("level",1)) < MAX_LEVEL and int(profile["exp"]) >= exp_to_next_level():
   profile["exp"] = int(profile["exp"])-exp_to_next_level()
   profile["level"] = int(profile["level"])+1
+  profile["skill_points"] = int(profile.get("skill_points", 0)) + 1
   gained_levels += 1
  _emit_change()
  save_slot(active_slot)
@@ -191,6 +198,10 @@ func load_slot(slot: int) -> bool:
  file.close()
  if typeof(parsed) != TYPE_DICTIONARY or int(parsed.get("version",0)) != 1: return false
  profile = parsed
+ profile["skill_points"] = int(profile.get("skill_points", 3))
+ profile["learned_skills"] = profile.get("learned_skills", {str(profile.get("class_id", "pegasus")): [str(profile.get("class_id", "pegasus")) + "_skill_1"]})
+ profile["skill_branches"] = profile.get("skill_branches", {})
+ profile["skill_slots"] = profile.get("skill_slots", {str(profile.get("class_id", "pegasus")): [str(profile.get("class_id", "pegasus")) + "_skill_1", "", "", ""]})
  active_slot = slot
  _emit_change()
  return true
