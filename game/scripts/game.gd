@@ -87,6 +87,14 @@ func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
         hud.call("set_enemy_count", enemies.size())
+        var boss_hp := 0.0
+        var boss_max := 1.0
+        for enemy in enemies:
+            if is_instance_valid(enemy) and enemy.get("is_boss"):
+                boss_hp = enemy.get("health")
+                boss_max = enemy.get("max_health")
+                break
+        hud.call("set_boss_status", boss_hp, boss_max)
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
         hud.call("set_notice", message)
