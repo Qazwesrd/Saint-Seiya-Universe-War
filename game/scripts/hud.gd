@@ -61,6 +61,8 @@ func _ready() -> void:
     quest_panel.add_child(quest_label)
 
     _button(root, "交谈 / 接任务", Vector2(22, 294), Vector2(190, 350), func(): game.call("interact_with_guide"), Color(0.38, 0.28, 0.08))
+    _button(root, "任务导航", Vector2(202, 294), Vector2(330, 350), func(): game.call("navigate_to_objective"), Color(0.12, 0.32, 0.42))
+    _button(root, "传送", Vector2(22, 470), Vector2(140, 520), func(): game.call("use_teleport_point"), Color(0.08, 0.28, 0.48))
     var map := Panel.new()
     map.anchor_left = 1.0
     map.anchor_right = 1.0
