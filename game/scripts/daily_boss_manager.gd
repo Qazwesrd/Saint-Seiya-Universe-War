@@ -32,12 +32,14 @@ func _process(delta: float) -> void:
 func _on_slot_loaded(_slot: int) -> void:
 	_refresh_cycle(true)
 
-func _cycle_id(unix_time: int = -1) -> String:
-	var timestamp := unix_time if unix_time >= 0 else int(Time.get_unix_time_from_system())
-	var local_now := Time.get_datetime_dict_from_system() if unix_time < 0 else Time.get_datetime_dict_from_unix_time(timestamp, false)
+func _cycle_id() -> String:
+	return _cycle_id_from_local(Time.get_datetime_dict_from_system())
+
+func _cycle_id_from_local(local_now: Dictionary) -> String:
+	# Use local calendar fields as a neutral timestamp only for date arithmetic.
 	var local_timestamp := int(Time.get_unix_time_from_datetime_dict(local_now))
 	var reset_timestamp := local_timestamp - RESET_HOUR * 3600
-	var date := Time.get_datetime_dict_from_unix_time(reset_timestamp, false)
+	var date := Time.get_datetime_dict_from_unix_time(reset_timestamp)
 	return "%04d-%02d-%02d" % [int(date.year), int(date.month), int(date.day)]
 
 func _boss_for_cycle(cycle_id: String) -> Dictionary:
