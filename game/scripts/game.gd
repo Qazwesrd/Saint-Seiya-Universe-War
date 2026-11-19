@@ -20,6 +20,7 @@ func _ready() -> void:
     player.position = Vector3(0, 0.15, 7)
     add_child(player)
     _spawn_followers()
+    CollectionSystem.collection_changed.connect(_spawn_followers)
     _build_sanctuary()
     _spawn_enemy(Vector3(-4, 0.1, -3), false)
     _spawn_enemy(Vector3(4, 0.1, -4), false)
@@ -214,6 +215,8 @@ func refresh_player_stats() -> void:
     player.cosmos = minf(player.cosmos, player.max_cosmos)
 
 func _spawn_followers() -> void:
+ for existing in get_tree().get_nodes_in_group("player_followers"):
+  if is_instance_valid(existing): existing.queue_free()
  var state: Dictionary = CollectionSystem.get_state()
  var companion_id := str(state.get("active_companion",""))
  var pet_id := str(state.get("active_pet",""))
@@ -222,6 +225,7 @@ func _spawn_followers() -> void:
   companion.set_script(FollowerScript)
   companion.set("target",player)
   companion.set("orbit_offset",Vector3(-1.6,0,1.1))
+  companion.add_to_group("player_followers")
   add_child(companion)
  if pet_id != "":
   var pet := Node3D.new()
@@ -229,6 +233,7 @@ func _spawn_followers() -> void:
   pet.set("target",player)
   pet.set("orbit_offset",Vector3(1.6,0,1.1))
   pet.set("follow_speed",6.5)
+  pet.add_to_group("player_followers")
   add_child(pet)
 
 func _build_sanctuary() -> void:
