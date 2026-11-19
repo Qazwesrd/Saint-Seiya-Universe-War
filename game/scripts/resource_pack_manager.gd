@@ -124,7 +124,12 @@ func _validate_directory(folder: String, expected_id: String) -> Dictionary:
 		if not FileAccess.file_exists(full_path):
 			failures.append("缺失：" + relative)
 			continue
-		var actual_size := int(FileAccess.get_length(full_path))
+		var size_reader := FileAccess.open(full_path, FileAccess.READ)
+		if size_reader == null:
+			failures.append("无法读取：" + relative)
+			continue
+		var actual_size := int(size_reader.get_length())
+		size_reader.close()
 		actual_total += actual_size
 		if int(item.get("size_bytes", -1)) != actual_size:
 			failures.append("大小不符：" + relative)
