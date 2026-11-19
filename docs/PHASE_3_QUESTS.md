@@ -8,7 +8,9 @@
 - `game/scripts/guide_npc.gd`：首位任务引导 NPC 的程序化占位模型和头顶任务标记。
 - `game/scripts/game.gd`：NPC 生成、交谈距离校验、击败敌人时同步任务目标。
 - `game/scripts/hud.gd`：任务追踪面板、交谈按钮、屏幕内对话、独立剧情对话界面。
-- `game/scripts/minimap.gd`：显示任务 NPC 的方向标记。
+- `game/scripts/minimap.gd`：显示任务 NPC、敌人和传送点标记。
+- `game/scripts/teleport_point.gd`：竞技场本地传送阵的程序化占位模型。
+- 玩家支持开放竞技场直线任务导航；手动摇杆输入可随时接管。
 - `game/project.godot`：注册 QuestManager 离线自动加载节点。
 
 ## 首条任务：银河竞技场试炼
@@ -27,7 +29,8 @@
 ## 地图与导航
 - 小地图继续显示玩家和敌人。
 - 未完成任务时显示引导 NPC 的黄色标记。
-- 当前竞技场使用目标方向标记和接近距离交互，不宣称已经完成复杂地图的自动寻路。
+- 当前竞技场提供任务目标直线导航、手动移动接管、NPC/敌人/传送点小地图标记，以及靠近传送阵后返回入口的本地传送。
+- 直线导航仅适用于当前开放竞技场，不具备绕障路径规划；复杂地图仍需 NavigationRegion3D/NavigationAgent3D 与烘焙导航网格。
 - 后续地图接入 NavigationRegion3D/NavigationAgent3D 并烘焙导航网格后，再启用可靠路径导航。
 
 ## 离线与存档
