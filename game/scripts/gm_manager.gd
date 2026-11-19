@@ -40,10 +40,7 @@ func grant_all_known_items() -> int:
  return count
 func reset_local_quest() -> bool:
  if not enabled: return false
- QuestManager.status = "not_started"
- QuestManager.defeated_normal = 0
- QuestManager.boss_defeated = false
- QuestManager.save_progress()
+ QuestManager.reset_progress()
  _record("重置当前任务")
  gm_action_completed.emit("当前任务已重置")
  return true
