@@ -18,5 +18,13 @@ func _run_tests() -> void:
 	DialogueManager.advance()
 	assert(not DialogueManager.is_active, "dialogue completion")
 	assert(not ResourcePackManager.get_pack_info("galaxy_wars").is_empty(), "offline pack catalog")
+	assert(RPGState.create_new_slot(3), "create empty character slot")
+	var slot_summary: Dictionary = RPGState.get_slot_summary(3)
+	assert(bool(slot_summary.get("exists", false)) and bool(slot_summary.get("valid", false)), "slot summary")
+	assert(RPGState.backup_slot(3) and RPGState.has_backup_slot(3), "backup character slot")
+	assert(RPGState.delete_slot(3) and not RPGState.has_slot(3), "delete slot after backup")
+	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
+	RPGState.delete_slot(3)
+
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)
