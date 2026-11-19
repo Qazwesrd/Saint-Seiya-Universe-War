@@ -4,11 +4,14 @@ const EnemyScript = preload("res://scripts/enemy.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const GuideNpcScript = preload("res://scripts/guide_npc.gd")
 const TeleportPointScript = preload("res://scripts/teleport_point.gd")
+const FollowerScript = preload("res://scripts/follower_actor.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
 var guide_npc: Node3D
 var teleport_point: Node3D
+var sanctuary_active := false
+var sanctuary_origin := Vector3(0, 0.15, 7)
 func _ready() -> void:
     _build_world()
     player = CharacterBody3D.new()
@@ -16,6 +19,8 @@ func _ready() -> void:
     player.set("game", self)
     player.position = Vector3(0, 0.15, 7)
     add_child(player)
+    _spawn_followers()
+    _build_sanctuary()
     _spawn_enemy(Vector3(-4, 0.1, -3), false)
     _spawn_enemy(Vector3(4, 0.1, -4), false)
     _spawn_enemy(Vector3(0, 0.1, -9), true)
@@ -207,3 +212,83 @@ func refresh_player_stats() -> void:
     player.max_cosmos = float(stats.get("max_cosmos", player.max_cosmos))
     player.health = minf(player.health, player.max_health)
     player.cosmos = minf(player.cosmos, player.max_cosmos)
+
+func _spawn_followers() -> void:
+ var state: Dictionary = CollectionSystem.get_state()
+ var companion_id := str(state.get("active_companion",""))
+ var pet_id := str(state.get("active_pet",""))
+ if companion_id != "":
+  var companion := Node3D.new()
+  companion.set_script(FollowerScript)
+  companion.set("target",player)
+  companion.set("orbit_offset",Vector3(-1.6,0,1.1))
+  add_child(companion)
+ if pet_id != "":
+  var pet := Node3D.new()
+  pet.set_script(FollowerScript)
+  pet.set("target",player)
+  pet.set("orbit_offset",Vector3(1.6,0,1.1))
+  pet.set("follow_speed",6.5)
+  add_child(pet)
+
+func _build_sanctuary() -> void:
+ var ground := StaticBody3D.new()
+ ground.position = Vector3(100, -0.35, 100)
+ var floor_mesh := MeshInstance3D.new()
+ var plane := PlaneMesh.new()
+ plane.size = Vector2(42,42)
+ floor_mesh.mesh = plane
+ var floor_mat := StandardMaterial3D.new()
+ floor_mat.albedo_color = Color(0.12,0.09,0.2)
+ floor_mat.metallic = 0.35
+ floor_mesh.material_override = floor_mat
+ ground.add_child(floor_mesh)
+ var collision := CollisionShape3D.new()
+ var shape := BoxShape3D.new()
+ shape.size = Vector3(42,0.5,42)
+ collision.shape = shape
+ collision.position.y = -0.25
+ ground.add_child(collision)
+ add_child(ground)
+ for i in range(3):
+  var building := MeshInstance3D.new()
+  var block := BoxMesh.new()
+  block.size = Vector3(5.0,3.0,4.0)
+  building.mesh = block
+  building.position = Vector3(88.0 + float(i)*12.0,1.5,91.0)
+  var material := StandardMaterial3D.new()
+  material.albedo_color = [Color(0.28,0.35,0.58),Color(0.35,0.22,0.48),Color(0.18,0.42,0.48)][i]
+  material.emission_enabled = true
+  material.emission = material.albedo_color * 0.18
+  building.material_override = material
+  add_child(building)
+ var portal := MeshInstance3D.new()
+ var ring := TorusMesh.new()
+ ring.inner_radius = 2.0
+ ring.outer_radius = 2.25
+ portal.mesh = ring
+ portal.position = Vector3(100,0.08,112)
+ var portal_mat := StandardMaterial3D.new()
+ portal_mat.albedo_color = Color(0.15,0.7,1.0)
+ portal_mat.emission_enabled = true
+ portal_mat.emission = Color(0.05,0.35,1.0)
+ portal.material_override = portal_mat
+ add_child(portal)
+
+func enter_sanctuary() -> void:
+ if sanctuary_active: return
+ sanctuary_origin = player.global_position
+ player.call("cancel_auto_move")
+ player.velocity = Vector3.ZERO
+ player.global_position = Vector3(100,0.15,100)
+ sanctuary_active = true
+ SanctuarySystem.record_visit()
+ show_notice("已进入个人圣域：可通过圣域面板领取离线收益、升级设施")
+
+func leave_sanctuary() -> void:
+ if not sanctuary_active: return
+ player.call("cancel_auto_move")
+ player.velocity = Vector3.ZERO
+ player.global_position = sanctuary_origin
+ sanctuary_active = false
+ show_notice("已返回银河竞技场")
