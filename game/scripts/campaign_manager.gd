@@ -1,12 +1,16 @@
 extends Node
 signal campaign_changed
 
-const SAVE_PATH := "user://campaign_progress.json"
+const SAVE_PATH := "user://campaign_progress_legacy.json"
 const SAVE_VERSION := 1
 
 var progress: Dictionary = {}
 
 func _ready() -> void:
+    RPGState.slot_loaded.connect(_on_profile_slot_loaded)
+    load_progress()
+
+func _on_profile_slot_loaded(_slot: int) -> void:
     load_progress()
 
 func _default_progress() -> Dictionary:
@@ -22,30 +26,34 @@ func _default_progress() -> Dictionary:
 
 func load_progress() -> void:
     progress = _default_progress()
-    if not FileAccess.file_exists(SAVE_PATH):
-        return
-    var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-    if file == null:
-        return
-    var parsed: Variant = JSON.parse_string(file.get_as_text())
-    file.close()
-    if typeof(parsed) != TYPE_DICTIONARY or int(parsed.get("version", 0)) != SAVE_VERSION:
-        return
-    var loaded: Dictionary = parsed
-    var unlocked: Array = loaded.get("unlocked_chapters", [])
-    var completed: Array = loaded.get("completed_missions", [])
-    var active := str(loaded.get("active_mission", CampaignDatabase.get_first_mission_id()))
-    if CampaignDatabase.get_mission(active).is_empty():
-        active = CampaignDatabase.get_first_mission_id()
-    progress = {
-        "version": SAVE_VERSION,
-        "unlocked_chapters": unlocked.duplicate(),
-        "completed_missions": completed.duplicate(),
-        "active_mission": active,
-        "objective_counts": loaded.get("objective_counts", {}).duplicate(true),
-        "claimed_rewards": loaded.get("claimed_rewards", []).duplicate()
-    }
-    _normalize_progress()
+    var parsed: Variant = RPGState.profile.get("campaign_progress", {})
+    var migrated_legacy := false
+    if (typeof(parsed) != TYPE_DICTIONARY or parsed.is_empty()) and FileAccess.file_exists(SAVE_PATH):
+        var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+        if file != null:
+            parsed = JSON.parse_string(file.get_as_text())
+            file.close()
+            migrated_legacy = typeof(parsed) == TYPE_DICTIONARY
+    if typeof(parsed) == TYPE_DICTIONARY and int(parsed.get("version", 0)) == SAVE_VERSION:
+        var loaded: Dictionary = parsed
+        var unlocked: Array = loaded.get("unlocked_chapters", [])
+        var completed: Array = loaded.get("completed_missions", [])
+        var active := str(loaded.get("active_mission", CampaignDatabase.get_first_mission_id()))
+        if CampaignDatabase.get_mission(active).is_empty():
+            active = CampaignDatabase.get_first_mission_id()
+        progress = {
+            "version": SAVE_VERSION,
+            "unlocked_chapters": unlocked.duplicate(),
+            "completed_missions": completed.duplicate(),
+            "active_mission": active,
+            "objective_counts": loaded.get("objective_counts", {}).duplicate(true),
+            "claimed_rewards": loaded.get("claimed_rewards", []).duplicate()
+        }
+        _normalize_progress()
+    if migrated_legacy:
+        RPGState.profile["campaign_progress"] = progress.duplicate(true)
+        RPGState.save_slot(RPGState.active_slot)
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
     campaign_changed.emit()
 
 func _normalize_progress() -> void:
@@ -211,10 +219,7 @@ func get_chapter_overview() -> Array:
     return result
 
 func _save() -> void:
-    var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-    if file == null:
-        push_warning("无法写入剧情进度存档")
-        return
-    file.store_string(JSON.stringify(progress))
-    file.close()
+    RPGState.profile["campaign_progress"] = progress.duplicate(true)
+    if not RPGState.save_slot(RPGState.active_slot):
+        SystemHealthManager.report_error("save", "剧情进度保存失败", "slot=%d" % RPGState.active_slot)
     campaign_changed.emit()
