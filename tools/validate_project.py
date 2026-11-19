@@ -34,7 +34,7 @@ if project_file.is_file():
                 continue
             name, value = line.split("=", 1)
             names.append(name.strip())
-            path_match = re.search(r'"res://([^"]+)"', value)
+            path_match = re.search(r'"\*?res://([^"]+)"', value)
             require(bool(path_match), f"AutoLoad 路径格式异常：{line}")
             if path_match:
                 target = GAME / path_match.group(1)
