@@ -22,7 +22,7 @@ const ACHIEVEMENTS := {
 func _ensure_state() -> Dictionary:
  var data: Dictionary = RPGState.profile.get("collection_state",{})
  if data.is_empty():
-  data = {"companions":[],"pets":[],"mounts":[],"active_companion":"","active_pet":"","active_mount":"","enemy_defeats":0,"boss_defeats":0,"achievements":{}}
+  data = {"companions":[],"pets":[],"mounts":[],"active_companion":"","active_pet":"","active_mount":"","enemy_defeats":0,"boss_defeats":0,"achievements":{},"claimed_achievements":[]}
   RPGState.profile["collection_state"] = data
  return data
 func get_state() -> Dictionary:
@@ -114,3 +114,19 @@ func _save() -> void:
  RPGState.state_changed.emit()
  RPGState.save_slot(RPGState.active_slot)
  collection_changed.emit()
+
+func claim_achievement(achievement_id: String) -> bool:
+ if not ACHIEVEMENTS.has(achievement_id): return false
+ var data := _ensure_state()
+ var achievements: Dictionary = data.get("achievements",{})
+ var claimed: Array = data.get("claimed_achievements",[])
+ if not bool(achievements.get(achievement_id,false)) or achievement_id in claimed: return false
+ var rewards := {"first_victory":{"coins":100,"exp":80},"ten_victories":{"coins":500,"exp":300},"boss_hunter":{"coins":300,"exp":250},"veteran":{"coins":2000,"exp":1500}}
+ var reward: Dictionary = rewards.get(achievement_id,{})
+ claimed.append(achievement_id)
+ data["claimed_achievements"] = claimed
+ RPGState.profile["collection_state"] = data
+ RPGState.add_currency(int(reward.get("coins",0)))
+ RPGState.add_exp(int(reward.get("exp",0)))
+ _save()
+ return true
