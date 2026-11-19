@@ -1,5 +1,5 @@
 extends CharacterBody3D
-var game: Node
+var game: Variant
 var is_boss := false
 var health := 65.0
 var max_health := 65.0
@@ -35,9 +35,10 @@ func _ready() -> void:
     model.material_override = mat
     add_child(model)
 func _physics_process(delta: float) -> void:
-    if not is_instance_valid(game.player): return
+    var target: Node3D = game.get("player")
+    if not is_instance_valid(target): return
     attack_timer = maxf(0.0, attack_timer - delta)
-    var offset: Vector3 = game.player.global_position - global_position
+    var offset: Vector3 = target.global_position - global_position
     var distance := offset.length()
     if distance > (2.0 if not is_boss else 2.8):
         var dir := offset.normalized()
@@ -48,13 +49,13 @@ func _physics_process(delta: float) -> void:
         velocity.z = move_toward(velocity.z, 0.0, speed * 5.0 * delta)
         if attack_timer <= 0.0:
             attack_timer = 1.6 if not is_boss else 2.2
-            game.player.receive_damage(7.0 if not is_boss else 16.0)
+            target.call("receive_damage", 7.0 if not is_boss else 16.0)
     velocity.y -= 22.0 * delta
     move_and_slide()
     if distance > 0.1: rotation.y = atan2(-offset.x, -offset.z)
 func take_damage(amount: float) -> void:
     health = maxf(0.0, health - amount)
-    if is_boss: game.show_notice("Boss 生命：" + str(roundi(health)) + "/" + str(roundi(max_health)))
+    if is_boss: game.call("show_notice", "Boss 生命：" + str(roundi(health)) + "/" + str(roundi(max_health)))
     if health <= 0.0:
-        game.on_enemy_defeated(self)
+        game.call("on_enemy_defeated", self)
         queue_free()
