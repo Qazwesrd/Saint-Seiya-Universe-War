@@ -191,3 +191,21 @@ func take_damage(amount: float) -> void:
     state = BrainState.STAGGER
     state_timer = 0.22 if is_boss else 0.3
     body_material.albedo_color = Color(1.0, 0.78, 0.55)
+
+
+func apply_hit_reaction(direction: Vector3, force: float, lift: float, stagger_duration: float) -> void:
+    if state == BrainState.DEAD:
+        return
+    # Bosses retain their wind-up armor so their telegraphed attacks cannot be
+    # cancelled by every light hit. Heavy finishers still deal normal damage.
+    if is_boss and state == BrainState.WINDUP:
+        return
+    var flat := direction
+    flat.y = 0.0
+    if flat.length_squared() > 0.001:
+        var resistance := 0.28 if is_boss else 1.0
+        knockback_velocity = flat.normalized() * force * resistance
+    if not is_boss and lift > 0.0:
+        velocity.y = maxf(velocity.y, lift)
+    state = BrainState.STAGGER
+    state_timer = maxf(state_timer, stagger_duration * (1.5 if is_boss else 1.0))
