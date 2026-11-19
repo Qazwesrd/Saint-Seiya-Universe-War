@@ -3,6 +3,8 @@ var game: Variant
 var status_label: Label
 var notice_label: Label
 var enemy_label: Label
+var quest_label: Label
+var dialogue_panel: Panel
 var hp_bar: ProgressBar
 var cosmos_bar: ProgressBar
 var skill_button: Button
@@ -44,6 +46,21 @@ func _ready() -> void:
     enemy_label.position = Vector2(26, 140)
     enemy_label.add_theme_font_size_override("font_size", 18)
     root.add_child(enemy_label)
+
+    var quest_panel := Panel.new()
+    quest_panel.position = Vector2(22, 365)
+    quest_panel.size = Vector2(330, 94)
+    _style_panel(quest_panel, Color(0.015, 0.025, 0.08, 0.82), Color(0.82, 0.62, 0.2))
+    root.add_child(quest_panel)
+    quest_label = Label.new()
+    quest_label.position = Vector2(12, 8)
+    quest_label.size = Vector2(306, 78)
+    quest_label.add_theme_font_size_override("font_size", 17)
+    quest_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    quest_label.text = "主线：银河竞技场试炼"
+    quest_panel.add_child(quest_label)
+
+    _button(root, "交谈 / 接任务", Vector2(22, 294), Vector2(190, 350), func(): game.call("interact_with_guide"), Color(0.38, 0.28, 0.08))
     var map := Panel.new()
     map.anchor_left = 1.0
     map.anchor_right = 1.0
@@ -174,6 +191,47 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
+
+func set_quest_text(value: String) -> void:
+    if is_instance_valid(quest_label):
+        quest_label.text = value
+
+func show_dialogue(data: Dictionary) -> void:
+    if is_instance_valid(dialogue_panel):
+        dialogue_panel.queue_free()
+    var root := get_child(0) as Control
+    dialogue_panel = Panel.new()
+    dialogue_panel.anchor_left = 0.5
+    dialogue_panel.anchor_right = 0.5
+    dialogue_panel.anchor_top = 1.0
+    dialogue_panel.anchor_bottom = 1.0
+    dialogue_panel.offset_left = -300
+    dialogue_panel.offset_right = 300
+    dialogue_panel.offset_top = -250
+    dialogue_panel.offset_bottom = -88
+    _style_panel(dialogue_panel, Color(0.015, 0.025, 0.08, 0.96), Color(0.82, 0.62, 0.2))
+    root.add_child(dialogue_panel)
+    var box := VBoxContainer.new()
+    box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    box.add_theme_constant_override("separation", 8)
+    dialogue_panel.add_child(box)
+    var speaker := Label.new()
+    speaker.text = str(data.get("speaker", "NPC"))
+    speaker.add_theme_font_size_override("font_size", 20)
+    box.add_child(speaker)
+    var message := Label.new()
+    message.text = str(data.get("text", ""))
+    message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    message.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(message)
+    var close := Button.new()
+    close.text = "继续"
+    close.pressed.connect(func():
+        if is_instance_valid(dialogue_panel):
+            dialogue_panel.queue_free()
+        dialogue_panel = null
+    )
+    box.add_child(close)
 func set_boss_status(hp: float, hp_max: float) -> void:
     var visible_boss := hp_max > 1.0
     boss_label.visible = visible_boss
