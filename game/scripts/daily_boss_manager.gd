@@ -34,8 +34,10 @@ func _on_slot_loaded(_slot: int) -> void:
 
 func _cycle_id(unix_time: int = -1) -> String:
 	var timestamp := unix_time if unix_time >= 0 else int(Time.get_unix_time_from_system())
-	var reset_timestamp := timestamp - RESET_HOUR * 3600
-	var date := Time.get_datetime_dict_from_unix_time(reset_timestamp, true)
+	var local_now := Time.get_datetime_dict_from_system() if unix_time < 0 else Time.get_datetime_dict_from_unix_time(timestamp, false)
+	var local_timestamp := int(Time.get_unix_time_from_datetime_dict(local_now))
+	var reset_timestamp := local_timestamp - RESET_HOUR * 3600
+	var date := Time.get_datetime_dict_from_unix_time(reset_timestamp, false)
 	return "%04d-%02d-%02d" % [int(date.year), int(date.month), int(date.day)]
 
 func _boss_for_cycle(cycle_id: String) -> Dictionary:
