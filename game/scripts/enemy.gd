@@ -4,6 +4,11 @@ enum BrainState { CHASE, WINDUP, RECOVERY, STAGGER, DEAD }
 
 var game: Variant
 var is_boss := false
+var archetype_id := "arena_guard"
+var enemy_level := 1
+var exp_reward := 30
+var coin_reward := 40
+var drop_tier := "normal"
 var health := 65.0
 var max_health := 65.0
 var speed := 2.5
@@ -33,15 +38,21 @@ var divine_mark_power := 0.0
 
 func _ready() -> void:
     add_to_group("enemies")
-    if is_boss:
-        display_name = "竞技场训练 Boss"
-        health = 260.0
-        max_health = 260.0
-        speed = 1.8
-        attack_damage = 16.0
-        attack_range = 2.8
-        attack_interval = 2.2
-        _base_color = Color(0.36, 0.08, 0.55)
+    var archetype: Dictionary = EnemyDatabase.get_archetype(archetype_id)
+    is_boss = bool(archetype.get("is_boss", is_boss))
+    enemy_level = maxi(1, int(RPGState.profile.get("level", 1)))
+    var level_scale := 1.0 + float(enemy_level - 1) * 0.035
+    display_name = str(archetype.get("name", "训练对手"))
+    max_health = float(archetype.get("health", 65.0)) * level_scale
+    health = max_health
+    speed = float(archetype.get("speed", 2.5)) * (1.0 + float(enemy_level - 1) * 0.006)
+    attack_damage = float(archetype.get("attack_damage", 7.0)) * level_scale
+    attack_range = float(archetype.get("attack_range", 2.0))
+    attack_interval = float(archetype.get("attack_interval", 1.6))
+    exp_reward = int(archetype.get("exp_reward", 30)) + maxi(0, enemy_level - 1) * 2
+    coin_reward = int(archetype.get("coin_reward", 40)) + maxi(0, enemy_level - 1) * 3
+    drop_tier = str(archetype.get("drop_tier", "normal"))
+    _base_color = archetype.get("color", Color(0.72, 0.16, 0.22))
 
     var radius := 0.55 if not is_boss else 0.9
     var height := 1.9 if not is_boss else 3.0
