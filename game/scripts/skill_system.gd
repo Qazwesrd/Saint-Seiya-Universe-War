@@ -12,7 +12,7 @@ const CLASS_SKILLS := {
         "range": 7.0, "cone": 150.0, "knockback": 3.5, "launch": 1.2, "stagger": 0.55,
         "combo_range": 8.5, "combo_knockback": 9.0, "combo_launch": 3.8,
         "burst_range": 5.0, "burst_knockback": 12.0, "burst_launch": 4.5,
-        "color": Color(0.18, 0.72, 1.0)
+        "color": Color(0.18, 0.72, 1.0),
         "abilities": [
             {"id":"pegasus_skill_1","name":"流星突袭","description":"高速突进并连续打击，命中后短暂减速目标。","type":"突进","role":"单体","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"pegasus_skill_2","name":"星辰乱坠","description":"跃起后向前方区域连续轰击，适合追击与清场。","type":"范围","role":"群体","unlock_level":5,"cost":18,"cooldown":8},
@@ -33,7 +33,7 @@ const CLASS_SKILLS := {
         "range": 6.2, "cone": 125.0, "knockback": 5.0, "launch": 3.6, "stagger": 0.72,
         "combo_range": 7.8, "combo_knockback": 11.0, "combo_launch": 5.0,
         "burst_range": 6.5, "burst_knockback": 13.0, "burst_launch": 5.5,
-        "color": Color(0.25, 0.85, 0.55)
+        "color": Color(0.25, 0.85, 0.55),
         "abilities": [
             {"id":"dragon_skill_1","name":"龙纹之盾","description":"举盾格挡正面攻击，成功防御时恢复小宇宙。","type":"防御","role":"减伤","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"dragon_skill_2","name":"升龙阵","description":"向前方跃起挑击，击飞并打断普通敌人。","type":"挑空","role":"控制","unlock_level":5,"cost":18,"cooldown":8},
@@ -54,7 +54,7 @@ const CLASS_SKILLS := {
         "range": 8.0, "cone": 170.0, "knockback": 2.8, "launch": 0.8, "stagger": 0.9,
         "combo_range": 9.0, "combo_knockback": 8.0, "combo_launch": 2.0,
         "burst_range": 7.0, "burst_knockback": 10.0, "burst_launch": 3.0,
-        "color": Color(0.55, 0.85, 1.0)
+        "color": Color(0.55, 0.85, 1.0),
         "abilities": [
             {"id":"cygnus_skill_1","name":"冰晶之环","description":"释放寒气环绕自身，减缓近身敌人。","type":"控场","role":"减速","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"cygnus_skill_2","name":"冰结晶束缚","description":"凝结冰晶封锁目标，短暂冻结普通敌人。","type":"冻结","role":"控制","unlock_level":5,"cost":18,"cooldown":8},
@@ -75,7 +75,7 @@ const CLASS_SKILLS := {
         "range": 9.5, "cone": 115.0, "knockback": 2.5, "launch": 0.4, "stagger": 0.8,
         "combo_range": 10.0, "combo_knockback": 7.5, "combo_launch": 1.5,
         "burst_range": 8.5, "burst_knockback": 9.0, "burst_launch": 2.5,
-        "color": Color(0.85, 0.55, 1.0)
+        "color": Color(0.85, 0.55, 1.0),
         "abilities": [
             {"id":"andromeda_skill_1","name":"星云锁链·圆锁","description":"锁链环绕自身，拦截近身敌人。","type":"防御","role":"反制","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"andromeda_skill_2","name":"星云锁链·角锁","description":"远距离锁定并刺击单个目标。","type":"牵制","role":"单体","unlock_level":5,"cost":18,"cooldown":8},
@@ -96,7 +96,7 @@ const CLASS_SKILLS := {
         "range": 7.2, "cone": 145.0, "knockback": 6.0, "launch": 1.8, "stagger": 0.65,
         "combo_range": 8.5, "combo_knockback": 12.0, "combo_launch": 4.0,
         "burst_range": 6.8, "burst_knockback": 15.0, "burst_launch": 5.0,
-        "color": Color(1.0, 0.35, 0.18)
+        "color": Color(1.0, 0.35, 0.18),
         "abilities": [
             {"id":"phoenix_skill_1","name":"凤翼天翔","description":"向前方释放烈焰冲击，造成高额爆发伤害。","type":"爆发","role":"范围","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"phoenix_skill_2","name":"凤凰幻魔拳","description":"精神冲击扰乱目标，使普通敌人短暂失衡。","type":"精神","role":"控制","unlock_level":5,"cost":18,"cooldown":8},
@@ -117,7 +117,7 @@ const CLASS_SKILLS := {
         "range": 9.0, "cone": 165.0, "knockback": 4.0, "launch": 1.4, "stagger": 0.7,
         "combo_range": 10.0, "combo_knockback": 10.0, "combo_launch": 3.5,
         "burst_range": 8.0, "burst_knockback": 14.0, "burst_launch": 4.2,
-        "color": Color(0.2, 0.75, 0.9)
+        "color": Color(0.2, 0.75, 0.9),
         "abilities": [
             {"id":"sea_dragon_skill_1","name":"黄金三角次元","description":"开启次元裂隙，对前方敌人造成空间冲击。","type":"次元","role":"范围","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"sea_dragon_skill_2","name":"幻胧魔皇拳","description":"精神压制目标，降低其攻击威胁。","type":"精神","role":"控制","unlock_level":5,"cost":18,"cooldown":8},
@@ -138,7 +138,7 @@ const CLASS_SKILLS := {
         "range": 5.8, "cone": 110.0, "knockback": 7.0, "launch": 1.0, "stagger": 0.95,
         "combo_range": 7.0, "combo_knockback": 13.0, "combo_launch": 3.0,
         "burst_range": 6.0, "burst_knockback": 16.0, "burst_launch": 4.0,
-        "color": Color(0.8, 0.45, 0.25)
+        "color": Color(0.8, 0.45, 0.25),
         "abilities": [
             {"id":"tenmou_skill_1","name":"天猛重击","description":"沉重打击正面敌人，造成高硬直。","type":"重击","role":"破防","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"tenmou_skill_2","name":"钢铁冲击","description":"蓄力冲锋，撞开路径上的敌人。","type":"冲锋","role":"群体","unlock_level":5,"cost":18,"cooldown":8},
@@ -159,7 +159,7 @@ const CLASS_SKILLS := {
         "range": 8.8, "cone": 180.0, "knockback": 1.8, "launch": 0.2, "stagger": 1.05,
         "combo_range": 9.5, "combo_knockback": 6.0, "combo_launch": 1.0,
         "burst_range": 8.0, "burst_knockback": 8.0, "burst_launch": 2.0,
-        "color": Color(0.9, 0.8, 0.35)
+        "color": Color(0.9, 0.8, 0.35),
         "abilities": [
             {"id":"lyra_skill_1","name":"弦乐幻境","description":"演奏音波扰乱敌人并造成持续伤害。","type":"音波","role":"持续","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"lyra_skill_2","name":"死亡交响曲","description":"释放高强度音波，对扇形区域造成伤害与硬直。","type":"控制","role":"群体","unlock_level":5,"cost":18,"cooldown":8},
@@ -180,7 +180,7 @@ const CLASS_SKILLS := {
         "range": 7.8, "cone": 135.0, "knockback": 3.0, "launch": 1.0, "stagger": 0.5,
         "combo_range": 9.0, "combo_knockback": 8.5, "combo_launch": 3.0,
         "burst_range": 6.0, "burst_knockback": 10.0, "burst_launch": 3.8,
-        "color": Color(0.25, 0.9, 0.8)
+        "color": Color(0.25, 0.9, 0.8),
         "abilities": [
             {"id":"sea_swallow_skill_1","name":"海燕疾风","description":"高速向前突刺并快速撤步。","type":"突进","role":"机动","unlock_level":1,"cost":12,"cooldown":4},
             {"id":"sea_swallow_skill_2","name":"旋流突袭","description":"连续旋身攻击周围敌人。","type":"连击","role":"群体","unlock_level":5,"cost":18,"cooldown":8},
