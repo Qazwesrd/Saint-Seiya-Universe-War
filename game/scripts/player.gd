@@ -1,6 +1,8 @@
 extends CharacterBody3D
 var game: Variant
 var move_input := Vector2.ZERO
+var auto_move_target := Vector3.ZERO
+var auto_moving := false
 var health := 100.0
 var max_health := 100.0
 var cosmos := 100.0
@@ -58,6 +60,13 @@ func _ready() -> void:
     cam.current = true
 func set_move_input(value: Vector2) -> void:
     move_input = value.limit_length(1.0)
+
+func set_auto_move_target(target: Vector3) -> void:
+    auto_move_target = target
+    auto_moving = true
+
+func cancel_auto_move() -> void:
+    auto_moving = false
 func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     attack_cd = maxf(0.0, attack_cd - delta)
@@ -69,10 +78,20 @@ func _physics_process(delta: float) -> void:
     var input_vec := move_input
     if input_vec.length() < 0.05:
         input_vec = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-    var basis := pivot.global_transform.basis
-    var direction := (basis.x * input_vec.x + (-basis.z) * -input_vec.y)
-    direction.y = 0
-    direction = direction.normalized()
+    var direction := Vector3.ZERO
+    if input_vec.length() >= 0.05:
+        auto_moving = false
+        var basis := pivot.global_transform.basis
+        direction = basis.x * input_vec.x + (-basis.z) * -input_vec.y
+        direction.y = 0
+        direction = direction.normalized()
+    elif auto_moving:
+        var target_offset := auto_move_target - global_position
+        target_offset.y = 0
+        if target_offset.length() <= 1.25:
+            auto_moving = false
+        else:
+            direction = target_offset.normalized()
     var speed := 6.2 * (2.2 if dodge_time > 0.0 else 1.0)
     velocity.x = direction.x * speed
     velocity.z = direction.z * speed
