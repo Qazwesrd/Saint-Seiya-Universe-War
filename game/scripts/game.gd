@@ -269,7 +269,9 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         reward_text += "，等级提升 %d 级！" % level_gains
     show_notice(reward_text)
     if defeated_boss:
-        CombatSessionManager.finish_encounter()
+        var battle_summary: Dictionary = CombatSessionManager.finish_encounter()
+        if is_instance_valid(hud) and hud.has_method("show_battle_result"):
+            hud.call("show_battle_result", battle_summary, {"exp": exp_reward, "coins": coin_reward})
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
