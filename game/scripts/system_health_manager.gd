@@ -34,7 +34,13 @@ func clear_log() -> bool:
 	return DirAccess.remove_absolute(ProjectSettings.globalize_path(LOG_PATH)) == OK
 
 func _append_log(entry: Dictionary) -> void:
-	if FileAccess.file_exists(LOG_PATH) and FileAccess.get_length(LOG_PATH) > MAX_LOG_BYTES:
+	var current_size := 0
+	if FileAccess.file_exists(LOG_PATH):
+		var size_file := FileAccess.open(LOG_PATH, FileAccess.READ)
+		if size_file != null:
+			current_size = int(size_file.get_length())
+			size_file.close()
+	if current_size > MAX_LOG_BYTES:
 		var old := FileAccess.open(LOG_PATH, FileAccess.READ)
 		if old != null:
 			var content := old.get_as_text()
