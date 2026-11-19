@@ -130,15 +130,17 @@ func _ready() -> void:
         var slot := slot_index
         var left := -570.0 + float(slot_index) * 92.0
         var top := -270.0
-        var slot_button := _button(root, "技能 %d\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func():
-            if is_instance_valid(game.player): game.player.call("cast_skill_slot", slot)
-        , Color(0.16, 0.28, 0.52))
+        var slot_button := _button(root, "技能 %d\\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func(): _cast_skill_slot(slot), Color(0.16, 0.28, 0.52))
         skill_slot_buttons.append(slot_button)
     _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
     _button(root, "个人圣域", Vector2(236, 154), Vector2(350, 214), func(): _open_sanctuary(root), Color(0.22, 0.16, 0.42))
     _button(root, "骑乘 / 下马", Vector2(354, 154), Vector2(488, 214), func(): _call_player("toggle_mount"), Color(0.12, 0.34, 0.38))
     get_viewport().size_changed.connect(_on_resize)
+func _cast_skill_slot(slot_index: int) -> void:
+    if is_instance_valid(game.player):
+        game.player.call("cast_skill_slot", slot_index)
+
 func _style_panel(panel: Panel, color: Color, border: Color) -> void:
     var style := StyleBoxFlat.new()
     style.bg_color = color
