@@ -40,7 +40,6 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 			SystemHealthManager.report_error("loot", "战利品入账失败", JSON.stringify(batch))
 			return []
 		loot_awarded.emit(awarded)
-		EventBus.inventory_changed.emit(RPGState.profile.get("inventory", {}).duplicate(true))
 	return awarded
 
 func grant_drop(item_id: String, quantity: int = 1) -> bool:
