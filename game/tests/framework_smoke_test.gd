@@ -21,6 +21,10 @@ func _run_tests() -> void:
 	assert(RPGState.create_new_slot(3), "create empty character slot")
 	var slot_summary: Dictionary = RPGState.get_slot_summary(3)
 	assert(bool(slot_summary.get("exists", false)) and bool(slot_summary.get("valid", false)), "slot summary")
+	RPGState.profile["currency"] = 9876
+	assert(RPGState.save_slot(3), "save created slot")
+	assert(not RPGState.create_new_slot(3), "do not overwrite occupied slot")
+	assert(RPGState.load_slot(3) and int(RPGState.profile.get("currency", 0)) == 9876, "occupied slot data preserved")
 	assert(RPGState.backup_slot(3) and RPGState.has_backup_slot(3), "backup character slot")
 	assert(RPGState.delete_slot(3) and not RPGState.has_slot(3), "delete slot after backup")
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
