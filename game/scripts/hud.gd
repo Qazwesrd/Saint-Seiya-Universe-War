@@ -98,7 +98,7 @@ func _ready() -> void:
     stick_knob.size = Vector2(56, 56)
     _style_panel(stick_knob, Color(0.5, 0.75, 1.0, 0.82), Color(0.8, 0.92, 1.0))
     root.add_child(stick_knob)
-    _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): set_notice("离线商城将在后续 RPG 系统阶段接入"), Color(0.28, 0.22, 0.08))
+    _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): _open_shop(root), Color(0.28, 0.22, 0.08))\n    _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
     burst_button = _button(root, "小宇宙", Vector2(-180, -278), Vector2(-70, -198), func(): _call_player("cosmos_burst"), Color(0.45, 0.18, 0.08))
@@ -159,7 +159,10 @@ func _call_player(method: String) -> void:
     if is_instance_valid(game.player): game.player.call(method)
 func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skill_cd: float, burst_cd: float) -> void:
     if not is_instance_valid(status_label): return
-    status_label.text = "天马座 Lv.1    HP " + str(roundi(hp)) + "/" + str(roundi(hp_max))
+    var profile: Dictionary = RPGState.profile
+    var class_id := str(profile.get("class_id", "pegasus"))
+    var class_name := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
+    status_label.text = class_name + " Lv." + str(profile.get("level", 1)) + "  星币 " + str(profile.get("currency", 0))
     hp_bar.max_value = hp_max
     hp_bar.value = hp
     cosmos_bar.max_value = cosmos_max
@@ -183,3 +186,43 @@ func set_notice(message: String) -> void:
 func _on_resize() -> void:
     stick_base.position = Vector2(42, get_viewport().size.y - 200)
     stick_knob.position = stick_base.position + Vector2(46, 46)
+
+func _open_shop(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(430, 430)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 10)
+    popup.add_child(box)
+    var title := Label.new()
+    title.text = "离线商城  |  星币：" + str(RPGState.profile.get("currency", 0))
+    title.add_theme_font_size_override("font_size", 22)
+    box.add_child(title)
+    for item_id in ["bronze_helmet", "bronze_chest", "bronze_greaves", "cosmos_potion"]:
+        var item: Dictionary = RPGState.ITEM_DATA[item_id]
+        var button := Button.new()
+        button.text = str(item["name"]) + "  -  " + str(item["price"]) + " 星币"
+        var selected_id: String = item_id
+        button.pressed.connect(func():
+            var success: bool = RPGState.buy_item(selected_id)
+            set_notice("购买成功：" + str(item["name"]) if success else "星币不足，无法购买")
+            popup.queue_free()
+        )
+        box.add_child(button)
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
+
+func _open_character(root: Control) -> void:
+    var profile: Dictionary = RPGState.profile
+    var stats: Dictionary = RPGState.get_combat_stats()
+    var class_id := str(profile.get("class_id", "pegasus"))
+    var class_name := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
+    var dialog := AcceptDialog.new()
+    dialog.title = "角色与装备"
+    dialog.dialog_text = "%s  Lv.%d\n经验：%d / %d\n生命：%.0f\n攻击：%.0f\n防御：%.0f\n速度：%.0f\n小宇宙培养：%d级\n星币：%d\n\n背包：%s" % [class_name, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], int(profile.get("cosmos_level",1)), int(profile.get("currency",0)), str(profile.get("inventory",{}))]
+    root.add_child(dialog)
+    dialog.confirmed.connect(func(): dialog.queue_free())
+    dialog.popup_centered()
