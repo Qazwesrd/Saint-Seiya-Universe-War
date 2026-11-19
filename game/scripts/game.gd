@@ -153,6 +153,24 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
         var offset: Vector3 = enemy.global_position - player.global_position
         if offset.length() <= reach and (offset.length() < 0.1 or forward.dot(offset.normalized()) >= cos(deg_to_rad(cone_degrees * 0.5))):
             enemy.call("take_damage", damage)
+func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knockback: float, launch: float, stagger: float) -> void:
+    if not is_instance_valid(player):
+        return
+    var forward := -player.global_transform.basis.z
+    for enemy in enemies.duplicate():
+        if not is_instance_valid(enemy):
+            enemies.erase(enemy)
+            continue
+        var offset: Vector3 = enemy.global_position - player.global_position
+        var distance := offset.length()
+        if distance > reach:
+            continue
+        if distance >= 0.1 and forward.dot(offset.normalized()) < cos(deg_to_rad(cone_degrees * 0.5)):
+            continue
+        enemy.call("take_damage", damage)
+        if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
+            enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger)
+
 func on_enemy_defeated(enemy: Node3D) -> void:
     QuestManager.on_enemy_defeated(bool(enemy.get("is_boss")))
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
