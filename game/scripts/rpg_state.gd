@@ -1,5 +1,6 @@
 extends Node
 signal state_changed
+signal slot_loaded(slot: int)
 const MAX_LEVEL := 100
 const CLASS_DATA := {
  "pegasus":{"name":"天马座","hp":110,"attack":14,"defense":8,"speed":12,"starter":"pegasus_bracer"},
@@ -60,7 +61,7 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system()}
+ profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system(),"quest_progress":{},"campaign_progress":{}}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
@@ -262,6 +263,7 @@ func load_slot(slot: int) -> bool:
  profile["skill_branches"] = profile.get("skill_branches", {})
  profile["skill_slots"] = profile.get("skill_slots", {str(profile.get("class_id", "pegasus")): [str(profile.get("class_id", "pegasus")) + "_skill_1", "", "", ""]})
  active_slot = slot
+ slot_loaded.emit(slot)
  _emit_change()
  return true
 func backup_slot(slot: int) -> bool:
@@ -329,6 +331,7 @@ func create_new_slot(slot: int) -> bool:
   profile = previous_profile
   active_slot = previous_slot
   return false
+ slot_loaded.emit(slot)
  _emit_change()
  return true
 
@@ -341,6 +344,7 @@ func delete_slot(slot: int) -> bool:
  if result and active_slot == slot:
   profile = {}
   _ensure_profile()
+  slot_loaded.emit(active_slot)
   _emit_change()
  return result
 
