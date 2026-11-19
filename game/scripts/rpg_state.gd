@@ -14,7 +14,25 @@ const CLASS_DATA := {
  "apollo":{"name":"阿波罗","hp":720,"attack":118,"defense":92,"speed":28,"starter":"apollo_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
  "athena":{"name":"雅典娜","hp":860,"attack":98,"defense":135,"speed":25,"starter":"athena_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
  "hades":{"name":"哈迪斯","hp":800,"attack":125,"defense":108,"speed":26,"starter":"hades_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
- "poseidon":{"name":"波塞冬","hp":820,"attack":116,"defense":112,"speed":27,"starter":"poseidon_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"}
+ "poseidon":{"name":"波塞冬","hp":820,"attack":116,"defense":112,"speed":27,"starter":"poseidon_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
+ "zeus":{"name":"宙斯","hp":900,"attack":150,"defense":140,"speed":28,"starter":"zeus_divine_relic","tier":"神明","faction":"奥林匹斯神王","canon_status":"原作提及，未正式正面登场","unlock_level":70,"unlock_condition":"角色达到70级并完成宙斯篇章试炼"},
+ "artemis":{"name":"阿尔忒弥斯","hp":790,"attack":118,"defense":120,"speed":31,"starter":"artemis_divine_relic","tier":"神明","faction":"月之女神","canon_status":"天界篇相关作品登场","unlock_level":70,"unlock_condition":"角色达到70级并完成阿尔忒弥斯篇章试炼"},
+ "hypnos":{"name":"修普诺斯","hp":810,"attack":112,"defense":132,"speed":25,"starter":"hypnos_divine_relic","tier":"神明","faction":"睡神","canon_status":"冥王篇登场","unlock_level":70,"unlock_condition":"角色达到70级并完成修普诺斯篇章试炼"},
+ "thanatos":{"name":"达纳托斯","hp":820,"attack":138,"defense":116,"speed":29,"starter":"thanatos_divine_relic","tier":"神明","faction":"死神","canon_status":"冥王篇登场","unlock_level":70,"unlock_condition":"角色达到70级并完成达纳托斯篇章试炼"},
+ "odin":{"name":"奥丁","hp":920,"attack":130,"defense":142,"speed":27,"starter":"odin_divine_relic","tier":"神明","faction":"北欧主神","canon_status":"北欧篇登场","unlock_level":70,"unlock_condition":"角色达到70级并完成奥丁篇章试炼"},
+ "ares":{"name":"阿瑞斯","hp":860,"attack":155,"defense":112,"speed":32,"starter":"ares_divine_relic","tier":"神明","faction":"战神","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成阿瑞斯篇章试炼"},
+ "eris":{"name":"厄里斯","hp":750,"attack":130,"defense":108,"speed":30,"starter":"eris_divine_relic","tier":"神明","faction":"纷争女神","canon_status":"剧场版《邪神厄里斯》","unlock_level":70,"unlock_condition":"角色达到70级并完成厄里斯篇章试炼"},
+ "abel":{"name":"亚伯","hp":840,"attack":148,"defense":124,"speed":30,"starter":"abel_divine_relic","tier":"神明","faction":"太阳神","canon_status":"剧场版《真红少年传说》","unlock_level":70,"unlock_condition":"角色达到70级并完成亚伯篇章试炼"},
+ "lucifer":{"name":"路西法","hp":870,"attack":150,"defense":118,"speed":33,"starter":"lucifer_divine_relic","tier":"神明","faction":"堕天使之王","canon_status":"剧场版《最终圣战的战士们》","unlock_level":70,"unlock_condition":"角色达到70级并完成路西法篇章试炼"},
+ "saturn":{"name":"萨图恩","hp":960,"attack":158,"defense":148,"speed":28,"starter":"saturn_divine_relic","tier":"神明","faction":"时间之神","canon_status":"《圣斗士星矢Ω》","unlock_level":70,"unlock_condition":"角色达到70级并完成萨图恩篇章试炼"},
+ "pallas":{"name":"帕拉斯","hp":800,"attack":126,"defense":120,"speed":32,"starter":"pallas_divine_relic","tier":"神明","faction":"爱与战争女神","canon_status":"《圣斗士星矢Ω》","unlock_level":70,"unlock_condition":"角色达到70级并完成帕拉斯篇章试炼"},
+ "chronos":{"name":"柯罗诺斯","hp":980,"attack":162,"defense":155,"speed":27,"starter":"chronos_divine_relic","tier":"神明","faction":"时间神","canon_status":"Episode G 系列；与泰坦克洛诺斯区分","unlock_level":70,"unlock_condition":"角色达到70级并完成柯罗诺斯篇章试炼"},
+ "hera":{"name":"赫拉","hp":840,"attack":120,"defense":145,"speed":25,"starter":"hera_divine_relic","tier":"神明","faction":"天后","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成赫拉篇章试炼"},
+ "demeter":{"name":"德墨忒尔","hp":860,"attack":110,"defense":140,"speed":24,"starter":"demeter_divine_relic","tier":"神明","faction":"丰饶女神","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成德墨忒尔篇章试炼"},
+ "hestia":{"name":"赫斯提亚","hp":870,"attack":116,"defense":152,"speed":23,"starter":"hestia_divine_relic","tier":"神明","faction":"炉灶女神","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成赫斯提亚篇章试炼"},
+ "hermes":{"name":"赫尔墨斯","hp":760,"attack":132,"defense":106,"speed":39,"starter":"hermes_divine_relic","tier":"神明","faction":"神使","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成赫尔墨斯篇章试炼"},
+ "hephaestus":{"name":"赫淮斯托斯","hp":950,"attack":136,"defense":158,"speed":21,"starter":"hephaestus_divine_relic","tier":"神明","faction":"锻造之神","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成赫淮斯托斯篇章试炼"},
+ "aphrodite":{"name":"阿佛洛狄忒","hp":770,"attack":122,"defense":114,"speed":31,"starter":"aphrodite_divine_relic","tier":"神明","faction":"爱与美之神","canon_status":"希腊神话扩展职业","unlock_level":70,"unlock_condition":"角色达到70级并完成阿佛洛狄忒篇章试炼"}
 }
 const ITEM_DATA := {
  "pegasus_bracer":{"name":"天马青铜护腕","slot":"arms","attack":3,"defense":1,"price":0},
@@ -41,7 +59,7 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system()}
+ profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system()}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
@@ -49,6 +67,9 @@ func get_class_list() -> Array:
  return result
 func select_class(class_id: String) -> bool:
  if not CLASS_DATA.has(class_id):
+  return false
+ var class_data: Dictionary = CLASS_DATA[class_id]
+ if str(class_data.get("tier", "")) == "神明" and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70)):
   return false
  if str(profile.get("class_id","pegasus")) == class_id:
   return true
@@ -60,6 +81,10 @@ func select_class(class_id: String) -> bool:
  var starter: String = str(CLASS_DATA[class_id]["starter"])
  equipment["arms"] = starter
  profile["class_id"] = class_id
+ var cosmos_levels: Dictionary = profile.get("cosmos_levels", {})
+ if not cosmos_levels.has(class_id): cosmos_levels[class_id] = 21 if str(CLASS_DATA[class_id].get("tier", "")) == "神明" else 1
+ profile["cosmos_levels"] = cosmos_levels
+ profile["cosmos_level"] = int(cosmos_levels[class_id])
  var learned: Dictionary = profile.get("learned_skills", {})
  if not learned.has(class_id): learned[class_id] = [class_id + "_skill_1"]
  profile["learned_skills"] = learned
@@ -71,11 +96,26 @@ func select_class(class_id: String) -> bool:
  _emit_change()
  save_slot(active_slot)
  return true
+func get_cosmos_profile() -> Dictionary:
+ var class_id := str(profile.get("class_id", "pegasus"))
+ var base: Dictionary = CLASS_DATA.get(class_id, CLASS_DATA["pegasus"])
+ var divine := str(base.get("tier", "")) == "神明"
+ var levels: Dictionary = profile.get("cosmos_levels", {})
+ var level := int(levels.get(class_id, profile.get("cosmos_level", 1)))
+ if divine: level = maxi(21, level)
+ var max_level := 100 if divine else 20
+ var rank := ""
+ if divine:
+  rank = "神格觉醒" if level <= 40 else "神域掌控" if level <= 60 else "主神神格" if level <= 80 else "至高神格"
+ else:
+  rank = "初识小宇宙" if level < 7 else "第七感" if level < 14 else "第八感" if level < 19 else "究极小宇宙"
+ return {"level":level,"max_level":max_level,"divine":divine,"rank":rank,"max_cosmos":float(260+(level-21)*18) if divine else float(100+(level-1)*10),"attack_bonus":float(maxi(0,level-21)*3.5) if divine else float((level-1)*0.7),"defense_bonus":float(maxi(0,level-21)*2.5) if divine else float((level-1)*0.5),"health_bonus":float(maxi(0,level-21)*14) if divine else float((level-1)*4),"regen_rate":8.5 if divine else 3.0,"skill_power_multiplier":float(maxi(0,level-21)*0.004) if divine else float((level-1)*0.002),"upgrade_cost":level*1500 if divine else level*250}
 func get_combat_stats() -> Dictionary:
+ var cosmos_data: Dictionary = get_cosmos_profile()
  var base: Dictionary = CLASS_DATA.get(str(profile.get("class_id","pegasus")),CLASS_DATA["pegasus"])
  var level: int = int(profile.get("level",1))
- var divine_tier := str(base.get("tier", "")) == "神明"
- var stats := {"max_health":float(base["hp"]+(level-1)*(30 if divine_tier else 8)),"attack":float(base["attack"]+(level-1)*(8 if divine_tier else 2)),"defense":float(base["defense"]+(level-1)*(5 if divine_tier else 1)),"speed":float(base["speed"]),"max_cosmos":float((260 if divine_tier else 100) + (int(profile.get("cosmos_level",1))-1)*(24 if divine_tier else 10))}
+ var divine_tier := bool(cosmos_data.get("divine", false))
+ var stats := {"max_health":float(base["hp"]+(level-1)*(30 if divine_tier else 8))+float(cosmos_data.get("health_bonus",0.0)),"attack":float(base["attack"]+(level-1)*(8 if divine_tier else 2))+float(cosmos_data.get("attack_bonus",0.0)),"defense":float(base["defense"]+(level-1)*(5 if divine_tier else 1))+float(cosmos_data.get("defense_bonus",0.0)),"speed":float(base["speed"]),"max_cosmos":float(cosmos_data.get("max_cosmos",100.0))}
  for slot in profile.get("equipment",{}):
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
@@ -157,11 +197,16 @@ func enhance_equipment(slot: String) -> bool:
  save_slot(active_slot)
  return true
 func upgrade_cosmos() -> bool:
- var level: int = int(profile.get("cosmos_level",1))
- var cost := level*250
- if level >= 20 or int(profile.get("currency",0)) < cost: return false
- profile["currency"] = int(profile["currency"])-cost
- profile["cosmos_level"] = level+1
+ var class_id := str(profile.get("class_id", "pegasus"))
+ var cosmos_data: Dictionary = get_cosmos_profile()
+ var level := int(cosmos_data.get("level", 1))
+ var cost := int(cosmos_data.get("upgrade_cost", level * 250))
+ if level >= int(cosmos_data.get("max_level", 20)) or int(profile.get("currency", 0)) < cost: return false
+ profile["currency"] = int(profile.get("currency", 0)) - cost
+ var levels: Dictionary = profile.get("cosmos_levels", {})
+ levels[class_id] = level + 1
+ profile["cosmos_levels"] = levels
+ profile["cosmos_level"] = level + 1
  _emit_change()
  save_slot(active_slot)
  return true
@@ -203,6 +248,7 @@ func load_slot(slot: int) -> bool:
  file.close()
  if typeof(parsed) != TYPE_DICTIONARY or int(parsed.get("version",0)) != 1: return false
  profile = parsed
+ profile["cosmos_levels"] = profile.get("cosmos_levels", {str(profile.get("class_id", "pegasus")): int(profile.get("cosmos_level", 1))})
  profile["skill_points"] = int(profile.get("skill_points", 3))
  profile["learned_skills"] = profile.get("learned_skills", {str(profile.get("class_id", "pegasus")): [str(profile.get("class_id", "pegasus")) + "_skill_1"]})
  profile["skill_branches"] = profile.get("skill_branches", {})
