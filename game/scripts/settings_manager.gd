@@ -58,8 +58,10 @@ func set_value(section: String, key: String, value: Variant, persist: bool = tru
 func reset_section(section: String) -> bool:
 	if not DEFAULTS.has(section):
 		return false
+	var previous: Dictionary = values.get(section, {}).duplicate(true)
 	values[section] = DEFAULTS[section].duplicate(true)
 	if not save_settings():
+		values[section] = previous
 		return false
 	apply_settings()
 	for key in values[section]:
@@ -68,8 +70,10 @@ func reset_section(section: String) -> bool:
 	return true
 
 func reset_all() -> bool:
+	var previous: Dictionary = values.duplicate(true)
 	values = DEFAULTS.duplicate(true)
 	if not save_settings():
+		values = previous
 		return false
 	apply_settings()
 	LocalizationManager.set_locale(str(values["system"]["language"]))
