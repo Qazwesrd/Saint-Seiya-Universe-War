@@ -86,6 +86,7 @@ func get_summary() -> Dictionary:
 	var result := stats.duplicate(true)
 	result["encounter_id"] = encounter_id
 	result["active"] = active
+	result["grade"] = _calculate_grade(result)
 	if active:
 		result["duration_seconds"] = maxi(0, int(Time.get_unix_time_from_system()) - started_at)
 	return result
@@ -94,3 +95,18 @@ func _emit_update() -> void:
 	var result := get_summary()
 	statistics_changed.emit(result)
 	EventBus.combat_event.emit("statistics_updated", result)
+
+
+func _calculate_grade(summary: Dictionary) -> String:
+    var bosses := int(summary.get("bosses_defeated", 0))
+    var damage_taken := float(summary.get("damage_taken", 0.0))
+    var duration := int(summary.get("duration_seconds", 0))
+    if bosses <= 0:
+        return "未完成"
+    if damage_taken <= 60.0 and duration <= 120:
+        return "S"
+    if damage_taken <= 140.0 and duration <= 240:
+        return "A"
+    if damage_taken <= 260.0:
+        return "B"
+    return "C"
