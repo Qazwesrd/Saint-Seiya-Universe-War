@@ -171,6 +171,67 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
         if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
             enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger)
 
+
+func apply_class_skill_effect(class_id: String, reach: float) -> void:
+    if not is_instance_valid(player):
+        return
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var applied := 0
+    for enemy in enemies.duplicate():
+        if not is_instance_valid(enemy) or enemy.get("health") <= 0.0:
+            continue
+        var distance := enemy.global_position.distance_to(player.global_position)
+        if distance > reach + 1.5:
+            continue
+        match class_id:
+            "pegasus":
+                enemy.call("apply_status_effect", "slow", 2.5, 0.18)
+            "dragon":
+                enemy.call("apply_hit_reaction", (enemy.global_position - player.global_position).normalized(), 2.0, 0.0, 0.35)
+            "cygnus":
+                enemy.call("apply_status_effect", "freeze", 1.8, 0.0)
+                enemy.call("apply_status_effect", "slow", 3.0, 0.4)
+            "andromeda":
+                var pull_direction := player.global_position - enemy.global_position
+                pull_direction.y = 0.0
+                enemy.call("apply_hit_reaction", pull_direction.normalized(), 5.5, 0.0, 0.45)
+                enemy.call("apply_status_effect", "slow", 2.0, 0.25)
+            "phoenix":
+                enemy.call("apply_status_effect", "burn", 5.0, maxf(2.0, attack_power * 0.14))
+            "sea_dragon":
+                enemy.call("apply_status_effect", "weaken", 4.0, 0.28)
+                enemy.call("apply_status_effect", "slow", 2.0, 0.2)
+            "tenmou":
+                enemy.call("apply_status_effect", "slow", 2.0, 0.15)
+            "lyra":
+                enemy.call("apply_status_effect", "weaken", 4.5, 0.22)
+                enemy.call("apply_status_effect", "slow", 3.0, 0.3)
+            "sea_swallow":
+                enemy.call("apply_status_effect", "burn", 3.5, maxf(1.5, attack_power * 0.09))
+                enemy.call("apply_status_effect", "slow", 1.5, 0.12)
+        applied += 1
+    match class_id:
+        "pegasus":
+            player.call("apply_temporary_buff", 0.18, 0.0, 4.0)
+        "dragon":
+            player.call("apply_temporary_buff", 0.0, 0.32, 5.0)
+        "andromeda":
+            player.call("apply_temporary_buff", 0.0, 0.16, 4.0)
+        "phoenix":
+            player.call("apply_temporary_buff", 0.12, 0.0, 5.0)
+        "sea_dragon":
+            player.call("apply_temporary_buff", 0.16, 0.08, 4.0)
+        "tenmou":
+            player.call("apply_temporary_buff", 0.12, 0.25, 5.0)
+        "lyra":
+            player.call("apply_temporary_buff", 0.08, 0.08, 4.0)
+        "sea_swallow":
+            player.call("apply_temporary_buff", 0.15, 0.0, 3.5)
+    if applied > 0:
+        var class_name := str(SkillSystem.get_class_skill(class_id).get("class_name", "职业"))
+        show_notice(class_name + "专属状态生效：影响敌人 %d 名" % applied)
+
+
 func on_enemy_defeated(enemy: Node3D) -> void:
     QuestManager.on_enemy_defeated(bool(enemy.get("is_boss")))
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
