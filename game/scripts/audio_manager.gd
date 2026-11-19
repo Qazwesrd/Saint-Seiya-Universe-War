@@ -5,12 +5,24 @@ var ambience_player: AudioStreamPlayer
 var sfx_pool: Array[AudioStreamPlayer] = []
 
 func _ready() -> void:
+	_ensure_bus("Music")
+	_ensure_bus("Ambience")
+	_ensure_bus("SFX")
+	_ensure_bus("UI")
 	music_player = _make_player("Music")
 	ambience_player = _make_player("Ambience")
 	for index in range(8):
 		sfx_pool.append(_make_player("SFX"))
 	SettingsManager.settings_changed.connect(_on_setting_changed)
 	_apply_volumes()
+
+func _ensure_bus(bus_name: String) -> void:
+	if AudioServer.get_bus_index(bus_name) >= 0:
+		return
+	AudioServer.add_bus()
+	var index := AudioServer.get_bus_count() - 1
+	AudioServer.set_bus_name(index, bus_name)
+	AudioServer.set_bus_send(index, "Master")
 
 func _make_player(bus_name: String) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
