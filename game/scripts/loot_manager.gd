@@ -36,7 +36,7 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 			})
 	if not awarded.is_empty():
 		loot_awarded.emit(awarded)
-		EventBus.inventory_changed.emit()
+		EventBus.inventory_changed.emit(RPGState.profile.get("inventory", {}).duplicate(true))
 	return awarded
 
 func grant_drop(item_id: String, quantity: int = 1) -> bool:
