@@ -186,6 +186,7 @@ func receive_damage(amount: float) -> void:
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
     var final_damage := maxf(1.0, amount - defense * 0.25)
     health = maxf(0.0, health - final_damage)
+    ArmorSystem.damage_random_part(1)
     _flash(Color(1.0, 0.12, 0.12))
     if health <= 0.0:
         health = max_health
