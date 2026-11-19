@@ -27,6 +27,9 @@ var burn_tick_timer := 0.0
 var burn_damage := 0.0
 var weaken_timer := 0.0
 var weaken_factor := 0.7
+var divine_mark := ""
+var divine_mark_timer := 0.0
+var divine_mark_power := 0.0
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -93,6 +96,10 @@ func _physics_process(delta: float) -> void:
     freeze_timer = maxf(0.0, freeze_timer - delta)
     slow_timer = maxf(0.0, slow_timer - delta)
     weaken_timer = maxf(0.0, weaken_timer - delta)
+    divine_mark_timer = maxf(0.0, divine_mark_timer - delta)
+    if divine_mark_timer <= 0.0:
+        divine_mark = ""
+        divine_mark_power = 0.0
     burn_timer = maxf(0.0, burn_timer - delta)
     if burn_timer > 0.0:
         burn_tick_timer -= delta
@@ -189,7 +196,8 @@ func _resolve_attack(target: Node3D) -> void:
 func take_damage(amount: float) -> void:
     if state == BrainState.DEAD or health <= 0.0:
         return
-    health = maxf(0.0, health - maxf(0.0, amount))
+    var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
+    health = maxf(0.0, health - maxf(0.0, amount) * mark_multiplier)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
 
@@ -261,3 +269,10 @@ func apply_status_effect(effect: String, duration: float, power: float = 0.0) ->
 
 func is_controlled() -> bool:
     return freeze_timer > 0.0 or slow_timer > 0.0 or state == BrainState.STAGGER
+
+func apply_divine_mark(mark: String, duration: float, power: float) -> void:
+    if state == BrainState.DEAD:
+        return
+    divine_mark = mark
+    divine_mark_timer = maxf(divine_mark_timer, duration * (0.55 if is_boss else 1.0))
+    divine_mark_power = maxf(divine_mark_power, clampf(power * (0.55 if is_boss else 1.0), 0.0, 0.18))
