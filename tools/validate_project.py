@@ -44,6 +44,9 @@ if project_file.is_file():
         require(False, "project.godot 缺少 [autoload] 区块")
 
 preset_file = GAME / "export_presets.cfg"
+require((GAME / "scenes" / "main_menu.tscn").is_file(), "缺少主菜单场景 game/scenes/main_menu.tscn")
+require((GAME / "scripts" / "main_menu.gd").is_file(), "缺少主菜单控制器 game/scripts/main_menu.gd")
+require((GAME / "tests" / "framework_smoke_test.tscn").is_file(), "缺少框架冒烟测试场景 game/tests/framework_smoke_test.tscn")
 require(preset_file.is_file(), "缺少 Android 导出预设 game/export_presets.cfg")
 if preset_file.is_file():
     preset = preset_file.read_text(encoding="utf-8")
@@ -73,7 +76,7 @@ if catalog_file.is_file():
 
 # Validate every literal res:// reference in scenes and scripts.
 resource_pattern = re.compile(r'res://([A-Za-z0-9_./-]+)')
-for source in list((GAME / "scripts").glob("*.gd")) + list((GAME / "scenes").glob("*.tscn")):
+for source in list(GAME.rglob("*.gd")) + list(GAME.rglob("*.tscn")):
     content = source.read_text(encoding="utf-8")
     for resource in sorted(set(resource_pattern.findall(content))):
         target = GAME / resource
