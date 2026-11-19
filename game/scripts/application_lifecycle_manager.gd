@@ -14,8 +14,8 @@ func _notification(what: int) -> void:
 
 func _handle_pause() -> void:
 	last_pause_timestamp = int(Time.get_unix_time_from_system())
-	var character_saved := RPGState.save_slot(RPGState.active_slot)
-	var settings_saved := SettingsManager.save_settings()
+	var character_saved: bool = bool(RPGState.save_slot(RPGState.active_slot))
+	var settings_saved: bool = bool(SettingsManager.save_settings())
 	pause_save_succeeded = character_saved and settings_saved
 	application_paused.emit()
 	if not pause_save_succeeded:
