@@ -197,9 +197,15 @@ func set_quest_text(value: String) -> void:
         quest_label.text = value
 
 func show_dialogue(data: Dictionary) -> void:
+    var root := get_child(0) as Control
+    if str(data.get("action", "")) in ["accept", "complete"]:
+        _show_cinematic_dialogue(root, data)
+    else:
+        _show_compact_dialogue(root, data)
+
+func _show_compact_dialogue(root: Control, data: Dictionary) -> void:
     if is_instance_valid(dialogue_panel):
         dialogue_panel.queue_free()
-    var root := get_child(0) as Control
     dialogue_panel = Panel.new()
     dialogue_panel.anchor_left = 0.5
     dialogue_panel.anchor_right = 0.5
@@ -224,6 +230,13 @@ func show_dialogue(data: Dictionary) -> void:
     message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     message.size_flags_vertical = Control.SIZE_EXPAND_FILL
     box.add_child(message)
+    var actions := HBoxContainer.new()
+    var story_button := Button.new()
+    story_button.text = "展开剧情"
+    story_button.pressed.connect(func():
+        _show_cinematic_dialogue(root, data)
+    )
+    actions.add_child(story_button)
     var close := Button.new()
     close.text = "继续"
     close.pressed.connect(func():
@@ -231,7 +244,54 @@ func show_dialogue(data: Dictionary) -> void:
             dialogue_panel.queue_free()
         dialogue_panel = null
     )
+    actions.add_child(close)
+    box.add_child(actions)
+
+func _show_cinematic_dialogue(root: Control, data: Dictionary) -> void:
+    if is_instance_valid(dialogue_panel):
+        dialogue_panel.queue_free()
+    dialogue_panel = Panel.new()
+    dialogue_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    _style_panel(dialogue_panel, Color(0.008, 0.012, 0.035, 0.98), Color(0.82, 0.62, 0.2))
+    root.add_child(dialogue_panel)
+    var box := VBoxContainer.new()
+    box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    box.add_theme_constant_override("separation", 20)
+    dialogue_panel.add_child(box)
+    var chapter := Label.new()
+    chapter.text = "银河战争篇 · 银河竞技场"
+    chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    chapter.add_theme_font_size_override("font_size", 28)
+    box.add_child(chapter)
+    var spacer := Control.new()
+    spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(spacer)
+    var speaker := Label.new()
+    speaker.text = str(data.get("speaker", "NPC"))
+    speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    speaker.add_theme_font_size_override("font_size", 30)
+    speaker.add_theme_color_override("font_color", Color(1.0, 0.82, 0.38))
+    box.add_child(speaker)
+    var message := Label.new()
+    message.text = str(data.get("text", ""))
+    message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    message.add_theme_font_size_override("font_size", 23)
+    message.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(message)
+    var close := Button.new()
+    close.text = "继续"
+    close.custom_minimum_size = Vector2(180, 58)
+    close.pressed.connect(func():
+        if is_instance_valid(dialogue_panel):
+            dialogue_panel.queue_free()
+        dialogue_panel = null
+    )
     box.add_child(close)
+    var bottom_spacer := Control.new()
+    bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(bottom_spacer)
+
 func set_boss_status(hp: float, hp_max: float) -> void:
     var visible_boss := hp_max > 1.0
     boss_label.visible = visible_boss
