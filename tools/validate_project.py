@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Static integrity checks for the Godot project; no third-party packages required."""
+from pathlib import Path
+import re
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+GAME = ROOT / "game"
+errors = []
+checks = 0
+
+def require(condition, message):
+    global checks
+    checks += 1
+    if not condition:
+        errors.append(message)
+
+project_file = GAME / "project.godot"
+require(project_file.is_file(), "缺少 game/project.godot")
+if project_file.is_file():
+    project = project_file.read_text(encoding="utf-8")
+    main_match = re.search(r'^run/main_scene="([^"]+)"', project, re.M)
+    require(bool(main_match), "project.godot 未配置 run/main_scene")
+    if main_match:
+        scene_path = GAME / main_match.group(1).replace("res://", "")
+        require(scene_path.is_file(), f"主场景不存在：{main_match.group(1)}")
+
+    autoload_section = re.search(r'\[autoload\](.*?)(?=\n\[|\Z)', project, re.S)
+    if autoload_section:
+        names = []
+        for line in autoload_section.group(1).splitlines():
+            line = line.strip()
+            if not line or line.startswith(";") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            names.append(name.strip())
+            path_match = re.search(r'"res://([^"]+)"', value)
+            require(bool(path_match), f"AutoLoad 路径格式异常：{line}")
+            if path_match:
+                target = GAME / path_match.group(1)
+                require(target.is_file(), f"AutoLoad 脚本不存在：{path_match.group(1)}")
+        require(len(names) == len(set(names)), "AutoLoad 名称存在重复")
+    else:
+        require(False, "project.godot 缺少 [autoload] 区块")
+
+preset_file = GAME / "export_presets.cfg"
+require(preset_file.is_file(), "缺少 Android 导出预设 game/export_presets.cfg")
+if preset_file.is_file():
+    preset = preset_file.read_text(encoding="utf-8")
+    require('platform="Android"' in preset, "导出预设未指定 Android")
+    require('architectures/arm64-v8a=true' in preset, "Android 预设未启用 ARM64")
+
+# Validate every literal res:// reference in scenes and scripts.
+resource_pattern = re.compile(r'res://([A-Za-z0-9_./-]+)')
+for source in list((GAME / "scripts").glob("*.gd")) + list((GAME / "scenes").glob("*.tscn")):
+    content = source.read_text(encoding="utf-8")
+    for resource in sorted(set(resource_pattern.findall(content))):
+        target = GAME / resource
+        require(target.exists(), f"{source.relative_to(ROOT)} 引用了不存在的资源：res://{resource}")
+
+# Every declared script should be non-empty and UTF-8 readable.
+scripts = list((GAME / "scripts").glob("*.gd"))
+require(bool(scripts), "game/scripts 中没有 GDScript 文件")
+for script in scripts:
+    require(script.stat().st_size > 0, f"脚本为空：{script.relative_to(ROOT)}")
+
+print(f"项目静态检查：{checks} 项")
+if errors:
+    print(f"发现 {len(errors)} 个问题：")
+    for error in errors:
+        print(f"  [FAIL] {error}")
+    sys.exit(1)
+print("结果：全部通过")
