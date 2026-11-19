@@ -24,6 +24,12 @@ func _draw() -> void:
         draw_circle(center + marker, 4.5, Color(1.0, 0.28, 0.2))
     draw_circle(center, 5.5, Color(0.25, 1.0, 0.72))
     draw_circle(center, 2.0, Color(0.04, 0.12, 0.1))
+    var portal: Node3D = game.get("teleport_point")
+    if is_instance_valid(portal):
+        var portal_delta: Vector3 = portal.global_position - origin
+        var portal_marker := Vector2(portal_delta.x, portal_delta.z) / 22.0 * radius
+        portal_marker = portal_marker.limit_length(radius - 6.0)
+        draw_circle(center + portal_marker, 4.5, Color(0.18, 0.72, 1.0))
     var guide: Node3D = game.get("guide_npc")
     if is_instance_valid(guide) and QuestManager.status in ["not_started", "ready_to_return"]:
         var guide_delta: Vector3 = guide.global_position - origin
