@@ -404,12 +404,12 @@ func _open_character(root: Control) -> void:
 
     var stats: Dictionary = RPGState.get_combat_stats()
     var class_label := str(RPGState.CLASS_DATA.get(current_class, {}).get("name", "天马座"))
+    var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
     var info := Label.new()
     info.text = "%s  Lv.%d    经验 %d/%d    星币 %d\n生命 %.0f    攻击 %.0f    防御 %.0f    速度 %.0f\n小宇宙：%s Lv.%d/%d（%s）" % [class_label, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), int(profile.get("currency",0)), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], "神明" if cosmos_info.get("divine", false) else "凡人", cosmos_info.get("level",1), cosmos_info.get("max_level",20), cosmos_info.get("rank","初识小宇宙")]
     box.add_child(info)
 
     var upgrade := Button.new()
-    var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
     upgrade.text = "提升小宇宙等级（%d/%d，消耗 %d 星币）" % [cosmos_info.get("level", 1), cosmos_info.get("max_level", 20), cosmos_info.get("upgrade_cost", 250)]
     upgrade.pressed.connect(func():
         var success: bool = RPGState.upgrade_cosmos()
