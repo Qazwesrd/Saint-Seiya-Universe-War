@@ -9,6 +9,7 @@ var cosmos := 100.0
 var max_cosmos := 100.0
 var attack_cd := 0.0
 var skill_cd := 0.0
+var combo_window := 0.0
 var burst_cd := 0.0
 var dodge_time := 0.0
 var invulnerable := 0.0
@@ -71,6 +72,7 @@ func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     attack_cd = maxf(0.0, attack_cd - delta)
     skill_cd = maxf(0.0, skill_cd - delta)
+    combo_window = maxf(0.0, combo_window - delta)
     burst_cd = maxf(0.0, burst_cd - delta)
     dodge_time = maxf(0.0, dodge_time - delta)
     invulnerable = maxf(0.0, invulnerable - delta)
@@ -119,13 +121,35 @@ func skill() -> void:
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     cosmos -= float(skill_data.get("cost", 18))
     skill_cd = float(skill_data.get("cooldown", 3.0))
+    combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
-    var damage_multiplier := float(skill_data.get("damage", 1.5))
+    var skill_level := SkillSystem.get_skill_level(class_id)
+    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
     game.call("damage_nearby", 18.0 + attack_power * damage_multiplier, 7.0, 150.0)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
+func combo_skill() -> void:
+    if combo_window <= 0.0:
+        game.call("show_notice", "先施放职业技能，才能衔接连招")
+        return
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var cost := float(skill_data.get("cost", 18)) * 1.35
+    if cosmos < cost:
+        game.call("show_notice", "小宇宙不足，无法施展连招")
+        return
+    cosmos -= cost
+    combo_window = 0.0
+    skill_cd = maxf(skill_cd, 1.0)
+    var skill_level := SkillSystem.get_skill_level(class_id)
+    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1)
+    var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
+    _flash(Color(1.0, 0.9, 0.55))
+    game.call("damage_nearby", damage, 8.5, 180.0)
+    game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.5) + Vector3.UP, skill_color, 4.0)
+    game.call("show_notice", str(skill_data.get("combo", "职业连招")) + "！")
 func cosmos_burst() -> void:
     if burst_cd > 0.0 or cosmos < 35.0:
         game.call("show_notice", "小宇宙能量不足或正在冷却")
