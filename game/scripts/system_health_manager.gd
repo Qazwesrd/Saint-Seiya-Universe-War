@@ -40,7 +40,7 @@ func _append_log(entry: Dictionary) -> void:
 			var content := old.get_as_text()
 			old.close()
 			var lines := content.split("\n", false)
-			var keep_from := maxi(0, lines.size() - MAX_LOG_LINES / 2)
+			var keep_from := maxi(0, lines.size() - int(MAX_LOG_LINES / 2))
 			var trimmed := "\n".join(lines.slice(keep_from, lines.size()))
 			var rotated := FileAccess.open(LOG_PATH, FileAccess.WRITE)
 			if rotated != null:
