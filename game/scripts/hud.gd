@@ -202,9 +202,10 @@ func _open_shop(root: Control) -> void:
         var button := Button.new()
         button.text = str(item["name"]) + "  -  " + str(item["price"]) + " 星币"
         var selected_id: String = item_id
+        var selected_name: String = str(item["name"])
         button.pressed.connect(func():
             var success: bool = RPGState.buy_item(selected_id)
-            set_notice("购买成功：" + str(item["name"]) if success else "星币不足，无法购买")
+            set_notice("购买成功：" + selected_name if success else "星币不足，无法购买")
             popup.queue_free()
         )
         box.add_child(button)
@@ -261,6 +262,8 @@ func _open_character(root: Control) -> void:
     upgrade.text = "提升小宇宙等级（消耗当前等级 × 250 星币）"
     upgrade.pressed.connect(func():
         var success: bool = RPGState.upgrade_cosmos()
+        if success:
+            game.call("refresh_player_stats")
         set_notice("小宇宙培养成功" if success else "星币不足或已达到培养上限")
         popup.queue_free()
     )
@@ -289,6 +292,8 @@ func _open_character(root: Control) -> void:
                 item_button.text = "使用：" + item_name + " ×" + str(item_count)
                 item_button.pressed.connect(func():
                     var used: bool = RPGState.use_item(selected_item_id)
+                    if used and is_instance_valid(game.player):
+                        game.player.cosmos = minf(game.player.max_cosmos, game.player.cosmos + 45.0)
                     set_notice("已使用：" + item_name if used else "无法使用该物品")
                     popup.queue_free()
                 )
