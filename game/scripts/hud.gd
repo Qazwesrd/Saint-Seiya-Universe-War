@@ -189,7 +189,8 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     cosmos_bar.max_value = cosmos_max
     cosmos_bar.value = cosmos
     if is_instance_valid(skill_button):
-        var skill_name := str(SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus"))).get("name", "职业技能"))\n        skill_button.text = skill_name + "\\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
+        var skill_name := str(SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus"))).get("name", "职业技能"))
+        skill_button.text = skill_name + "\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
 func set_enemy_count(count: int) -> void:
