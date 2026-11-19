@@ -128,6 +128,10 @@ func get_combat_stats() -> Dictionary:
    var enhance_level: int = int(profile.get("equipment_levels",{}).get(item_id,0))
    stats["attack"] += float(enhance_level) * 1.5
    stats["defense"] += float(enhance_level) * 1.5
+ var relic_bonus: Dictionary = EquipmentDatabase.get_bonus_stats()
+ stats["attack"] += float(relic_bonus.get("attack", 0.0))
+ stats["defense"] += float(relic_bonus.get("defense", 0.0))
+ stats["max_health"] += float(relic_bonus.get("max_health", 0.0))
  var armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
  stats["attack"] += float(armor_bonus.get("attack",0.0))
  stats["defense"] += float(armor_bonus.get("defense",0.0))
