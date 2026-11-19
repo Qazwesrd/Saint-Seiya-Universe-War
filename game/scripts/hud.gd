@@ -190,7 +190,8 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     cosmos_bar.max_value = cosmos_max
     cosmos_bar.value = cosmos
     if is_instance_valid(skill_button):
-        var skill_name := str(SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus"))).get("name", "职业技能"))
+        var current_class_id := str(RPGState.profile.get("class_id", "pegasus"))
+        var skill_name := str(SkillSystem.get_class_skill(current_class_id).get("name", "职业技能")) + " Lv." + str(SkillSystem.get_skill_level(current_class_id))
         skill_button.text = skill_name + "\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
@@ -584,6 +585,85 @@ func _open_gm(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(items_button)
+    var armor_title := Label.new()
+    armor_title.text = "圣衣管理"
+    armor_title.add_theme_font_size_override("font_size", 20)
+    box.add_child(armor_title)
+    var armor_state: Dictionary = ArmorSystem.get_state()
+    var stage_picker := OptionButton.new()
+    var stage_ids := ["bronze","silver","gold","sea_scale","surplice","god_cloth","god_armor"]
+    var stage_names := ["青铜圣衣","白银圣衣","黄金圣衣","海界鳞衣","冥衣","神圣衣","主神圣衣"]
+    for i in range(stage_ids.size()):
+        stage_picker.add_item(stage_names[i])
+        stage_picker.set_item_metadata(i,stage_ids[i])
+        if stage_ids[i] == str(armor_state.get("current_stage","bronze")):
+            stage_picker.select(i)
+    box.add_child(_gm_labeled_row("当前圣衣阶段",stage_picker))
+    var equip_stage_button := Button.new()
+    equip_stage_button.text = "切换到选定圣衣"
+    equip_stage_button.pressed.connect(func():
+        var stage_id: String = str(stage_picker.get_item_metadata(stage_picker.selected))
+        var ok: bool = ArmorSystem.equip_stage(stage_id)
+        game.call("refresh_player_stats")
+        set_notice("已切换圣衣：" + str(stage_picker.get_item_text(stage_picker.selected)) if ok else "该圣衣尚未解锁")
+        popup.queue_free()
+    )
+    box.add_child(equip_stage_button)
+    var unlock_armor_button := Button.new()
+    unlock_armor_button.text = "GM：解锁全部圣衣阶段"
+    unlock_armor_button.pressed.connect(func():
+        GMManager.grant_all_armor_stages()
+        set_notice("全部圣衣阶段已解锁")
+        popup.queue_free()
+    )
+    box.add_child(unlock_armor_button)
+    var repair_button := Button.new()
+    repair_button.text = "修复全部圣衣部件（消耗星币）"
+    repair_button.pressed.connect(func():
+        var ok: bool = GMManager.repair_armor()
+        game.call("refresh_player_stats")
+        set_notice("圣衣修复完成" if ok else "无需修复或星币不足")
+        popup.queue_free()
+    )
+    box.add_child(repair_button)
+    for part_id in ["head","chest","arms","waist","legs"]:
+        var selected_part: String = part_id
+        var part_button := Button.new()
+        part_button.text = "强化圣衣：" + str({"head":"头盔","chest":"胸甲","arms":"护腕","waist":"腰甲","legs":"腿甲"}[part_id])
+        part_button.pressed.connect(func():
+            var ok: bool = GMManager.enhance_armor_part(selected_part)
+            game.call("refresh_player_stats")
+            set_notice("圣衣部件强化成功" if ok else "强化失败：星币不足或已达上限")
+            popup.queue_free()
+        )
+        box.add_child(part_button)
+    var awaken_button := Button.new()
+    awaken_button.text = "圣衣觉醒（黄金/神圣/主神圣衣）"
+    awaken_button.pressed.connect(func():
+        var ok: bool = GMManager.awaken_armor()
+        game.call("refresh_player_stats")
+        set_notice("圣衣觉醒成功" if ok else "当前圣衣无法觉醒或条件不足")
+        popup.queue_free()
+    )
+    box.add_child(awaken_button)
+    var skill_title := Label.new()
+    skill_title.text = "职业技能成长"
+    skill_title.add_theme_font_size_override("font_size", 20)
+    box.add_child(skill_title)
+    var skill_level_input := SpinBox.new()
+    skill_level_input.min_value = 1
+    skill_level_input.max_value = 10
+    skill_level_input.value = SkillSystem.get_skill_level(str(RPGState.profile.get("class_id","pegasus")))
+    box.add_child(_gm_labeled_row("当前职业技能等级",skill_level_input))
+    var set_skill_button := Button.new()
+    set_skill_button.text = "GM：设置当前职业技能等级"
+    set_skill_button.pressed.connect(func():
+        var class_id := str(RPGState.profile.get("class_id","pegasus"))
+        var ok: bool = GMManager.set_skill_level(class_id,int(skill_level_input.value))
+        set_notice("职业技能等级已更新" if ok else "技能等级设置失败")
+        popup.queue_free()
+    )
+    box.add_child(set_skill_button)
     var reset_button := Button.new()
     reset_button.text = "重置当前任务（危险操作）"
     reset_button.pressed.connect(func():
