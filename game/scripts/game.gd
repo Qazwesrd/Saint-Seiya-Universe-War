@@ -87,7 +87,7 @@ func use_teleport_point() -> void:
     if player.global_position.distance_to(teleport_point.global_position) > 3.8:
         show_notice("靠近蓝色传送阵后才能使用")
         return
-    player.cancel_auto_move()
+    player.call("cancel_auto_move")
     player.velocity = Vector3.ZERO
     player.global_position = Vector3(0, 0.15, 7)
     show_notice("已传送回银河竞技场入口")
@@ -114,7 +114,7 @@ func navigate_to_objective() -> void:
     else:
         target = guide_npc
     if is_instance_valid(target):
-        player.set_auto_move_target(target.global_position)
+        player.call("set_auto_move_target", target.global_position)
         show_notice("任务导航已启动；手动摇杆可随时接管")
     else:
         show_notice("当前没有可导航的任务目标")
