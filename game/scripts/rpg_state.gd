@@ -37,7 +37,7 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"created_at":Time.get_datetime_string_from_system()}
+ profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"created_at":Time.get_datetime_string_from_system()}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
@@ -67,7 +67,7 @@ func get_combat_stats() -> Dictionary:
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
    stats["attack"] += float(ITEM_DATA[item_id].get("attack",0))
-   stats["defense"] += float(ITEM_DATA[item_id].get("defense",0))
+   stats["defense"] += float(ITEM_DATA[item_id].get("defense",0))\n   var enhance_level: int = int(profile.get("equipment_levels",{}).get(item_id,0))\n   stats["attack"] += float(enhance_level) * 1.5\n   stats["defense"] += float(enhance_level) * 1.5
  return stats
 func exp_to_next_level() -> int:
  return 100+(int(profile.get("level",1))-1)*65
@@ -108,6 +108,24 @@ func equip_item(item_id: String) -> bool:
  equipment[slot] = item_id
  profile["inventory"] = inventory
  profile["equipment"] = equipment
+ _emit_change()
+ save_slot(active_slot)
+ return true
+func enhance_equipment(slot: String) -> bool:
+ var equipment: Dictionary = profile.get("equipment",{})
+ var item_id: String = str(equipment.get(slot,""))
+ if item_id == "" or not ITEM_DATA.has(item_id):
+  return false
+ var levels: Dictionary = profile.get("equipment_levels",{})
+ var current_level: int = int(levels.get(item_id,0))
+ if current_level >= 10:
+  return false
+ var cost: int = (current_level + 1) * 100
+ if int(profile.get("currency",0)) < cost:
+  return false
+ profile["currency"] = int(profile["currency"]) - cost
+ levels[item_id] = current_level + 1
+ profile["equipment_levels"] = levels
  _emit_change()
  save_slot(active_slot)
  return true
