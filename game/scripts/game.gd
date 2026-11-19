@@ -497,3 +497,110 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "闪避" in ability_type or "突进" in ability_type or "位移" in ability_type or "回能" in ability_type or "资源" in ability_type or "霸体" in ability_type:
         show_notice(ability_name + "：自身效果已生效")
+    if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
+        _apply_divine_signature(class_id, ability, max_distance)
+
+func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance: float) -> void:
+    var ability_id := str(ability.get("id", ""))
+    var ability_type := str(ability.get("type", ""))
+    var ability_name := str(ability.get("name", "神权技能"))
+    var is_support := "防御" in ability_type or "护盾" in ability_type or "治疗" in ability_type or "复苏" in ability_type or "增益" in ability_type
+    var mark := ""
+    var status := ""
+    var duration := 4.0
+    var power := 0.18
+    match class_id:
+        "apollo", "abel":
+            mark = "solar"
+            status = "burn"
+            duration = 6.0
+            power = 0.32
+        "artemis", "pallas":
+            mark = "lunar"
+            status = "slow"
+            duration = 4.5
+            power = 0.42
+        "hades", "lucifer":
+            mark = "soul"
+            status = "weaken"
+            duration = 5.0
+            power = 0.28
+        "poseidon":
+            mark = "tidal"
+            status = "slow"
+            duration = 4.0
+            power = 0.30
+        "zeus", "ares":
+            mark = "storm"
+            status = "burn"
+            duration = 4.0
+            power = 0.24
+        "hypnos":
+            mark = "dream"
+            status = "slow"
+            duration = 5.0
+            power = 0.48
+        "thanatos":
+            mark = "death"
+            status = "weaken"
+            duration = 5.0
+            power = 0.32
+        "odin":
+            mark = "rune"
+            status = "weaken"
+            duration = 3.5
+            power = 0.18
+        "eris":
+            mark = "discord"
+            status = "weaken"
+            duration = 4.5
+            power = 0.24
+        "saturn", "chronos":
+            mark = "time"
+            status = "slow"
+            duration = 4.0
+            power = 0.38
+        "hera":
+            mark = "command"
+            status = "weaken"
+            duration = 4.0
+            power = 0.20
+        "demeter":
+            mark = "harvest"
+            status = "slow"
+            duration = 4.0
+            power = 0.26
+        "hestia", "hephaestus":
+            mark = "forge"
+            status = "burn"
+            duration = 4.0
+            power = 0.20
+        "hermes":
+            mark = "swift"
+            status = "slow"
+            duration = 2.5
+            power = 0.20
+        "aphrodite":
+            mark = "charm"
+            status = "weaken"
+            duration = 4.5
+            power = 0.26
+    if is_support:
+        if class_id in ["hestia", "athena", "hera"]:
+            player.health = minf(player.max_health, player.health + player.max_health * 0.08)
+        if class_id in ["zeus", "ares", "hermes"]:
+            player.velocity += -player.global_transform.basis.z * 2.5
+        return
+    var affected := 0
+    for enemy in enemies.duplicate():
+        if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
+            continue
+        if enemy.global_position.distance_to(player.global_position) > max_distance:
+            continue
+        if status != "" and enemy.has_method("apply_status_effect"):
+            enemy.call("apply_status_effect", status, duration, power)
+        if enemy.has_method("apply_divine_mark"):
+            enemy.call("apply_divine_mark", mark, duration, 0.12 if ability_id.ends_with("_6") or "奥义" in ability_type else 0.06)
+        affected += 1
+    if affected > 0:
+        show_notice("%s：%s神印命中 %d 个目标" % [ability_name, mark, affected])
