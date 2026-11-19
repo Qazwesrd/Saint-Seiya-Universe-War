@@ -57,6 +57,7 @@ if preset_file.is_file():
 required_services = [
     "EventBus", "SettingsManager", "LocalizationManager", "AudioManager",
     "SaveManager", "ResourcePackManager", "DialogueManager", "SceneFlowManager",
+    "SystemHealthManager", "ApplicationLifecycleManager",
     "RPGState", "QuestManager", "SkillSystem", "CampaignManager"
 ]
 if project_file.is_file():
@@ -71,6 +72,11 @@ if catalog_file.is_file():
         catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
         require(isinstance(catalog.get("packs"), dict), "资源包目录缺少 packs 字典")
         require(catalog.get("delivery_mode") == "offline_local", "资源包交付模式必须为离线本地")
+        for pack_id, pack in catalog.get("packs", {}).items():
+            require(bool(re.fullmatch(r"[a-z][a-z0-9_]*", pack_id)), f"资源包编号无效：{pack_id}")
+            require(isinstance(pack, dict) and bool(pack.get("name")), f"资源包元数据不完整：{pack_id}")
+            if pack.get("required"):
+                require(pack.get("install_state") == "bundled", f"必需资源包必须内置：{pack_id}")
     except (json.JSONDecodeError, UnicodeDecodeError):
         require(False, "章节资源包目录不是有效 UTF-8 JSON")
 
