@@ -9,16 +9,16 @@ func _ready() -> void:
     _build_world()
     player = CharacterBody3D.new()
     player.set_script(PlayerScript)
-    player.game = self
+    player.set("game", self)
     player.position = Vector3(0, 0.15, 7)
     add_child(player)
     _spawn_enemy(Vector3(-4, 0.1, -3), false)
     _spawn_enemy(Vector3(4, 0.1, -4), false)
     _spawn_enemy(Vector3(0, 0.1, -9), true)
     hud = HUDScript.new()
-    hud.game = self
+    hud.set("game", self)
     add_child(hud)
-    hud.set_notice("训练开始：移动并击败两名敌人与 Boss。")
+    hud.call("set_notice", "训练开始：移动并击败两名敌人与 Boss。")
 func _build_world() -> void:
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
@@ -66,8 +66,8 @@ func _build_world() -> void:
 func _spawn_enemy(at: Vector3, boss: bool) -> void:
     var enemy := CharacterBody3D.new()
     enemy.set_script(EnemyScript)
-    enemy.game = self
-    enemy.is_boss = boss
+    enemy.set("game", self)
+    enemy.set("is_boss", boss)
     enemy.position = at
     add_child(enemy)
     enemies.append(enemy)
@@ -79,14 +79,14 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
         if offset.length() <= reach and (offset.length() < 0.1 or forward.dot(offset.normalized()) >= cos(deg_to_rad(cone_degrees * 0.5))):
-            enemy.take_damage(damage)
+            enemy.call("take_damage", damage)
 func on_enemy_defeated(enemy: Node3D) -> void:
     enemies.erase(enemy)
     show_notice("目标已击败，剩余：" + str(enemies.size()) if not enemies.is_empty() else "训练完成！所有敌人和 Boss 均已击败。")
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
-        hud.set_status(player.health, player.max_health, player.cosmos, player.max_cosmos)
-        hud.set_enemy_count(enemies.size())
+        hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"))
+        hud.call("set_enemy_count", enemies.size())
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
-        hud.set_notice(message)
+        hud.call("set_notice", message)
