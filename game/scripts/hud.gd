@@ -124,6 +124,7 @@ func _ready() -> void:
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
     burst_button = _button(root, "小宇宙", Vector2(-180, -278), Vector2(-70, -198), func(): _call_player("cosmos_burst"), Color(0.45, 0.18, 0.08))
     skill_button = _button(root, "流星拳\n技能", Vector2(-292, -98), Vector2(-166, -4), func(): _call_player("skill"), Color(0.08, 0.35, 0.68))
+    _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
     get_viewport().size_changed.connect(_on_resize)
 func _style_panel(panel: Panel, color: Color, border: Color) -> void:
