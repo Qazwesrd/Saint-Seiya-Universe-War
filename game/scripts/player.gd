@@ -131,7 +131,7 @@ func toggle_lock() -> void:
     game.call("show_notice", "已锁定最近目标" if is_instance_valid(locked_target) else "附近没有目标")
 func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
-    health = maxf(0.0, health - amount)
+    var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))\n    var final_damage := maxf(1.0, amount - defense * 0.25)\n    health = maxf(0.0, health - final_damage)
     _flash(Color(1.0, 0.12, 0.12))
     if health <= 0.0:
         health = max_health
