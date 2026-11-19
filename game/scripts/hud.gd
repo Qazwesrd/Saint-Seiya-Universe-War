@@ -120,6 +120,7 @@ func _ready() -> void:
     _button(root, "GM管理", Vector2(-190, 18), Vector2(-22, 72), func(): _open_gm(root), Color(0.42, 0.12, 0.28))
     _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): _open_shop(root), Color(0.28, 0.22, 0.08))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
+    _button(root, "伙伴图鉴", Vector2(118, 224), Vector2(230, 284), func(): _open_collection(root), Color(0.28, 0.18, 0.45))
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
     burst_button = _button(root, "小宇宙", Vector2(-180, -278), Vector2(-70, -198), func(): _call_player("cosmos_burst"), Color(0.45, 0.18, 0.08))
@@ -709,3 +710,70 @@ func _gm_labeled_row(caption: String, control: Control) -> Control:
     control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     row.add_child(control)
     return row
+
+func _open_collection(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(560, 560)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(540, 540)
+    popup.add_child(scroll)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 8)
+    scroll.add_child(box)
+    var title := Label.new()
+    title.text = "伙伴 · 宠物 · 坐骑 · 成就图鉴"
+    title.add_theme_font_size_override("font_size", 22)
+    box.add_child(title)
+    var data: Dictionary = CollectionSystem.get_state()
+    var defeat_label := Label.new()
+    defeat_label.text = "累计击败敌人：" + str(data.get("enemy_defeats",0)) + "    Boss：" + str(data.get("boss_defeats",0))
+    box.add_child(defeat_label)
+    var sections := [
+        {"kind":"companion","title":"伙伴","catalog":CollectionSystem.COMPANIONS,"owned":data.get("companions",[]),"active":data.get("active_companion","")},
+        {"kind":"pet","title":"宠物","catalog":CollectionSystem.PETS,"owned":data.get("pets",[]),"active":data.get("active_pet","")},
+        {"kind":"mount","title":"坐骑","catalog":CollectionSystem.MOUNTS,"owned":data.get("mounts",[]),"active":data.get("active_mount","")}
+    ]
+    for section in sections:
+        var heading := Label.new()
+        heading.text = str(section["title"])
+        heading.add_theme_font_size_override("font_size",19)
+        box.add_child(heading)
+        var catalog: Dictionary = section["catalog"]
+        var owned: Array = section["owned"]
+        for item_id in catalog:
+            var item: Dictionary = catalog[item_id]
+            var item_key: String = str(item_id)
+            var kind: String = str(section["kind"])
+            var button := Button.new()
+            var is_owned := item_key in owned
+            button.text = str(item["name"]) + ("  · 已拥有" if is_owned else "  · 未解锁")
+            if is_owned and item_key != str(section["active"]):
+                button.pressed.connect(func():
+                    CollectionSystem.equip(kind,item_key)
+                    game.call("refresh_player_stats")
+                    set_notice("已装备：" + str(item["name"]))
+                    popup.queue_free()
+                )
+            else:
+                button.disabled = true
+            box.add_child(button)
+            var detail := Label.new()
+            detail.text = str(item.get("description",""))
+            box.add_child(detail)
+    var achievements_title := Label.new()
+    achievements_title.text = "成就"
+    achievements_title.add_theme_font_size_override("font_size",19)
+    box.add_child(achievements_title)
+    var achievements: Dictionary = data.get("achievements",{})
+    for achievement_id in CollectionSystem.ACHIEVEMENTS:
+        var achievement: Dictionary = CollectionSystem.ACHIEVEMENTS[achievement_id]
+        var done := bool(achievements.get(achievement_id,false))
+        var achievement_label := Label.new()
+        achievement_label.text = ("✓ " if done else "○ ") + str(achievement["name"]) + "： " + str(achievement["description"])
+        box.add_child(achievement_label)
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
