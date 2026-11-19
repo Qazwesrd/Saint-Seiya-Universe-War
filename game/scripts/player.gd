@@ -96,6 +96,7 @@ func skill() -> void:
     skill_cd = 3.0
     _flash(Color(0.2, 0.8, 1.0))
     game.call("damage_nearby", 28.0, 7.0, 150.0)
+    game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, Color(0.18, 0.72, 1.0), 2.8)
     game.call("show_notice", "天马流星拳！")
 func cosmos_burst() -> void:
     if burst_cd > 0.0 or cosmos < 35.0:
@@ -105,6 +106,7 @@ func cosmos_burst() -> void:
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
     game.call("damage_nearby", 42.0, 5.0, 360.0)
+    game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", "小宇宙爆发！")
 func dodge() -> void:
     if dodge_time > 0.0: return
