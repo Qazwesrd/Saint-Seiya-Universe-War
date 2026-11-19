@@ -9,6 +9,8 @@ var max_health := 100.0
 var cosmos := 100.0
 var max_cosmos := 100.0
 var attack_cd := 0.0
+var basic_combo_step := 0
+var basic_combo_reset := 0.0
 var skill_cd := 0.0
 var combo_window := 0.0
 var burst_cd := 0.0
@@ -88,6 +90,9 @@ func cancel_auto_move() -> void:
 func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     attack_cd = maxf(0.0, attack_cd - delta)
+    basic_combo_reset = maxf(0.0, basic_combo_reset - delta)
+    if basic_combo_reset <= 0.0:
+        basic_combo_step = 0
     skill_cd = maxf(0.0, skill_cd - delta)
     combo_window = maxf(0.0, combo_window - delta)
     burst_cd = maxf(0.0, burst_cd - delta)
@@ -127,11 +132,21 @@ func _physics_process(delta: float) -> void:
     if Input.is_action_just_pressed("ui_cancel"): dodge()
     game.call("update_hud")
 func attack() -> void:
-    if attack_cd > 0.0: return
-    attack_cd = 0.42
-    _flash(Color(1.0, 0.82, 0.35))
-    game.call("damage_nearby", 8.0 + float(RPGState.get_combat_stats().get("attack", 14.0)), 2.8, 120.0)
-    game.call("show_notice", "普通攻击！")
+    if attack_cd > 0.0:
+        return
+    if basic_combo_reset <= 0.0:
+        basic_combo_step = 0
+    basic_combo_step = (basic_combo_step % 3) + 1
+    basic_combo_reset = 0.95
+    attack_cd = 0.28 if basic_combo_step < 3 else 0.52
+    var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var multipliers := [0.85, 1.0, 1.45]
+    var damages := 8.0 + attack_stat * float(multipliers[basic_combo_step - 1])
+    var push_forces := [1.8, 2.8, 6.5]
+    var lift_forces := [0.0, 0.0, 2.8]
+    _flash(Color(1.0, 0.82, 0.35) if basic_combo_step < 3 else Color(1.0, 0.48, 0.16))
+    game.call("damage_nearby_combat", damages, 2.8 if basic_combo_step < 3 else 3.2, 125.0, push_forces[basic_combo_step - 1], lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else 0.48)
+    game.call("show_notice", ["第一段：疾风拳！", "第二段：追击拳！", "第三段：终结重击！"][basic_combo_step - 1])
 func skill() -> void:
     if skill_cd > 0.0 or cosmos < 18.0:
         game.call("show_notice", "小宇宙不足或技能冷却中")
@@ -146,7 +161,7 @@ func skill() -> void:
     var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
-    game.call("damage_nearby", 18.0 + attack_power * damage_multiplier, 7.0, 150.0)
+    game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, 7.0, 150.0, 3.5, 1.2, 0.55)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
 func combo_skill() -> void:
@@ -166,7 +181,7 @@ func combo_skill() -> void:
     var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1)
     var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
     _flash(Color(1.0, 0.9, 0.55))
-    game.call("damage_nearby", damage, 8.5, 180.0)
+    game.call("damage_nearby_combat", damage, 8.5, 180.0, 9.0, 3.8, 0.85)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.5) + Vector3.UP, skill_color, 4.0)
     game.call("show_notice", str(skill_data.get("combo", "职业连招")) + "！")
 func cosmos_burst() -> void:
@@ -176,7 +191,7 @@ func cosmos_burst() -> void:
     cosmos -= 35.0
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
-    game.call("damage_nearby", 24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0, 5.0, 360.0)
+    game.call("damage_nearby_combat", 24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0, 5.0, 360.0, 12.0, 4.5, 1.0)
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", "小宇宙爆发！")
 func dodge() -> void:
