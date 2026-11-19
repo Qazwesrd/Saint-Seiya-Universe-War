@@ -14,6 +14,10 @@ var locked_target: Node3D
 var pivot: Node3D
 var body_mat: StandardMaterial3D
 func _ready() -> void:
+    var rpg_stats: Dictionary = RPGState.get_combat_stats()
+    max_health = float(rpg_stats.get("max_health", 110.0))
+    max_cosmos = float(rpg_stats.get("max_cosmos", 100.0))
+    health = max_health
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.43
