@@ -127,3 +127,12 @@ art/                  自制或已获授权的美术源文件（不提交大型�
 技能树支持角色升级获得技能点、技能学习、专精分支锁定、技能树重置、四格主动技能装备与释放。技能按职业等级、技能点、专精和小宇宙消耗限制使用；不同技能类型触发相应程序化战斗效果。旧版本存档会补齐技能字段，不主动删除既有进度。
 
 天界篇与全系列装备图鉴设计范围见 `docs/GAME_DESIGN.md` 和 `docs/ROADMAP.md`。当前为设计与路线登记，尚未代表全部角色、装备模型、技能和剧情均已实现。
+
+
+## 工程搭建与自动验收（阶段 6.6）
+
+- 新增 `tools/validate_project.py`：检查主场景、AutoLoad、Android ARM64 导出预设、GDScript 文件和字面量资源引用。
+- GitHub Actions 分成工程静态检查与 Godot 4.4.1 headless 检查，并尝试启动主场景。
+- 新增 `docs/PROJECT_SETUP_AND_ACCEPTANCE.md`：统一 Windows 11 环境搭建、Godot 导入、Android SDK/JDK 配置、Debug APK 导出和魅族 21 Pro 验收步骤。
+- 这些自动化配置已提交，但必须等 GitHub Actions 实际运行后才能确认 CI 通过；本次没有本机 Godot 环境，因此没有声称完成引擎解析、APK 导出或真机验收。
+- “工程搭建”不等于“完整游戏完成”：正式模型/动画/音效、完整剧情地图、装备 UI、分章节资源管理、性能优化和真机验收仍是后续工作。
