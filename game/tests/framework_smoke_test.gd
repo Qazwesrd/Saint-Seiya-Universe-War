@@ -16,9 +16,9 @@ func _run_tests() -> void:
 	assert(str(DailyBossManager.get_state().get("boss_id", "")) != "", "daily boss cycle initialized")
 	assert(int(DailyBossManager.get_state().get("reset_hour_local", -1)) == 5, "daily boss reset at local 05:00")
 	var local_date := Time.get_datetime_dict_from_system()
-	var reset_today := {"year": local_date.year, "month": local_date.month, "day": local_date.day, "hour": 5, "minute": 0, "second": 0}
-	var reset_unix := int(Time.get_unix_time_from_datetime_dict(reset_today))
-	assert(DailyBossManager._cycle_id(reset_unix - 60) != DailyBossManager._cycle_id(reset_unix + 60), "daily boss cycle changes across local reset boundary")
+	var before_reset := {"year": local_date.year, "month": local_date.month, "day": local_date.day, "hour": 4, "minute": 59, "second": 0}
+	var after_reset := {"year": local_date.year, "month": local_date.month, "day": local_date.day, "hour": 5, "minute": 1, "second": 0}
+	assert(DailyBossManager._cycle_id_from_local(before_reset) != DailyBossManager._cycle_id_from_local(after_reset), "daily boss cycle changes across local reset boundary")
 	assert(LootManager != null, "offline loot service")
 	assert(EnemyDatabase.has_archetype("arena_guard") and EnemyDatabase.has_archetype("arena_boss"), "enemy archetype catalog")
 	assert(float(EnemyDatabase.get_archetype("arena_boss").get("health", 0.0)) > float(EnemyDatabase.get_archetype("arena_guard").get("health", 0.0)), "boss archetype stronger than normal enemy")
