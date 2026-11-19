@@ -11,6 +11,7 @@ const CLASS_DATA := {
  "tenmou":{"name":"天猛","hp":125,"attack":13,"defense":12,"speed":8,"starter":"tenmou_armor"},
  "lyra":{"name":"天琴","hp":100,"attack":15,"defense":8,"speed":14,"starter":"lyra_harp"},
  "sea_swallow":{"name":"海燕","hp":108,"attack":13,"defense":10,"speed":13,"starter":"swallow_scale"},
+ "tenkishi":{"name":"天斗士","hp":520,"attack":82,"defense":76,"speed":34,"starter":"heavenly_glory","tier":"天斗士","faction":"天界·阿尔忒弥斯阵营","canon_status":"天斗士与天衣Glory属于天界篇设定","unlock_level":45,"unlock_condition":"角色达到45级并完成天界试炼"},
  "apollo":{"name":"阿波罗","hp":720,"attack":118,"defense":92,"speed":28,"starter":"apollo_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
  "athena":{"name":"雅典娜","hp":860,"attack":98,"defense":135,"speed":25,"starter":"athena_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
  "hades":{"name":"哈迪斯","hp":800,"attack":125,"defense":108,"speed":26,"starter":"hades_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
@@ -69,7 +70,7 @@ func select_class(class_id: String) -> bool:
  if not CLASS_DATA.has(class_id):
   return false
  var class_data: Dictionary = CLASS_DATA[class_id]
- if str(class_data.get("tier", "")) == "神明" and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70)):
+ if str(class_data.get("tier", "")) in ["神明", "天斗士"] and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70 if str(class_data.get("tier", "")) == "神明" else 45)):
   return false
  if str(profile.get("class_id","pegasus")) == class_id:
   return true
@@ -82,7 +83,7 @@ func select_class(class_id: String) -> bool:
  equipment["arms"] = starter
  profile["class_id"] = class_id
  var cosmos_levels: Dictionary = profile.get("cosmos_levels", {})
- if not cosmos_levels.has(class_id): cosmos_levels[class_id] = 21 if str(CLASS_DATA[class_id].get("tier", "")) == "神明" else 1
+ if not cosmos_levels.has(class_id): cosmos_levels[class_id] = 21 if str(CLASS_DATA[class_id].get("tier", "")) in ["神明", "天斗士"] else 1
  profile["cosmos_levels"] = cosmos_levels
  profile["cosmos_level"] = int(cosmos_levels[class_id])
  var learned: Dictionary = profile.get("learned_skills", {})
@@ -100,16 +101,19 @@ func get_cosmos_profile() -> Dictionary:
  var class_id := str(profile.get("class_id", "pegasus"))
  var base: Dictionary = CLASS_DATA.get(class_id, CLASS_DATA["pegasus"])
  var divine := str(base.get("tier", "")) == "神明"
+ var heavenly := str(base.get("tier", "")) == "天斗士"
  var levels: Dictionary = profile.get("cosmos_levels", {})
  var level := int(levels.get(class_id, profile.get("cosmos_level", 1)))
- if divine: level = maxi(21, level)
- var max_level := 100 if divine else 20
+ if divine or heavenly: level = maxi(21, level)
+ var max_level := 100 if divine else (50 if heavenly else 20)
  var rank := ""
  if divine:
   rank = "神格觉醒" if level <= 40 else "神域掌控" if level <= 60 else "主神神格" if level <= 80 else "至高神格"
+ elif heavenly:
+  rank = "天衣觉醒" if level <= 30 else "天域掌控" if level <= 40 else "天使神格"
  else:
   rank = "初识小宇宙" if level < 7 else "第七感" if level < 14 else "第八感" if level < 19 else "究极小宇宙"
- return {"level":level,"max_level":max_level,"divine":divine,"rank":rank,"max_cosmos":float(260+(level-21)*18) if divine else float(100+(level-1)*10),"attack_bonus":float(maxi(0,level-21)*3.5) if divine else float((level-1)*0.7),"defense_bonus":float(maxi(0,level-21)*2.5) if divine else float((level-1)*0.5),"health_bonus":float(maxi(0,level-21)*14) if divine else float((level-1)*4),"regen_rate":8.5 if divine else 3.0,"skill_power_multiplier":float(maxi(0,level-21)*0.004) if divine else float((level-1)*0.002),"upgrade_cost":level*1500 if divine else level*250}
+ return {"level":level,"max_level":max_level,"divine":divine,"heavenly":heavenly,"rank":rank,"max_cosmos":float(260+(level-21)*18) if divine else (float(180+(level-21)*12) if heavenly else float(100+(level-1)*10)),"attack_bonus":float(maxi(0,level-21)*3.5) if divine else (float(maxi(0,level-21)*2.0) if heavenly else float((level-1)*0.7)),"defense_bonus":float(maxi(0,level-21)*2.5) if divine else (float(maxi(0,level-21)*1.5) if heavenly else float((level-1)*0.5)),"health_bonus":float(maxi(0,level-21)*14) if divine else (float(maxi(0,level-21)*8) if heavenly else float((level-1)*4)),"regen_rate":8.5 if divine else (5.5 if heavenly else 3.0),"skill_power_multiplier":float(maxi(0,level-21)*0.004) if divine else (float(maxi(0,level-21)*0.0025) if heavenly else float((level-1)*0.002)),"upgrade_cost":level*1500 if divine else (level*800 if heavenly else level*250)}
 func get_combat_stats() -> Dictionary:
  var cosmos_data: Dictionary = get_cosmos_profile()
  var base: Dictionary = CLASS_DATA.get(str(profile.get("class_id","pegasus")),CLASS_DATA["pegasus"])
