@@ -8,6 +8,8 @@ var cosmos_bar: ProgressBar
 var skill_button: Button
 var burst_button: Button
 var minimap_control: Control
+var boss_label: Label
+var boss_bar: ProgressBar
 var stick_base: Panel
 var stick_knob: Panel
 var finger_id := -1
@@ -66,6 +68,26 @@ func _ready() -> void:
     notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     notice_label.add_theme_font_size_override("font_size", 20)
     root.add_child(notice_label)
+    boss_label = Label.new()
+    boss_label.anchor_left = 0.5
+    boss_label.anchor_right = 0.5
+    boss_label.offset_left = -170
+    boss_label.offset_right = 170
+    boss_label.offset_top = 150
+    boss_label.offset_bottom = 178
+    boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    boss_label.add_theme_font_size_override("font_size", 17)
+    root.add_child(boss_label)
+    boss_bar = ProgressBar.new()
+    boss_bar.anchor_left = 0.5
+    boss_bar.anchor_right = 0.5
+    boss_bar.offset_left = -170
+    boss_bar.offset_right = 170
+    boss_bar.offset_top = 180
+    boss_bar.offset_bottom = 195
+    boss_bar.max_value = 100
+    boss_bar.show_percentage = false
+    root.add_child(boss_bar)
     stick_base = Panel.new()
     stick_base.position = Vector2(42, 520)
     stick_base.size = Vector2(148, 148)
@@ -148,6 +170,14 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
         burst_button.text = "小宇宙\\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
+func set_boss_status(hp: float, hp_max: float) -> void:
+    var visible_boss := hp_max > 1.0
+    boss_label.visible = visible_boss
+    boss_bar.visible = visible_boss
+    if visible_boss:
+        boss_label.text = "训练 Boss"
+        boss_bar.max_value = hp_max
+        boss_bar.value = hp
 func set_notice(message: String) -> void:
     if is_instance_valid(notice_label): notice_label.text = message
 func _on_resize() -> void:
