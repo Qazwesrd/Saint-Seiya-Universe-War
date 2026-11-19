@@ -4,20 +4,33 @@ on:
   push:
     paths:
       - "game/**"
+      - "tools/**"
       - ".github/workflows/godot-check.yml"
   pull_request:
     paths:
       - "game/**"
+      - "tools/**"
       - ".github/workflows/godot-check.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+  project-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate project structure and resource references
+        run: python3 tools/validate_project.py
+
   godot-headless:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Godot 4
+      - name: Install Godot 4.4.1
         uses: firebelley/setup-godot@v1
         with:
           version: 4.4.1
