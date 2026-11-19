@@ -130,3 +130,10 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
         hud.call("set_notice", message)
+
+func refresh_player_stats() -> void:
+    if not is_instance_valid(player):
+        return
+    var stats: Dictionary = RPGState.get_combat_stats()
+    player.max_health = float(stats.get("max_health", player.max_health))
+    player.health = minf(player.health, player.max_health)
