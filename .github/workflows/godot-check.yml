@@ -33,6 +33,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Import and parse project
-        run: godot --headless --editor --path game --quit
+        shell: sh
+        run: |
+          godot --headless --editor --path game --quit 2>&1 | tee /tmp/godot-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script" /tmp/godot-import.log; then
+            echo "Godot script parse/import errors detected"
+            exit 1
+          fi
       - name: Launch main scene headlessly
-        run: godot --headless --path game --quit-after 3
+        shell: sh
+        run: |
+          godot --headless --path game --quit-after 3 2>&1 | tee /tmp/godot-run.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script" /tmp/godot-run.log; then
+            echo "Godot runtime script errors detected"
+            exit 1
+          fi
