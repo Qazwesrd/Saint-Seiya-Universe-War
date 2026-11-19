@@ -515,6 +515,11 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             status = "burn"
             duration = 6.0
             power = 0.32
+        "athena":
+            mark = "aegis"
+            status = "weaken"
+            duration = 4.5
+            power = 0.18
         "artemis", "pallas":
             mark = "lunar"
             status = "slow"
