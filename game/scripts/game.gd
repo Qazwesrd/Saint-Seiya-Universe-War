@@ -376,3 +376,44 @@ func leave_sanctuary() -> void:
  player.global_position = sanctuary_origin
  sanctuary_active = false
  show_notice("已返回银河竞技场")
+
+func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -> void:
+    if not is_instance_valid(player):
+        return
+    var ability_type := str(ability.get("type", ""))
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var status := ""
+    if "冻结" in ability_type or "冰" in ability_type:
+        status = "freeze"
+    elif "灼烧" in ability_type or "火" in ability_type:
+        status = "burn"
+    elif "削弱" in ability_type or "精神" in ability_type or "控制" in ability_type:
+        status = "weaken"
+    elif "领域" in ability_type or "控场" in ability_type:
+        status = "slow"
+    if status != "":
+        for enemy in enemies.duplicate():
+            if not is_instance_valid(enemy) or enemy.global_position.distance_to(player.global_position) > reach + 1.0:
+                continue
+            var duration := 2.2 if status == "freeze" else 4.0
+            var power := maxf(1.5, attack_power * 0.12) if status == "burn" else (0.3 if status == "slow" else 0.22)
+            enemy.call("apply_status_effect", status, duration, power)
+    if "牵引" in ability_type or "弹射" in ability_type:
+        for enemy in enemies.duplicate():
+            if not is_instance_valid(enemy) or enemy.global_position.distance_to(player.global_position) > reach:
+                continue
+            var pull := player.global_position - enemy.global_position
+            pull.y = 0.0
+            enemy.call("apply_hit_reaction", pull.normalized(), 5.0, 0.0, 0.4)
+    if "冲锋" in ability_type or "突进" in ability_type or "机动" in ability_type:
+        player.velocity = -player.global_transform.basis.z * 9.0
+        player.invulnerable = maxf(player.invulnerable, 0.22)
+    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type:
+        player.call("apply_temporary_buff", 0.0, 0.38, 5.0)
+    if "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type:
+        player.health = minf(player.max_health, player.health + player.max_health * 0.28)
+        player.cosmos = minf(player.max_cosmos, player.cosmos + 12.0)
+    if "增益" in ability_type or "狂怒" in ability_type or "召唤" in ability_type:
+        player.call("apply_temporary_buff", 0.22, 0.0, 5.0)
+    if "闪避" in ability_type:
+        player.invulnerable = maxf(player.invulnerable, 0.75)
