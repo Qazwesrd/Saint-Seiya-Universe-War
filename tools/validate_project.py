@@ -50,6 +50,27 @@ if preset_file.is_file():
     require('platform="Android"' in preset, "导出预设未指定 Android")
     require('architectures/arm64-v8a=true' in preset, "Android 预设未启用 ARM64")
 
+# Core framework services must be registered as AutoLoads and present on disk.
+required_services = [
+    "EventBus", "SettingsManager", "LocalizationManager", "AudioManager",
+    "SaveManager", "ResourcePackManager", "DialogueManager", "SceneFlowManager",
+    "RPGState", "QuestManager", "SkillSystem", "CampaignManager"
+]
+if project_file.is_file():
+    for service in required_services:
+        require(f'{service}="*res://scripts/' in project, f"缺少核心服务 AutoLoad：{service}")
+
+catalog_file = GAME / "content" / "pack_catalog.json"
+require(catalog_file.is_file(), "缺少章节资源包目录 game/content/pack_catalog.json")
+if catalog_file.is_file():
+    import json
+    try:
+        catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
+        require(isinstance(catalog.get("packs"), dict), "资源包目录缺少 packs 字典")
+        require(catalog.get("delivery_mode") == "offline_local", "资源包交付模式必须为离线本地")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        require(False, "章节资源包目录不是有效 UTF-8 JSON")
+
 # Validate every literal res:// reference in scenes and scripts.
 resource_pattern = re.compile(r'res://([A-Za-z0-9_./-]+)')
 for source in list((GAME / "scripts").glob("*.gd")) + list((GAME / "scenes").glob("*.tscn")):
