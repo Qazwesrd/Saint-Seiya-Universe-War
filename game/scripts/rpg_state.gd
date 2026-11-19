@@ -180,25 +180,36 @@ func add_items(items: Dictionary) -> bool:
 		profile["inventory"] = previous_inventory
 		return false
 	_emit_change()
+	EventBus.inventory_changed.emit(inventory.duplicate(true))
 	return true
 func equip_item(item_id: String) -> bool:
- if not ITEM_DATA.has(item_id): return false
- var inventory: Dictionary = profile.get("inventory",{})
- if int(inventory.get(item_id,0)) <= 0: return false
- var slot: String = str(ITEM_DATA[item_id]["slot"])
- if slot == "consumable": return false
- var equipment: Dictionary = profile.get("equipment",{})
- var old_id: String = str(equipment.get(slot,""))
- if old_id != "": inventory[old_id] = int(inventory.get(old_id,0))+1
- inventory[item_id] = int(inventory[item_id])-1
- if int(inventory[item_id]) <= 0: inventory.erase(item_id)
+ if not ITEM_DATA.has(item_id):
+  return false
+ var previous_inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+ var previous_equipment: Dictionary = profile.get("equipment", {}).duplicate(true)
+ if int(previous_inventory.get(item_id, 0)) <= 0:
+  return false
+ var slot: String = str(ITEM_DATA[item_id].get("slot", ""))
+ if slot == "" or slot == "consumable":
+  return false
+ var inventory: Dictionary = previous_inventory.duplicate(true)
+ var equipment: Dictionary = previous_equipment.duplicate(true)
+ var old_id := str(equipment.get(slot, ""))
+ if old_id != "":
+  inventory[old_id] = int(inventory.get(old_id, 0)) + 1
+ inventory[item_id] = int(inventory[item_id]) - 1
+ if int(inventory[item_id]) <= 0:
+  inventory.erase(item_id)
  equipment[slot] = item_id
  profile["inventory"] = inventory
  profile["equipment"] = equipment
+ if not save_slot(active_slot):
+  profile["inventory"] = previous_inventory
+  profile["equipment"] = previous_equipment
+  return false
  _emit_change()
  EventBus.inventory_changed.emit(inventory.duplicate(true))
  EventBus.equipment_changed.emit(equipment.duplicate(true))
- save_slot(active_slot)
  return true
 func enhance_equipment(slot: String) -> bool:
  var equipment: Dictionary = profile.get("equipment",{})
