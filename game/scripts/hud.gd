@@ -198,7 +198,8 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     var profile: Dictionary = RPGState.profile
     var class_id := str(profile.get("class_id", "pegasus"))
     var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
-    status_label.text = class_label + " Lv." + str(profile.get("level", 1)) + "  星币 " + str(profile.get("currency", 0))
+    var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
+    status_label.text = class_label + " Lv." + str(profile.get("level", 1)) + "  小宇宙 " + str(cosmos_info.get("level", 1)) + "/" + str(cosmos_info.get("max_level", 20)) + "  星币 " + str(profile.get("currency", 0))
     hp_bar.max_value = hp_max
     hp_bar.value = hp
     cosmos_bar.max_value = cosmos_max
@@ -408,7 +409,8 @@ func _open_character(root: Control) -> void:
     box.add_child(info)
 
     var upgrade := Button.new()
-    upgrade.text = "提升小宇宙等级（消耗当前等级 × 250 星币）"
+    var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
+    upgrade.text = "提升小宇宙等级（%d/%d，消耗 %d 星币）" % [cosmos_info.get("level", 1), cosmos_info.get("max_level", 20), cosmos_info.get("upgrade_cost", 250)]
     upgrade.pressed.connect(func():
         var success: bool = RPGState.upgrade_cosmos()
         if success:
