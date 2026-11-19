@@ -161,8 +161,8 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     if not is_instance_valid(status_label): return
     var profile: Dictionary = RPGState.profile
     var class_id := str(profile.get("class_id", "pegasus"))
-    var class_name := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
-    status_label.text = class_name + " Lv." + str(profile.get("level", 1)) + "  星币 " + str(profile.get("currency", 0))
+    var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
+    status_label.text = class_label + " Lv." + str(profile.get("level", 1)) + "  星币 " + str(profile.get("currency", 0))
     hp_bar.max_value = hp_max
     hp_bar.value = hp
     cosmos_bar.max_value = cosmos_max
@@ -219,10 +219,10 @@ func _open_character(root: Control) -> void:
     var profile: Dictionary = RPGState.profile
     var stats: Dictionary = RPGState.get_combat_stats()
     var class_id := str(profile.get("class_id", "pegasus"))
-    var class_name := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
+    var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
     var dialog := AcceptDialog.new()
     dialog.title = "角色与装备"
-    dialog.dialog_text = "%s  Lv.%d\n经验：%d / %d\n生命：%.0f\n攻击：%.0f\n防御：%.0f\n速度：%.0f\n小宇宙培养：%d级\n星币：%d\n\n背包：%s" % [class_name, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], int(profile.get("cosmos_level",1)), int(profile.get("currency",0)), str(profile.get("inventory",{}))]
+    dialog.dialog_text = "%s  Lv.%d\n经验：%d / %d\n生命：%.0f\n攻击：%.0f\n防御：%.0f\n速度：%.0f\n小宇宙培养：%d级\n星币：%d\n\n背包：%s" % [class_label, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], int(profile.get("cosmos_level",1)), int(profile.get("currency",0)), str(profile.get("inventory",{}))]
     root.add_child(dialog)
     dialog.confirmed.connect(func(): dialog.queue_free())
     dialog.popup_centered()
