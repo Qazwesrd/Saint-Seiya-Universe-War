@@ -26,7 +26,7 @@ func _run_tests() -> void:
 	var inventory_before: Dictionary = RPGState.profile.get("inventory", {}).duplicate(true)
 	assert(not RPGState.add_items({"cosmos_potion": 2, "invalid_item": 1}), "reject invalid inventory transaction")
 	assert(RPGState.profile.get("inventory", {}) == inventory_before, "inventory transaction rollback")
-	assert(RPGState.profile.get("combat_record", {}) is Dictionary, "profile combat record schema remains extensible")
+	assert(RPGState.profile.get("quest_progress", {}) is Dictionary and RPGState.profile.get("campaign_progress", {}) is Dictionary, "slot progress containers")
 
 
 	var original_fps := int(SettingsManager.get_value("graphics", "fps_limit", 60))
