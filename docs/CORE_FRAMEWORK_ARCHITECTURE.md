@@ -8,13 +8,21 @@
 
 | 层级 | 模块 | 主要职责 |
 |---|---|---|
-| 应用入口 | `project.godot`、`scenes/main.tscn` | 启动、渲染器、窗口方向、AutoLoad |
+| 应用入口 | `project.godot`、`scenes/main_menu.tscn`、`scenes/main.tscn` | 主菜单启动、游戏场景进入、渲染器、窗口方向、AutoLoad |
 | 核心服务 | EventBus、SettingsManager、SaveManager、SceneFlowManager | 事件解耦、设置、通用文档存档、场景切换 |
 | 内容服务 | ResourcePackManager、LocalizationManager、DialogueManager | 离线章节资源包、语言词条、剧情对话状态 |
 | 表现服务 | AudioManager、HUD、Minimap | 音频路由、触控界面、地图标记 |
 | 角色与战斗 | RPGState、SkillSystem、ArmorSystem、Enemy、Player | 职业、属性、技能、装备与实时战斗 |
 | 玩法系统 | QuestManager、CampaignManager、CollectionSystem、SanctuarySystem | 任务、篇章、收藏、个人圣域 |
 | 运营工具 | GMManager | 本地开发测试辅助，不作为玩家付费或联网系统 |
+
+## 应用启动与界面导航
+
+- `scenes/main_menu.tscn` 是应用入口；主菜单只负责开始/继续游戏、设置和退出，不直接持有战斗状态。
+- `scenes/main.tscn` 保留为实际游戏场景，由 `SceneFlowManager` 统一进入。
+- 主菜单基础设置写入 `SettingsManager`，设置服务负责本地持久化；帧率上限立即应用。
+- 角色档案仍由 `RPGState` 管理。主菜单显示当前档案摘要，不复制或维护第二份角色数据。
+- 当前主菜单为程序化 UI 骨架；多存档槽位选择、首次建档向导、触控适配验收和完整设置页仍待后续完善。
 
 ## 全局服务调用约定
 
@@ -63,4 +71,4 @@
 
 ## 当前底层框架状态
 
-已建立全局事件、设置、语言、音频、通用存档、离线资源包目录、对话状态和场景切换服务，并注册到 AutoLoad。已有 RPG/战斗/任务/圣衣/收藏/圣域系统保持原有数据归属。框架代码仍需 Godot 4.4 实际解析、运行和 Android 真机验收。
+已建立主菜单入口、全局事件、设置、语言、音频、通用存档、离线资源包目录、对话状态和场景切换服务，并注册到 AutoLoad。已有 RPG/战斗/任务/圣衣/收藏/圣域系统保持原有数据归属。GitHub Actions 已覆盖静态检查、Godot 4.4.1 导入解析、主场景启动和框架冒烟测试；具体通过状态以最新工作流结果为准。Android APK 导出、安装、触控与真机性能验收仍未完成。
