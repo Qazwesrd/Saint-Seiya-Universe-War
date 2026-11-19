@@ -16,6 +16,8 @@ var invulnerable := 0.0
 var locked_target: Node3D
 var pivot: Node3D
 var body_mat: StandardMaterial3D
+var is_mounted := false
+var mount_indicator: MeshInstance3D
 func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
@@ -49,6 +51,19 @@ func _ready() -> void:
     head.position.y = 1.95
     head.material_override = body_mat
     add_child(head)
+    mount_indicator = MeshInstance3D.new()
+    var mount_ring := TorusMesh.new()
+    mount_ring.inner_radius = 0.48
+    mount_ring.outer_radius = 0.62
+    mount_indicator.mesh = mount_ring
+    mount_indicator.position = Vector3(0, 0.12, 0)
+    mount_indicator.visible = false
+    var mount_material := StandardMaterial3D.new()
+    mount_material.albedo_color = Color(0.2, 0.85, 1.0)
+    mount_material.emission_enabled = true
+    mount_material.emission = Color(0.05, 0.45, 1.0)
+    mount_indicator.material_override = mount_material
+    add_child(mount_indicator)
     pivot = Node3D.new()
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     game.add_child(pivot)
@@ -95,7 +110,7 @@ func _physics_process(delta: float) -> void:
         else:
             direction = target_offset.normalized()
     var base_speed := float(RPGState.get_combat_stats().get("speed",12.0)) * 0.52
-    var speed := base_speed * (2.2 if dodge_time > 0.0 else 1.0)
+    var speed := base_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
     velocity.x = direction.x * speed
     velocity.z = direction.z * speed
     velocity.y -= 22.0 * delta
@@ -199,3 +214,14 @@ func _flash(color: Color) -> void:
         if is_instance_valid(body_mat):
             body_mat.albedo_color = Color(0.18, 0.52, 0.95)
     )
+
+func toggle_mount() -> void:
+ var state: Dictionary = CollectionSystem.get_state()
+ var mount_id := str(state.get("active_mount",""))
+ if mount_id == "":
+  game.call("show_notice","尚未拥有或装备坐骑，请先到伙伴图鉴查看")
+  return
+ is_mounted = not is_mounted
+ if is_instance_valid(mount_indicator):
+  mount_indicator.visible = is_mounted
+ game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
