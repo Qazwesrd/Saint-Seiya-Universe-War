@@ -26,7 +26,10 @@ func _run_tests() -> void:
 	assert(payload != null, "create package payload")
 	payload.store_string("offline package test")
 	payload.close()
-	var payload_size := int(FileAccess.get_length(payload_path))
+	var payload_reader := FileAccess.open(payload_path, FileAccess.READ)
+	assert(payload_reader != null, "read package payload")
+	var payload_size := int(payload_reader.get_length())
+	payload_reader.close()
 	var manifest := {
 		"id": "galaxy_wars",
 		"manifest_version": 1,
