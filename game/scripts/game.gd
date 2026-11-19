@@ -3,10 +3,12 @@ const PlayerScript = preload("res://scripts/player.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const GuideNpcScript = preload("res://scripts/guide_npc.gd")
+const TeleportPointScript = preload("res://scripts/teleport_point.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
 var guide_npc: Node3D
+var teleport_point: Node3D
 func _ready() -> void:
     _build_world()
     player = CharacterBody3D.new()
@@ -18,6 +20,7 @@ func _ready() -> void:
     _spawn_enemy(Vector3(4, 0.1, -4), false)
     _spawn_enemy(Vector3(0, 0.1, -9), true)
     _spawn_guide_npc()
+    _spawn_teleport_point()
     hud = HUDScript.new()
     hud.set("game", self)
     add_child(hud)
@@ -71,6 +74,50 @@ func _spawn_guide_npc() -> void:
     guide_npc.set_script(GuideNpcScript)
     guide_npc.position = Vector3(0, 0, 2)
     add_child(guide_npc)
+
+func _spawn_teleport_point() -> void:
+    teleport_point = Node3D.new()
+    teleport_point.set_script(TeleportPointScript)
+    teleport_point.position = Vector3(0, 0, -16)
+    add_child(teleport_point)
+
+func use_teleport_point() -> void:
+    if not is_instance_valid(player) or not is_instance_valid(teleport_point):
+        return
+    if player.global_position.distance_to(teleport_point.global_position) > 3.8:
+        show_notice("靠近蓝色传送阵后才能使用")
+        return
+    player.cancel_auto_move()
+    player.velocity = Vector3.ZERO
+    player.global_position = Vector3(0, 0.15, 7)
+    show_notice("已传送回银河竞技场入口")
+
+func navigate_to_objective() -> void:
+    if not is_instance_valid(player):
+        return
+    var target: Node3D
+    if QuestManager.status == "not_started" or QuestManager.status == "ready_to_return" or QuestManager.status == "completed":
+        target = guide_npc
+    elif QuestManager.defeated_normal < 2:
+        var nearest_distance := INF
+        for enemy in enemies:
+            if is_instance_valid(enemy) and not bool(enemy.get("is_boss")):
+                var distance: float = player.global_position.distance_to(enemy.global_position)
+                if distance < nearest_distance:
+                    nearest_distance = distance
+                    target = enemy
+    elif not QuestManager.boss_defeated:
+        for enemy in enemies:
+            if is_instance_valid(enemy) and bool(enemy.get("is_boss")):
+                target = enemy
+                break
+    else:
+        target = guide_npc
+    if is_instance_valid(target):
+        player.set_auto_move_target(target.global_position)
+        show_notice("任务导航已启动；手动摇杆可随时接管")
+    else:
+        show_notice("当前没有可导航的任务目标")
 
 func interact_with_guide() -> void:
     if not is_instance_valid(player) or not is_instance_valid(guide_npc):
