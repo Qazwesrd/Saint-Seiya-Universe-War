@@ -984,11 +984,40 @@ const EXTENDED_DIVINE_ADVANCED_SKILLS := {
  ]
 }
 
+const HEAVENLY_CLASS_SKILLS := {
+ "tenkishi":{"class_name":"天斗士","tier":"天斗士","faction":"天界·阿尔忒弥斯阵营","faction_id":"heavenly_angels","canon_status":"天斗士与天衣Glory属于天界篇设定；本职业通用技能为游戏化原创","style":"天衣与光翼高速战斗","basic_attacks":["天翼连拳","圣光追击","天界坠击"],"name":"天翼突击","combo":"圣光羽刃","burst_name":"天使终裁","description":"使用天衣与光翼作战，战力高于普通圣斗士，低于神明职业。","cost":28,"cooldown":2.8,"damage":3.8,"combo_damage":5.8,"range":10.0,"cone":175.0,"knockback":9.0,"launch":3.0,"stagger":1.1,"combo_range":12.0,"combo_knockback":13.0,"combo_launch":5.0,"burst_range":14.0,"burst_knockback":18.0,"burst_launch":7.0,"color":Color(0.72,0.86,1.0),"abilities":[{"id":"tenkishi_skill_1","name":"天翼突击","description":"天斗士展开双翼高速突进并连续攻击。","type":"突进","role":"单体","unlock_level":1,"cost":28,"cooldown":4},
+{"id":"tenkishi_skill_2","name":"圣光羽刃","description":"天斗士发射圣光羽刃穿透直线敌人。","type":"远程","role":"群体","unlock_level":5,"cost":34,"cooldown":7},
+{"id":"tenkishi_skill_3","name":"天界屏障","description":"天斗士展开天衣光幕吸收伤害。","type":"护盾","role":"防御","unlock_level":10,"cost":40,"cooldown":10},
+{"id":"tenkishi_skill_4","name":"神圣威压","description":"天斗士释放天界威压削弱敌人行动。","type":"削弱","role":"群体","unlock_level":18,"cost":48,"cooldown":12},
+{"id":"tenkishi_skill_5","name":"光翼闪行","description":"天斗士化作光翼残影快速位移并短暂无敌。","type":"闪避","role":"机动","unlock_level":28,"cost":54,"cooldown":14},
+{"id":"tenkishi_skill_6","name":"天使终裁","description":"天斗士召唤天界之力轰击大范围目标。","type":"奥义","role":"范围","unlock_level":40,"cost":68,"cooldown":25}],"passive":{"name":"天衣神速","description":"天衣提升机动能力与神圣防护。","effect":"damage_reduction","value":0.18},"resource_name":"天界之力"}
+}
+const HEAVENLY_ADVANCED_SKILLS := {
+ "tenkishi":[{"id":"tenkishi_advanced_1","name":"天翔连击","description":"天斗士施展天翔连击，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"突进","role":"单体","unlock_level":45,"cost":40,"cooldown":7},
+{"id":"tenkishi_advanced_2","name":"圣翼贯穿","description":"天斗士施展圣翼贯穿，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"远程","role":"群体","unlock_level":48,"cost":40,"cooldown":9},
+{"id":"tenkishi_advanced_3","name":"光羽乱舞","description":"天斗士施展光羽乱舞，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"冲击","role":"范围","unlock_level":51,"cost":43,"cooldown":11},
+{"id":"tenkishi_advanced_4","name":"天界重击","description":"天斗士施展天界重击，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"连击","role":"单体","unlock_level":54,"cost":43,"cooldown":13},
+{"id":"tenkishi_advanced_5","name":"羽刃追猎","description":"天斗士施展羽刃追猎，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"终结","role":"范围","unlock_level":57,"cost":46,"cooldown":15},
+{"id":"tenkishi_advanced_6","name":"天使终结","description":"天斗士施展天使终结，运用天衣与天界力量形成战斗效果。","branch":"天界突击","type":"奥义","role":"范围","unlock_level":60,"cost":46,"cooldown":17},
+{"id":"tenkishi_advanced_7","name":"天域展开","description":"天斗士施展天域展开，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"领域","role":"群体","unlock_level":60,"cost":48,"cooldown":7},
+{"id":"tenkishi_advanced_8","name":"神圣束缚","description":"天斗士施展神圣束缚，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"牵引","role":"群体","unlock_level":63,"cost":48,"cooldown":9},
+{"id":"tenkishi_advanced_9","name":"圣光风暴","description":"天斗士施展圣光风暴，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"削弱","role":"单体","unlock_level":66,"cost":51,"cooldown":11},
+{"id":"tenkishi_advanced_10","name":"天界封印","description":"天斗士施展天界封印，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"打断","role":"控制","unlock_level":69,"cost":51,"cooldown":13},
+{"id":"tenkishi_advanced_11","name":"羽翼牢笼","description":"天斗士施展羽翼牢笼，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"范围","role":"群体","unlock_level":72,"cost":54,"cooldown":15},
+{"id":"tenkishi_advanced_12","name":"天域裁断","description":"天斗士施展天域裁断，运用天衣与天界力量形成战斗效果。","branch":"天域掌控","type":"奥义","role":"范围","unlock_level":75,"cost":54,"cooldown":17},
+{"id":"tenkishi_advanced_13","name":"天衣复苏","description":"天斗士施展天衣复苏，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"复苏","role":"生存","unlock_level":75,"cost":56,"cooldown":7},
+{"id":"tenkishi_advanced_14","name":"圣光治愈","description":"天斗士施展圣光治愈，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"治疗","role":"恢复","unlock_level":78,"cost":56,"cooldown":9},
+{"id":"tenkishi_advanced_15","name":"天使守护","description":"天斗士施展天使守护，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"护盾","role":"防御","unlock_level":81,"cost":59,"cooldown":11},
+{"id":"tenkishi_advanced_16","name":"光翼反震","description":"天斗士施展光翼反震，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"增益","role":"自身","unlock_level":84,"cost":59,"cooldown":13},
+{"id":"tenkishi_advanced_17","name":"神圣共鸣","description":"天斗士施展神圣共鸣，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"被动强化","role":"自身","unlock_level":87,"cost":62,"cooldown":15},
+{"id":"tenkishi_advanced_18","name":"天界极光","description":"天斗士施展天界极光，运用天衣与天界力量形成战斗效果。","branch":"天使守护","type":"奥义","role":"范围","unlock_level":90,"cost":62,"cooldown":17}]
+}
+
 const ARMOR_STAGES := ["青铜圣衣", "白银圣衣", "黄金圣衣", "海界鳞衣", "冥衣", "神圣衣", "主神圣衣"]
 const ARMOR_PARTS := ["头盔", "胸甲", "护腕", "腰甲", "腿甲"]
 
 func get_class_skill(class_id: String) -> Dictionary:
-    return EXTENDED_DIVINE_CLASS_SKILLS.get(class_id, DIVINE_CLASS_SKILLS.get(class_id, CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"]))).duplicate(true)
+    return HEAVENLY_CLASS_SKILLS.get(class_id, EXTENDED_DIVINE_CLASS_SKILLS.get(class_id, DIVINE_CLASS_SKILLS.get(class_id, CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"])))).duplicate(true)
 
 func get_class_skill_catalog() -> Array:
     var result: Array = []
@@ -1004,6 +1033,10 @@ func get_class_skill_catalog() -> Array:
         var entry: Dictionary = get_class_skill(class_id)
         entry["id"] = class_id
         result.append(entry)
+    for class_id in HEAVENLY_CLASS_SKILLS:
+        var entry: Dictionary = get_class_skill(class_id)
+        entry["id"] = class_id
+        result.append(entry)
     return result
 
 func get_skill_level(class_id: String) -> int:
@@ -1011,7 +1044,7 @@ func get_skill_level(class_id: String) -> int:
     return clampi(int(levels.get(class_id, 1)), 1, 10)
 
 func upgrade_skill(class_id: String) -> bool:
-    if not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id):
+    if not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id) and not HEAVENLY_CLASS_SKILLS.has(class_id):
         return false
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     var level := get_skill_level(class_id)
@@ -1028,7 +1061,7 @@ func upgrade_skill(class_id: String) -> bool:
     return true
 
 func set_skill_level(class_id: String, level: int) -> bool:
-    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id)) or level < 1 or level > 10:
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id) and not HEAVENLY_CLASS_SKILLS.has(class_id)) or level < 1 or level > 10:
         return false
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     levels[class_id] = level
@@ -1047,7 +1080,7 @@ func get_armor_catalog() -> Array:
 func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
     var result: Array = data.get("abilities", []).duplicate(true)
-    result.append_array(EXTENDED_DIVINE_ADVANCED_SKILLS.get(class_id, DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"]))).duplicate(true))
+    result.append_array(HEAVENLY_ADVANCED_SKILLS.get(class_id, EXTENDED_DIVINE_ADVANCED_SKILLS.get(class_id, DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"])))).duplicate(true))
     return result
 
 func get_skill_branches(class_id: String) -> Array:
@@ -1077,7 +1110,7 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
 func get_damage_reduction(class_id: String) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "damage_reduction":
-        return clampf(float(passive.get("value", 0.0)), 0.0, 0.60 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明" else 0.35)
+        return clampf(float(passive.get("value", 0.0)), 0.0, 0.60 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明" else (0.25 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "天斗士" else 0.35))
     return 0.0
 
 func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
@@ -1087,7 +1120,7 @@ func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
     return 999
 
 func reset_skill_tree(class_id: String) -> bool:
-    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id)) or int(RPGState.profile.get("currency", 0)) < 500:
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id) and not HEAVENLY_CLASS_SKILLS.has(class_id)) or int(RPGState.profile.get("currency", 0)) < 500:
         return false
     var learned: Dictionary = RPGState.profile.get("learned_skills", {})
     var current: Array = learned.get(class_id, [class_id + "_skill_1"])
@@ -1118,7 +1151,7 @@ func get_selected_branch(class_id: String) -> String:
     var branches: Dictionary = RPGState.profile.get("skill_branches", {})
     return str(branches.get(class_id, ""))
 func choose_skill_branch(class_id: String, branch: String) -> bool:
-    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id)) or not get_skill_branches(class_id).has(branch):
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id) and not EXTENDED_DIVINE_CLASS_SKILLS.has(class_id) and not HEAVENLY_CLASS_SKILLS.has(class_id)) or not get_skill_branches(class_id).has(branch):
         return false
     var selected := get_selected_branch(class_id)
     if selected != "" and selected != branch:
