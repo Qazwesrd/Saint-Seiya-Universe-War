@@ -43,8 +43,8 @@ func _ready() -> void:
     head.material_override = body_mat
     add_child(head)
     pivot = Node3D.new()
-    pivot.position.y = 1.5
-    add_child(pivot)
+    pivot.global_position = global_position + Vector3(0, 1.5, 0)
+    game.add_child(pivot)
     var arm := SpringArm3D.new()
     arm.spring_length = 7.5
     pivot.add_child(arm)
@@ -55,6 +55,7 @@ func _ready() -> void:
 func set_move_input(value: Vector2) -> void:
     move_input = value.limit_length(1.0)
 func _physics_process(delta: float) -> void:
+    pivot.global_position = global_position + Vector3(0, 1.5, 0)
     attack_cd = maxf(0.0, attack_cd - delta)
     skill_cd = maxf(0.0, skill_cd - delta)
     burst_cd = maxf(0.0, burst_cd - delta)
@@ -109,7 +110,8 @@ func dodge() -> void:
     if dodge_time > 0.0: return
     dodge_time = 0.32
     invulnerable = 0.4
-    var direction := Vector3(move_input.x, 0, -move_input.y)
+    var direction := pivot.global_transform.basis.x * move_input.x + (-pivot.global_transform.basis.z) * -move_input.y
+    direction.y = 0
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * 15.0
     game.call("show_notice", "闪避！短暂无敌")
