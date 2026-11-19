@@ -23,6 +23,11 @@ func _run_tests() -> void:
 	assert(int(combat_summary.get("bosses_defeated", 0)) == 1 and int(combat_summary.get("combos_used", 0)) == 1, "combat encounter summary")
 	assert(LootManager.grant_drop("cosmos_potion", 1), "grant valid offline loot")
 	assert(not LootManager.grant_drop("unknown_item", 1), "reject unknown loot item")
+	var inventory_before: Dictionary = RPGState.profile.get("inventory", {}).duplicate(true)
+	assert(not RPGState.add_items({"cosmos_potion": 2, "invalid_item": 1}), "reject invalid inventory transaction")
+	assert(RPGState.profile.get("inventory", {}) == inventory_before, "inventory transaction rollback")
+	assert(RPGState.profile.get("combat_record", {}) is Dictionary, "profile combat record schema remains extensible")
+
 
 	var original_fps := int(SettingsManager.get_value("graphics", "fps_limit", 60))
 	assert(SettingsManager.set_value("graphics", "fps_limit", 999), "settings write")
