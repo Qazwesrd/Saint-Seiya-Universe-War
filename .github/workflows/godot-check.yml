@@ -13,6 +13,10 @@ on:
       - ".github/workflows/godot-check.yml"
   workflow_dispatch:
 
+concurrency:
+  group: godot-android-checks-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
