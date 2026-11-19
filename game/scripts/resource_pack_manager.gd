@@ -282,7 +282,10 @@ func _valid_relative_path(value: String) -> bool:
 
 func _get_free_space_bytes() -> int:
 	var root := ProjectSettings.globalize_path("user://")
-	return int(DirAccess.get_space_left(root)) if not root.is_empty() else -1
+	if root.is_empty():
+		return -1
+	var directory := DirAccess.open(root)
+	return int(directory.get_space_left()) if directory != null else -1
 
 func _copy_directory(source: String, destination: String) -> bool:
 	var source_dir := DirAccess.open(source)
