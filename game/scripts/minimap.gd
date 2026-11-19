@@ -25,7 +25,7 @@ func _draw() -> void:
     draw_circle(center, 5.5, Color(0.25, 1.0, 0.72))
     draw_circle(center, 2.0, Color(0.04, 0.12, 0.1))
     var guide: Node3D = game.get("guide_npc")
-    if is_instance_valid(guide) and QuestManager.status != "completed":
+    if is_instance_valid(guide) and QuestManager.status in ["not_started", "ready_to_return"]:
         var guide_delta: Vector3 = guide.global_position - origin
         var guide_marker := Vector2(guide_delta.x, guide_delta.z) / 22.0 * radius
         guide_marker = guide_marker.limit_length(radius - 6.0)
