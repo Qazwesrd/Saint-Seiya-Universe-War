@@ -10,6 +10,7 @@ const STAGES := {
 }
 const PARTS := ["head","chest","arms","waist","legs"]
 const PART_NAMES := {"head":"头盔","chest":"胸甲","arms":"护腕","waist":"腰甲","legs":"腿甲"}
+var damage_ticks := 0
 func _ensure_data() -> Dictionary:
  var data: Dictionary = RPGState.profile.get("armor_state", {})
  if data.is_empty():
@@ -50,6 +51,8 @@ func repair_all() -> bool:
  _save()
  return true
 func damage_random_part(amount: int = 8) -> void:
+ damage_ticks += 1
+ if damage_ticks % 5 != 0: return
  var data := _ensure_data()
  var durability: Dictionary = data.get("durability",{})
  var part: String = PARTS[randi_range(0,PARTS.size()-1)]
