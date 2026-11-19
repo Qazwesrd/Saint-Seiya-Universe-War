@@ -196,6 +196,8 @@ func equip_item(item_id: String) -> bool:
  profile["inventory"] = inventory
  profile["equipment"] = equipment
  _emit_change()
+ EventBus.inventory_changed.emit(inventory.duplicate(true))
+ EventBus.equipment_changed.emit(equipment.duplicate(true))
  save_slot(active_slot)
  return true
 func enhance_equipment(slot: String) -> bool:
@@ -302,6 +304,7 @@ func restore_backup(slot: int) -> bool:
  return load_slot(slot)
 func _emit_change() -> void:
  state_changed.emit()
+ EventBus.player_profile_changed.emit(profile.duplicate(true))
 
 
 func has_slot(slot: int) -> bool:
