@@ -1,0 +1,28 @@
+name: Godot Android Prototype Checks
+
+on:
+  push:
+    paths:
+      - "game/**"
+      - ".github/workflows/godot-check.yml"
+  pull_request:
+    paths:
+      - "game/**"
+      - ".github/workflows/godot-check.yml"
+  workflow_dispatch:
+
+jobs:
+  godot-headless:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Godot 4
+        uses: firebelley/setup-godot@v1
+        with:
+          version: 4.4.1
+          use-dotnet: false
+      - name: Import and parse project
+        run: godot --headless --editor --path game --quit
+      - name: Launch main scene headlessly
+        run: godot --headless --path game --quit-after 3
