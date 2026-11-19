@@ -46,6 +46,8 @@ func get_class_list() -> Array:
 func select_class(class_id: String) -> bool:
  if not CLASS_DATA.has(class_id):
   return false
+ if str(profile.get("class_id","pegasus")) == class_id:
+  return true
  var equipment: Dictionary = profile.get("equipment",{})
  var inventory: Dictionary = profile.get("inventory",{})
  var old_arm: String = str(equipment.get("arms",""))
