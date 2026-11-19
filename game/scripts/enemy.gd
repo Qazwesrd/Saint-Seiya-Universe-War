@@ -197,7 +197,9 @@ func take_damage(amount: float) -> void:
     if state == BrainState.DEAD or health <= 0.0:
         return
     var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
-    health = maxf(0.0, health - maxf(0.0, amount) * mark_multiplier)
+    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier)
+    health = maxf(0.0, health - applied_damage)
+    CombatSessionManager.record_damage_dealt(applied_damage)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
 
