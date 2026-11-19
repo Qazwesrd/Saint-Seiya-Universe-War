@@ -124,7 +124,7 @@ func _validate_directory(folder: String, expected_id: String) -> Dictionary:
 		if not FileAccess.file_exists(full_path):
 			failures.append("缺失：" + relative)
 			continue
-		var actual_size := FileAccess.get_file_as_bytes(full_path).size()
+		var actual_size := int(FileAccess.get_length(full_path))
 		actual_total += actual_size
 		if int(item.get("size_bytes", -1)) != actual_size:
 			failures.append("大小不符：" + relative)
@@ -277,7 +277,7 @@ func _valid_relative_path(value: String) -> bool:
 
 func _get_free_space_bytes() -> int:
 	var root := ProjectSettings.globalize_path("user://")
-	return int(OS.get_static_memory_usage()) if root.is_empty() else -1
+	return int(DirAccess.get_space_left(root)) if not root.is_empty() else -1
 
 func _copy_directory(source: String, destination: String) -> bool:
 	var source_dir := DirAccess.open(source)
