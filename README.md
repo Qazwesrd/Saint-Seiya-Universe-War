@@ -136,3 +136,10 @@ art/                  自制或已获授权的美术源文件（不提交大型�
 - 新增 `docs/PROJECT_SETUP_AND_ACCEPTANCE.md`：统一 Windows 11 环境搭建、Godot 导入、Android SDK/JDK 配置、Debug APK 导出和魅族 21 Pro 验收步骤。
 - 这些自动化配置已提交，但必须等 GitHub Actions 实际运行后才能确认 CI 通过；本次没有本机 Godot 环境，因此没有声称完成引擎解析、APK 导出或真机验收。
 - “工程搭建”不等于“完整游戏完成”：正式模型/动画/音效、完整剧情地图、装备 UI、分章节资源管理、性能优化和真机验收仍是后续工作。
+
+
+## 底层框架建设
+
+已新增并注册 EventBus、SettingsManager、LocalizationManager、AudioManager、SaveManager、ResourcePackManager、DialogueManager、SceneFlowManager 等通用服务；章节离线资源包目录与角色/圣衣/地图/动画/音频/VFX/UI/材质资源目录规范已建立。详见 `docs/CORE_FRAMEWORK_ARCHITECTURE.md`。
+
+当前工作重点是先补齐底层模块边界、数据归属、资源规范和自动检查，再集中制作完整游戏内容。框架源码提交不代表全部模块已通过 Godot 引擎或 Android 真机验收。
