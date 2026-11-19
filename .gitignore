@@ -1,0 +1,35 @@
+# Engine generated files
+.import/
+.godot/
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+
+# IDE and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local builds and packages
+*.apk
+*.aab
+*.obb
+*.ipa
+*.exe
+*.msi
+*.zip
+*.7z
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Local secrets
+.env
+.env.*
+!.env.example
