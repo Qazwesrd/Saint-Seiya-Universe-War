@@ -16,6 +16,7 @@ var stick_base: Panel
 var stick_knob: Panel
 var finger_id := -1
 var stick_value := Vector2.ZERO
+var skill_slot_buttons: Array[Button] = []
 func _ready() -> void:
     var root := Control.new()
     root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -125,6 +126,14 @@ func _ready() -> void:
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
     burst_button = _button(root, "小宇宙", Vector2(-180, -278), Vector2(-70, -198), func(): _call_player("cosmos_burst"), Color(0.45, 0.18, 0.08))
     skill_button = _button(root, "流星拳\n技能", Vector2(-292, -98), Vector2(-166, -4), func(): _call_player("skill"), Color(0.08, 0.35, 0.68))
+    for slot_index in range(4):
+        var slot := slot_index
+        var left := -520.0 + float(slot_index % 2) * 100.0
+        var top := -220.0 + float(slot_index / 2) * 92.0
+        var slot_button := _button(root, "技能 %d\\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 94.0, top + 82.0), func():
+            if is_instance_valid(game.player): game.player.call("cast_skill_slot", slot)
+        , Color(0.16, 0.28, 0.52))
+        skill_slot_buttons.append(slot_button)
     _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
     _button(root, "个人圣域", Vector2(236, 154), Vector2(350, 214), func(): _open_sanctuary(root), Color(0.22, 0.16, 0.42))
@@ -198,6 +207,16 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
         skill_button.text = skill_name + "\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
+func refresh_skill_slots() -> void:
+    if skill_slot_buttons.is_empty():
+        return
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var slots := SkillSystem.get_equipped_abilities(class_id)
+    for i in range(mini(4, skill_slot_buttons.size())):
+        var ability_id := str(slots[i])
+        var ability := SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
+        skill_slot_buttons[i].text = "技能 %d\\n%s" % [i + 1, str(ability.get("name", "未装备"))]
+
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
 
@@ -415,12 +434,71 @@ func _open_character(root: Control) -> void:
     passive_label.text = "职业被动【%s】：%s" % [str(passive_data.get("name", "职业被动")), str(passive_data.get("description", ""))]
     passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(passive_label)
+    var skill_points_label := Label.new()
+    skill_points_label.text = "可用技能点：%d（角色每升 1 级获得 1 点）" % int(profile.get("skill_points", 0))
+    box.add_child(skill_points_label)
+    var selected_branch := SkillSystem.get_selected_branch(current_class_id)
+    var branch_picker := OptionButton.new()
+    branch_picker.add_item("选择专精分支（进阶技能需要先选）")
+    for branch in SkillSystem.get_skill_branches(current_class_id):
+        if str(branch) != "基础技能":
+            branch_picker.add_item(str(branch))
+    var branch_button := Button.new()
+    branch_button.text = "确认专精分支"
+    branch_button.disabled = selected_branch != ""
+    branch_button.pressed.connect(func():
+        if branch_picker.selected > 0:
+            var branch_name := branch_picker.get_item_text(branch_picker.selected)
+            var ok := SkillSystem.choose_skill_branch(current_class_id, branch_name)
+            set_notice("已选择专精：" + branch_name if ok else "专精已锁定，无法更改")
+            popup.queue_free()
+    )
+    box.add_child(branch_picker)
+    box.add_child(branch_button)
+    if selected_branch != "":
+        var branch_info := Label.new()
+        branch_info.text = "当前专精：" + selected_branch + "（本职业专精选择后锁定）"
+        box.add_child(branch_info)
+    var reset_tree := Button.new()
+    reset_tree.text = "重置本职业技能树（消耗 500 星币，返还技能点）"
+    reset_tree.pressed.connect(func():
+        var ok := SkillSystem.reset_skill_tree(current_class_id)
+        set_notice("技能树已重置" if ok else "需要 500 星币")
+        popup.queue_free()
+    )
+    box.add_child(reset_tree)
     for ability in SkillSystem.get_ability_catalog(current_class_id):
+        var ability_id := str(ability.get("id", ""))
+        var ability_branch := str(ability.get("branch", "基础技能"))
+        var learned := SkillSystem.is_ability_learned(current_class_id, ability_id)
+        var level_ok := int(profile.get("level", 1)) >= int(ability.get("unlock_level", 1))
+        var branch_ok := ability_branch == "基础技能" or selected_branch == ability_branch
+        var row := HBoxContainer.new()
         var ability_label := Label.new()
-        var unlocked := int(profile.get("level", 1)) >= int(ability.get("unlock_level", 1))
-        ability_label.text = "%s  · Lv.%d解锁 · %s\n%s" % [str(ability.get("name", "技能")), int(ability.get("unlock_level", 1)), ("已解锁" if unlocked else "未解锁"), str(ability.get("description", ""))]
+        ability_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        ability_label.custom_minimum_size.x = 290
         ability_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-        box.add_child(ability_label)
+        ability_label.text = "%s [%s] Lv.%d %s\\n%s" % [str(ability.get("name", "技能")), ability_branch, int(ability.get("unlock_level", 1)), ("已学习" if learned else ("可学习" if level_ok and branch_ok else "未解锁/未选分支")), str(ability.get("description", ""))]
+        row.add_child(ability_label)
+        var learn_button := Button.new()
+        learn_button.text = "学习"
+        learn_button.disabled = learned or not level_ok or not branch_ok or int(profile.get("skill_points", 0)) < 1
+        learn_button.pressed.connect(func():
+            var ok := SkillSystem.learn_ability(current_class_id, ability_id)
+            set_notice("技能学习成功" if ok else "技能点、等级或专精条件不足")
+            popup.queue_free()
+        )
+        row.add_child(learn_button)
+        var equip_button := Button.new()
+        equip_button.text = "装备"
+        equip_button.disabled = not learned
+        equip_button.pressed.connect(func():
+            var ok := SkillSystem.equip_ability(current_class_id, ability_id, 0)
+            set_notice("已装备到技能栏第 1 格" if ok else "请先学习技能")
+            popup.queue_free()
+        )
+        row.add_child(equip_button)
+        box.add_child(row)
 
     var armor_info := Label.new()
     var armor_state: Dictionary = ArmorSystem.get_state()
