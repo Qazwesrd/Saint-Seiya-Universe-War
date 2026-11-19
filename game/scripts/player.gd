@@ -1,5 +1,5 @@
 extends CharacterBody3D
-var game: Node
+var game: Variant
 var move_input := Vector2.ZERO
 var health := 100.0
 var max_health := 100.0
@@ -80,31 +80,31 @@ func _physics_process(delta: float) -> void:
         rotation.y = lerp_angle(rotation.y, atan2(-toward.x, -toward.z), delta * 5.0)
     if Input.is_action_just_pressed("ui_accept"): attack()
     if Input.is_action_just_pressed("ui_cancel"): dodge()
-    game.update_hud()
+    game.call("update_hud")
 func attack() -> void:
     if attack_cd > 0.0: return
     attack_cd = 0.42
     _flash(Color(1.0, 0.82, 0.35))
-    game.damage_nearby(12.0, 2.8, 120.0)
-    game.show_notice("普通攻击！")
+    game.call("damage_nearby", 12.0, 2.8, 120.0)
+    game.call("show_notice", "普通攻击！")
 func skill() -> void:
     if skill_cd > 0.0 or cosmos < 18.0:
-        game.show_notice("小宇宙不足或技能冷却中")
+        game.call("show_notice", "小宇宙不足或技能冷却中")
         return
     cosmos -= 18.0
     skill_cd = 3.0
     _flash(Color(0.2, 0.8, 1.0))
-    game.damage_nearby(28.0, 7.0, 150.0)
-    game.show_notice("天马流星拳！")
+    game.call("damage_nearby", 28.0, 7.0, 150.0)
+    game.call("show_notice", "天马流星拳！")
 func cosmos_burst() -> void:
     if burst_cd > 0.0 or cosmos < 35.0:
-        game.show_notice("小宇宙能量不足或正在冷却")
+        game.call("show_notice", "小宇宙能量不足或正在冷却")
         return
     cosmos -= 35.0
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
-    game.damage_nearby(42.0, 5.0, 360.0)
-    game.show_notice("小宇宙爆发！")
+    game.call("damage_nearby", 42.0, 5.0, 360.0)
+    game.call("show_notice", "小宇宙爆发！")
 func dodge() -> void:
     if dodge_time > 0.0: return
     dodge_time = 0.32
@@ -112,11 +112,11 @@ func dodge() -> void:
     var direction := Vector3(move_input.x, 0, -move_input.y)
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * 15.0
-    game.show_notice("闪避！短暂无敌")
+    game.call("show_notice", "闪避！短暂无敌")
 func toggle_lock() -> void:
     if is_instance_valid(locked_target):
         locked_target = null
-        game.show_notice("已解除锁定")
+        game.call("show_notice", "已解除锁定")
         return
     var best := 999.0
     for target in get_tree().get_nodes_in_group("enemies"):
@@ -124,7 +124,7 @@ func toggle_lock() -> void:
         if distance < best:
             best = distance
             locked_target = target
-    game.show_notice("已锁定最近目标" if is_instance_valid(locked_target) else "附近没有目标")
+    game.call("show_notice", "已锁定最近目标" if is_instance_valid(locked_target) else "附近没有目标")
 func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
     health = maxf(0.0, health - amount)
@@ -132,7 +132,7 @@ func receive_damage(amount: float) -> void:
     if health <= 0.0:
         health = max_health
         global_position = Vector3(0, 0.2, 7)
-        game.show_notice("角色倒地，已在训练场复位")
+        game.call("show_notice", "角色倒地，已在训练场复位")
 func _flash(color: Color) -> void:
     body_mat.albedo_color = color
     get_tree().create_timer(0.16).timeout.connect(func():
