@@ -82,7 +82,17 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             enemy.call("take_damage", damage)
 func on_enemy_defeated(enemy: Node3D) -> void:
     enemies.erase(enemy)
-    show_notice("目标已击败，剩余：" + str(enemies.size()) if not enemies.is_empty() else "训练完成！所有敌人和 Boss 均已击败。")
+    var exp_reward := 90 if enemy.get("is_boss") else 30
+    var coin_reward := 120 if enemy.get("is_boss") else 40
+    var level_gains: int = RPGState.add_exp(exp_reward)
+    RPGState.add_currency(coin_reward)
+    var stats: Dictionary = RPGState.get_combat_stats()
+    player.max_health = float(stats.get("max_health", player.max_health))
+    player.health = minf(player.health, player.max_health)
+    var reward_text := "获得经验 %d、星币 %d" % [exp_reward, coin_reward]
+    if level_gains > 0:
+        reward_text += "，等级提升 %d 级！" % level_gains
+    show_notice(reward_text)
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
