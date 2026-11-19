@@ -423,12 +423,13 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_duration = 3.5
         status_power = 0.32
 
-    # 天猛：冥斗士重击压制；天琴：以音律迟缓并打断敌人。
-    if class_id == "tenmou":
+    var is_support_ability := "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or "回能" in ability_type or "资源" in ability_type or "净化" in ability_type
+    # 天猛：冥斗士重击压制；天琴：以音律迟缓并打断敌人。辅助技能不附带敌方控制。
+    if not is_support_ability and class_id == "tenmou":
         status = "weaken"
         status_duration = maxf(status_duration, 2.8)
         status_power = maxf(status_power, 0.18)
-    elif class_id == "lyra":
+    elif not is_support_ability and class_id == "lyra":
         status = "slow"
         status_duration = maxf(status_duration, 3.0)
         status_power = maxf(status_power, 0.22)
@@ -436,7 +437,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     var is_area := "范围" in ability_role or "群体" in ability_role or "领域" in ability_type or "震地" in ability_type or "奥义" in ability_type
     var max_distance := reach + (1.5 if is_area else 0.5)
     for enemy in enemies.duplicate():
-        if not is_instance_valid(enemy) or float(enemy.get("health", 0.0)) <= 0.0:
+        if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
         var distance := offset.length()
@@ -464,7 +465,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
             if enemy.has_method("apply_hit_reaction"):
                 enemy.call("apply_hit_reaction", push.normalized(), 7.0, 1.2, 0.5)
                 impacted = true
-        elif ("打断" in ability_type or class_id == "lyra") and enemy.has_method("apply_hit_reaction"):
+        elif ("打断" in ability_type or (class_id == "lyra" and not is_support_ability)) and enemy.has_method("apply_hit_reaction"):
             var stagger := 0.9 if "打断" in ability_type else 0.55
             enemy.call("apply_hit_reaction", offset.normalized(), 1.5, 0.0, stagger)
             impacted = true
