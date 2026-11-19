@@ -85,7 +85,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     show_notice("目标已击败，剩余：" + str(enemies.size()) if not enemies.is_empty() else "训练完成！所有敌人和 Boss 均已击败。")
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
-        hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"))
+        hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
         hud.call("set_enemy_count", enemies.size())
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
