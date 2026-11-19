@@ -19,6 +19,14 @@ var body_material: StandardMaterial3D
 var telegraph_mesh: MeshInstance3D
 var _boss_phase_two := false
 var _base_color := Color(0.72, 0.16, 0.22)
+var freeze_timer := 0.0
+var slow_timer := 0.0
+var slow_factor := 0.55
+var burn_timer := 0.0
+var burn_tick_timer := 0.0
+var burn_damage := 0.0
+var weaken_timer := 0.0
+var weaken_factor := 0.7
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -82,6 +90,17 @@ func _physics_process(delta: float) -> void:
 
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
     state_timer = maxf(0.0, state_timer - delta)
+    freeze_timer = maxf(0.0, freeze_timer - delta)
+    slow_timer = maxf(0.0, slow_timer - delta)
+    weaken_timer = maxf(0.0, weaken_timer - delta)
+    burn_timer = maxf(0.0, burn_timer - delta)
+    if burn_timer > 0.0:
+        burn_tick_timer -= delta
+        if burn_tick_timer <= 0.0:
+            burn_tick_timer = 1.0
+            take_damage(burn_damage)
+            if state == BrainState.DEAD:
+                return
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 18.0 * delta)
 
     var target: Node3D = game.get("player") if is_instance_valid(game) else null
@@ -95,6 +114,14 @@ func _physics_process(delta: float) -> void:
     var distance := offset.length()
     var direction := offset.normalized() if distance > 0.01 else Vector3.ZERO
 
+    if freeze_timer > 0.0:
+        telegraph_mesh.visible = false
+        velocity.x = move_toward(velocity.x, 0.0, 30.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 30.0 * delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        return
+
     if distance > 0.1:
         rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * 8.0)
 
@@ -104,8 +131,9 @@ func _physics_process(delta: float) -> void:
             if distance <= attack_range and attack_cooldown <= 0.0:
                 _begin_attack()
             else:
-                velocity.x = direction.x * speed + knockback_velocity.x
-                velocity.z = direction.z * speed + knockback_velocity.z
+                var effective_speed := speed * (slow_factor if slow_timer > 0.0 else 1.0)
+                velocity.x = direction.x * effective_speed + knockback_velocity.x
+                velocity.z = direction.z * effective_speed + knockback_velocity.z
         BrainState.WINDUP:
             telegraph_mesh.visible = true
             velocity.x = move_toward(velocity.x, 0.0, speed * 8.0 * delta)
@@ -147,7 +175,8 @@ func _resolve_attack(target: Node3D) -> void:
     var current_distance := global_position.distance_to(target.global_position)
     if current_distance <= attack_range + 0.35:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
-        target.call("receive_damage", attack_damage)
+        var outgoing_attack := attack_damage * (weaken_factor if weaken_timer > 0.0 else 1.0)
+        target.call("receive_damage", outgoing_attack)
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
             var push := target.global_position - global_position
             push.y = 0.0
@@ -209,3 +238,26 @@ func apply_hit_reaction(direction: Vector3, force: float, lift: float, stagger_d
         velocity.y = maxf(velocity.y, lift)
     state = BrainState.STAGGER
     state_timer = maxf(state_timer, stagger_duration * (1.5 if is_boss else 1.0))
+
+func apply_status_effect(effect: String, duration: float, power: float = 0.0) -> void:
+    if state == BrainState.DEAD:
+        return
+    match effect:
+        "freeze":
+            var resistance := 0.35 if is_boss else 1.0
+            freeze_timer = maxf(freeze_timer, duration * resistance)
+            state = BrainState.STAGGER
+            state_timer = maxf(state_timer, freeze_timer)
+        "slow":
+            slow_timer = maxf(slow_timer, duration)
+            slow_factor = clampf(1.0 - power, 0.25, 0.9)
+        "burn":
+            burn_timer = maxf(burn_timer, duration)
+            burn_damage = maxf(burn_damage, power)
+            burn_tick_timer = minf(burn_tick_timer, 0.2) if burn_tick_timer > 0.0 else 0.2
+        "weaken":
+            weaken_timer = maxf(weaken_timer, duration)
+            weaken_factor = clampf(1.0 - power, 0.35, 0.95)
+
+func is_controlled() -> bool:
+    return freeze_timer > 0.0 or slow_timer > 0.0 or state == BrainState.STAGGER
