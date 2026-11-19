@@ -10,7 +10,11 @@ const CLASS_DATA := {
  "sea_dragon":{"name":"海龙","hp":120,"attack":15,"defense":10,"speed":9,"starter":"sea_dragon_scale"},
  "tenmou":{"name":"天猛","hp":125,"attack":13,"defense":12,"speed":8,"starter":"tenmou_armor"},
  "lyra":{"name":"天琴","hp":100,"attack":15,"defense":8,"speed":14,"starter":"lyra_harp"},
- "sea_swallow":{"name":"海燕","hp":108,"attack":13,"defense":10,"speed":13,"starter":"swallow_scale"}
+ "sea_swallow":{"name":"海燕","hp":108,"attack":13,"defense":10,"speed":13,"starter":"swallow_scale"},
+ "apollo":{"name":"阿波罗","hp":720,"attack":118,"defense":92,"speed":28,"starter":"apollo_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
+ "athena":{"name":"雅典娜","hp":860,"attack":98,"defense":135,"speed":25,"starter":"athena_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
+ "hades":{"name":"哈迪斯","hp":800,"attack":125,"defense":108,"speed":26,"starter":"hades_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"},
+ "poseidon":{"name":"波塞冬","hp":820,"attack":116,"defense":112,"speed":27,"starter":"poseidon_divine_relic","tier":"神明","unlock_level":70,"unlock_condition":"完成对应神明篇章与神级试炼"}
 }
 const ITEM_DATA := {
  "pegasus_bracer":{"name":"天马青铜护腕","slot":"arms","attack":3,"defense":1,"price":0},
@@ -70,7 +74,8 @@ func select_class(class_id: String) -> bool:
 func get_combat_stats() -> Dictionary:
  var base: Dictionary = CLASS_DATA.get(str(profile.get("class_id","pegasus")),CLASS_DATA["pegasus"])
  var level: int = int(profile.get("level",1))
- var stats := {"max_health":float(base["hp"]+(level-1)*8),"attack":float(base["attack"]+(level-1)*2),"defense":float(base["defense"]+(level-1)),"speed":float(base["speed"]),"max_cosmos":float(100 + (int(profile.get("cosmos_level",1))-1)*10)}
+ var divine_tier := str(base.get("tier", "")) == "神明"
+ var stats := {"max_health":float(base["hp"]+(level-1)*(30 if divine_tier else 8)),"attack":float(base["attack"]+(level-1)*(8 if divine_tier else 2)),"defense":float(base["defense"]+(level-1)*(5 if divine_tier else 1)),"speed":float(base["speed"]),"max_cosmos":float((260 if divine_tier else 100) + (int(profile.get("cosmos_level",1))-1)*(24 if divine_tier else 10))}
  for slot in profile.get("equipment",{}):
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
