@@ -46,3 +46,33 @@ func reset_local_quest() -> bool:
  return true
 func get_audit_log() -> Array[String]:
  return audit_log.duplicate()
+
+func grant_all_armor_stages() -> void:
+ if not enabled: return
+ ArmorSystem.unlock_all_stages()
+ _record("解锁全部圣衣阶段")
+ gm_action_completed.emit("全部圣衣阶段已解锁")
+func repair_armor() -> bool:
+ if not enabled: return false
+ var ok: bool = ArmorSystem.repair_all()
+ if ok: _record("修复全部圣衣部件")
+ gm_action_completed.emit("圣衣修复成功" if ok else "圣衣无需修复或星币不足")
+ return ok
+func enhance_armor_part(part: String) -> bool:
+ if not enabled: return false
+ var ok: bool = ArmorSystem.enhance_part(part)
+ if ok: _record("强化圣衣部件 "+part)
+ gm_action_completed.emit("圣衣部件强化成功" if ok else "强化失败：星币不足或已达上限")
+ return ok
+func awaken_armor() -> bool:
+ if not enabled: return false
+ var ok: bool = ArmorSystem.awaken_current()
+ if ok: _record("圣衣觉醒")
+ gm_action_completed.emit("圣衣觉醒成功" if ok else "当前圣衣不能觉醒或条件不足")
+ return ok
+func set_skill_level(class_id: String, level: int) -> bool:
+ if not enabled: return false
+ var ok: bool = SkillSystem.set_skill_level(class_id,level)
+ if ok: _record("设置技能等级 "+class_id+" Lv."+str(level))
+ gm_action_completed.emit("技能等级设置成功" if ok else "技能等级设置失败")
+ return ok
