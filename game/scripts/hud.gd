@@ -130,7 +130,7 @@ func _ready() -> void:
         var slot := slot_index
         var left := -570.0 + float(slot_index) * 92.0
         var top := -270.0
-        var slot_button := _button(root, "技能 %d\\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func(): _cast_skill_slot(slot), Color(0.16, 0.28, 0.52))
+        var slot_button := _button(root, "技能 %d\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func(): _cast_skill_slot(slot), Color(0.16, 0.28, 0.52))
         skill_slot_buttons.append(slot_button)
     _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
