@@ -1,7 +1,7 @@
 config_version=5
 [application]
 config/name="圣斗士：宇宙之战"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 EventBus="*res://scripts/event_bus.gd"
