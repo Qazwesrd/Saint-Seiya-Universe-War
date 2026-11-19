@@ -12,6 +12,8 @@ func _run_tests() -> void:
 	assert(ApplicationLifecycleManager != null, "application lifecycle service")
 	assert(CombatSessionManager != null, "combat session service")
 	assert(LootManager != null, "offline loot service")
+	assert(EnemyDatabase.has_archetype("arena_guard") and EnemyDatabase.has_archetype("arena_boss"), "enemy archetype catalog")
+	assert(float(EnemyDatabase.get_archetype("arena_boss").get("health", 0.0)) > float(EnemyDatabase.get_archetype("arena_guard").get("health", 0.0)), "boss archetype stronger than normal enemy")
 	assert(EquipmentAffixManager != null, "equipment affix service")
 	var skill_state: Dictionary = SkillSystem.get_skill_state("pegasus")
 	assert(str(skill_state.get("class_id", "")) == "pegasus", "skill tree state class binding")
