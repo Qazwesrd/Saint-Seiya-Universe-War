@@ -228,8 +228,8 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
         "sea_swallow":
             player.call("apply_temporary_buff", 0.15, 0.0, 3.5)
     if applied > 0:
-        var class_name := str(SkillSystem.get_class_skill(class_id).get("class_name", "职业"))
-        show_notice(class_name + "专属状态生效：影响敌人 %d 名" % applied)
+        var class_label := str(SkillSystem.get_class_skill(class_id).get("class_name", "职业"))
+        show_notice(class_label + "专属状态生效：影响敌人 %d 名" % applied)
 
 
 func on_enemy_defeated(enemy: Node3D) -> void:
