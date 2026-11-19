@@ -198,7 +198,7 @@ func _chapter_for_mission(mission_id: String) -> Dictionary:
 func get_chapter_overview() -> Array:
     var result: Array = []
     for chapter in CampaignDatabase.CHAPTERS:
-        var unlocked := str(chapter["id"]) in progress["unlocked_chapters"]
+        var unlocked: bool = str(chapter["id"]) in progress["unlocked_chapters"]
         var completed_count := 0
         for mission in chapter["missions"]:
             if str(mission["id"]) in progress["completed_missions"]:
