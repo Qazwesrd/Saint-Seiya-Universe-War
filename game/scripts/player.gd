@@ -14,6 +14,7 @@ var combo_window := 0.0
 var burst_cd := 0.0
 var dodge_time := 0.0
 var invulnerable := 0.0
+var knockback_velocity := Vector3.ZERO
 var locked_target: Node3D
 var pivot: Node3D
 var body_mat: StandardMaterial3D
@@ -112,8 +113,9 @@ func _physics_process(delta: float) -> void:
             direction = target_offset.normalized()
     var base_speed := float(RPGState.get_combat_stats().get("speed",12.0)) * 0.52
     var speed := base_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
-    velocity.x = direction.x * speed
-    velocity.z = direction.z * speed
+    knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 24.0 * delta)
+    velocity.x = direction.x * speed + knockback_velocity.x
+    velocity.z = direction.z * speed + knockback_velocity.z
     velocity.y -= 22.0 * delta
     move_and_slide()
     if direction.length() > 0.1:
@@ -224,3 +226,10 @@ func toggle_mount() -> void:
  if is_instance_valid(mount_indicator):
   mount_indicator.visible = is_mounted
  game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
+
+func apply_enemy_knockback(direction: Vector3, force: float) -> void:
+    var flat_direction := direction
+    flat_direction.y = 0.0
+    if flat_direction.length_squared() <= 0.001:
+        flat_direction = -global_transform.basis.z
+    knockback_velocity = flat_direction.normalized() * force
