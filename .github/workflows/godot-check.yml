@@ -48,3 +48,12 @@ jobs:
             echo "Godot runtime script errors detected"
             exit 1
           fi
+      - name: Run core framework smoke tests
+        shell: sh
+        run: |
+          godot --headless --path game --script res://tests/framework_smoke_test.gd 2>&1 | tee /tmp/framework-test.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script|Assertion failed" /tmp/framework-test.log; then
+            echo "Framework smoke tests failed"
+            exit 1
+          fi
+          grep -q "FRAMEWORK_SMOKE_TEST_PASS" /tmp/framework-test.log
