@@ -9,6 +9,10 @@ var defeated_normal := 0
 var boss_defeated := false
 
 func _ready() -> void:
+    RPGState.slot_loaded.connect(_on_profile_slot_loaded)
+    load_progress()
+
+func _on_profile_slot_loaded(_slot: int) -> void:
     load_progress()
 
 func interact_with_guide() -> Dictionary:
@@ -72,7 +76,7 @@ func get_map_objective() -> String:
     return "试炼完成"
 
 func _save_path() -> String:
-    return "user://quest_progress.json"
+    return "user://quest_progress_legacy.json"
 
 func _save_progress() -> void:
     var data := {
@@ -82,33 +86,35 @@ func _save_progress() -> void:
         "defeated_normal": defeated_normal,
         "boss_defeated": boss_defeated
     }
-    var file := FileAccess.open(_save_path(), FileAccess.WRITE)
-    if file == null:
-        push_warning("无法保存任务进度")
-        return
-    file.store_string(JSON.stringify(data))
-    file.close()
+    RPGState.profile["quest_progress"] = data.duplicate(true)
+    if not RPGState.save_slot(RPGState.active_slot):
+        SystemHealthManager.report_error("save", "任务进度保存失败", "slot=%d" % RPGState.active_slot)
+    quest_changed.emit()
 
 func load_progress() -> void:
-    if not FileAccess.file_exists(_save_path()):
-        return
-    var file := FileAccess.open(_save_path(), FileAccess.READ)
-    if file == null:
-        return
-    var parsed: Variant = JSON.parse_string(file.get_as_text())
-    file.close()
-    if typeof(parsed) != TYPE_DICTIONARY:
-        return
-    if int(parsed.get("version", 0)) != 1 or str(parsed.get("quest_id", "")) != QUEST_ID:
-        return
-    var loaded_status := str(parsed.get("status", "not_started"))
-    if not (loaded_status in ["not_started", "active", "ready_to_return", "completed"]):
-        return
-    status = loaded_status
-    defeated_normal = clampi(int(parsed.get("defeated_normal", 0)), 0, 2)
-    boss_defeated = bool(parsed.get("boss_defeated", false))
-    if status == "active" and defeated_normal >= 2 and boss_defeated:
-        status = "ready_to_return"
+    var parsed: Variant = RPGState.profile.get("quest_progress", {})
+    var migrated_legacy := false
+    if (typeof(parsed) != TYPE_DICTIONARY or parsed.is_empty()) and FileAccess.file_exists(_save_path()):
+        var file := FileAccess.open(_save_path(), FileAccess.READ)
+        if file != null:
+            parsed = JSON.parse_string(file.get_as_text())
+            file.close()
+            migrated_legacy = typeof(parsed) == TYPE_DICTIONARY
+    status = "not_started"
+    defeated_normal = 0
+    boss_defeated = false
+    if typeof(parsed) == TYPE_DICTIONARY and int(parsed.get("version", 0)) == 1 and str(parsed.get("quest_id", "")) == QUEST_ID:
+        var loaded_status := str(parsed.get("status", "not_started"))
+        if loaded_status in ["not_started", "active", "ready_to_return", "completed"]:
+            status = loaded_status
+            defeated_normal = clampi(int(parsed.get("defeated_normal", 0)), 0, 2)
+            boss_defeated = bool(parsed.get("boss_defeated", false))
+            if status == "active" and defeated_normal >= 2 and boss_defeated:
+                status = "ready_to_return"
+    if migrated_legacy:
+        RPGState.profile["quest_progress"] = parsed.duplicate(true)
+        RPGState.save_slot(RPGState.active_slot)
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path()))
     quest_changed.emit()
 
 func reset_progress() -> void:
