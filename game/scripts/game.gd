@@ -23,15 +23,13 @@ func _ready() -> void:
     _spawn_followers()
     CollectionSystem.collection_changed.connect(_spawn_followers)
     _build_sanctuary()
-    _spawn_enemy(Vector3(-4, 0.1, -3), false)
-    _spawn_enemy(Vector3(4, 0.1, -4), false)
-    _spawn_enemy(Vector3(0, 0.1, -9), true)
     _spawn_guide_npc()
     _spawn_teleport_point()
     hud = HUDScript.new()
     hud.set("game", self)
     add_child(hud)
-    hud.call("set_notice", "训练开始：移动并击败两名敌人与 Boss。")
+    hud.call("set_notice", "按主线剧情顺序完成任务；当前目标：" + str(CampaignManager.get_active_mission().get("name", "与引导员交谈")))
+    _refresh_story_encounter()
 func _build_world() -> void:
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
@@ -142,7 +140,39 @@ func interact_with_guide() -> void:
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if is_instance_valid(hud):
         hud.call("show_dialogue", dialogue)
+    _refresh_story_encounter()
     show_notice(str(dialogue.get("action", "")))
+
+func _refresh_story_encounter() -> void:
+    for enemy in enemies.duplicate():
+        if not is_instance_valid(enemy):
+            enemies.erase(enemy)
+    if not enemies.is_empty():
+        return
+    var mission := CampaignManager.get_active_mission()
+    var mission_id := str(mission.get("id", ""))
+    var mission_state := CampaignManager.get_mission_progress(mission_id)
+    var objectives: Array = mission_state.get("objectives", [])
+    if mission_id == "gw_002":
+        var remaining := 0
+        for objective in objectives:
+            if str(objective.get("id", "")) == "defeat_training_enemy":
+                remaining = maxi(0, int(objective.get("target", 0)) - int(objective.get("current", 0)))
+        var positions := [Vector3(-4, 0.1, -3), Vector3(4, 0.1, -4)]
+        for index in range(remaining):
+            _spawn_enemy(positions[index % positions.size()], false)
+        if remaining > 0:
+            show_notice("剧情推进：击败训练对手（%d 名）" % remaining)
+    elif mission_id == "gw_003":
+        var remaining_boss := 0
+        for objective in objectives:
+            if str(objective.get("id", "")) == "defeat_training_boss":
+                remaining_boss = maxi(0, int(objective.get("target", 0)) - int(objective.get("current", 0)))
+        if remaining_boss > 0:
+            _spawn_enemy(Vector3(0, 0.1, -9), true)
+            show_notice("剧情推进：训练首领登场")
+    elif not mission.is_empty():
+        show_notice("当前剧情任务：" + str(mission.get("name", "")) + "。请先完成任务目标。")
 
 func _spawn_enemy(at: Vector3, boss: bool) -> void:
     var enemy := CharacterBody3D.new()
@@ -273,6 +303,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         var battle_summary: Dictionary = CombatSessionManager.finish_encounter()
         if is_instance_valid(hud) and hud.has_method("show_battle_result"):
             hud.call("show_battle_result", battle_summary, {"exp": exp_reward, "coins": coin_reward})
+    _refresh_story_encounter()
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
