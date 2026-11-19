@@ -67,7 +67,10 @@ func get_combat_stats() -> Dictionary:
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
    stats["attack"] += float(ITEM_DATA[item_id].get("attack",0))
-   stats["defense"] += float(ITEM_DATA[item_id].get("defense",0))\n   var enhance_level: int = int(profile.get("equipment_levels",{}).get(item_id,0))\n   stats["attack"] += float(enhance_level) * 1.5\n   stats["defense"] += float(enhance_level) * 1.5
+   stats["defense"] += float(ITEM_DATA[item_id].get("defense",0))
+   var enhance_level: int = int(profile.get("equipment_levels",{}).get(item_id,0))
+   stats["attack"] += float(enhance_level) * 1.5
+   stats["defense"] += float(enhance_level) * 1.5
  return stats
 func exp_to_next_level() -> int:
  return 100+(int(profile.get("level",1))-1)*65
