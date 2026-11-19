@@ -216,13 +216,143 @@ func _open_shop(root: Control) -> void:
     popup.popup_centered()
 
 func _open_character(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(560, 620)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(540, 600)
+    popup.add_child(scroll)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 8)
+    scroll.add_child(box)
+
+    var title := Label.new()
+    title.text = "角色成长、职业、装备与存档"
+    title.add_theme_font_size_override("font_size", 23)
+    box.add_child(title)
+
     var profile: Dictionary = RPGState.profile
+    var current_class := str(profile.get("class_id", "pegasus"))
+    var class_picker := OptionButton.new()
+    var class_index := 0
+    var index := 0
+    for class_id in RPGState.CLASS_DATA:
+        class_picker.add_item(str(RPGState.CLASS_DATA[class_id]["name"]))
+        class_picker.set_item_metadata(index, class_id)
+        if class_id == current_class:
+            class_index = index
+        index += 1
+    class_picker.select(class_index)
+    class_picker.item_selected.connect(func(selected_index: int):
+        var chosen_id: String = str(class_picker.get_item_metadata(selected_index))
+        RPGState.select_class(chosen_id)
+        game.call("refresh_player_stats")
+        set_notice("已切换职业：" + str(RPGState.CLASS_DATA[chosen_id]["name"]))
+        popup.queue_free()
+    )
+    box.add_child(class_picker)
+
     var stats: Dictionary = RPGState.get_combat_stats()
-    var class_id := str(profile.get("class_id", "pegasus"))
-    var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
-    var dialog := AcceptDialog.new()
-    dialog.title = "角色与装备"
-    dialog.dialog_text = "%s  Lv.%d\n经验：%d / %d\n生命：%.0f\n攻击：%.0f\n防御：%.0f\n速度：%.0f\n小宇宙培养：%d级\n星币：%d\n\n背包：%s" % [class_label, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], int(profile.get("cosmos_level",1)), int(profile.get("currency",0)), str(profile.get("inventory",{}))]
-    root.add_child(dialog)
-    dialog.confirmed.connect(func(): dialog.queue_free())
-    dialog.popup_centered()
+    var class_label := str(RPGState.CLASS_DATA.get(current_class, {}).get("name", "天马座"))
+    var info := Label.new()
+    info.text = "%s  Lv.%d    经验 %d/%d    星币 %d\n生命 %.0f    攻击 %.0f    防御 %.0f    速度 %.0f\n小宇宙培养：%d级" % [class_label, int(profile.get("level",1)), int(profile.get("exp",0)), RPGState.exp_to_next_level(), int(profile.get("currency",0)), stats["max_health"], stats["attack"], stats["defense"], stats["speed"], int(profile.get("cosmos_level",1))]
+    box.add_child(info)
+
+    var upgrade := Button.new()
+    upgrade.text = "提升小宇宙等级（消耗当前等级 × 250 星币）"
+    upgrade.pressed.connect(func():
+        var success: bool = RPGState.upgrade_cosmos()
+        set_notice("小宇宙培养成功" if success else "星币不足或已达到培养上限")
+        popup.queue_free()
+    )
+    box.add_child(upgrade)
+
+    var inventory_title := Label.new()
+    inventory_title.text = "背包与装备（点击装备即可穿戴）"
+    inventory_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(inventory_title)
+    var inventory: Dictionary = profile.get("inventory", {})
+    if inventory.is_empty():
+        var empty_label := Label.new()
+        empty_label.text = "背包暂时为空"
+        box.add_child(empty_label)
+    else:
+        for item_id in inventory:
+            var item_count: int = int(inventory[item_id])
+            if item_count <= 0 or not RPGState.ITEM_DATA.has(item_id):
+                continue
+            var item: Dictionary = RPGState.ITEM_DATA[item_id]
+            var item_slot: String = str(item.get("slot", ""))
+            var item_name: String = str(item.get("name", item_id))
+            var selected_item_id: String = str(item_id)
+            var item_button := Button.new()
+            if item_slot == "consumable":
+                item_button.text = "使用：" + item_name + " ×" + str(item_count)
+                item_button.pressed.connect(func():
+                    var used: bool = RPGState.use_item(selected_item_id)
+                    set_notice("已使用：" + item_name if used else "无法使用该物品")
+                    popup.queue_free()
+                )
+            else:
+                item_button.text = "穿戴：" + item_name + " ×" + str(item_count)
+                item_button.pressed.connect(func():
+                    var equipped: bool = RPGState.equip_item(selected_item_id)
+                    if equipped:
+                        game.call("refresh_player_stats")
+                    set_notice("装备成功：" + item_name if equipped else "装备失败")
+                    popup.queue_free()
+                )
+            box.add_child(item_button)
+
+    var equipment_label := Label.new()
+    equipment_label.text = "当前装备：" + str(profile.get("equipment", {}))
+    box.add_child(equipment_label)
+
+    var save_title := Label.new()
+    save_title.text = "本地存档管理（3 个独立存档槽）"
+    save_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(save_title)
+    for slot in [1, 2, 3]:
+        var slot_id: int = slot
+        var row := HBoxContainer.new()
+        var save_button := Button.new()
+        save_button.text = "槽%d 保存" % slot_id
+        save_button.pressed.connect(func():
+            set_notice("存档已保存" if RPGState.save_slot(slot_id) else "存档保存失败")
+            popup.queue_free()
+        )
+        row.add_child(save_button)
+        var load_button := Button.new()
+        load_button.text = "读取"
+        load_button.pressed.connect(func():
+            var loaded: bool = RPGState.load_slot(slot_id)
+            if loaded:
+                game.call("refresh_player_stats")
+            set_notice("存档读取成功" if loaded else "该槽没有有效存档")
+            popup.queue_free()
+        )
+        row.add_child(load_button)
+        var backup_button := Button.new()
+        backup_button.text = "备份"
+        backup_button.pressed.connect(func():
+            set_notice("备份成功" if RPGState.backup_slot(slot_id) else "备份失败")
+            popup.queue_free()
+        )
+        row.add_child(backup_button)
+        var restore_button := Button.new()
+        restore_button.text = "恢复备份"
+        restore_button.pressed.connect(func():
+            var restored: bool = RPGState.restore_backup(slot_id)
+            if restored:
+                game.call("refresh_player_stats")
+            set_notice("备份恢复成功" if restored else "没有可用备份")
+            popup.queue_free()
+        )
+        row.add_child(restore_button)
+        box.add_child(row)
+
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
