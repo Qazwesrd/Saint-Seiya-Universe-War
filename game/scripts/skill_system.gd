@@ -1066,7 +1066,7 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
     var effect := str(passive.get("effect", ""))
     var value := float(passive.get("value", 0.0))
     if effect == "damage":
-        return 1.0 + value + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)) + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))
+        return 1.0 + value + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))
     if effect == "combo_damage":
         return 1.0 + value
     if effect == "control_damage" and is_instance_valid(target):
