@@ -10,6 +10,7 @@ SkillSystem="*res://scripts/skill_system.gd"
 GMManager="*res://scripts/gm_manager.gd"
 ArmorSystem="*res://scripts/armor_system.gd"
 CollectionSystem="*res://scripts/collection_system.gd"
+SanctuarySystem="*res://scripts/sanctuary_system.gd"
 
 [display]
 window/size/viewport_width=1280
