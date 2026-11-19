@@ -9,7 +9,6 @@ var max_health := 100.0
 var cosmos := 100.0
 var max_cosmos := 100.0
 var cosmos_regen_rate := 3.0
-var cosmos_regen_rate := 3.0
 var attack_cd := 0.0
 var basic_combo_step := 0
 var basic_combo_reset := 0.0
@@ -32,7 +31,6 @@ func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
     max_cosmos = float(rpg_stats.get("max_cosmos", 100.0))
-    cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", 3.0))
     cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", 3.0))
     health = max_health
     var col := CollisionShape3D.new()
