@@ -69,6 +69,17 @@ func _normalize_progress() -> void:
         if not CampaignDatabase.get_mission(str(mission_id)).is_empty():
             valid_completed.append(str(mission_id))
     progress["completed_missions"] = valid_completed
+    var next_in_order := _first_incomplete_mission_id()
+    if not next_in_order.is_empty():
+        progress["active_mission"] = next_in_order
+
+func _first_incomplete_mission_id() -> String:
+    for chapter in CampaignDatabase.CHAPTERS:
+        for mission in chapter["missions"]:
+            var mission_id := str(mission["id"])
+            if not mission_id in progress["completed_missions"]:
+                return mission_id
+    return CampaignDatabase.get_first_mission_id()
 
 func get_active_mission() -> Dictionary:
     return CampaignDatabase.get_mission(str(progress.get("active_mission", "")))
@@ -102,6 +113,8 @@ func get_mission_progress(mission_id: String) -> Dictionary:
 func accept_mission(mission_id: String) -> bool:
     var mission := CampaignDatabase.get_mission(mission_id)
     if mission.is_empty() or mission_id in progress["completed_missions"]:
+        return false
+    if mission_id != str(progress.get("active_mission", "")):
         return false
     var chapter := _chapter_for_mission(mission_id)
     if chapter.is_empty() or not str(chapter["id"]) in progress["unlocked_chapters"]:
