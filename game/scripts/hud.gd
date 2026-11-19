@@ -405,6 +405,22 @@ func _open_character(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(skill_upgrade)
+    var skill_book_title := Label.new()
+    skill_book_title.text = "职业技能图鉴 · " + str(SkillSystem.get_class_skill(current_class_id).get("resource_name", "小宇宙"))
+    skill_book_title.add_theme_font_size_override("font_size", 18)
+    box.add_child(skill_book_title)
+    var class_skill_data: Dictionary = SkillSystem.get_class_skill(current_class_id)
+    var passive_data: Dictionary = class_skill_data.get("passive", {})
+    var passive_label := Label.new()
+    passive_label.text = "职业被动【%s】：%s" % [str(passive_data.get("name", "职业被动")), str(passive_data.get("description", ""))]
+    passive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    box.add_child(passive_label)
+    for ability in SkillSystem.get_ability_catalog(current_class_id):
+        var ability_label := Label.new()
+        var unlocked := int(profile.get("level", 1)) >= int(ability.get("unlock_level", 1))
+        ability_label.text = "%s  · Lv.%d解锁 · %s\n%s" % [str(ability.get("name", "技能")), int(ability.get("unlock_level", 1)), ("已解锁" if unlocked else "未解锁"), str(ability.get("description", ""))]
+        ability_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        box.add_child(ability_label)
 
     var armor_info := Label.new()
     var armor_state: Dictionary = ArmorSystem.get_state()
