@@ -76,3 +76,9 @@ func set_skill_level(class_id: String, level: int) -> bool:
  if ok: _record("设置技能等级 "+class_id+" Lv."+str(level))
  gm_action_completed.emit("技能等级设置成功" if ok else "技能等级设置失败")
  return ok
+
+func unlock_all_collections() -> void:
+ if not enabled: return
+ CollectionSystem.unlock_all()
+ _record("解锁全部伙伴宠物坐骑")
+ gm_action_completed.emit("伙伴、宠物和坐骑图鉴已全部解锁")
