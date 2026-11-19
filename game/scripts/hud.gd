@@ -311,6 +311,22 @@ func _open_character(root: Control) -> void:
     var equipment_label := Label.new()
     equipment_label.text = "当前装备：" + str(profile.get("equipment", {}))
     box.add_child(equipment_label)
+    var equipped_items: Dictionary = profile.get("equipment", {})
+    for equipment_slot in equipped_items:
+        var equipped_id: String = str(equipped_items[equipment_slot])
+        if equipped_id == "":
+            continue
+        var selected_slot: String = str(equipment_slot)
+        var enhance_button := Button.new()
+        var enhance_level: int = int(profile.get("equipment_levels", {}).get(equipped_id, 0))
+        enhance_button.text = "强化 " + str(RPGState.ITEM_DATA.get(equipped_id, {}).get("name", equipped_id)) + "（当前 +" + str(enhance_level) + "）"
+        enhance_button.pressed.connect(func():
+            var success: bool = RPGState.enhance_equipment(selected_slot)
+            game.call("refresh_player_stats")
+            set_notice("装备强化成功" if success else "星币不足或已达到强化上限")
+            popup.queue_free()
+        )
+        box.add_child(enhance_button)
 
     var save_title := Label.new()
     save_title.text = "本地存档管理（3 个独立存档槽）"
