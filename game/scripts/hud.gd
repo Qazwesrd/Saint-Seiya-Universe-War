@@ -128,9 +128,9 @@ func _ready() -> void:
     skill_button = _button(root, "流星拳\n技能", Vector2(-292, -98), Vector2(-166, -4), func(): _call_player("skill"), Color(0.08, 0.35, 0.68))
     for slot_index in range(4):
         var slot := slot_index
-        var left := -520.0 + float(slot_index % 2) * 100.0
-        var top := -220.0 + float(slot_index / 2) * 92.0
-        var slot_button := _button(root, "技能 %d\\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 94.0, top + 82.0), func():
+        var left := -570.0 + float(slot_index) * 92.0
+        var top := -270.0
+        var slot_button := _button(root, "技能 %d\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func():
             if is_instance_valid(game.player): game.player.call("cast_skill_slot", slot)
         , Color(0.16, 0.28, 0.52))
         skill_slot_buttons.append(slot_button)
@@ -215,7 +215,7 @@ func refresh_skill_slots() -> void:
     for i in range(mini(4, skill_slot_buttons.size())):
         var ability_id := str(slots[i])
         var ability := SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
-        skill_slot_buttons[i].text = "技能 %d\\n%s" % [i + 1, str(ability.get("name", "未装备"))]
+        skill_slot_buttons[i].text = "技能 %d\n%s" % [i + 1, str(ability.get("name", "未装备"))]
 
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
@@ -478,7 +478,7 @@ func _open_character(root: Control) -> void:
         ability_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         ability_label.custom_minimum_size.x = 290
         ability_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-        ability_label.text = "%s [%s] Lv.%d %s\\n%s" % [str(ability.get("name", "技能")), ability_branch, int(ability.get("unlock_level", 1)), ("已学习" if learned else ("可学习" if level_ok and branch_ok else "未解锁/未选分支")), str(ability.get("description", ""))]
+        ability_label.text = "%s [%s] Lv.%d %s\n%s" % [str(ability.get("name", "技能")), ability_branch, int(ability.get("unlock_level", 1)), ("已学习" if learned else ("可学习" if level_ok and branch_ok else "未解锁/未选分支")), str(ability.get("description", ""))]
         row.add_child(ability_label)
         var learn_button := Button.new()
         learn_button.text = "学习"
@@ -489,12 +489,17 @@ func _open_character(root: Control) -> void:
             popup.queue_free()
         )
         row.add_child(learn_button)
+        var slot_picker := OptionButton.new()
+        for slot_number in range(1, 5):
+            slot_picker.add_item("栏位 %d" % slot_number)
+        row.add_child(slot_picker)
         var equip_button := Button.new()
         equip_button.text = "装备"
         equip_button.disabled = not learned
         equip_button.pressed.connect(func():
-            var ok := SkillSystem.equip_ability(current_class_id, ability_id, 0)
-            set_notice("已装备到技能栏第 1 格" if ok else "请先学习技能")
+            var target_slot := slot_picker.selected
+            var ok := SkillSystem.equip_ability(current_class_id, ability_id, target_slot)
+            set_notice("已装备到技能栏第 %d 格" % (target_slot + 1) if ok else "请先学习技能")
             popup.queue_free()
         )
         row.add_child(equip_button)
