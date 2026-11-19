@@ -90,6 +90,8 @@ func _sanitize_value(section: String, key: String, value: Variant) -> Variant:
 			return clampi(int(value), 30, 120)
 		if key == "render_scale":
 			return snappedf(clampf(float(value), 0.5, 1.0), 0.05)
+		if key in ["shadows", "effects"]:
+			return bool(value)
 	if section == "audio":
 		return clampf(float(value), 0.0, 1.0)
 	if section == "camera":
