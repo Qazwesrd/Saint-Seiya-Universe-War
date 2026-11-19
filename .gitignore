@@ -33,3 +33,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+
+game/build/
+*.keystore
+*.jks
