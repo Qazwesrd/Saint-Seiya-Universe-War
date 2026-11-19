@@ -1,5 +1,5 @@
 extends CanvasLayer
-var game: Node
+var game: Variant
 var status_label: Label
 var notice_label: Label
 var enemy_label: Label
