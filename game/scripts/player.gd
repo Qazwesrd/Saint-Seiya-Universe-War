@@ -115,12 +115,17 @@ func skill() -> void:
     if skill_cd > 0.0 or cosmos < 18.0:
         game.call("show_notice", "小宇宙不足或技能冷却中")
         return
-    cosmos -= 18.0
-    skill_cd = 3.0
-    _flash(Color(0.2, 0.8, 1.0))
-    game.call("damage_nearby", 18.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 1.5, 7.0, 150.0)
-    game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, Color(0.18, 0.72, 1.0), 2.8)
-    game.call("show_notice", "天马流星拳！")
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    cosmos -= float(skill_data.get("cost", 18))
+    skill_cd = float(skill_data.get("cooldown", 3.0))
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var damage_multiplier := float(skill_data.get("damage", 1.5))
+    var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
+    _flash(skill_color)
+    game.call("damage_nearby", 18.0 + attack_power * damage_multiplier, 7.0, 150.0)
+    game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
+    game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
 func cosmos_burst() -> void:
     if burst_cd > 0.0 or cosmos < 35.0:
         game.call("show_notice", "小宇宙能量不足或正在冷却")
