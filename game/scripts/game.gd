@@ -2,9 +2,11 @@ extends Node3D
 const PlayerScript = preload("res://scripts/player.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const HUDScript = preload("res://scripts/hud.gd")
+const GuideNpcScript = preload("res://scripts/guide_npc.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
+var guide_npc: Node3D
 func _ready() -> void:
     _build_world()
     player = CharacterBody3D.new()
@@ -15,6 +17,7 @@ func _ready() -> void:
     _spawn_enemy(Vector3(-4, 0.1, -3), false)
     _spawn_enemy(Vector3(4, 0.1, -4), false)
     _spawn_enemy(Vector3(0, 0.1, -9), true)
+    _spawn_guide_npc()
     hud = HUDScript.new()
     hud.set("game", self)
     add_child(hud)
@@ -63,6 +66,23 @@ func _build_world() -> void:
         ring_mat.emission = Color(0.03, 0.12, 0.5)
         ring.material_override = ring_mat
         add_child(ring)
+func _spawn_guide_npc() -> void:
+    guide_npc = Node3D.new()
+    guide_npc.set_script(GuideNpcScript)
+    guide_npc.position = Vector3(0, 0, 2)
+    add_child(guide_npc)
+
+func interact_with_guide() -> void:
+    if not is_instance_valid(player) or not is_instance_valid(guide_npc):
+        return
+    if player.global_position.distance_to(guide_npc.global_position) > 4.8:
+        show_notice("靠近圣域训练引导员后再交谈")
+        return
+    var dialogue: Dictionary = QuestManager.interact_with_guide()
+    if is_instance_valid(hud):
+        hud.call("show_dialogue", dialogue)
+    show_notice(str(dialogue.get("action", "")))
+
 func _spawn_enemy(at: Vector3, boss: bool) -> void:
     var enemy := CharacterBody3D.new()
     enemy.set_script(EnemyScript)
@@ -81,6 +101,7 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
         if offset.length() <= reach and (offset.length() < 0.1 or forward.dot(offset.normalized()) >= cos(deg_to_rad(cone_degrees * 0.5))):
             enemy.call("take_damage", damage)
 func on_enemy_defeated(enemy: Node3D) -> void:
+    QuestManager.on_enemy_defeated(bool(enemy.get("is_boss")))
     enemies.erase(enemy)
     var exp_reward := 90 if enemy.get("is_boss") else 30
     var coin_reward := 120 if enemy.get("is_boss") else 40
@@ -95,6 +116,7 @@ func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
         hud.call("set_enemy_count", enemies.size())
+        hud.call("set_quest_text", QuestManager.get_tracker_text())
         var boss_hp := 0.0
         var boss_max := 1.0
         for enemy in enemies:
