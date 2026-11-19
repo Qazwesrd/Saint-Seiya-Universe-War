@@ -9,6 +9,7 @@ var max_health := 100.0
 var cosmos := 100.0
 var max_cosmos := 100.0
 var cosmos_regen_rate := 3.0
+var cosmos_regen_rate := 3.0
 var attack_cd := 0.0
 var basic_combo_step := 0
 var basic_combo_reset := 0.0
@@ -31,6 +32,7 @@ func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
     max_cosmos = float(rpg_stats.get("max_cosmos", 100.0))
+    cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", 3.0))
     cosmos_regen_rate = float(RPGState.get_cosmos_profile().get("regen_rate", 3.0))
     health = max_health
     var col := CollisionShape3D.new()
@@ -304,7 +306,7 @@ func cast_ability(ability_id: String) -> void:
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
     var type_scale := 1.25 if ("奥义" in ability_type or "终结" in ability_type) else (0.72 if ("防御" in ability_type or "治疗" in ability_type or "守护" in ability_type) else 1.0)
-    var damage := (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * (1.0 + temporary_damage_bonus)
+    var damage := (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var reach := float(class_data.get("range", 7.0))
     if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
         reach += 2.0
