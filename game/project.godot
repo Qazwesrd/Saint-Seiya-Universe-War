@@ -22,6 +22,8 @@ CollectionSystem="*res://scripts/collection_system.gd"
 SanctuarySystem="*res://scripts/sanctuary_system.gd"
 EquipmentDatabase="*res://scripts/equipment_database.gd"
 CampaignManager="*res://scripts/campaign_manager.gd"
+CombatSessionManager="*res://scripts/combat_session_manager.gd"
+LootManager="*res://scripts/loot_manager.gd"
 ApplicationLifecycleManager="*res://scripts/application_lifecycle_manager.gd"
 
 [display]
