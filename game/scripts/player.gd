@@ -170,6 +170,7 @@ func skill() -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     cosmos -= float(skill_data.get("cost", 18))
+    CombatSessionManager.record_skill_cast()
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
@@ -192,6 +193,7 @@ func combo_skill() -> void:
         game.call("show_notice", "小宇宙不足，无法施展连招")
         return
     cosmos -= cost
+    CombatSessionManager.record_skill_cast(true)
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
     var skill_level := SkillSystem.get_skill_level(class_id)
@@ -237,6 +239,7 @@ func receive_damage(amount: float) -> void:
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     health = maxf(0.0, health - final_damage)
+    CombatSessionManager.record_damage_taken(final_damage)
     ArmorSystem.damage_random_part(1)
     _flash(Color(1.0, 0.12, 0.12))
     if health <= 0.0:
@@ -298,6 +301,7 @@ func cast_ability(ability_id: String) -> void:
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % cost)
         return
     cosmos -= cost
+    CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
     var class_data := SkillSystem.get_class_skill(class_id)
     var ability_type := str(ability.get("type", "攻击"))
