@@ -399,39 +399,78 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     if not is_instance_valid(player):
         return
     var ability_type := str(ability.get("type", ""))
+    var ability_role := str(ability.get("role", ""))
+    var ability_name := str(ability.get("name", ""))
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var affected := 0
     var status := ""
-    if "冻结" in ability_type or "冰" in ability_type:
+    var status_duration := 3.0
+    var status_power := 0.0
+
+    if "冻结" in ability_type or "冰" in ability_type or "冰结" in ability_name:
         status = "freeze"
-    elif "灼烧" in ability_type or "火" in ability_type:
+        status_duration = 2.6
+    elif "灼烧" in ability_type or "火" in ability_type or "烈焰" in ability_name:
         status = "burn"
-    elif "削弱" in ability_type or "精神" in ability_type or "控制" in ability_type:
+        status_duration = 5.0
+        status_power = maxf(2.0, attack_power * 0.16)
+    elif "削弱" in ability_type or "精神" in ability_type or "虚弱" in ability_name:
         status = "weaken"
-    elif "领域" in ability_type or "控场" in ability_type:
+        status_duration = 4.5
+        status_power = 0.3
+    elif "领域" in ability_type or "控场" in ability_type or "音波" in ability_type:
         status = "slow"
-    if status != "":
-        for enemy in enemies.duplicate():
-            if not is_instance_valid(enemy) or enemy.global_position.distance_to(player.global_position) > reach + 1.0:
+        status_duration = 3.5
+        status_power = 0.32
+
+    var is_area := "范围" in ability_role or "群体" in ability_role or "领域" in ability_type or "震地" in ability_type or "奥义" in ability_type
+    var max_distance := reach + (1.5 if is_area else 0.5)
+    for enemy in enemies.duplicate():
+        if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
+            continue
+        var offset: Vector3 = enemy.global_position - player.global_position
+        var distance := offset.length()
+        if distance > max_distance:
+            continue
+        if not is_area and distance > 0.1:
+            var forward := -player.global_transform.basis.z
+            if forward.dot(offset.normalized()) < -0.05:
                 continue
-            var duration := 2.2 if status == "freeze" else 4.0
-            var power := maxf(1.5, attack_power * 0.12) if status == "burn" else (0.3 if status == "slow" else 0.22)
-            enemy.call("apply_status_effect", status, duration, power)
-    if "牵引" in ability_type or "弹射" in ability_type:
-        for enemy in enemies.duplicate():
-            if not is_instance_valid(enemy) or enemy.global_position.distance_to(player.global_position) > reach:
-                continue
+        if status != "" and enemy.has_method("apply_status_effect"):
+            enemy.call("apply_status_effect", status, status_duration, status_power)
+            affected += 1
+
+        if "牵引" in ability_type or "拉拽" in ability_name:
             var pull := player.global_position - enemy.global_position
             pull.y = 0.0
-            enemy.call("apply_hit_reaction", pull.normalized(), 5.0, 0.0, 0.4)
-    if "冲锋" in ability_type or "突进" in ability_type or "机动" in ability_type:
-        player.velocity = -player.global_transform.basis.z * 9.0
-        player.invulnerable = maxf(player.invulnerable, 0.22)
+            if enemy.has_method("apply_hit_reaction"):
+                enemy.call("apply_hit_reaction", pull.normalized(), 6.0, 0.0, 0.45)
+            affected += 1
+        elif "击退" in ability_type or "冲击" in ability_type or "震地" in ability_type:
+            var push := enemy.global_position - player.global_position
+            push.y = 0.0
+            if enemy.has_method("apply_hit_reaction"):
+                enemy.call("apply_hit_reaction", push.normalized(), 7.0, 1.2, 0.5)
+            affected += 1
+        elif "打断" in ability_type and enemy.has_method("apply_hit_reaction"):
+            enemy.call("apply_hit_reaction", offset.normalized(), 2.0, 0.0, 0.9)
+            affected += 1
+
     if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type:
-        player.call("apply_temporary_buff", 0.0, 0.38, 5.0)
+        player.call("apply_temporary_buff", 0.0, 0.42, 5.0)
     if "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type:
-        player.health = minf(player.max_health, player.health + player.max_health * 0.28)
-        player.cosmos = minf(player.max_cosmos, player.cosmos + 12.0)
-    if "增益" in ability_type or "狂怒" in ability_type or "召唤" in ability_type:
-        player.call("apply_temporary_buff", 0.22, 0.0, 5.0)
-    if "闪避" in ability_type:
-        player.invulnerable = maxf(player.invulnerable, 0.75)
+        player.health = minf(player.max_health, player.health + player.max_health * 0.32)
+        player.cosmos = minf(player.max_cosmos, player.cosmos + 15.0)
+    if "增益" in ability_type or "狂怒" in ability_type or "召唤" in ability_type or "被动强化" in ability_type:
+        player.call("apply_temporary_buff", 0.25, 0.0, 5.5)
+    if "闪避" in ability_type or "替身" in ability_type:
+        player.invulnerable = maxf(player.invulnerable, 0.85)
+        player.velocity = -player.global_transform.basis.z * 7.0
+    if "冲锋" in ability_type or "突进" in ability_type or "机动" in ability_type or "位移" in ability_type:
+        player.velocity = -player.global_transform.basis.z * 10.0
+        player.invulnerable = maxf(player.invulnerable, 0.3)
+
+    if affected > 0:
+        show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
+    elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "闪避" in ability_type or "突进" in ability_type or "位移" in ability_type:
+        show_notice(ability_name + "：自身效果已生效")
