@@ -25,6 +25,7 @@ var mount_indicator: MeshInstance3D
 var temporary_damage_bonus := 0.0
 var temporary_damage_reduction := 0.0
 var temporary_buff_timer := 0.0
+var ability_cooldowns: Dictionary = {}
 func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
@@ -102,6 +103,8 @@ func _physics_process(delta: float) -> void:
     dodge_time = maxf(0.0, dodge_time - delta)
     invulnerable = maxf(0.0, invulnerable - delta)
     temporary_buff_timer = maxf(0.0, temporary_buff_timer - delta)
+    for ability_id in ability_cooldowns.keys():
+        ability_cooldowns[ability_id] = maxf(0.0, float(ability_cooldowns[ability_id]) - delta)
     if temporary_buff_timer <= 0.0:
         temporary_damage_bonus = 0.0
         temporary_damage_reduction = 0.0
@@ -267,3 +270,46 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
     if flat_direction.length_squared() <= 0.001:
         flat_direction = -global_transform.basis.z
     knockback_velocity = flat_direction.normalized() * force
+
+func cast_skill_slot(slot_index: int) -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var slots := SkillSystem.get_equipped_abilities(class_id)
+    if slot_index < 0 or slot_index >= slots.size():
+        return
+    var ability_id := str(slots[slot_index])
+    if ability_id == "":
+        game.call("show_notice", "技能栏第 %d 格尚未装备技能" % (slot_index + 1))
+        return
+    cast_ability(ability_id)
+func cast_ability(ability_id: String) -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var ability := SkillSystem.get_ability_data(class_id, ability_id)
+    if ability.is_empty() or not SkillSystem.is_ability_learned(class_id, ability_id):
+        game.call("show_notice", "技能尚未学习")
+        return
+    var remaining := float(ability_cooldowns.get(ability_id, 0.0))
+    if remaining > 0.0:
+        game.call("show_notice", "技能冷却中：%.1f 秒" % remaining)
+        return
+    var cost := float(ability.get("cost", 12))
+    if cosmos < cost:
+        game.call("show_notice", "小宇宙不足，需要 %.0f 点" % cost)
+        return
+    cosmos -= cost
+    ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
+    var class_data := SkillSystem.get_class_skill(class_id)
+    var ability_type := str(ability.get("type", "攻击"))
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
+    var type_scale := 1.25 if ("奥义" in ability_type or "终结" in ability_type) else (0.72 if ("防御" in ability_type or "治疗" in ability_type or "守护" in ability_type) else 1.0)
+    var damage := (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * (1.0 + temporary_damage_bonus)
+    var reach := float(class_data.get("range", 7.0))
+    if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
+        reach += 2.0
+    var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
+    _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
+    if not ("防御" in ability_type or "护盾" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "守护" in ability_type or "闪避" in ability_type):
+        game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15, float(class_data.get("launch", 1.0)), float(class_data.get("stagger", 0.5)))
+    game.call("apply_ability_effect", class_id, ability, reach)
+    game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
+    game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
