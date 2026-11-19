@@ -110,3 +110,10 @@ func load_progress() -> void:
     if status == "active" and defeated_normal >= 2 and boss_defeated:
         status = "ready_to_return"
     quest_changed.emit()
+
+func reset_progress() -> void:
+    status = "not_started"
+    defeated_normal = 0
+    boss_defeated = false
+    _save_progress()
+    quest_changed.emit()
