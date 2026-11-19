@@ -59,7 +59,7 @@ required_services = [
     "SaveManager", "ResourcePackManager", "DialogueManager", "SceneFlowManager",
     "SystemHealthManager", "ApplicationLifecycleManager",
     "RPGState", "QuestManager", "SkillSystem", "CampaignManager",
-    "CombatSessionManager", "LootManager"
+    "CombatSessionManager", "LootManager", "EquipmentAffixManager"
 ]
 if project_file.is_file():
     for service in required_services:
