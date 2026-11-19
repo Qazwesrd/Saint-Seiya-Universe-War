@@ -98,15 +98,15 @@ func _emit_update() -> void:
 
 
 func _calculate_grade(summary: Dictionary) -> String:
-    var bosses := int(summary.get("bosses_defeated", 0))
-    var damage_taken := float(summary.get("damage_taken", 0.0))
-    var duration := int(summary.get("duration_seconds", 0))
-    if bosses <= 0:
-        return "未完成"
-    if damage_taken <= 60.0 and duration <= 120:
-        return "S"
-    if damage_taken <= 140.0 and duration <= 240:
-        return "A"
-    if damage_taken <= 260.0:
-        return "B"
-    return "C"
+	var bosses := int(summary.get("bosses_defeated", 0))
+	var damage_taken := float(summary.get("damage_taken", 0.0))
+	var duration := int(summary.get("duration_seconds", 0))
+	if bosses <= 0:
+	    return "未完成"
+	if damage_taken <= 60.0 and duration <= 120:
+	    return "S"
+	if damage_taken <= 140.0 and duration <= 240:
+	    return "A"
+	if damage_taken <= 260.0:
+	    return "B"
+	return "C"
