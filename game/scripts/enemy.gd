@@ -54,6 +54,7 @@ func _physics_process(delta: float) -> void:
     move_and_slide()
     if distance > 0.1: rotation.y = atan2(-offset.x, -offset.z)
 func take_damage(amount: float) -> void:
+    game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
     health = maxf(0.0, health - amount)
     if is_boss: game.call("show_notice", "Boss 生命：" + str(roundi(health)) + "/" + str(roundi(max_health)))
     if health <= 0.0:
