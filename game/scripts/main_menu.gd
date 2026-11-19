@@ -53,8 +53,8 @@ func _build_interface() -> void:
 	settings_panel = _build_settings_panel()
 	settings_panel.visible = false
 	settings_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-230, -170)
-	settings_panel.custom_minimum_size = Vector2(460, 340)
+	settings_panel.position = Vector2(-340, -305)
+	settings_panel.custom_minimum_size = Vector2(680, 610)
 	add_child(settings_panel)
 
 	slots_panel = _build_slots_panel()
@@ -80,50 +80,113 @@ func _add_button(parent: VBoxContainer, caption: String, action: Callable) -> vo
 
 func _build_settings_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 12)
-	panel.add_child(column)
-
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 8)
+	panel.add_child(outer)
 	var heading := Label.new()
-	heading.text = "游戏设置"
+	heading.text = "完整游戏设置"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 24)
-	column.add_child(heading)
-
-	var quality := OptionButton.new()
-	quality.add_item("低画质", 0)
-	quality.add_item("中画质", 1)
-	quality.add_item("高画质", 2)
-	var current_quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
-	quality.select(0 if current_quality == "low" else (2 if current_quality == "high" else 1))
-	quality.item_selected.connect(_on_quality_selected)
-	column.add_child(_labeled_control("画质", quality))
-
-	var fps := OptionButton.new()
-	fps.add_item("30 FPS", 30)
-	fps.add_item("45 FPS", 45)
-	fps.add_item("60 FPS", 60)
-	fps.add_item("90 FPS", 90)
-	var current_fps := int(SettingsManager.get_value("graphics", "fps_limit", 60))
-	fps.select(0 if current_fps <= 30 else (1 if current_fps <= 45 else (2 if current_fps <= 60 else 3)))
-	fps.item_selected.connect(_on_fps_selected.bind(fps))
-	column.add_child(_labeled_control("帧率上限", fps))
-
-	var volume := HSlider.new()
-	volume.min_value = 0.0
-	volume.max_value = 1.0
-	volume.step = 0.05
-	volume.value = float(SettingsManager.get_value("audio", "master", 1.0))
-	volume.value_changed.connect(_on_master_volume_changed)
-	column.add_child(_labeled_control("主音量", volume))
-
+	outer.add_child(heading)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(620, 480)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(scroll)
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 8)
+	scroll.add_child(content)
+	_add_settings_section(content, "画面与性能")
+	_add_option_setting(content, "画质", "graphics", "quality", ["low", "medium", "high"], ["低", "中", "高"])
+	_add_option_setting(content, "帧率上限", "graphics", "fps_limit", [30, 45, 60, 90, 120], ["30 FPS", "45 FPS", "60 FPS", "90 FPS", "120 FPS"])
+	_add_slider_setting(content, "渲染比例", "graphics", "render_scale", 0.5, 1.0, 0.05)
+	_add_check_setting(content, "显示阴影", "graphics", "shadows")
+	_add_check_setting(content, "显示战斗特效", "graphics", "effects")
+	_add_settings_section(content, "声音")
+	_add_slider_setting(content, "总音量", "audio", "master", 0.0, 1.0, 0.05)
+	_add_slider_setting(content, "音乐音量", "audio", "music", 0.0, 1.0, 0.05)
+	_add_slider_setting(content, "战斗音效", "audio", "sfx", 0.0, 1.0, 0.05)
+	_add_slider_setting(content, "界面音效", "audio", "ui", 0.0, 1.0, 0.05)
+	_add_settings_section(content, "镜头")
+	_add_slider_setting(content, "镜头距离", "camera", "distance", 3.0, 14.0, 0.5)
+	_add_slider_setting(content, "镜头灵敏度", "camera", "sensitivity", 0.2, 3.0, 0.1)
+	_add_check_setting(content, "反转垂直镜头", "camera", "invert_y")
+	_add_settings_section(content, "触控与操作")
+	_add_check_setting(content, "战斗震动反馈", "controls", "vibration")
+	_add_check_setting(content, "自动拾取物品", "controls", "auto_pickup")
+	_add_check_setting(content, "左手操作布局", "controls", "left_handed")
+	_add_slider_setting(content, "虚拟按键大小", "controls", "button_scale", 0.75, 1.5, 0.05)
+	_add_settings_section(content, "玩法辅助")
+	_add_check_setting(content, "自动锁定目标", "gameplay", "auto_target")
+	_add_check_setting(content, "显示伤害数字", "gameplay", "damage_numbers")
+	_add_check_setting(content, "显示新手提示", "gameplay", "show_tutorials")
+	_add_settings_section(content, "系统")
+	_add_option_setting(content, "界面语言", "system", "language", ["zh_CN", "en_US"], ["简体中文", "English"])
+	var actions := HBoxContainer.new()
+	var reset := Button.new()
+	reset.text = "恢复默认设置"
+	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset.pressed.connect(_on_reset_settings)
+	actions.add_child(reset)
 	var close := Button.new()
 	close.text = "返回主菜单"
-	close.custom_minimum_size.y = 46
+	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func() -> void: settings_panel.visible = false)
-	column.add_child(close)
+	actions.add_child(close)
+	outer.add_child(actions)
+	panel.custom_minimum_size = Vector2(680, 610)
 	return panel
 
+func _add_settings_section(parent: VBoxContainer, caption: String) -> void:
+	var label := Label.new()
+	label.text = "— " + caption + " —"
+	label.add_theme_font_size_override("font_size", 18)
+	parent.add_child(label)
+
+func _add_option_setting(parent: VBoxContainer, caption: String, section: String, key: String, values: Array, labels: Array) -> void:
+	var option := OptionButton.new()
+	for index in range(values.size()):
+		option.add_item(str(labels[index]))
+	var current: Variant = SettingsManager.get_value(section, key)
+	var selected := values.find(current)
+	option.select(maxi(0, selected))
+	option.item_selected.connect(_on_option_setting_changed.bind(section, key, values))
+	parent.add_child(_labeled_control(caption, option))
+
+func _add_slider_setting(parent: VBoxContainer, caption: String, section: String, key: String, minimum: float, maximum: float, step: float) -> void:
+	var slider := HSlider.new()
+	slider.min_value = minimum
+	slider.max_value = maximum
+	slider.step = step
+	slider.value = float(SettingsManager.get_value(section, key, minimum))
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(_on_slider_setting_changed.bind(section, key))
+	parent.add_child(_labeled_control(caption, slider))
+
+func _add_check_setting(parent: VBoxContainer, caption: String, section: String, key: String) -> void:
+	var check := CheckBox.new()
+	check.text = caption
+	check.button_pressed = bool(SettingsManager.get_value(section, key, false))
+	check.toggled.connect(_on_check_setting_changed.bind(section, key))
+	parent.add_child(check)
+
+func _on_option_setting_changed(index: int, section: String, key: String, values: Array) -> void:
+	SettingsManager.set_value(section, key, values[index])
+
+func _on_slider_setting_changed(value: float, section: String, key: String) -> void:
+	SettingsManager.set_value(section, key, value)
+
+func _on_check_setting_changed(value: bool, section: String, key: String) -> void:
+	SettingsManager.set_value(section, key, value)
+
+func _on_reset_settings() -> void:
+	if SettingsManager.reset_all():
+		settings_panel.queue_free()
+		settings_panel = _build_settings_panel()
+		settings_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+		settings_panel.position = Vector2(-340, -305)
+		add_child(settings_panel)
+		settings_panel.visible = true
 func _build_slots_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	var outer := VBoxContainer.new()
