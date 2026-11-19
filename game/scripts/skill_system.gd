@@ -194,6 +194,54 @@ const CLASS_SKILLS := {
     }
 }
 
+# Divine classes are deliberately above mortal combat tiers; unlocks and story gates are handled by progression.
+const DIVINE_CLASS_SKILLS := {
+    "apollo": {
+        "class_name":"阿波罗","tier":"神明","faction":"奥林匹斯·阿波罗","faction_id":"apollo","canon_status":"原作神明角色；可操作职业技能为游戏化扩展","style":"太阳神·远程毁灭与神域压制","basic_attacks":["日轮神拳","太阳追击","神焰终结"],"name":"太阳神裁决","combo":"日轮焚天","burst_name":"阿波罗·太阳终焉","description":"神明职业拥有远超凡人战士的神格、神力与神域，技能数值定位为最高战力层。","cost":50,"cooldown":2.2,"damage":6.8,"combo_damage":9.5,"range":16,"cone":210,"knockback":18,"launch":7,"stagger":1.8,"combo_range":18,"combo_knockback":22,"combo_launch":9,"burst_range":17,"burst_knockback":26,"burst_launch":10,"color":Color(1.0, 0.72, 0.18),"abilities":[
+            {"id":"apollo_skill_1","name":"神焰降临","description":"召唤太阳神焰轰击目标区域。","type":"灼烧","role":"范围","unlock_level":1,"cost":48,"cooldown":5},
+            {"id":"apollo_skill_2","name":"日轮光矢","description":"凝聚太阳光束贯穿直线敌人。","type":"远程","role":"群体","unlock_level":5,"cost":56,"cooldown":7},
+            {"id":"apollo_skill_3","name":"太阳神盾","description":"展开日轮屏障，大幅减伤并反震近身攻击。","type":"护盾","role":"防御","unlock_level":10,"cost":64,"cooldown":12},
+            {"id":"apollo_skill_4","name":"光之审判","description":"释放高热光环，持续灼烧并削弱敌人。","type":"领域","role":"群体","unlock_level":18,"cost":72,"cooldown":14},
+            {"id":"apollo_skill_5","name":"神速日行","description":"化作光芒瞬移追击，短暂免疫伤害。","type":"闪避","role":"机动","unlock_level":28,"cost":78,"cooldown":16},
+            {"id":"apollo_skill_6","name":"太阳终焉","description":"释放神级太阳爆发，对大范围敌人造成毁灭打击。","type":"奥义","role":"范围","unlock_level":40,"cost":95,"cooldown":32}
+        ],
+        "passive":{"name":"日轮神格","description":"太阳神域持续灼烧周围敌人，神级奥义伤害进一步提高。","effect":"damage","value":0.38},"resource_name":"太阳神力"
+    },
+    "athena": {
+        "class_name":"雅典娜","tier":"神明","faction":"奥林匹斯·雅典娜","faction_id":"athena","canon_status":"原作神明角色；可操作职业技能为游戏化扩展","style":"智慧与战争女神·神圣守护及统御","basic_attacks":["神圣长矛","胜利追击","女神裁决"],"name":"胜利女神之矛","combo":"雅典娜神圣裁决","burst_name":"雅典娜·大地守护","description":"神明职业拥有远超凡人战士的神格、神力与神域，技能数值定位为最高战力层。","cost":46,"cooldown":2.2,"damage":5.8,"combo_damage":8.8,"range":14,"cone":230,"knockback":13,"launch":5,"stagger":2.1,"combo_range":16,"combo_knockback":17,"combo_launch":7,"burst_range":15,"burst_knockback":21,"burst_launch":8,"color":Color(0.55, 0.82, 1.0),"abilities":[
+            {"id":"athena_skill_1","name":"胜利女神之矛","description":"以神圣之矛贯穿敌阵并击退目标。","type":"冲击","role":"群体","unlock_level":1,"cost":45,"cooldown":5},
+            {"id":"athena_skill_2","name":"雅典娜神盾","description":"展开女神结界，吸收大量伤害。","type":"护盾","role":"防御","unlock_level":5,"cost":52,"cooldown":8},
+            {"id":"athena_skill_3","name":"神圣净化","description":"净化自身负面状态并恢复生命与神力。","type":"治疗","role":"恢复","unlock_level":10,"cost":60,"cooldown":12},
+            {"id":"athena_skill_4","name":"战争女神号令","description":"神威压制敌人，降低其攻击并使其迟缓。","type":"削弱","role":"群体","unlock_level":18,"cost":68,"cooldown":14},
+            {"id":"athena_skill_5","name":"大地守护结界","description":"建立持续神域，强化防御并恢复生命。","type":"领域","role":"群体","unlock_level":28,"cost":76,"cooldown":18},
+            {"id":"athena_skill_6","name":"女神最终审判","description":"召唤神圣力量审判大范围敌人并施加强力硬直。","type":"奥义","role":"范围","unlock_level":40,"cost":92,"cooldown":32}
+        ],
+        "passive":{"name":"胜利女神庇护","description":"神圣结界持续减伤，净化与守护技能获得额外效果。","effect":"damage_reduction","value":0.42},"resource_name":"雅典娜神力"
+    },
+    "hades": {
+        "class_name":"哈迪斯","tier":"神明","faction":"冥界·哈迪斯","faction_id":"hades","canon_status":"原作神明角色；可操作职业技能为游戏化扩展","style":"冥界之神·灵魂侵蚀与死亡领域","basic_attacks":["冥王剑斩","亡魂追击","黑暗终结"],"name":"冥界之剑","combo":"冥王审判","burst_name":"哈迪斯·永恒黑暗","description":"神明职业拥有远超凡人战士的神格、神力与神域，技能数值定位为最高战力层。","cost":50,"cooldown":2.2,"damage":7.2,"combo_damage":10.2,"range":15,"cone":220,"knockback":16,"launch":6,"stagger":2,"combo_range":17,"combo_knockback":20,"combo_launch":8,"burst_range":16,"burst_knockback":24,"burst_launch":9,"color":Color(0.62, 0.28, 0.78),"abilities":[
+            {"id":"hades_skill_1","name":"冥界之剑","description":"挥出冥王剑气，斩裂前方敌人。","type":"冲击","role":"范围","unlock_level":1,"cost":48,"cooldown":5},
+            {"id":"hades_skill_2","name":"亡者召引","description":"召来亡魂缠绕目标，造成持续侵蚀与减速。","type":"领域","role":"群体","unlock_level":5,"cost":56,"cooldown":8},
+            {"id":"hades_skill_3","name":"冥王黑翼","description":"展开黑翼突进并击飞路径上的敌人。","type":"突进","role":"群体","unlock_level":10,"cost":64,"cooldown":11},
+            {"id":"hades_skill_4","name":"灵魂剥夺","description":"侵蚀目标灵魂，削弱其攻击与防御。","type":"削弱","role":"单体","unlock_level":18,"cost":72,"cooldown":14},
+            {"id":"hades_skill_5","name":"冥界不灭体","description":"短时间获得强力护盾并恢复生命。","type":"复苏","role":"生存","unlock_level":28,"cost":80,"cooldown":18},
+            {"id":"hades_skill_6","name":"永恒黑暗","description":"降下冥界终焉，对大范围敌人造成毁灭性伤害。","type":"奥义","role":"范围","unlock_level":40,"cost":100,"cooldown":34}
+        ],
+        "passive":{"name":"冥王不灭","description":"冥界领域侵蚀敌人并强化自身，生命低时获得额外神力护体。","effect":"damage","value":0.42},"resource_name":"冥王神力"
+    },
+    "poseidon": {
+        "class_name":"波塞冬","tier":"神明","faction":"海界·波塞冬","faction_id":"poseidon","canon_status":"原作神明角色；可操作职业技能为游戏化扩展","style":"海皇·海啸统御与三叉戟神罚","basic_attacks":["三叉戟横斩","海潮追击","海皇神罚"],"name":"海皇三叉戟","combo":"深海海啸","burst_name":"波塞冬·天地洪流","description":"神明职业拥有远超凡人战士的神格、神力与神域，技能数值定位为最高战力层。","cost":50,"cooldown":2.2,"damage":6.7,"combo_damage":9.6,"range":16,"cone":225,"knockback":19,"launch":6,"stagger":1.9,"combo_range":18,"combo_knockback":23,"combo_launch":8,"burst_range":17,"burst_knockback":27,"burst_launch":9,"color":Color(0.18, 0.72, 0.92),"abilities":[
+            {"id":"poseidon_skill_1","name":"三叉戟神罚","description":"挥动三叉戟释放贯穿海潮。","type":"冲击","role":"群体","unlock_level":1,"cost":48,"cooldown":5},
+            {"id":"poseidon_skill_2","name":"深海漩涡","description":"制造巨型漩涡牵引并压制敌人。","type":"牵引","role":"群体","unlock_level":5,"cost":56,"cooldown":8},
+            {"id":"poseidon_skill_3","name":"海皇壁垒","description":"召唤海流护盾，抵挡攻击并反击。","type":"护盾","role":"防御","unlock_level":10,"cost":64,"cooldown":12},
+            {"id":"poseidon_skill_4","name":"海啸天罚","description":"召唤海啸冲击大范围敌人。","type":"范围","role":"群体","unlock_level":18,"cost":72,"cooldown":14},
+            {"id":"poseidon_skill_5","name":"海界统御","description":"进入海皇领域，提升攻击、防御与移动。","type":"增益","role":"自身","unlock_level":28,"cost":80,"cooldown":18},
+            {"id":"poseidon_skill_6","name":"天地洪流","description":"释放海皇神力形成终极洪流，席卷战场。","type":"奥义","role":"范围","unlock_level":40,"cost":100,"cooldown":34}
+        ],
+        "passive":{"name":"海皇统御","description":"海皇领域强化水流攻击，并降低受到的远程伤害。","effect":"damage_reduction","value":0.36},"resource_name":"海皇神力"
+    }
+}
+
 # Advanced class skill branches: 18 additional skills per class, in three six-skill branches.
 const ADVANCED_CLASS_SKILLS := {
     "pegasus": [
@@ -378,16 +426,104 @@ const ADVANCED_CLASS_SKILLS := {
     ]
 }
 
+
+const DIVINE_ADVANCED_SKILLS := {
+    "apollo": [
+        {"id":"apollo_advanced_1","name":"日冕爆裂","description":"阿波罗施展日冕爆裂，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"突进","role":"单体","unlock_level":45,"cost":52,"cooldown":7},
+        {"id":"apollo_advanced_2","name":"耀斑贯星","description":"阿波罗施展耀斑贯星，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"远程","role":"群体","unlock_level":48,"cost":52,"cooldown":9},
+        {"id":"apollo_advanced_3","name":"神火连环","description":"阿波罗施展神火连环，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"冲击","role":"范围","unlock_level":51,"cost":56,"cooldown":11},
+        {"id":"apollo_advanced_4","name":"日轮坠落","description":"阿波罗施展日轮坠落，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"奥义","role":"范围","unlock_level":54,"cost":56,"cooldown":13},
+        {"id":"apollo_advanced_5","name":"光矛穿云","description":"阿波罗施展光矛穿云，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"连击","role":"单体","unlock_level":57,"cost":60,"cooldown":15},
+        {"id":"apollo_advanced_6","name":"太阳风暴","description":"阿波罗施展太阳风暴，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"终结","role":"范围","unlock_level":60,"cost":60,"cooldown":17},
+        {"id":"apollo_advanced_7","name":"光域禁锢","description":"阿波罗施展光域禁锢，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"领域","role":"群体","unlock_level":63,"cost":60,"cooldown":7},
+        {"id":"apollo_advanced_8","name":"神光灼魂","description":"阿波罗施展神光灼魂，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"削弱","role":"单体","unlock_level":66,"cost":60,"cooldown":9},
+        {"id":"apollo_advanced_9","name":"日蚀领域","description":"阿波罗施展日蚀领域，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"牵引","role":"群体","unlock_level":69,"cost":64,"cooldown":11},
+        {"id":"apollo_advanced_10","name":"烈阳屏障","description":"阿波罗施展烈阳屏障，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"护盾","role":"防御","unlock_level":72,"cost":64,"cooldown":13},
+        {"id":"apollo_advanced_11","name":"光速裁断","description":"阿波罗施展光速裁断，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"打断","role":"控制","unlock_level":75,"cost":68,"cooldown":15},
+        {"id":"apollo_advanced_12","name":"日轮锁链","description":"阿波罗施展日轮锁链，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"范围","role":"群体","unlock_level":78,"cost":68,"cooldown":17},
+        {"id":"apollo_advanced_13","name":"不灭日辉","description":"阿波罗施展不灭日辉，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"复苏","role":"生存","unlock_level":81,"cost":68,"cooldown":7},
+        {"id":"apollo_advanced_14","name":"太阳复苏","description":"阿波罗施展太阳复苏，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"治疗","role":"恢复","unlock_level":84,"cost":68,"cooldown":9},
+        {"id":"apollo_advanced_15","name":"神躯护佑","description":"阿波罗施展神躯护佑，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"护盾","role":"防御","unlock_level":87,"cost":72,"cooldown":11},
+        {"id":"apollo_advanced_16","name":"神威反震","description":"阿波罗施展神威反震，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"增益","role":"自身","unlock_level":90,"cost":72,"cooldown":13},
+        {"id":"apollo_advanced_17","name":"神格共鸣","description":"阿波罗施展神格共鸣，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"被动强化","role":"自身","unlock_level":93,"cost":76,"cooldown":15},
+        {"id":"apollo_advanced_18","name":"宇宙日冕","description":"阿波罗施展宇宙日冕，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"奥义","role":"范围","unlock_level":96,"cost":76,"cooldown":17}
+    ],
+    "athena": [
+        {"id":"athena_advanced_1","name":"圣矛连刺","description":"雅典娜施展圣矛连刺，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"突进","role":"单体","unlock_level":45,"cost":52,"cooldown":7},
+        {"id":"athena_advanced_2","name":"胜利突击","description":"雅典娜施展胜利突击，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"远程","role":"群体","unlock_level":48,"cost":52,"cooldown":9},
+        {"id":"athena_advanced_3","name":"神圣震荡","description":"雅典娜施展神圣震荡，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"冲击","role":"范围","unlock_level":51,"cost":56,"cooldown":11},
+        {"id":"athena_advanced_4","name":"女神回旋击","description":"雅典娜施展女神回旋击，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"奥义","role":"范围","unlock_level":54,"cost":56,"cooldown":13},
+        {"id":"athena_advanced_5","name":"战争裁断","description":"雅典娜施展战争裁断，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"连击","role":"单体","unlock_level":57,"cost":60,"cooldown":15},
+        {"id":"athena_advanced_6","name":"胜利终结","description":"雅典娜施展胜利终结，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"终结","role":"范围","unlock_level":60,"cost":60,"cooldown":17},
+        {"id":"athena_advanced_7","name":"和平结界","description":"雅典娜施展和平结界，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"领域","role":"群体","unlock_level":63,"cost":60,"cooldown":7},
+        {"id":"athena_advanced_8","name":"神圣净化阵","description":"雅典娜施展神圣净化阵，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"削弱","role":"单体","unlock_level":66,"cost":60,"cooldown":9},
+        {"id":"athena_advanced_9","name":"智慧预判","description":"雅典娜施展智慧预判，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"牵引","role":"群体","unlock_level":69,"cost":64,"cooldown":11},
+        {"id":"athena_advanced_10","name":"守护光环","description":"雅典娜施展守护光环，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"护盾","role":"防御","unlock_level":72,"cost":64,"cooldown":13},
+        {"id":"athena_advanced_11","name":"敌意消解","description":"雅典娜施展敌意消解，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"打断","role":"控制","unlock_level":75,"cost":68,"cooldown":15},
+        {"id":"athena_advanced_12","name":"圣域封锁","description":"雅典娜施展圣域封锁，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"范围","role":"群体","unlock_level":78,"cost":68,"cooldown":17},
+        {"id":"athena_advanced_13","name":"女神恩典","description":"雅典娜施展女神恩典，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"复苏","role":"生存","unlock_level":81,"cost":68,"cooldown":7},
+        {"id":"athena_advanced_14","name":"神力复苏","description":"雅典娜施展神力复苏，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"治疗","role":"恢复","unlock_level":84,"cost":68,"cooldown":9},
+        {"id":"athena_advanced_15","name":"神盾反击","description":"雅典娜施展神盾反击，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"护盾","role":"防御","unlock_level":87,"cost":72,"cooldown":11},
+        {"id":"athena_advanced_16","name":"不屈神格","description":"雅典娜施展不屈神格，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"增益","role":"自身","unlock_level":90,"cost":72,"cooldown":13},
+        {"id":"athena_advanced_17","name":"守护共鸣","description":"雅典娜施展守护共鸣，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"被动强化","role":"自身","unlock_level":93,"cost":76,"cooldown":15},
+        {"id":"athena_advanced_18","name":"奥林匹斯庇护","description":"雅典娜施展奥林匹斯庇护，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"奥义","role":"范围","unlock_level":96,"cost":76,"cooldown":17}
+    ],
+    "hades": [
+        {"id":"hades_advanced_1","name":"冥剑乱舞","description":"哈迪斯施展冥剑乱舞，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"突进","role":"单体","unlock_level":45,"cost":52,"cooldown":7},
+        {"id":"hades_advanced_2","name":"黑暗裂斩","description":"哈迪斯施展黑暗裂斩，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"远程","role":"群体","unlock_level":48,"cost":52,"cooldown":9},
+        {"id":"hades_advanced_3","name":"亡魂穿刺","description":"哈迪斯施展亡魂穿刺，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"冲击","role":"范围","unlock_level":51,"cost":56,"cooldown":11},
+        {"id":"hades_advanced_4","name":"深渊震荡","description":"哈迪斯施展深渊震荡，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"奥义","role":"范围","unlock_level":54,"cost":56,"cooldown":13},
+        {"id":"hades_advanced_5","name":"冥河斩击","description":"哈迪斯施展冥河斩击，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"连击","role":"单体","unlock_level":57,"cost":60,"cooldown":15},
+        {"id":"hades_advanced_6","name":"死亡终章","description":"哈迪斯施展死亡终章，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"终结","role":"范围","unlock_level":60,"cost":60,"cooldown":17},
+        {"id":"hades_advanced_7","name":"灵魂枷锁","description":"哈迪斯施展灵魂枷锁，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"领域","role":"群体","unlock_level":63,"cost":60,"cooldown":7},
+        {"id":"hades_advanced_8","name":"冥河漩涡","description":"哈迪斯施展冥河漩涡，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"削弱","role":"单体","unlock_level":66,"cost":60,"cooldown":9},
+        {"id":"hades_advanced_9","name":"死亡领域","description":"哈迪斯施展死亡领域，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"牵引","role":"群体","unlock_level":69,"cost":64,"cooldown":11},
+        {"id":"hades_advanced_10","name":"暗影侵蚀","description":"哈迪斯施展暗影侵蚀，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"护盾","role":"防御","unlock_level":72,"cost":64,"cooldown":13},
+        {"id":"hades_advanced_11","name":"亡者哀嚎","description":"哈迪斯施展亡者哀嚎，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"打断","role":"控制","unlock_level":75,"cost":68,"cooldown":15},
+        {"id":"hades_advanced_12","name":"冥界封印","description":"哈迪斯施展冥界封印，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"范围","role":"群体","unlock_level":78,"cost":68,"cooldown":17},
+        {"id":"hades_advanced_13","name":"不死冥躯","description":"哈迪斯施展不死冥躯，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"复苏","role":"生存","unlock_level":81,"cost":68,"cooldown":7},
+        {"id":"hades_advanced_14","name":"灵魂回收","description":"哈迪斯施展灵魂回收，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"治疗","role":"恢复","unlock_level":84,"cost":68,"cooldown":9},
+        {"id":"hades_advanced_15","name":"黑翼守护","description":"哈迪斯施展黑翼守护，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"护盾","role":"防御","unlock_level":87,"cost":72,"cooldown":11},
+        {"id":"hades_advanced_16","name":"死亡反噬","description":"哈迪斯施展死亡反噬，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"增益","role":"自身","unlock_level":90,"cost":72,"cooldown":13},
+        {"id":"hades_advanced_17","name":"冥王威压","description":"哈迪斯施展冥王威压，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"被动强化","role":"自身","unlock_level":93,"cost":76,"cooldown":15},
+        {"id":"hades_advanced_18","name":"永夜神格","description":"哈迪斯施展永夜神格，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"奥义","role":"范围","unlock_level":96,"cost":76,"cooldown":17}
+    ],
+    "poseidon": [
+        {"id":"poseidon_advanced_1","name":"三叉戟连斩","description":"波塞冬施展三叉戟连斩，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"突进","role":"单体","unlock_level":45,"cost":52,"cooldown":7},
+        {"id":"poseidon_advanced_2","name":"海流贯穿","description":"波塞冬施展海流贯穿，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"远程","role":"群体","unlock_level":48,"cost":52,"cooldown":9},
+        {"id":"poseidon_advanced_3","name":"怒涛冲拳","description":"波塞冬施展怒涛冲拳，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"冲击","role":"范围","unlock_level":51,"cost":56,"cooldown":11},
+        {"id":"poseidon_advanced_4","name":"海皇震击","description":"波塞冬施展海皇震击，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"奥义","role":"范围","unlock_level":54,"cost":56,"cooldown":13},
+        {"id":"poseidon_advanced_5","name":"深海龙卷","description":"波塞冬施展深海龙卷，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"连击","role":"单体","unlock_level":57,"cost":60,"cooldown":15},
+        {"id":"poseidon_advanced_6","name":"海神终结","description":"波塞冬施展海神终结，以神级力量强化神威进攻，产生专属战斗效果。","branch":"神威进攻","type":"终结","role":"范围","unlock_level":60,"cost":60,"cooldown":17},
+        {"id":"poseidon_advanced_7","name":"潮汐束缚","description":"波塞冬施展潮汐束缚，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"领域","role":"群体","unlock_level":63,"cost":60,"cooldown":7},
+        {"id":"poseidon_advanced_8","name":"海界结界","description":"波塞冬施展海界结界，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"削弱","role":"单体","unlock_level":66,"cost":60,"cooldown":9},
+        {"id":"poseidon_advanced_9","name":"深海压制","description":"波塞冬施展深海压制，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"牵引","role":"群体","unlock_level":69,"cost":64,"cooldown":11},
+        {"id":"poseidon_advanced_10","name":"海啸领域","description":"波塞冬施展海啸领域，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"护盾","role":"防御","unlock_level":72,"cost":64,"cooldown":13},
+        {"id":"poseidon_advanced_11","name":"水龙卷锁敌","description":"波塞冬施展水龙卷锁敌，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"打断","role":"控制","unlock_level":75,"cost":68,"cooldown":15},
+        {"id":"poseidon_advanced_12","name":"海皇封域","description":"波塞冬施展海皇封域，以神级力量强化神域掌控，产生专属战斗效果。","branch":"神域掌控","type":"范围","role":"群体","unlock_level":78,"cost":68,"cooldown":17},
+        {"id":"poseidon_advanced_13","name":"海神复苏","description":"波塞冬施展海神复苏，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"复苏","role":"生存","unlock_level":81,"cost":68,"cooldown":7},
+        {"id":"poseidon_advanced_14","name":"潮汐护体","description":"波塞冬施展潮汐护体，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"治疗","role":"恢复","unlock_level":84,"cost":68,"cooldown":9},
+        {"id":"poseidon_advanced_15","name":"三叉戟反击","description":"波塞冬施展三叉戟反击，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"护盾","role":"防御","unlock_level":87,"cost":72,"cooldown":11},
+        {"id":"poseidon_advanced_16","name":"海皇威严","description":"波塞冬施展海皇威严，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"增益","role":"自身","unlock_level":90,"cost":72,"cooldown":13},
+        {"id":"poseidon_advanced_17","name":"海洋共鸣","description":"波塞冬施展海洋共鸣，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"被动强化","role":"自身","unlock_level":93,"cost":76,"cooldown":15},
+        {"id":"poseidon_advanced_18","name":"万流归海","description":"波塞冬施展万流归海，以神级力量强化不朽神格，产生专属战斗效果。","branch":"不朽神格","type":"奥义","role":"范围","unlock_level":96,"cost":76,"cooldown":17}
+    ]
+}
+
 const ARMOR_STAGES := ["青铜圣衣", "白银圣衣", "黄金圣衣", "海界鳞衣", "冥衣", "神圣衣", "主神圣衣"]
 const ARMOR_PARTS := ["头盔", "胸甲", "护腕", "腰甲", "腿甲"]
 
 func get_class_skill(class_id: String) -> Dictionary:
-    return CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"]).duplicate(true)
+    return DIVINE_CLASS_SKILLS.get(class_id, CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"])).duplicate(true)
 
 func get_class_skill_catalog() -> Array:
     var result: Array = []
     for class_id in CLASS_SKILLS:
-        var entry: Dictionary = CLASS_SKILLS[class_id].duplicate(true)
+        var entry: Dictionary = get_class_skill(class_id)
+        entry["id"] = class_id
+        result.append(entry)
+    for class_id in DIVINE_CLASS_SKILLS:
+        var entry: Dictionary = get_class_skill(class_id)
         entry["id"] = class_id
         result.append(entry)
     return result
@@ -397,7 +533,7 @@ func get_skill_level(class_id: String) -> int:
     return clampi(int(levels.get(class_id, 1)), 1, 10)
 
 func upgrade_skill(class_id: String) -> bool:
-    if not CLASS_SKILLS.has(class_id):
+    if not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id):
         return false
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     var level := get_skill_level(class_id)
@@ -414,7 +550,7 @@ func upgrade_skill(class_id: String) -> bool:
     return true
 
 func set_skill_level(class_id: String, level: int) -> bool:
-    if not CLASS_SKILLS.has(class_id) or level < 1 or level > 10:
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id)) or level < 1 or level > 10:
         return false
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     levels[class_id] = level
@@ -433,7 +569,7 @@ func get_armor_catalog() -> Array:
 func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
     var result: Array = data.get("abilities", []).duplicate(true)
-    result.append_array(ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"]).duplicate(true))
+    result.append_array(DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"])).duplicate(true))
     return result
 
 func get_skill_branches(class_id: String) -> Array:
@@ -473,7 +609,7 @@ func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
     return 999
 
 func reset_skill_tree(class_id: String) -> bool:
-    if not CLASS_SKILLS.has(class_id) or int(RPGState.profile.get("currency", 0)) < 500:
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id)) or int(RPGState.profile.get("currency", 0)) < 500:
         return false
     var learned: Dictionary = RPGState.profile.get("learned_skills", {})
     var current: Array = learned.get(class_id, [class_id + "_skill_1"])
@@ -504,7 +640,7 @@ func get_selected_branch(class_id: String) -> String:
     var branches: Dictionary = RPGState.profile.get("skill_branches", {})
     return str(branches.get(class_id, ""))
 func choose_skill_branch(class_id: String, branch: String) -> bool:
-    if not CLASS_SKILLS.has(class_id) or not get_skill_branches(class_id).has(branch):
+    if (not CLASS_SKILLS.has(class_id) and not DIVINE_CLASS_SKILLS.has(class_id)) or not get_skill_branches(class_id).has(branch):
         return false
     var selected := get_selected_branch(class_id)
     if selected != "" and selected != branch:
