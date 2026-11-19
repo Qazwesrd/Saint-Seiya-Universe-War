@@ -127,6 +127,8 @@ func _ready() -> void:
     skill_button = _button(root, "流星拳\n技能", Vector2(-292, -98), Vector2(-166, -4), func(): _call_player("skill"), Color(0.08, 0.35, 0.68))
     _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
+    _button(root, "个人圣域", Vector2(236, 154), Vector2(350, 214), func(): _open_sanctuary(root), Color(0.22, 0.16, 0.42))
+    _button(root, "骑乘 / 下马", Vector2(354, 154), Vector2(488, 214), func(): _call_player("toggle_mount"), Color(0.12, 0.34, 0.38))
     get_viewport().size_changed.connect(_on_resize)
 func _style_panel(panel: Panel, color: Color, border: Color) -> void:
     var style := StyleBoxFlat.new()
@@ -777,12 +779,85 @@ func _open_collection(root: Control) -> void:
     for achievement_id in CollectionSystem.ACHIEVEMENTS:
         var achievement: Dictionary = CollectionSystem.ACHIEVEMENTS[achievement_id]
         var done := bool(achievements.get(achievement_id,false))
-        var achievement_label := Label.new()
-        achievement_label.text = ("✓ " if done else "○ ") + str(achievement["name"]) + "： " + str(achievement["description"])
-        box.add_child(achievement_label)
+        var claimed: Array = data.get("claimed_achievements",[])
+        var achievement_button := Button.new()
+        achievement_button.text = ("已领取 · " if achievement_id in claimed else ("领取奖励 · " if done else "未完成 · ")) + str(achievement["name"]) + "： " + str(achievement["description"])
+        achievement_button.disabled = not done or achievement_id in claimed
+        var selected_achievement := str(achievement_id)
+        achievement_button.pressed.connect(func():
+            var ok: bool = CollectionSystem.claim_achievement(selected_achievement)
+            set_notice("成就奖励已领取" if ok else "该成就尚未完成或奖励已领取")
+            popup.queue_free()
+        )
+        box.add_child(achievement_button)
     var close := Button.new()
     close.text = "关闭"
     close.pressed.connect(func(): popup.queue_free())
     box.add_child(close)
     root.add_child(popup)
     popup.popup_centered()
+
+func _open_sanctuary(root: Control) -> void:
+ var popup := PopupPanel.new()
+ popup.size = Vector2(560,520)
+ var scroll := ScrollContainer.new()
+ scroll.custom_minimum_size = Vector2(540,500)
+ popup.add_child(scroll)
+ var box := VBoxContainer.new()
+ box.add_theme_constant_override("separation",10)
+ scroll.add_child(box)
+ var title := Label.new()
+ title.text = "个人圣域 · 离线经营"
+ title.add_theme_font_size_override("font_size",23)
+ box.add_child(title)
+ var state: Dictionary = SanctuarySystem.get_state()
+ var rewards: Dictionary = SanctuarySystem.get_offline_rewards()
+ var summary := Label.new()
+ summary.text = "圣域等级：%d / 10    离线累计：%.1f 小时（最多 24 小时）\n可领取：经验 %d    星币 %d" % [int(state.get("level",1)),float(rewards.get("hours",0.0)),int(rewards.get("exp",0)),int(rewards.get("coins",0))]
+ summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+ box.add_child(summary)
+ var collect := Button.new()
+ collect.text = "领取离线收益"
+ collect.pressed.connect(func():
+  var result: Dictionary = SanctuarySystem.collect_offline_rewards()
+  game.call("refresh_player_stats")
+  set_notice("离线收益：经验 %d，星币 %d" % [int(result.get("exp",0)),int(result.get("coins",0))])
+  popup.queue_free()
+ )
+ box.add_child(collect)
+ var upgrade_home := Button.new()
+ upgrade_home.text = "升级个人圣域（消耗 %d 星币）" % (int(state.get("level",1))*1500)
+ upgrade_home.pressed.connect(func():
+  var ok: bool = SanctuarySystem.upgrade_sanctuary()
+  set_notice("圣域等级提升成功" if ok else "星币不足或圣域已达上限")
+  popup.queue_free()
+ )
+ box.add_child(upgrade_home)
+ var facilities: Dictionary = state.get("facilities",{})
+ for facility_id in SanctuarySystem.FACILITIES:
+  var facility: Dictionary = SanctuarySystem.FACILITIES[facility_id]
+  var level := int(facilities.get(facility_id,1))
+  var button := Button.new()
+  button.text = "%s Lv.%d → Lv.%d（消耗 %d 星币）" % [str(facility.get("name","设施")),level,level+1,int(facility.get("base_cost",300))*level]
+  button.disabled = level >= SanctuarySystem.MAX_FACILITY_LEVEL
+  var selected_id := str(facility_id)
+  button.pressed.connect(func():
+   var ok: bool = SanctuarySystem.upgrade_facility(selected_id)
+   set_notice("设施升级成功" if ok else "星币不足或设施已达上限")
+   popup.queue_free()
+  )
+  box.add_child(button)
+ var leave := Button.new()
+ leave.text = "进入圣域 / 返回竞技场"
+ leave.pressed.connect(func():
+  popup.queue_free()
+  if bool(game.get("sanctuary_active")): game.call("leave_sanctuary")
+  else: game.call("enter_sanctuary")
+ )
+ box.add_child(leave)
+ var close := Button.new()
+ close.text = "关闭"
+ close.pressed.connect(func(): popup.queue_free())
+ box.add_child(close)
+ root.add_child(popup)
+ popup.popup_centered()
