@@ -117,6 +117,7 @@ func _ready() -> void:
     stick_knob.size = Vector2(56, 56)
     _style_panel(stick_knob, Color(0.5, 0.75, 1.0, 0.82), Color(0.8, 0.92, 1.0))
     root.add_child(stick_knob)
+    _button(root, "GM管理", Vector2(-190, 18), Vector2(-22, 72), func(): _open_gm(root), Color(0.42, 0.12, 0.28))
     _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): _open_shop(root), Color(0.28, 0.22, 0.08))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
@@ -188,7 +189,7 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     cosmos_bar.max_value = cosmos_max
     cosmos_bar.value = cosmos
     if is_instance_valid(skill_button):
-        skill_button.text = "流星拳\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
+        var skill_name := str(SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus"))).get("name", "职业技能"))\n        skill_button.text = skill_name + "\\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
 func set_enemy_count(count: int) -> void:
@@ -498,3 +499,116 @@ func _open_character(root: Control) -> void:
     box.add_child(close)
     root.add_child(popup)
     popup.popup_centered()
+
+func _open_gm(root: Control) -> void:
+    if not GMManager.enabled:
+        set_notice("GM 管理当前已关闭")
+        return
+    var popup := PopupPanel.new()
+    popup.size = Vector2(500, 560)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(480, 540)
+    popup.add_child(scroll)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 10)
+    scroll.add_child(box)
+    var title := Label.new()
+    title.text = "本地 GM 管理面板"
+    title.add_theme_font_size_override("font_size", 24)
+    box.add_child(title)
+    var warning := Label.new()
+    warning.text = "仅本机离线调试使用；修改会写入当前本地存档。"
+    warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    box.add_child(warning)
+    var coin_input := SpinBox.new()
+    coin_input.min_value = 1
+    coin_input.max_value = 100000000
+    coin_input.value = 10000
+    coin_input.step = 100
+    box.add_child(_gm_labeled_row("增加星币", coin_input))
+    var coin_button := Button.new()
+    coin_button.text = "执行：增加星币"
+    coin_button.pressed.connect(func():
+        var ok: bool = GMManager.grant_currency(int(coin_input.value))
+        set_notice("星币已增加" if ok else "操作失败")
+        popup.queue_free()
+    )
+    box.add_child(coin_button)
+    var exp_input := SpinBox.new()
+    exp_input.min_value = 1
+    exp_input.max_value = 10000000
+    exp_input.value = 5000
+    exp_input.step = 100
+    box.add_child(_gm_labeled_row("增加经验", exp_input))
+    var exp_button := Button.new()
+    exp_button.text = "执行：增加经验"
+    exp_button.pressed.connect(func():
+        var ok: bool = GMManager.grant_exp(int(exp_input.value))
+        if ok: game.call("refresh_player_stats")
+        set_notice("经验已增加" if ok else "操作失败")
+        popup.queue_free()
+    )
+    box.add_child(exp_button)
+    var level_input := SpinBox.new()
+    level_input.min_value = 1
+    level_input.max_value = RPGState.MAX_LEVEL
+    level_input.value = int(RPGState.profile.get("level", 1))
+    box.add_child(_gm_labeled_row("设置等级（1-100）", level_input))
+    var level_button := Button.new()
+    level_button.text = "执行：设置等级"
+    level_button.pressed.connect(func():
+        var ok: bool = GMManager.set_level(int(level_input.value))
+        if ok: game.call("refresh_player_stats")
+        set_notice("等级设置完成" if ok else "等级设置失败")
+        popup.queue_free()
+    )
+    box.add_child(level_button)
+    var heal_button := Button.new()
+    heal_button.text = "恢复角色生命与小宇宙"
+    heal_button.pressed.connect(func():
+        if is_instance_valid(game.player):
+            game.player.health = game.player.max_health
+            game.player.cosmos = game.player.max_cosmos
+        GMManager.restore_player()
+        set_notice("角色状态已恢复")
+        popup.queue_free()
+    )
+    box.add_child(heal_button)
+    var items_button := Button.new()
+    items_button.text = "发放全部已定义物品"
+    items_button.pressed.connect(func():
+        GMManager.grant_all_known_items()
+        set_notice("已发放物品；可在角色背包查看")
+        popup.queue_free()
+    )
+    box.add_child(items_button)
+    var reset_button := Button.new()
+    reset_button.text = "重置当前任务（危险操作）"
+    reset_button.pressed.connect(func():
+        var confirm := ConfirmationDialog.new()
+        confirm.dialog_text = "确定重置当前任务进度吗？此操作会覆盖本地任务记录。"
+        confirm.confirmed.connect(func():
+            GMManager.reset_local_quest()
+            set_notice("当前任务已重置")
+            popup.queue_free()
+        )
+        root.add_child(confirm)
+        confirm.popup_centered()
+    )
+    box.add_child(reset_button)
+    var close := Button.new()
+    close.text = "关闭 GM 面板"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
+
+func _gm_labeled_row(caption: String, control: Control) -> Control:
+    var row := HBoxContainer.new()
+    var label := Label.new()
+    label.text = caption
+    label.custom_minimum_size = Vector2(190, 36)
+    row.add_child(label)
+    control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    row.add_child(control)
+    return row
