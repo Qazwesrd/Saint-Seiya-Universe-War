@@ -86,9 +86,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     var coin_reward := 120 if enemy.get("is_boss") else 40
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
-    var stats: Dictionary = RPGState.get_combat_stats()
-    player.max_health = float(stats.get("max_health", player.max_health))
-    player.health = minf(player.health, player.max_health)
+    refresh_player_stats()
     var reward_text := "获得经验 %d、星币 %d" % [exp_reward, coin_reward]
     if level_gains > 0:
         reward_text += "，等级提升 %d 级！" % level_gains
@@ -136,4 +134,6 @@ func refresh_player_stats() -> void:
         return
     var stats: Dictionary = RPGState.get_combat_stats()
     player.max_health = float(stats.get("max_health", player.max_health))
+    player.max_cosmos = float(stats.get("max_cosmos", player.max_cosmos))
     player.health = minf(player.health, player.max_health)
+    player.cosmos = minf(player.cosmos, player.max_cosmos)
