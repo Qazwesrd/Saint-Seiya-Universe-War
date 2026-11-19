@@ -289,3 +289,57 @@ func restore_backup(slot: int) -> bool:
  return load_slot(slot)
 func _emit_change() -> void:
  state_changed.emit()
+
+
+func has_slot(slot: int) -> bool:
+	return slot >= 1 and slot <= 3 and FileAccess.file_exists(_save_path(slot))
+
+func get_slot_summary(slot: int) -> Dictionary:
+	if not has_slot(slot):
+		return {"slot": slot, "exists": false, "label": "空存档槽"}
+	var file := FileAccess.open(_save_path(slot), FileAccess.READ)
+	if file == null:
+		return {"slot": slot, "exists": false, "label": "存档无法读取"}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY or int(parsed.get("version", 0)) != 1:
+		return {"slot": slot, "exists": true, "valid": false, "label": "存档损坏或版本不兼容"}
+	var class_id := str(parsed.get("class_id", "pegasus"))
+	var class_data: Dictionary = CLASS_DATA.get(class_id, CLASS_DATA["pegasus"])
+	return {
+		"slot": slot,
+		"exists": true,
+		"valid": true,
+		"class_id": class_id,
+		"class_name": str(class_data.get("name", class_id)),
+		"level": int(parsed.get("level", 1)),
+		"currency": int(parsed.get("currency", 0)),
+		"saved_at": str(parsed.get("updated_at", parsed.get("created_at", "未知"))),
+		"label": "%s · Lv.%d · 星币 %d" % [str(class_data.get("name", class_id)), int(parsed.get("level", 1)), int(parsed.get("currency", 0))]
+	}
+
+func create_new_slot(slot: int) -> bool:
+	if slot < 1 or slot > 3 or has_slot(slot):
+		return false
+	var previous_profile: Dictionary = profile.duplicate(true)
+	var previous_slot: int = active_slot
+	profile = {}
+	_ensure_profile()
+	if not save_slot(slot):
+		profile = previous_profile
+		active_slot = previous_slot
+		return false
+	_emit_change()
+	return true
+
+func delete_slot(slot: int) -> bool:
+	if not has_slot(slot):
+		return false
+	if not backup_slot(slot):
+		return false
+	var result := DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path(slot))) == OK
+	if result and active_slot == slot:
+		profile = {}
+		_ensure_profile()
+		_emit_change()
+	return result
