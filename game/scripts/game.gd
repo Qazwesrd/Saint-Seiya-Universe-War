@@ -132,6 +132,13 @@ func interact_with_guide() -> void:
         show_notice("靠近圣域训练引导员后再交谈")
         return
     var dialogue: Dictionary = QuestManager.interact_with_guide()
+    var campaign_mission: Dictionary = CampaignManager.get_active_mission()
+    if str(campaign_mission.get("id", "")) == "gw_001":
+        CampaignManager.add_objective_progress("talk_guide", 1)
+        if CampaignManager.can_complete_active_mission():
+            var campaign_result: Dictionary = CampaignManager.complete_active_mission()
+            if bool(campaign_result.get("success", false)):
+                show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if is_instance_valid(hud):
         hud.call("show_dialogue", dialogue)
     show_notice(str(dialogue.get("action", "")))
@@ -233,7 +240,18 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
 
 
 func on_enemy_defeated(enemy: Node3D) -> void:
-    QuestManager.on_enemy_defeated(bool(enemy.get("is_boss")))
+    var defeated_boss := bool(enemy.get("is_boss"))
+    var campaign_mission: Dictionary = CampaignManager.get_active_mission()
+    var campaign_id := str(campaign_mission.get("id", ""))
+    if campaign_id == "gw_002" and not defeated_boss:
+        CampaignManager.add_objective_progress("defeat_training_enemy", 1)
+    elif campaign_id == "gw_003" and defeated_boss:
+        CampaignManager.add_objective_progress("defeat_training_boss", 1)
+    if CampaignManager.can_complete_active_mission():
+        var campaign_result: Dictionary = CampaignManager.complete_active_mission()
+        if bool(campaign_result.get("success", false)):
+            show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
+    QuestManager.on_enemy_defeated(defeated_boss)
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     enemies.erase(enemy)
     var exp_reward := 90 if enemy.get("is_boss") else 30
