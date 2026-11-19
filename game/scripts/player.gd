@@ -308,7 +308,7 @@ func cast_ability(ability_id: String) -> void:
         reach += 2.0
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
     _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
-    if not ("防御" in ability_type or "护盾" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "守护" in ability_type or "闪避" in ability_type):
+    if not ("防御" in ability_type or "护盾" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or "回能" in ability_type or "资源" in ability_type or "增益" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or "净化" in ability_type or "闪避" in ability_type):
         game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15, float(class_data.get("launch", 1.0)), float(class_data.get("stagger", 0.5)))
     game.call("apply_ability_effect", class_id, ability, reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
