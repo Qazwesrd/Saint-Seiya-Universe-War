@@ -16,6 +16,8 @@ func _ensure_data() -> Dictionary:
   data = {"unlocked_stages":["bronze"],"current_stage":"bronze","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
   RPGState.profile["armor_state"] = data
  return data
+func get_stage_ids() -> Array:
+ return STAGES.keys()
 func get_state() -> Dictionary:
  return _ensure_data().duplicate(true)
 func get_current_stage_name() -> String:
