@@ -680,6 +680,15 @@ func _open_gm(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(set_skill_button)
+    var unlock_collection_button := Button.new()
+    unlock_collection_button.text = "GM：解锁全部伙伴、宠物与坐骑"
+    unlock_collection_button.pressed.connect(func():
+        GMManager.unlock_all_collections()
+        game.call("refresh_player_stats")
+        set_notice("伙伴、宠物和坐骑图鉴已全部解锁")
+        popup.queue_free()
+    )
+    box.add_child(unlock_collection_button)
     var reset_button := Button.new()
     reset_button.text = "重置当前任务（危险操作）"
     reset_button.pressed.connect(func():
