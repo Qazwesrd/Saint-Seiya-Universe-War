@@ -149,6 +149,7 @@ func _spawn_enemy(at: Vector3, boss: bool) -> void:
     enemy.set_script(EnemyScript)
     enemy.set("game", self)
     enemy.set("is_boss", boss)
+    enemy.set("archetype_id", "arena_boss" if boss else "arena_guard")
     enemy.position = at
     add_child(enemy)
     enemies.append(enemy)
@@ -256,8 +257,8 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
-    var exp_reward := 90 if enemy.get("is_boss") else 30
-    var coin_reward := 120 if enemy.get("is_boss") else 40
+    var exp_reward := int(enemy.get("exp_reward"))
+    var coin_reward := int(enemy.get("coin_reward"))
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
     var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)))
