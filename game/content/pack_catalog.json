@@ -1,0 +1,13 @@
+{
+  "catalog_version": 1,
+  "delivery_mode": "offline_local",
+  "packs": {
+    "core": {"name": "基础游戏资源", "chapter": "core", "required": true, "install_state": "bundled"},
+    "galaxy_wars": {"name": "银河战争篇", "chapter": "galaxy_wars", "required": false, "install_state": "planned"},
+    "sanctuary_twelve_houses": {"name": "圣域十二宫篇", "chapter": "sanctuary", "required": false, "install_state": "planned"},
+    "poseidon": {"name": "海皇篇", "chapter": "poseidon", "required": false, "install_state": "planned"},
+    "hades": {"name": "冥王篇", "chapter": "hades", "required": false, "install_state": "planned"},
+    "heaven": {"name": "天界篇", "chapter": "heaven", "required": false, "install_state": "planned"},
+    "original_final": {"name": "原创终极篇", "chapter": "original_final", "required": false, "install_state": "planned"}
+  }
+}
