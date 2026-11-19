@@ -13,6 +13,7 @@ var teleport_point: Node3D
 var sanctuary_active := false
 var sanctuary_origin := Vector3(0, 0.15, 7)
 func _ready() -> void:
+    CombatSessionManager.begin_encounter("galaxy_arena_trial")
     _build_world()
     player = CharacterBody3D.new()
     player.set_script(PlayerScript)
@@ -253,13 +254,17 @@ func on_enemy_defeated(enemy: Node3D) -> void:
             show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     QuestManager.on_enemy_defeated(defeated_boss)
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
+    CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
     var exp_reward := 90 if enemy.get("is_boss") else 30
     var coin_reward := 120 if enemy.get("is_boss") else 40
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
+    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)))
     refresh_player_stats()
     var reward_text := "获得经验 %d、星币 %d" % [exp_reward, coin_reward]
+    for drop in drops:
+        reward_text += "、%s×%d" % [str(drop.get("name", "物品")), int(drop.get("quantity", 1))]
     if level_gains > 0:
         reward_text += "，等级提升 %d 级！" % level_gains
     show_notice(reward_text)
