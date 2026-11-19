@@ -5,6 +5,7 @@ run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 EventBus="*res://scripts/event_bus.gd"
+SystemHealthManager="*res://scripts/system_health_manager.gd"
 SettingsManager="*res://scripts/settings_manager.gd"
 LocalizationManager="*res://scripts/localization_manager.gd"
 AudioManager="*res://scripts/audio_manager.gd"
