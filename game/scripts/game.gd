@@ -557,24 +557,40 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     var status_duration := 3.0
     var status_power := 0.0
 
-    if "冻结" in ability_type or "冰" in ability_type or "冰结" in ability_name:
+    # Resolve combat behavior from authored skill type/role instead of relying
+    # on a small handful of hard-coded skill names.
+    if "冻结" in ability_type or "冰" in ability_type or "冰结" in ability_name or "禁锢" in ability_type or "束缚" in ability_type:
         status = "freeze"
-        status_duration = 2.6
-    elif "灼烧" in ability_type or "火" in ability_type or "烈焰" in ability_name:
+        status_duration = 2.2
+    elif "灼烧" in ability_type or "火" in ability_type or "烈焰" in ability_name or "引爆" in ability_type:
         status = "burn"
-        status_duration = 5.0
-        status_power = maxf(2.0, attack_power * 0.16)
-    elif "削弱" in ability_type or "精神" in ability_type or "虚弱" in ability_name:
-        status = "weaken"
         status_duration = 4.5
-        status_power = 0.3
-    elif "领域" in ability_type or "控场" in ability_type or "音波" in ability_type:
+        status_power = maxf(2.0, attack_power * 0.14)
+    elif "削弱" in ability_type or "精神" in ability_type or "虚弱" in ability_name or "破防" in ability_type or "破甲" in ability_type or "易伤" in ability_type:
+        status = "weaken"
+        status_duration = 4.0
+        status_power = 0.26 if ("易伤" in ability_type or "破甲" in ability_type) else 0.20
+    elif "领域" in ability_type or "控场" in ability_type or "音波" in ability_type or "陷阱" in ability_type or "牵制" in ability_type or "减速" in ability_role or "混乱" in ability_type or "干扰" in ability_type:
         status = "slow"
         status_duration = 3.5
-        status_power = 0.32
+        status_power = 0.30
+    elif "控制" in ability_role or "打断" in ability_type:
+        status = "slow"
+        status_duration = 2.0
+        status_power = 0.18
 
-    var is_support_ability := "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or "回能" in ability_type or "资源" in ability_type or "净化" in ability_type
-    # 天猛：冥斗士重击压制；天琴：以音律迟缓并打断敌人。辅助技能不附带敌方控制。
+    var is_support_ability := (
+        "防御" in ability_type or "护盾" in ability_type or "屏障" in ability_type or
+        "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or
+        "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or
+        "保命" in ability_type or "减伤" in ability_type or "反伤" in ability_type or
+        "回能" in ability_type or "资源" in ability_type or "净化" in ability_type or
+        "闪避" in ability_type or "替身" in ability_type or "脱身" in ability_type or
+        "生存" in ability_role or "恢复" in ability_role or "治疗" in ability_role or
+        "护盾" in ability_role or "减伤" in ability_role or "防御" in ability_role
+    )
+
+    # Core classes retain their signature control identities.
     if not is_support_ability and class_id == "tenmou":
         status = "weaken"
         status_duration = maxf(status_duration, 2.8)
@@ -584,7 +600,11 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_duration = maxf(status_duration, 3.0)
         status_power = maxf(status_power, 0.22)
 
-    var is_area := "范围" in ability_role or "群体" in ability_role or "领域" in ability_type or "震地" in ability_type or "奥义" in ability_type
+    var is_area := (
+        "范围" in ability_role or "群体" in ability_role or "群攻" in ability_role or
+        "领域" in ability_type or "震地" in ability_type or "奥义" in ability_type or
+        "扩散" in ability_type or "弹射" in ability_type or "直线" in ability_role
+    )
     var max_distance := reach + (1.5 if is_area else 0.5)
     for enemy in enemies.duplicate():
         if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
@@ -603,48 +623,52 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
             enemy.call("apply_status_effect", status, status_duration, status_power)
             impacted = true
 
-        if "牵引" in ability_type or "拉拽" in ability_name:
+        if ("牵引" in ability_type or "拉拽" in ability_name) and enemy.has_method("apply_hit_reaction"):
             var pull: Vector3 = player.global_position - enemy.global_position
             pull.y = 0.0
-            if enemy.has_method("apply_hit_reaction"):
+            if pull.length_squared() > 0.001:
                 enemy.call("apply_hit_reaction", pull.normalized(), 6.0, 0.0, 0.45)
                 impacted = true
-        elif "击退" in ability_type or "冲击" in ability_type or "震地" in ability_type:
+        elif ("击退" in ability_type or "冲击" in ability_type or "震地" in ability_type) and enemy.has_method("apply_hit_reaction"):
             var push: Vector3 = enemy.global_position - player.global_position
             push.y = 0.0
-            if enemy.has_method("apply_hit_reaction"):
+            if push.length_squared() > 0.001:
                 enemy.call("apply_hit_reaction", push.normalized(), 7.0, 1.2, 0.5)
                 impacted = true
-        elif ("打断" in ability_type or (class_id == "lyra" and not is_support_ability)) and enemy.has_method("apply_hit_reaction"):
-            var stagger := 0.9 if "打断" in ability_type else 0.55
-            enemy.call("apply_hit_reaction", offset.normalized(), 1.5, 0.0, stagger)
+        elif ("挑空" in ability_type or "空袭" in ability_type) and enemy.has_method("apply_hit_reaction"):
+            enemy.call("apply_hit_reaction", offset.normalized(), 4.0, 3.2, 0.55)
             impacted = true
-        elif class_id == "tenmou" and enemy.has_method("apply_hit_reaction"):
+        elif ("打断" in ability_type or class_id == "lyra") and not is_support_ability and enemy.has_method("apply_hit_reaction"):
+            enemy.call("apply_hit_reaction", offset.normalized(), 1.5, 0.0, 0.65)
+            impacted = true
+        elif class_id == "tenmou" and not is_support_ability and enemy.has_method("apply_hit_reaction"):
             enemy.call("apply_hit_reaction", offset.normalized(), 2.8, 0.0, 0.65)
             impacted = true
 
         if impacted:
             affected += 1
 
-    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type:
+    if "防御" in ability_type or "护盾" in ability_type or "屏障" in ability_type or "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or "减伤" in ability_type or "保命" in ability_type:
         player.call("apply_temporary_buff", 0.0, 0.42 if "霸体" not in ability_type else 0.28, 5.0)
-    if "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type:
-        player.health = minf(player.max_health, player.health + player.max_health * 0.32)
+    if "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or "治疗" in ability_role or "恢复" in ability_role:
+        player.health = minf(player.max_health, player.health + player.max_health * (0.38 if "复苏" in ability_type else 0.28))
         player.cosmos = minf(player.max_cosmos, player.cosmos + 15.0)
     if "回能" in ability_type or "资源" in ability_type:
         player.cosmos = minf(player.max_cosmos, player.cosmos + 28.0)
-    if "增益" in ability_type or "狂怒" in ability_type or "召唤" in ability_type or "被动强化" in ability_type:
+    if "增益" in ability_type or "狂怒" in ability_type or "被动强化" in ability_type or "强化" in ability_type or "蓄力" in ability_type:
         player.call("apply_temporary_buff", 0.25, 0.0, 5.5)
-    if "闪避" in ability_type or "替身" in ability_type:
+    if "闪避" in ability_type or "替身" in ability_type or "脱身" in ability_type:
         player.invulnerable = maxf(player.invulnerable, 0.85)
         player.velocity = -player.global_transform.basis.z * 7.0
-    if "冲锋" in ability_type or "突进" in ability_type or "机动" in ability_type or "位移" in ability_type:
+    if "冲锋" in ability_type or "突进" in ability_type or "机动" in ability_type or "位移" in ability_type or "突刺" in ability_type:
         player.velocity = -player.global_transform.basis.z * 10.0
         player.invulnerable = maxf(player.invulnerable, 0.3)
+    if "反击" in ability_type or "反制" in ability_type:
+        player.call("apply_temporary_buff", 0.12, 0.35, 2.5)
 
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
-    elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "治疗" in ability_type or "恢复" in ability_type or "增益" in ability_type or "闪避" in ability_type or "突进" in ability_type or "位移" in ability_type or "回能" in ability_type or "资源" in ability_type or "霸体" in ability_type:
+    elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
         show_notice(ability_name + "：自身效果已生效")
     if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
         _apply_divine_signature(class_id, ability, max_distance)
