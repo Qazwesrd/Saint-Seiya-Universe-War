@@ -121,6 +121,24 @@ func _run_tests() -> void:
 	assert(DailyBossManager.get_rotation_catalog().size() == 7, "seven-day daily boss rotation")
 	assert(str(DailyBossManager.get_state().get("boss_id", "")) != "", "daily boss cycle initialized")
 	assert(int(DailyBossManager.get_state().get("reset_hour_local", -1)) == 5, "daily boss reset at local 05:00")
+	var daily_profile_snapshot: Dictionary = RPGState.profile.duplicate(true)
+	var daily_state_snapshot: Dictionary = DailyBossManager.state.duplicate(true)
+	var daily_slot_snapshot := RPGState.active_slot
+	DailyBossManager.state = {
+		"version": 1,
+		"cycle_id": "2099-01-01",
+		"boss_id": "daily_celestial_guardian",
+		"defeated": true,
+		"reward_claimed": false
+	}
+	RPGState.active_slot = 0
+	var rejected_daily_claim: Dictionary = DailyBossManager.claim_reward()
+	assert(not bool(rejected_daily_claim.get("success", false)), "daily reward claim rejects an unavailable save slot")
+	assert(RPGState.profile == daily_profile_snapshot, "failed daily reward claim rolls back all profile rewards")
+	assert(not bool(DailyBossManager.state.get("reward_claimed", false)), "failed daily reward claim rolls back claim marker")
+	RPGState.profile = daily_profile_snapshot
+	RPGState.active_slot = daily_slot_snapshot
+	DailyBossManager.state = daily_state_snapshot
 	var local_date := Time.get_datetime_dict_from_system()
 	var before_reset := {"year": local_date.year, "month": local_date.month, "day": local_date.day, "hour": 4, "minute": 59, "second": 0}
 	var after_reset := {"year": local_date.year, "month": local_date.month, "day": local_date.day, "hour": 5, "minute": 1, "second": 0}
