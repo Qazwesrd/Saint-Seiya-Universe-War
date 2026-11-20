@@ -192,6 +192,12 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("lyra"), 1.15), "Lyra stagger passive affects hit reactions")
 	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("sea_swallow"), 1.12), "Sea Swallow speed passive affects movement")
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("pegasus"), 1.0), "classes without stagger passives keep neutral stagger")
+	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("pegasus"), 1.0), "combo-only passive does not increase basic or ordinary skill damage")
+	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("pegasus"), 1.08), "Pegasus combo passive applies to combo finishers")
+	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("dragon"), 1.0), "classes without combo passive keep neutral combo damage")
+	assert(is_equal_approx(SkillSystem.get_damage_reduction("dragon"), 0.12), "Dragon defensive passive exposes its damage reduction")
+	assert(is_equal_approx(SkillSystem.get_damage_reduction("pegasus"), 0.0), "classes without defensive passive have no passive damage reduction")
+
 	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
 	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
 	test_boss.queue_free()
