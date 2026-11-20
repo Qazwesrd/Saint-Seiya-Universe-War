@@ -260,6 +260,15 @@ func _run_tests() -> void:
 	assert(str(summon_profile.get("action", "")) == "summon", "summon skills resolve an autonomous combat actor")
 	assert(float(summon_profile.get("summon_lifetime", 0.0)) >= 5.0 and float(summon_profile.get("summon_damage_ratio", 0.0)) > 0.0, "summon duration and damage are configured")
 	assert(load("res://scripts/skill_summon.gd") != null, "offline summon actor script is present")
+	var field_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "领域"})
+	assert(str(field_profile.get("action", "")) == "field" and float(field_profile.get("field_lifetime", 0.0)) >= 4.0, "area skills create persistent damage fields")
+	assert(float(field_profile.get("field_radius", 0.0)) >= 3.0 and float(field_profile.get("field_tick_interval", 0.0)) > 0.0, "field radius and tick cadence are configured")
+	var trap_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "陷阱"})
+	assert(str(trap_profile.get("action", "")) == "trap" and float(trap_profile.get("field_lifetime", 0.0)) >= 8.0, "trap skills create timed trigger actors")
+	var homing_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "追踪"})
+	assert(str(homing_profile.get("action", "")) == "homing_projectile" and float(homing_profile.get("projectile_damage_ratio", 0.0)) > 0.0, "tracking skills create homing projectiles")
+	assert(load("res://scripts/skill_field.gd") != null, "field and trap actor script is present")
+	assert(load("res://scripts/skill_projectile.gd") != null, "homing projectile actor script is present")
 	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("tenkishi"), 1.22), "Tenkishi flight profession retains its movement passive")
 	var divine_support_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
