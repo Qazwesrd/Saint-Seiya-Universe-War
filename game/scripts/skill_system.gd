@@ -1188,7 +1188,8 @@ func get_combo_damage_multiplier(class_id: String) -> float:
 func get_damage_reduction(class_id: String, facing_dot: float = 1.0) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "damage_reduction":
-        var reduction := clampf(float(passive.get("value", 0.0)), 0.0, 0.60 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明" else (0.25 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "天斗士" else 0.35))
+        var reduction_cap := 0.14 if class_id == "tenkishi" else (0.60 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明" else (0.25 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "天斗士" else 0.35))
+		var reduction := clampf(float(passive.get("value", 0.0)), 0.0, reduction_cap)
         # Dragon Shield is a directional guard: attacks from the front are
         # mitigated, while flank and rear attacks bypass this passive.
         if class_id == "dragon" and facing_dot < 0.25:
