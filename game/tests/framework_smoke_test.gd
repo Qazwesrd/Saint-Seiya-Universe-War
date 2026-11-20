@@ -90,6 +90,15 @@ func _run_tests() -> void:
 	for coverage_key in ["model_coverage", "portrait_coverage", "animation_coverage"]:
 		assert(float(art_coverage_report.get(coverage_key, -1.0)) >= 0.0 and float(art_coverage_report.get(coverage_key, 1.1)) <= 1.0, "art asset coverage is a valid ratio: " + coverage_key)
 	assert(art_coverage_report.has("missing_models") and art_coverage_report.has("missing_portraits") and art_coverage_report.has("missing_animations"), "art asset audit reports missing deliverables explicitly")
+	var equipment_art_count := EquipmentDatabase.get_catalog().size()
+	assert(int(art_coverage_report.get("equipment_count", -1)) == equipment_art_count, "art audit covers every catalogued armor and garment")
+	assert(art_coverage_report.has("missing_armor_models") and art_coverage_report.has("missing_armor_icons") and art_coverage_report.has("missing_armor_manifests"), "armor audit reports every missing deliverable")
+	assert(int(art_coverage_report.get("enemy_count", -1)) == EnemyDatabase.ARCHETYPES.size(), "art audit covers every enemy and boss")
+	assert(art_coverage_report.has("missing_enemy_models") and art_coverage_report.has("missing_enemy_portraits"), "enemy audit reports missing authored assets")
+	assert(int(art_coverage_report.get("chapter_count", 0)) == 7 and art_coverage_report.has("missing_chapter_scenes"), "art audit covers all seven campaign environment themes")
+	assert(int(art_coverage_report.get("skill_count", 0)) == 768, "art audit counts all 768 class abilities")
+	assert(art_coverage_report.has("missing_skill_effects"), "skill VFX audit reports missing authored element effects")
+	assert(typeof(art_coverage_report.get("authored_art_complete", null)) == TYPE_BOOL, "art audit exposes an explicit completion gate")
 	var animation_profile_count := 0
 	for class_entry in SkillSystem.get_class_skill_catalog():
 		var animation_class_id := str(class_entry.get("id", ""))
