@@ -102,8 +102,6 @@ static func build_report() -> Dictionary:
 		"armor_icon_count": equipment_total - missing_armor_icons.size(),
 		"armor_manifest_count": equipment_total - missing_armor_manifests.size(),
 		"armor_model_coverage": _coverage(equipment_total - missing_armor_models.size(), equipment_total),
-		"armor_icon_count": equipment_total - missing_armor_icons.size(),
-		"armor_manifest_count": equipment_total - missing_armor_manifests.size(),
 		"armor_icon_coverage": _coverage(equipment_total - missing_armor_icons.size(), equipment_total),
 		"armor_manifest_coverage": _coverage(equipment_total - missing_armor_manifests.size(), equipment_total),
 		"missing_armor_models": missing_armor_models,
