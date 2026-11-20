@@ -1128,6 +1128,77 @@ func get_armor_catalog() -> Array:
     return result
 
 
+func get_divine_signature_profile(class_id: String) -> Dictionary:
+    var profile := {
+        "effect": "divine_strike",
+        "mark": "",
+        "status": "weaken",
+        "duration": 4.0,
+        "status_power": 0.18,
+        "mark_power": 0.06,
+        "damage_ratio": 0.0,
+        "execute_threshold": 0.0,
+        "execute_ratio": 0.0,
+        "chain_ratio": 0.0,
+        "heal_ratio": 0.0,
+        "buff_damage": 0.0,
+        "buff_reduction": 0.0,
+        "buff_duration": 4.0,
+        "pull_force": 0.0,
+        "knockback_force": 0.0,
+        "stagger_force": 0.0,
+        "mobility": 0.0,
+        "secondary_status": "",
+        "secondary_duration": 0.0,
+        "secondary_power": 0.0
+    }
+    match class_id:
+        "apollo":
+            profile.merge({"effect": "solar_burn", "mark": "solar", "status": "burn", "duration": 6.0, "status_power": 0.14, "mark_power": 0.12, "damage_ratio": 0.12}, true)
+        "abel":
+            profile.merge({"effect": "cosmos_wave", "mark": "solar", "status": "burn", "duration": 5.0, "status_power": 0.10, "mark_power": 0.10, "damage_ratio": 0.18, "secondary_status": "weaken", "secondary_duration": 2.5, "secondary_power": 0.12}, true)
+        "athena":
+            profile.merge({"effect": "aegis_break", "mark": "aegis", "status": "weaken", "duration": 4.5, "status_power": 0.18, "mark_power": 0.08, "damage_ratio": 0.06, "heal_ratio": 0.025}, true)
+        "artemis":
+            profile.merge({"effect": "lunar_precision", "mark": "lunar", "status": "slow", "duration": 4.5, "status_power": 0.42, "mark_power": 0.10, "damage_ratio": 0.10}, true)
+        "pallas":
+            profile.merge({"effect": "mirror_reflect", "mark": "lunar", "status": "slow", "duration": 4.0, "status_power": 0.28, "mark_power": 0.08, "buff_reduction": 0.10, "buff_duration": 4.5}, true)
+        "hades":
+            profile.merge({"effect": "soul_drain", "mark": "soul", "status": "weaken", "duration": 5.0, "status_power": 0.28, "mark_power": 0.10, "heal_ratio": 0.04, "damage_ratio": 0.05}, true)
+        "lucifer":
+            profile.merge({"effect": "abyss_rupture", "mark": "soul", "status": "weaken", "duration": 5.0, "status_power": 0.30, "mark_power": 0.12, "execute_threshold": 0.40, "execute_ratio": 0.14}, true)
+        "poseidon":
+            profile.merge({"effect": "tidal_pull", "mark": "tidal", "status": "slow", "duration": 4.0, "status_power": 0.30, "mark_power": 0.08, "pull_force": 6.0}, true)
+        "zeus":
+            profile.merge({"effect": "storm_chain", "mark": "storm", "status": "burn", "duration": 4.0, "status_power": 0.12, "mark_power": 0.10, "chain_ratio": 0.24}, true)
+        "ares":
+            profile.merge({"effect": "war_frenzy", "mark": "storm", "status": "burn", "duration": 4.0, "status_power": 0.10, "mark_power": 0.08, "buff_damage": 0.12, "buff_duration": 4.0}, true)
+        "hypnos":
+            profile.merge({"effect": "dream_lock", "mark": "dream", "status": "slow", "duration": 5.0, "status_power": 0.48, "mark_power": 0.08, "secondary_status": "freeze", "secondary_duration": 0.45}, true)
+        "thanatos":
+            profile.merge({"effect": "death_execute", "mark": "death", "status": "weaken", "duration": 5.0, "status_power": 0.32, "mark_power": 0.12, "execute_threshold": 0.30, "execute_ratio": 0.20}, true)
+        "odin":
+            profile.merge({"effect": "rune_guard", "mark": "rune", "status": "weaken", "duration": 3.5, "status_power": 0.18, "mark_power": 0.08, "buff_reduction": 0.12, "buff_duration": 4.0}, true)
+        "eris":
+            profile.merge({"effect": "discord", "mark": "discord", "status": "weaken", "duration": 4.5, "status_power": 0.24, "mark_power": 0.08, "secondary_status": "slow", "secondary_duration": 2.0, "secondary_power": 0.18}, true)
+        "saturn":
+            profile.merge({"effect": "entropy", "mark": "time", "status": "slow", "duration": 4.0, "status_power": 0.38, "mark_power": 0.08, "damage_ratio": 0.08}, true)
+        "chronos":
+            profile.merge({"effect": "time_echo", "mark": "time", "status": "slow", "duration": 4.5, "status_power": 0.34, "mark_power": 0.10, "chain_ratio": 0.16, "secondary_status": "weaken", "secondary_duration": 2.0, "secondary_power": 0.10}, true)
+        "hera":
+            profile.merge({"effect": "command", "mark": "command", "status": "weaken", "duration": 4.0, "status_power": 0.20, "mark_power": 0.08, "stagger_force": 2.8, "buff_reduction": 0.06, "buff_duration": 3.5}, true)
+        "demeter":
+            profile.merge({"effect": "harvest", "mark": "harvest", "status": "slow", "duration": 4.0, "status_power": 0.26, "mark_power": 0.08, "heal_ratio": 0.04}, true)
+        "hestia":
+            profile.merge({"effect": "hearth", "mark": "forge", "status": "burn", "duration": 4.0, "status_power": 0.16, "mark_power": 0.08, "heal_ratio": 0.06, "buff_reduction": 0.04, "buff_duration": 3.5}, true)
+        "hephaestus":
+            profile.merge({"effect": "forge", "mark": "forge", "status": "burn", "duration": 4.0, "status_power": 0.20, "mark_power": 0.10, "damage_ratio": 0.12, "knockback_force": 4.5}, true)
+        "hermes":
+            profile.merge({"effect": "swift", "mark": "swift", "status": "slow", "duration": 2.5, "status_power": 0.20, "mark_power": 0.06, "mobility": 2.2, "knockback_force": 3.0}, true)
+        "aphrodite":
+            profile.merge({"effect": "charm", "mark": "charm", "status": "weaken", "duration": 4.5, "status_power": 0.26, "mark_power": 0.08, "secondary_status": "slow", "secondary_duration": 2.2, "secondary_power": 0.16}, true)
+    return profile
+
 func get_divine_support_profile(class_id: String) -> Dictionary:
     if str(get_class_skill(class_id).get("tier", "")) != "神明":
         return {}
