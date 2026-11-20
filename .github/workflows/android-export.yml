@@ -9,6 +9,7 @@ on:
       - .github/workflows/android-export.yml
       - game/export_presets.cfg
       - game/project.godot
+      - game/**
 
 permissions:
   contents: read
