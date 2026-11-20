@@ -32,6 +32,8 @@ var forearm_nodes: Array[MeshInstance3D] = []
 var leg_nodes: Array[MeshInstance3D] = []
 var armor_wing_nodes: Array[MeshInstance3D] = []
 var armor_wing_base_angles: Array[float] = []
+var armor_skirt_nodes: Array[MeshInstance3D] = []
+var armor_skirt_base_angles: Array[float] = []
 var armor_aura_node: MeshInstance3D
 var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
@@ -200,6 +202,14 @@ func _animate_visual_motion(delta: float) -> void:
     var wing_motion := sin(clock * (1.35 if tenkishi_flight_active else 0.82)) * (0.16 + movement_ratio * 0.18)
     if tenkishi_flight_active:
         wing_motion *= 1.65
+    var cloth_sway := sin(clock * 1.35) * (0.045 + movement_ratio * 0.09)
+    if tenkishi_flight_active:
+        cloth_sway *= 1.7
+    for skirt_index in range(armor_skirt_nodes.size()):
+        var skirt_side := -1.0 if skirt_index % 2 == 0 else 1.0
+        var skirt_base := armor_skirt_base_angles[skirt_index] if skirt_index < armor_skirt_base_angles.size() else 0.0
+        var skirt_target := skirt_base + skirt_side * cloth_sway
+        armor_skirt_nodes[skirt_index].rotation.z = lerp_angle(armor_skirt_nodes[skirt_index].rotation.z, skirt_target, minf(1.0, delta * 6.0))
     for wing_index in range(armor_wing_nodes.size()):
         var wing_side := -1.0 if wing_index % 2 == 0 else 1.0
         var wing_base := armor_wing_base_angles[wing_index] if wing_index < armor_wing_base_angles.size() else 0.0
@@ -312,6 +322,8 @@ func _build_armor_visuals() -> void:
         armor_root.queue_free()
     armor_wing_nodes.clear()
     armor_wing_base_angles.clear()
+    armor_skirt_nodes.clear()
+    armor_skirt_base_angles.clear()
     armor_aura_node = null
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
@@ -455,6 +467,8 @@ func _build_armor_visuals() -> void:
         for skirt_offset in [-1.0, 1.0]:
             var skirt_piece := _add_armor_piece(skirt_plate, Vector3(skirt_side * 0.22, 0.48, skirt_offset * 0.16), Vector3(1.0, 1.0, 0.72), dark if skirt_offset > 0.0 else bright, stage_metallic)
             skirt_piece.rotation.z = -skirt_side * 0.12
+            armor_skirt_nodes.append(skirt_piece)
+            armor_skirt_base_angles.append(skirt_piece.rotation.z)
     var shin_mesh := BoxMesh.new()
     shin_mesh.size = Vector3(0.24, 0.48, 0.18)
     _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
