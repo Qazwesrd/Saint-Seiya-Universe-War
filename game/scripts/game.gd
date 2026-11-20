@@ -5,6 +5,7 @@ const HUDScript = preload("res://scripts/hud.gd")
 const GuideNpcScript = preload("res://scripts/guide_npc.gd")
 const TeleportPointScript = preload("res://scripts/teleport_point.gd")
 const FollowerScript = preload("res://scripts/follower_actor.gd")
+const SkillSummonScript = preload("res://scripts/skill_summon.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
@@ -692,12 +693,41 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     if "反击" in ability_type or "反制" in ability_type:
         player.call("apply_temporary_buff", 0.12, 0.35, 2.5)
 
+    if "召唤" in ability_type:
+        _spawn_skill_summon(class_id, ability)
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
         show_notice(ability_name + "：自身效果已生效")
     if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
         _apply_divine_signature(class_id, ability, max_distance)
+
+func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
+    if not is_instance_valid(player):
+        return
+    var existing := get_tree().get_nodes_in_group("skill_summons")
+    if existing.size() >= 2:
+        var oldest: Node = existing[0]
+        var oldest_age := float(oldest.get("age"))
+        for summon in existing:
+            if float(summon.get("age")) > oldest_age:
+                oldest = summon
+                oldest_age = float(summon.get("age"))
+        oldest.queue_free()
+    var summon := Node3D.new()
+    summon.set_script(SkillSummonScript)
+    summon.set("game", self)
+    summon.set("owner_player", player)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var summon_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    summon_power *= float(class_data.get("damage", 1.5)) * 0.72
+    summon_power *= SkillSystem.get_skill_damage_multiplier(class_id)
+    summon.set("summon_damage", maxf(4.0, summon_power))
+    summon.set("life_time", 9.0)
+    summon.set("summon_color", class_data.get("color", Color(0.35, 0.8, 1.0)))
+    summon.global_position = player.global_position + (-player.global_transform.basis.z * 1.5) + Vector3.UP * 1.8
+    add_child(summon)
+    show_notice(str(ability.get("name", "召唤技能")) + "：召唤灵体加入战斗")
 
 func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance: float) -> void:
     var ability_id := str(ability.get("id", ""))
