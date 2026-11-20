@@ -47,11 +47,14 @@ func reset_local_quest() -> bool:
 func get_audit_log() -> Array[String]:
  return audit_log.duplicate()
 
-func grant_all_armor_stages() -> void:
- if not enabled: return
- ArmorSystem.unlock_all_stages()
- _record("解锁全部圣衣阶段")
- gm_action_completed.emit("全部圣衣阶段已解锁")
+func grant_all_armor_stages() -> bool:
+ if not enabled:
+  return false
+ var ok: bool = ArmorSystem.unlock_all_stages()
+ if ok:
+  _record("解锁全部圣衣阶段")
+ gm_action_completed.emit("全部圣衣阶段已解锁" if ok else "圣衣阶段解锁失败：存档写入未完成")
+ return ok
 func repair_armor() -> bool:
  if not enabled: return false
  var ok: bool = ArmorSystem.repair_all()
