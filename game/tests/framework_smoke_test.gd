@@ -205,9 +205,9 @@ func _run_tests() -> void:
 	assert(RPGState.backup_slot(3) and RPGState.has_backup_slot(3), "backup character slot")
 	assert(RPGState.delete_slot(3), "delete slot after backup")
 	assert(not RPGState.has_slot(3), "deleted save slot is no longer visible")
+	assert(RPGState.active_slot == 0, "deleting the active slot clears the active character")
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
-	RPGState.delete_slot(3)
-
+	assert(RPGState.active_slot == 3, "restoring a backup reloads its character slot")
 
 	var combo_steps: Array = ["basic_attack_1", "pegasus_skill_1", "dodge"]
 	assert(ComboPresetManager.save_preset("pegasus", "smoke_combo", "测试连招", combo_steps), "save player combo preset")
@@ -215,5 +215,7 @@ func _run_tests() -> void:
 	assert(ComboPresetManager.set_active_preset("pegasus", "smoke_combo"), "switch active combo preset")
 	assert(ComboPresetManager.delete_preset("pegasus", "smoke_combo"), "delete combo preset")
 	assert(not ComboPresetManager.save_preset("pegasus", "invalid_combo", "非法连招", ["not_unlocked"]), "reject unlearned skill in combo")
+	assert(RPGState.delete_slot(3), "clean up restored test character slot")
+	assert(not RPGState.has_slot(3), "test character cleanup removes active slot")
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)
