@@ -504,27 +504,67 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
 func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
     if not bool(SettingsManager.get_value("graphics", "effects", true)):
         return
-    var effect := MeshInstance3D.new()
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.5
-    sphere.height = 1.0
-    effect.mesh = sphere
-    effect.position = at
-    effect.scale = Vector3.ONE * 0.15
-    var material := StandardMaterial3D.new()
-    material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-    material.albedo_color = Color(effect_color.r, effect_color.g, effect_color.b, 0.48)
-    material.emission_enabled = true
-    material.emission = effect_color
-    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    effect.material_override = material
-    add_child(effect)
+    var effect_root := Node3D.new()
+    effect_root.name = "CosmosImpactEffect"
+    effect_root.position = at
+    effect_root.scale = Vector3.ONE * 0.16
+    add_child(effect_root)
+
+    var core := MeshInstance3D.new()
+    var core_mesh := SphereMesh.new()
+    core_mesh.radius = 0.48
+    core_mesh.height = 0.96
+    core.mesh = core_mesh
+    var core_material := StandardMaterial3D.new()
+    core_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    core_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    core_material.albedo_color = Color(effect_color.r, effect_color.g, effect_color.b, 0.58)
+    core_material.emission_enabled = true
+    core_material.emission = effect_color * 1.2
+    core.material_override = core_material
+    effect_root.add_child(core)
+
+    var shock_ring := MeshInstance3D.new()
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.56
+    ring_mesh.outer_radius = 0.68
+    shock_ring.mesh = ring_mesh
+    shock_ring.rotation.x = deg_to_rad(90.0)
+    var ring_material := StandardMaterial3D.new()
+    ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    ring_material.albedo_color = effect_color.lightened(0.22)
+    ring_material.emission_enabled = true
+    ring_material.emission = effect_color * 1.6
+    shock_ring.material_override = ring_material
+    effect_root.add_child(shock_ring)
+
+    for shard_index in range(6):
+        var shard := MeshInstance3D.new()
+        var shard_mesh := PrismMesh.new()
+        shard_mesh.size = Vector3(0.12, 0.46, 0.10)
+        shard.mesh = shard_mesh
+        var angle := TAU * float(shard_index) / 6.0
+        shard.position = Vector3(cos(angle) * 0.42, 0.0, sin(angle) * 0.42)
+        shard.rotation.y = -angle
+        shard.rotation.z = -0.48
+        var shard_material := StandardMaterial3D.new()
+        shard_material.albedo_color = effect_color.lightened(0.3)
+        shard_material.emission_enabled = true
+        shard_material.emission = effect_color
+        shard.material_override = shard_material
+        effect_root.add_child(shard)
+
+    var safe_radius := clampf(radius, 0.35, 5.0)
     var tween := create_tween()
-    tween.tween_property(effect, "scale", Vector3.ONE * radius, 0.22)
-    get_tree().create_timer(0.32).timeout.connect(func():
-        if is_instance_valid(effect):
-            effect.queue_free()
+    tween.set_parallel(true)
+    tween.tween_property(effect_root, "scale", Vector3.ONE * safe_radius, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    tween.tween_property(effect_root, "rotation:y", TAU * 0.12, 0.34)
+    tween.tween_property(effect_root, "position:y", at.y + 0.22, 0.34)
+    tween.finished.connect(func() -> void:
+        if is_instance_valid(effect_root):
+            effect_root.queue_free()
     )
+
 func spawn_damage_number(at: Vector3, damage: float, critical: bool = false) -> void:
     if not bool(SettingsManager.get_value("gameplay", "damage_numbers", true)):
         return
