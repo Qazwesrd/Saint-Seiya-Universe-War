@@ -10,7 +10,30 @@ const EQUIPMENT := {
  "odin_god_robe":{"name":"奥丁神斗衣","category":"神斗衣 God Robe","faction":"北欧仙宫","source_work":"北欧篇","canon_status":"独立于雅典娜圣衣体系","rank":"神斗级","attack":24,"defense":28,"max_health":150,"unlock_level":65},
  "saturn_chronotector":{"name":"刻衣·萨图恩系列档案","category":"刻衣 Chronotector","faction":"时间之神","source_work":"圣斗士星矢Ω","canon_status":"衍生作品独立装备体系","rank":"刻衣级","attack":28,"defense":26,"max_health":150,"unlock_level":70},
  "glory_unverified_archive":{"name":"天斗士专属天衣档案（待逐件核实）","category":"天衣 Glory","faction":"天界","source_work":"天界篇相关作品","canon_status":"系列档案；具体名称、持有者与造型待核实","rank":"未定","attack":0,"defense":0,"max_health":0,"unlock_level":45},
- "unknown_88_archive":{"name":"未登场星座圣衣档案","category":"雅典娜圣衣·未公开","faction":"雅典娜军","source_work":"88星座设定框架","canon_status":"未公开条目，不生成官方名称、持有者或外观","rank":"未公开","attack":0,"defense":0,"max_health":0,"unlock_level":1}
+ "unknown_88_archive":{"name":"未登场星座圣衣档案","category":"雅典娜圣衣·未公开","faction":"雅典娜军","source_work":"88星座设定框架","canon_status":"未公开条目，不生成官方名称、持有者或外观","rank":"未公开","attack":0,"defense":0,"max_health":0,"unlock_level":1},
+ "heavenly_glory":{"name":"天斗士制式天衣","category":"天衣 Glory","faction":"天界","source_work":"天界篇相关设定","canon_status":"游戏通用装备档案；不代表特定原作人物造型","rank":"天界级","attack":18,"defense":22,"max_health":120,"unlock_level":45},
+ "apollo_divine_relic":{"name":"阿波罗神衣","category":"神明专属神衣","faction":"太阳神系","source_work":"真红少年传说相关扩展","canon_status":"游戏职业装备数据；具体造型以授权美术为准","rank":"主神级","attack":38,"defense":30,"max_health":240,"unlock_level":70},
+ "athena_divine_relic":{"name":"雅典娜神衣","category":"神明专属神衣","faction":"雅典娜军","source_work":"圣斗士系列相关作品","canon_status":"神明装备，与圣斗士神圣衣区分","rank":"主神级","attack":28,"defense":42,"max_health":300,"unlock_level":70},
+ "hades_divine_relic":{"name":"哈迪斯冥王神衣","category":"神明专属神衣","faction":"冥界","source_work":"冥王篇","canon_status":"神明装备，与冥斗士冥衣区分","rank":"主神级","attack":42,"defense":36,"max_health":270,"unlock_level":70},
+ "poseidon_divine_relic":{"name":"波塞冬海皇鳞衣","category":"鳞衣 Scale","faction":"海界","source_work":"海皇篇","canon_status":"海皇装备体系","rank":"主神级","attack":40,"defense":34,"max_health":260,"unlock_level":70},
+ "zeus_divine_relic":{"name":"宙斯神衣档案","category":"神明专属神衣","faction":"奥林匹斯","source_work":"原作提及，未正式正面登场","canon_status":"概念档案；游戏原创数值，不宣称官方造型","rank":"至高神级","attack":48,"defense":44,"max_health":320,"unlock_level":70},
+ "artemis_divine_relic":{"name":"阿尔忒弥斯神衣","category":"神明专属神衣","faction":"月之女神","source_work":"天界篇相关作品","canon_status":"游戏职业装备数据；具体造型以授权美术为准","rank":"主神级","attack":38,"defense":40,"max_health":280,"unlock_level":70},
+ "hypnos_divine_relic":{"name":"修普诺斯神衣","category":"神明专属神衣","faction":"睡神","source_work":"冥王篇","canon_status":"神明装备；与双子神设定对应","rank":"主神级","attack":34,"defense":44,"max_health":280,"unlock_level":70},
+ "thanatos_divine_relic":{"name":"达纳托斯神衣","category":"神明专属神衣","faction":"死神","source_work":"冥王篇","canon_status":"神明装备；与双子神设定对应","rank":"主神级","attack":44,"defense":36,"max_health":270,"unlock_level":70},
+ "odin_divine_relic":{"name":"奥丁神斗衣","category":"神斗衣 God Robe","faction":"北欧仙宫","source_work":"北欧篇","canon_status":"独立于雅典娜圣衣体系","rank":"主神级","attack":38,"defense":42,"max_health":290,"unlock_level":70},
+ "ares_divine_relic":{"name":"阿瑞斯战神衣","category":"神明专属神衣","faction":"战神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":48,"defense":34,"max_health":280,"unlock_level":70},
+ "eris_divine_relic":{"name":"厄里斯神衣","category":"神明专属神衣","faction":"纷争女神","source_work":"邪神厄里斯","canon_status":"游戏职业装备数据；具体造型以授权美术为准","rank":"主神级","attack":40,"defense":32,"max_health":250,"unlock_level":70},
+ "abel_divine_relic":{"name":"亚伯太阳神衣","category":"神明专属神衣","faction":"太阳神","source_work":"真红少年传说","canon_status":"游戏职业装备数据；具体造型以授权美术为准","rank":"主神级","attack":46,"defense":38,"max_health":290,"unlock_level":70},
+ "lucifer_divine_relic":{"name":"路西法堕天神衣","category":"神明专属神衣","faction":"堕天使","source_work":"最终圣战的战士们","canon_status":"游戏职业装备数据；具体造型以授权美术为准","rank":"主神级","attack":46,"defense":34,"max_health":280,"unlock_level":70},
+ "saturn_divine_relic":{"name":"萨图恩刻衣","category":"刻衣 Chronotector","faction":"时间之神","source_work":"圣斗士星矢Ω","canon_status":"衍生作品独立装备体系","rank":"主神级","attack":48,"defense":44,"max_health":310,"unlock_level":70},
+ "pallas_divine_relic":{"name":"帕拉斯刻衣","category":"刻衣 Chronotector","faction":"帕拉斯军","source_work":"圣斗士星矢Ω","canon_status":"衍生作品独立装备体系","rank":"主神级","attack":40,"defense":38,"max_health":280,"unlock_level":70},
+ "chronos_divine_relic":{"name":"柯罗诺斯神衣","category":"神明专属神衣","faction":"时间神","source_work":"Episode G 系列相关扩展","canon_status":"与泰坦克洛诺斯区分；游戏职业装备数据","rank":"至高神级","attack":50,"defense":46,"max_health":330,"unlock_level":70},
+ "hera_divine_relic":{"name":"赫拉神衣","category":"神明专属神衣","faction":"天后","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":34,"defense":46,"max_health":300,"unlock_level":70},
+ "demeter_divine_relic":{"name":"德墨忒尔神衣","category":"神明专属神衣","faction":"丰饶女神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":30,"defense":44,"max_health":310,"unlock_level":70},
+ "hestia_divine_relic":{"name":"赫斯提亚神衣","category":"神明专属神衣","faction":"炉灶女神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":32,"defense":48,"max_health":320,"unlock_level":70},
+ "hermes_divine_relic":{"name":"赫尔墨斯神衣","category":"神明专属神衣","faction":"神使","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":44,"defense":32,"max_health":250,"unlock_level":70},
+ "hephaestus_divine_relic":{"name":"赫淮斯托斯神衣","category":"神明专属神衣","faction":"锻造之神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":40,"defense":50,"max_health":330,"unlock_level":70},
+ "aphrodite_divine_relic":{"name":"阿佛洛狄忒神衣","category":"神明专属神衣","faction":"爱与美之神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":36,"defense":38,"max_health":280,"unlock_level":70}
 }
 
 func get_catalog() -> Array:
