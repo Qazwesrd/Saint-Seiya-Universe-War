@@ -135,6 +135,17 @@ func _run_tests() -> void:
 	var scorpio_profile: Dictionary = EnemyDatabase.get_archetype("gold_scorpio")
 	assert(float(taurus_profile.get("boss_heavy_multiplier", 0.0)) > float(scorpio_profile.get("boss_heavy_multiplier", 0.0)), "Taurus heavy strike has a distinct impact profile")
 	assert(float(scorpio_profile.get("boss_windup", 1.0)) < float(taurus_profile.get("boss_windup", 0.0)), "Scorpio attacks use a faster warning cadence")
+	var asgard_chapter: Dictionary = CampaignDatabase.get_chapter("asgard")
+	var poseidon_chapter: Dictionary = CampaignDatabase.get_chapter("poseidon")
+	assert(asgard_chapter.get("missions", []).size() == 8, "anime Asgard arc is inserted before Poseidon")
+	assert(poseidon_chapter.get("missions", []).size() == 10, "Poseidon arc contains Athena rescue, seven generals, pillars and final battle")
+	assert(int(asgard_chapter.get("order", 0)) < int(poseidon_chapter.get("order", 0)), "Asgard precedes Poseidon in anime chronology")
+	for archetype_id in ["god_warrior_thor", "god_warrior_fenrir", "god_warrior_hagen", "god_warrior_mime", "god_warrior_alberich", "god_warrior_syd", "god_warrior_bud", "god_warrior_siegfried", "mariner_baian", "mariner_io", "mariner_krishna", "mariner_kasa", "mariner_isaac", "mariner_sorrento", "mariner_kanon", "poseidon_emperor"]:
+		assert(EnemyDatabase.has_archetype(archetype_id), "Asgard/Poseidon boss archetype: " + archetype_id)
+	for mission_id in ["po_002", "po_003", "po_004", "po_005", "po_006", "po_007", "po_008", "po_010"]:
+		assert(not CampaignDatabase.get_mission(mission_id).get("encounter", {}).get("waves", []).is_empty(), "Poseidon boss mission encounter: " + mission_id)
+	assert(str(CampaignDatabase.get_mission("po_010").get("encounter", {}).get("waves", [])[0].get("spawns", [])[0].get("archetype_id", "")) == "poseidon_emperor", "Poseidon final encounter configured")
+	assert(CampaignDatabase.get_mission("po_009").get("objectives", [])[0].get("target", 0) == 7, "seven pillar story objective")
 	var taurus_mission: Dictionary = CampaignDatabase.get_mission("s12_003")
 	assert(not taurus_mission.get("encounter", {}).get("waves", []).is_empty(), "Taurus story mission has a data-driven encounter")
 	assert(str(taurus_mission["encounter"]["waves"][0]["spawns"][0]["archetype_id"]) == "gold_taurus", "Taurus encounter resolves its configured archetype")
