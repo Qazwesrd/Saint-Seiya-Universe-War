@@ -203,6 +203,13 @@ func _run_tests() -> void:
 
 	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
 	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
+	var boss_health_before_mark := float(test_boss.health)
+	test_boss.apply_divine_mark("solar", 6.0, 0.12)
+	assert(str(test_boss.divine_mark) == "solar", "divine mark identity is retained")
+	assert(float(test_boss.divine_mark_timer) < 6.0, "boss divine mark duration is resisted")
+	assert(float(test_boss.divine_mark_power) <= 0.066, "boss divine mark damage amplification is resisted")
+	test_boss.take_damage(10.0)
+	assert(is_equal_approx(boss_health_before_mark - float(test_boss.health), 10.66), "divine mark amplifies incoming damage within boss resistance cap")
 	test_boss.queue_free()
 	var asgard_chapter: Dictionary = CampaignDatabase.get_chapter("asgard")
 	var poseidon_chapter: Dictionary = CampaignDatabase.get_chapter("poseidon")
