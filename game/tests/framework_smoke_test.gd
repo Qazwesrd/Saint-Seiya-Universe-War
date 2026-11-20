@@ -177,6 +177,8 @@ func _run_tests() -> void:
 	test_boss.apply_status_effect("freeze", 2.0, 0.0)
 	assert(float(test_boss.freeze_timer) < 2.0, "boss freeze duration is resisted")
 	test_boss.apply_status_effect("slow", 2.0, 0.5)
+	assert(is_equal_approx(SkillSystem.get_target_condition_multiplier("cygnus", test_boss), 1.12), "Cygnus passive increases damage against controlled targets")
+	assert(is_equal_approx(SkillSystem.get_target_condition_multiplier("pegasus", test_boss), 1.0), "unconditional passives are not applied twice per target")
 	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
 	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
 	test_boss.queue_free()
