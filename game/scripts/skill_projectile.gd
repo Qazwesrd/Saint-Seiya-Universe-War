@@ -15,8 +15,15 @@ var status := "slow"
 var status_duration := 1.2
 var status_power := 0.12
 var age := 0.0
+var visual_root: Node3D
+var halo_node: MeshInstance3D
+var halo_material: StandardMaterial3D
+var orbit_nodes: Array[MeshInstance3D] = []
 
 func _ready() -> void:
+    add_to_group("skill_projectiles")
+    visual_root = Node3D.new()
+    add_child(visual_root)
     var orb := MeshInstance3D.new()
     match projectile_shape:
         "shard", "bolt":
@@ -40,11 +47,37 @@ func _ready() -> void:
     material.emission = projectile_color
     material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     orb.material_override = material
-    add_child(orb)
-    add_to_group("skill_projectiles")
+    visual_root.add_child(orb)
+
+    halo_node = MeshInstance3D.new()
+    var halo_mesh := TorusMesh.new()
+    halo_mesh.inner_radius = 0.28
+    halo_mesh.outer_radius = 0.34
+    halo_node.mesh = halo_mesh
+    halo_node.rotation_degrees.x = 90.0
+    halo_node.scale = Vector3.ONE * clampf(impact_scale, 0.65, 1.35)
+    halo_material = StandardMaterial3D.new()
+    halo_material.albedo_color = Color(projectile_color.r, projectile_color.g, projectile_color.b, 0.72)
+    halo_material.emission_enabled = true
+    halo_material.emission = projectile_color * 0.85
+    halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    halo_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    halo_node.material_override = halo_material
+    visual_root.add_child(halo_node)
+
+    for orbit_index in range(2):
+        var mote := MeshInstance3D.new()
+        var mote_mesh := SphereMesh.new()
+        mote_mesh.radius = 0.055
+        mote_mesh.height = 0.11
+        mote.mesh = mote_mesh
+        mote.material_override = material
+        orbit_nodes.append(mote)
+        visual_root.add_child(mote)
 
 func _physics_process(delta: float) -> void:
     age += delta
+    _animate_projectile(delta)
     if age >= lifetime or not is_instance_valid(owner_player) or not is_instance_valid(game):
         queue_free()
         return
@@ -72,6 +105,19 @@ func _physics_process(delta: float) -> void:
     var steering := current.lerp(direction, minf(1.0, turn_rate * delta)).normalized()
     look_at(global_position + steering, Vector3.UP)
     global_position += steering * speed * delta
+
+func _animate_projectile(delta: float) -> void:
+    if not is_instance_valid(visual_root):
+        return
+    var pulse := 1.0 + sin(age * 13.0) * 0.09
+    visual_root.scale = Vector3.ONE * pulse
+    visual_root.rotate_y(delta * 4.2)
+    if is_instance_valid(halo_node):
+        halo_node.rotate_z(delta * 5.5)
+        halo_node.scale = Vector3.ONE * (1.0 + sin(age * 9.0) * 0.12)
+    for index in range(orbit_nodes.size()):
+        var angle := age * (5.0 if index == 0 else -4.0) + float(index) * PI
+        orbit_nodes[index].position = Vector3(cos(angle) * 0.38, sin(angle * 1.3) * 0.12, sin(angle) * 0.38)
 
 func _hit_target(hit_target: Node3D) -> void:
     if hit_target.has_method("take_damage"):
