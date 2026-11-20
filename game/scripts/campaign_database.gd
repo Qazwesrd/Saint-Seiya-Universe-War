@@ -1,7 +1,7 @@
 extends RefCounted
 class_name CampaignDatabase
 
-# Original mission structure organized around the six planned story arcs.
+# Offline story campaigns are ordered across seven chronological arcs.
 # Story summaries are concise design notes; final dialogue and licensed assets
 # must be authored/cleared separately.
 const CHAPTERS := [
