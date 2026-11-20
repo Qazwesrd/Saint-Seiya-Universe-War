@@ -601,22 +601,71 @@ func _build_armor_visuals() -> void:
     shoulder_scale = Vector3(shoulder_scale.x * silhouette_width * stage_structure, shoulder_scale.y * silhouette_height, shoulder_scale.z)
     _add_armor_piece(shoulder_mesh, Vector3(-0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
     _add_armor_piece(shoulder_mesh, Vector3(0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
+    # Shoulder plates now use the class heraldry and armor tier, not one generic spike.
+    var shoulder_plate_mesh := PrismMesh.new()
+    var shoulder_plate_width := 0.34
+    var shoulder_plate_height := 0.30
+    match ornament_id:
+        "war_spikes", "thorn_wings", "forge_plates":
+            shoulder_plate_width = 0.26
+            shoulder_plate_height = 0.48
+        "tidal_fins", "fin", "scale":
+            shoulder_plate_width = 0.20
+            shoulder_plate_height = 0.42
+        "royal_wings", "heaven_wings", "solar_wings", "radiant":
+            shoulder_plate_width = 0.42
+            shoulder_plate_height = 0.34
+        "time_rings", "dream_wings", "sound", "aegis":
+            shoulder_plate_width = 0.36
+            shoulder_plate_height = 0.26
+        "chain", "comet", "swift_wings", "feather":
+            shoulder_plate_width = 0.30
+            shoulder_plate_height = 0.24
+    shoulder_plate_mesh.size = Vector3(shoulder_plate_width * stage_structure, shoulder_plate_height * silhouette_height, 0.18)
+    for shoulder_side in [-1.0, 1.0]:
+        var shoulder_plate := _add_armor_piece(shoulder_plate_mesh, Vector3(shoulder_side * 0.56 * silhouette_width, 1.64, -0.12), Vector3(1.0, 1.0, 0.9), stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "arms")
+        shoulder_plate.rotation.z = -shoulder_side * (0.22 if ornament_id in ["war_spikes", "thorn_wings", "forge_plates", "tidal_fins", "fin"] else 0.08)
     var shoulder_spike := PrismMesh.new()
     shoulder_spike.size = Vector3(0.24, 0.42, 0.22)
+    if ornament_id in ["time_rings", "sound", "aegis", "dream_wings"]:
+        shoulder_spike.size = Vector3(0.12, 0.22, 0.12)
+    elif ornament_id in ["war_spikes", "thorn_wings", "forge_plates"]:
+        shoulder_spike.size = Vector3(0.20, 0.54, 0.18)
+    elif ornament_id in ["tidal_fins", "fin", "scale"]:
+        shoulder_spike.size = Vector3(0.12, 0.40, 0.10)
     var left_spike := _add_armor_piece(shoulder_spike, Vector3(-0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic, "arms")
     left_spike.rotation.z = 0.48
     var right_spike := _add_armor_piece(shoulder_spike, Vector3(0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic, "arms")
     right_spike.rotation.z = -0.48
+    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+        var shoulder_ridge_mesh := BoxMesh.new()
+        shoulder_ridge_mesh.size = Vector3(0.30 * stage_structure, 0.07, 0.20)
+        for shoulder_side in [-1.0, 1.0]:
+            var shoulder_ridge := _add_armor_piece(shoulder_ridge_mesh, Vector3(shoulder_side * 0.55, 1.52, -0.12), Vector3.ONE, stage_trim_color, stage_metallic, "arms")
+            shoulder_ridge.rotation.z = -shoulder_side * 0.18
     var arm_mesh := CylinderMesh.new()
     arm_mesh.top_radius = 0.13
     arm_mesh.bottom_radius = 0.17
     arm_mesh.height = 0.48
     _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic, "arms")
     _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic, "arms")
-    var bracer_mesh := BoxMesh.new()
-    bracer_mesh.size = Vector3(0.22, 0.38, 0.25)
-    _add_armor_piece(bracer_mesh, Vector3(-0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic, "arms")
-    _add_armor_piece(bracer_mesh, Vector3(0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic, "arms")
+    var bracer_mesh := PrismMesh.new()
+    bracer_mesh.size = Vector3(0.24, 0.40, 0.24)
+    match ornament_id:
+        "shield", "aegis", "war_spikes":
+            bracer_mesh.size = Vector3(0.28, 0.42, 0.28)
+        "chain", "sound", "time_rings":
+            bracer_mesh.size = Vector3(0.20, 0.34, 0.20)
+        "tidal_fins", "fin", "scale":
+            bracer_mesh.size = Vector3(0.18, 0.42, 0.22)
+    for bracer_side in [-1.0, 1.0]:
+        var bracer := _add_armor_piece(bracer_mesh, Vector3(bracer_side * 0.48, 0.98, -0.14), Vector3.ONE, bright, stage_metallic, "arms")
+        bracer.rotation.z = -bracer_side * 0.05
+        var cuff_mesh := TorusMesh.new()
+        cuff_mesh.inner_radius = 0.12
+        cuff_mesh.outer_radius = 0.17 if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else 0.15
+        var cuff := _add_armor_piece(cuff_mesh, Vector3(bracer_side * 0.48, 0.78, -0.02), Vector3(1.0, 0.82, 0.82), stage_trim_color, stage_metallic, "arms")
+        cuff.rotation.x = deg_to_rad(90.0)
 
     # Starter relics and signature bracers get distinct readable silhouettes.
     var equipped_arms_id := str(RPGState.profile.get("equipment", {}).get("arms", ""))
@@ -698,6 +747,38 @@ func _build_armor_visuals() -> void:
             skirt_piece.rotation.z = -skirt_side * 0.12
             armor_skirt_nodes.append(skirt_piece)
             armor_skirt_base_angles.append(skirt_piece.rotation.z)
+    # Tier-specific tassets and side guards give each armor family a different waist profile.
+    var tasset_mesh := PrismMesh.new()
+    tasset_mesh.size = Vector3(0.24, 0.38, 0.14)
+    match stage_id:
+        "silver":
+            tasset_mesh.size = Vector3(0.22, 0.34, 0.13)
+        "gold":
+            tasset_mesh.size = Vector3(0.30, 0.44, 0.18)
+        "sea_scale":
+            tasset_mesh.size = Vector3(0.20, 0.48, 0.16)
+        "surplice":
+            tasset_mesh.size = Vector3(0.28, 0.46, 0.16)
+        "god_cloth":
+            tasset_mesh.size = Vector3(0.32, 0.52, 0.18)
+        "god_armor":
+            tasset_mesh.size = Vector3(0.36, 0.58, 0.20)
+    if ornament_id in ["tidal_fins", "fin", "scale"]:
+        tasset_mesh.size.x *= 0.78
+        tasset_mesh.size.y *= 1.18
+    elif ornament_id in ["royal_wings", "heaven_wings", "solar_wings", "radiant"]:
+        tasset_mesh.size.x *= 1.18
+    elif ornament_id in ["war_spikes", "thorn_wings", "forge_plates"]:
+        tasset_mesh.size.z *= 1.22
+    for tasset_side in [-1.0, 1.0]:
+        var side_tasset := _add_armor_piece(tasset_mesh, Vector3(tasset_side * 0.38 * silhouette_waist, 0.49, -0.18), Vector3.ONE, stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "waist")
+        side_tasset.rotation.z = -tasset_side * 0.18
+    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+        var waist_side_mesh := BoxMesh.new()
+        waist_side_mesh.size = Vector3(0.12, 0.34 * stage_structure, 0.18)
+        for waist_side in [-1.0, 1.0]:
+            var waist_guard := _add_armor_piece(waist_side_mesh, Vector3(waist_side * 0.43 * silhouette_waist, 0.61, 0.0), Vector3.ONE, dark, stage_metallic, "waist")
+            waist_guard.rotation.z = -waist_side * 0.12
     var thigh_mesh := PrismMesh.new()
     thigh_mesh.size = Vector3(0.25 * silhouette_waist, 0.30 * silhouette_height, 0.17)
     var shin_mesh := BoxMesh.new()
