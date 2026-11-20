@@ -654,26 +654,42 @@ func _build_armor_visuals() -> void:
 
     # Every class receives its own heraldic crest and chest sigil.
     var crest_mesh: Mesh
+    var crest_scale := Vector3.ONE
     var crest_id := str(relic_visual_profile.get("crest", visual_profile.get("crest", "star")))
     match crest_id:
-        "horn", "spear", "trident", "ice", "flame", "anvil":
+        "horn", "spear", "trident", "ice", "flame", "anvil", "bolt", "scythe", "thorn", "wave", "fin", "harvest":
             var crest_prism := PrismMesh.new()
             crest_prism.size = Vector3(0.20, 0.42, 0.16)
+            if crest_id in ["bolt", "scythe", "thorn"]:
+                crest_prism.size = Vector3(0.16, 0.50, 0.13)
+            elif crest_id in ["wave", "fin", "harvest"]:
+                crest_prism.size = Vector3(0.26, 0.30, 0.12)
             crest_mesh = crest_prism
         "halo", "crescent", "clock", "dream", "aegis", "rune", "rose", "lyre":
             var crest_ring := TorusMesh.new()
             crest_ring.inner_radius = 0.09
             crest_ring.outer_radius = 0.15
+            if crest_id in ["crescent", "aegis"]:
+                crest_ring.inner_radius = 0.075
+                crest_ring.outer_radius = 0.18
             crest_mesh = crest_ring
+        "sun", "crown", "wing":
+            var crest_crown := PrismMesh.new()
+            crest_crown.size = Vector3(0.34, 0.30, 0.12)
+            crest_mesh = crest_crown
         _:
             var crest_cone := CylinderMesh.new()
             crest_cone.bottom_radius = 0.13
             crest_cone.top_radius = 0.015
             crest_cone.height = 0.34
             crest_mesh = crest_cone
-    var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic, "head")
-    if crest_id in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
+    if crest_id in ["sun", "crown", "wing"]:
+        crest_scale = Vector3(1.0, 0.92, 0.82)
+    var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), crest_scale, accent, stage_metallic, "head")
+    if crest_id in ["horn", "spear", "trident", "ice", "flame", "anvil", "bolt", "scythe", "thorn", "wave", "fin", "harvest"]:
         crest.rotation.x = -0.18
+    elif crest_id == "crescent":
+        crest.rotation.z = PI * 0.5
     var helmet_brow := BoxMesh.new()
     helmet_brow.size = Vector3(0.54, 0.11, 0.12)
     _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic, "head")
@@ -714,17 +730,35 @@ func _build_armor_visuals() -> void:
     var wing_span := float(relic_visual_profile.get("wing_span", visual_profile.get("wing_span", 0.0)))
     if wing_span > 0.0:
         var feather_mesh := PrismMesh.new()
-        feather_mesh.size = Vector3(0.16, 0.72, 0.10)
+        var feather_width := 0.16
+        var feather_height := 0.72
+        if ornament_id in ["tidal_fins", "fin", "rune_wings"]:
+            feather_width = 0.12
+            feather_height = 0.82
+        elif ornament_id in ["leaf_wings", "petal_wings", "royal_wings"]:
+            feather_width = 0.22
+            feather_height = 0.68
+        elif ornament_id in ["fallen_wings", "soul_wings", "thorn_wings", "war_spikes"]:
+            feather_width = 0.14
+            feather_height = 0.88
+        feather_mesh.size = Vector3(feather_width, feather_height, 0.10)
         for side in [-1.0, 1.0]:
-            for feather_index in range(3):
-                var feather_scale := Vector3(1.0, wing_span * (1.0 - float(feather_index) * 0.14), 1.0)
-                var feather_position := Vector3(side * (0.46 + float(feather_index) * 0.18), 1.72 - float(feather_index) * 0.08, 0.26 + float(feather_index) * 0.045)
-                var feather := _add_armor_piece(feather_mesh, feather_position, feather_scale, bright if feather_index == 0 else accent, stage_metallic)
-                feather.rotation.z = -side * (0.38 + float(feather_index) * 0.18)
+            for feather_index in range(4):
+                var spread := float(feather_index) * (0.15 if ornament_id in ["tidal_fins", "fin"] else 0.18)
+                var feather_scale := Vector3(1.0, wing_span * (1.0 - float(feather_index) * 0.12), 1.0)
+                var feather_position := Vector3(side * (0.42 + spread), 1.70 - float(feather_index) * 0.07, 0.25 + float(feather_index) * 0.05)
+                var feather := _add_armor_piece(feather_mesh, feather_position, feather_scale, bright if feather_index == 0 else accent, stage_metallic, "chest")
+                feather.rotation.z = -side * (0.34 + float(feather_index) * 0.17)
                 feather.rotation.x = -0.22
                 armor_wing_nodes.append(feather)
                 armor_wing_base_angles.append(feather.rotation.z)
-    if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings"]:
+    if ornament_id in ["war_spikes", "thorn_wings", "forge_plates"]:
+        var side_plate_mesh := PrismMesh.new()
+        side_plate_mesh.size = Vector3(0.20, 0.48, 0.16)
+        for side in [-1.0, 1.0]:
+            var side_plate := _add_armor_piece(side_plate_mesh, Vector3(side * 0.68, 1.42, -0.02), Vector3(1.0, 1.0, 0.9), accent, stage_metallic, "arms")
+            side_plate.rotation.z = -side * 0.52
+    if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings", "swift_wings", "petal_wings", "thorn_wings"]:
         var aura_ring := TorusMesh.new()
         aura_ring.inner_radius = 0.68
         aura_ring.outer_radius = 0.73
