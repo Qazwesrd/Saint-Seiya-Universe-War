@@ -198,9 +198,8 @@ func _input(event: InputEvent) -> void:
         var touch := event as InputEventScreenTouch
         var viewport_width := get_viewport().get_visible_rect().size.x
         var viewport_height := get_viewport().get_visible_rect().size.y
-        var left_handed := bool(SettingsManager.get_value("controls", "left_handed", false))
-        var stick_side := touch.position.x > viewport_width - 230.0 if left_handed else touch.position.x < 230.0
-        if touch.pressed and stick_side and touch.position.y > viewport_height * 0.55 and finger_id == -1:
+        var stick_rect := stick_base.get_global_rect().grow(24.0) if is_instance_valid(stick_base) else Rect2()
+        if touch.pressed and stick_rect.has_point(touch.position) and touch.position.y > viewport_height * 0.55 and finger_id == -1:
             finger_id = touch.index
             _move_stick(touch.position)
         elif touch.pressed and not _is_touch_over_button(touch.position) and camera_finger_id == -1:
@@ -233,8 +232,8 @@ func _is_touch_over_button(position: Vector2) -> bool:
     return false
 
 func _reset_stick_knob() -> void:
-    var center := stick_base.position + stick_base.size * 0.5
-    stick_knob.position = center - stick_knob.size * 0.5
+    var center := stick_base.position + stick_base.size * stick_base.scale.x * 0.5
+    stick_knob.position = center - stick_knob.size * stick_knob.scale.x * 0.5
 
 func _on_hud_setting_changed(section: String, key: String, _value: Variant) -> void:
     if section == "controls" and key in ["left_handed", "button_scale"]:
@@ -266,9 +265,11 @@ func _apply_touch_layout() -> void:
         _reset_stick_knob()
 
 func _move_stick(pos: Vector2) -> void:
-    var center := stick_base.position + stick_base.size * 0.5
-    stick_value = ((pos - center).limit_length(58.0)) / 58.0
-    stick_knob.position = center + stick_value * 58.0 - stick_knob.size * 0.5
+    var scale := stick_base.scale.x
+    var center := stick_base.position + stick_base.size * scale * 0.5
+    var radius := 58.0 * scale
+    stick_value = ((pos - center).limit_length(radius)) / radius
+    stick_knob.position = center + stick_value * radius - stick_knob.size * stick_knob.scale.x * 0.5
     _send_move(stick_value)
 func _send_move(value: Vector2) -> void:
     if is_instance_valid(game.player): game.player.set_move_input(value)
