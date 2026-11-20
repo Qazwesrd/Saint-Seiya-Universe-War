@@ -37,6 +37,17 @@ func _run_tests() -> void:
 	var skill_state: Dictionary = SkillSystem.get_skill_state("pegasus")
 	assert(str(skill_state.get("class_id", "")) == "pegasus", "skill tree state class binding")
 	assert(not skill_state.get("abilities", []).is_empty(), "skill tree catalog state")
+	for class_entry in SkillSystem.get_class_skill_catalog():
+		var catalog_class_id := str(class_entry.get("id", ""))
+		assert(SkillSystem.get_ability_catalog(catalog_class_id).size() == 24, "24 skills configured for " + catalog_class_id)
+	assert(ArmorSystem.unlock_all_stages(), "unlock all armor stages saves successfully")
+	assert(ArmorSystem.get_state().get("unlocked_stages", []).size() == 7, "all seven armor stages unlocked")
+	assert(ArmorSystem.equip_stage("gold"), "equip unlocked gold cloth stage")
+	assert(ArmorSystem.get_current_stage_name() == "黄金圣衣", "armor stage selection reflected")
+	assert(ArmorSystem.equip_stage("bronze"), "restore bronze cloth stage")
+	assert(RPGState.select_class("dragon"), "switch to dragon class")
+	assert(str(RPGState.profile.get("class_id", "")) == "dragon", "class switch persisted")
+	assert(RPGState.select_class("pegasus"), "switch back to pegasus class")
 	assert(bool(SkillSystem.can_learn_ability("pegasus", "pegasus_skill_2").get("allowed", false)) == (int(RPGState.profile.get("level", 1)) >= 5 and int(RPGState.profile.get("skill_points", 0)) > 0), "skill learn requirements are explicit")
 	assert(EquipmentAffixManager.roll_affixes("arms", 2), "roll and persist equipment affixes")
 	assert(not EquipmentAffixManager.get_equipped_affixes().get("arms", []).is_empty(), "equipment affixes persisted")
@@ -164,7 +175,8 @@ func _run_tests() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://backup_slot_2.json"))
 
 	assert(RPGState.backup_slot(3) and RPGState.has_backup_slot(3), "backup character slot")
-	assert(RPGState.delete_slot(3) and not RPGState.has_slot(3), "delete slot after backup")
+	assert(RPGState.delete_slot(3), "delete slot after backup")
+	assert(not RPGState.has_slot(3), "deleted save slot is no longer visible")
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
 	RPGState.delete_slot(3)
 
