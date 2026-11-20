@@ -188,5 +188,12 @@ static func validate_catalog() -> Dictionary:
         "errors": errors
     }
 
+static func get_chapter_for_mission(mission_id: String) -> Dictionary:
+    for chapter in CHAPTERS:
+        for mission in chapter.get("missions", []):
+            if str(mission.get("id", "")) == mission_id:
+                return chapter.duplicate(true)
+    return {}
+
 static func get_first_mission_id() -> String:
     return str(CHAPTERS[0]["missions"][0]["id"])
