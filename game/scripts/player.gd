@@ -42,6 +42,8 @@ var combat_pose_strength := 0.0
 var combat_pose_motion := "strike"
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
+var visual_flash_timer := 0.0
+var visual_flash_color := Color.WHITE
 var armor_root: Node3D
 var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
@@ -613,6 +615,10 @@ func cancel_auto_move() -> void:
 func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     _animate_visual_motion(delta)
+    visual_flash_timer = maxf(0.0, visual_flash_timer - delta)
+    if is_instance_valid(body_mat):
+        var flash_strength := clampf(visual_flash_timer / 0.16, 0.0, 1.0)
+        body_mat.albedo_color = armor_base_color.lerp(visual_flash_color, flash_strength)
     attack_cd = maxf(0.0, attack_cd - delta)
     basic_combo_reset = maxf(0.0, basic_combo_reset - delta)
     if basic_combo_reset <= 0.0:
@@ -881,11 +887,11 @@ func apply_temporary_buff(damage_bonus: float, damage_reduction: float, duration
     temporary_buff_timer = maxf(temporary_buff_timer, duration)
 
 func _flash(color: Color) -> void:
+    if not is_instance_valid(body_mat):
+        return
+    visual_flash_color = color
+    visual_flash_timer = 0.16
     body_mat.albedo_color = color
-    get_tree().create_timer(0.16).timeout.connect(func():
-        if is_instance_valid(body_mat):
-            body_mat.albedo_color = armor_base_color
-    )
 
 func toggle_mount() -> void:
  var state: Dictionary = CollectionSystem.get_state()
