@@ -133,7 +133,7 @@ func _physics_process(delta: float) -> void:
         burn_tick_timer -= delta
         if burn_tick_timer <= 0.0:
             burn_tick_timer = 1.0
-            take_damage(burn_damage)
+            take_damage(burn_damage * get_divine_mark_burn_multiplier())
             if state == BrainState.DEAD:
                 return
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 18.0 * delta)
@@ -343,6 +343,11 @@ func is_controlled() -> bool:
 
 func get_divine_mark_lifesteal_ratio() -> float:
     return 0.025 if divine_mark in ["soul", "death"] else 0.0
+
+func get_divine_mark_burn_multiplier() -> float:
+    if divine_mark != "solar" or divine_mark_timer <= 0.0:
+        return 1.0
+    return 0.75 if is_boss else 1.2
 
 func get_divine_mark_knockback_multiplier() -> float:
     match divine_mark:
