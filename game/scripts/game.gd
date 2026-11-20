@@ -508,6 +508,40 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
 func spawn_effect(at: Vector3, effect_color: Color, radius: float, effect_shape: String = "star", glow: float = 0.4) -> void:
     if not bool(SettingsManager.get_value("graphics", "effects", true)):
         return
+    var element := "cosmos"
+    for candidate in SkillVisualCatalogScript.ELEMENTS:
+        var profile: Dictionary = SkillVisualCatalogScript.ELEMENTS[candidate]
+        if str(profile.get("shape", "")) == effect_shape:
+            element = str(candidate)
+            break
+    var authored_path := "res://assets/vfx/%s/effect.tscn" % element
+    if ResourceLoader.exists(authored_path):
+        var packed_effect := load(authored_path) as PackedScene
+        if packed_effect != null:
+            var authored_root := packed_effect.instantiate() as Node3D
+            if authored_root != null:
+                authored_root.name = "CosmosImpact_" + element
+                authored_root.position = at
+                authored_root.scale = Vector3.ONE * 0.16
+                var quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
+                var visible_shards := 2 if quality == "low" else (5 if quality == "medium" else 8)
+                for child in authored_root.get_children():
+                    if str(child.name).begins_with("Shard_"):
+                        var shard_index := int(str(child.name).trim_prefix("Shard_"))
+                        child.visible = shard_index <= visible_shards
+                add_child(authored_root)
+                var safe_radius := clampf(radius, 0.35, 5.0)
+                var authored_tween := create_tween()
+                authored_tween.set_parallel(true)
+                authored_tween.tween_property(authored_root, "scale", Vector3.ONE * safe_radius, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+                authored_tween.tween_property(authored_root, "rotation:y", TAU * (0.12 if effect_shape in ["ring", "halo", "time"] else 0.2), 0.34)
+                authored_tween.tween_property(authored_root, "position:y", at.y + 0.22, 0.34)
+                authored_tween.finished.connect(func() -> void:
+                    if is_instance_valid(authored_root):
+                        authored_root.queue_free()
+                )
+                return
+
     var effect_root := Node3D.new()
     effect_root.name = "CosmosImpact_" + effect_shape
     effect_root.position = at

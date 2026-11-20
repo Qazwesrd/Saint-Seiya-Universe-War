@@ -211,8 +211,31 @@ def validate_vfx_manifest(data: dict, scene: Path) -> None:
     else:
         raise ValueError("VFX scene must be .glb or .tscn")
 
+def validate_vfx_scene_catalog() -> list[str]:
+    errors = []
+    shape_by_element = {
+        "fire": "flare", "ice": "shard", "lightning": "bolt", "light": "halo",
+        "dark": "void", "water": "wave", "wind": "crescent", "time": "ring",
+        "soul": "wisp", "sound": "pulse", "cosmos": "star",
+    }
+    for element, shape in shape_by_element.items():
+        scene = ROOT / "game/assets/vfx" / element / "effect.tscn"
+        if not scene.is_file():
+            errors.append(f"{element}: missing authored effect scene")
+            continue
+        source = scene.read_text(encoding="utf-8")
+        required = ['[node name="Effect" type="Node3D"]', '[node name="Core" type="MeshInstance3D"', '[node name="ShockRing" type="MeshInstance3D"']
+        required.extend(f'[node name="Shard_{index:02d}" type="MeshInstance3D"' for index in range(1, 9))
+        for token in required:
+            if token not in source:
+                errors.append(f"{element}: effect scene missing {token}")
+        if f'# element={element} shape={shape}' not in source:
+            errors.append(f"{element}: effect scene identity metadata mismatch")
+    return errors
+
+
 def main() -> int:
-    errors = validate_character_visual_catalog() + validate_skill_visual_catalog()
+    errors = validate_character_visual_catalog() + validate_skill_visual_catalog() + validate_vfx_scene_catalog()
     specs = expected()
     for manifest_path, spec in specs.items():
         if not manifest_path.is_file():

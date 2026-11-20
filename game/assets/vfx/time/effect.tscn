@@ -1,0 +1,71 @@
+[gd_scene load_steps=6 format=3]
+
+# element=time shape=ring
+[sub_resource type="StandardMaterial3D" id="CoreMaterial"]
+shading_mode = 1
+transparency = 1
+albedo_color = Color(0.72, 0.56, 1, 0.62)
+emission_enabled = true
+emission = Color(0.72, 0.56, 1, 1)
+[sub_resource type="TorusMesh" id="CoreMesh"]
+inner_radius = 0.22
+outer_radius = 0.48
+[sub_resource type="TorusMesh" id="RingMesh"]
+inner_radius = 0.56
+outer_radius = 0.68
+[sub_resource type="StandardMaterial3D" id="RingMaterial"]
+shading_mode = 1
+albedo_color = Color(0.72, 0.56, 1, 1)
+emission_enabled = true
+emission = Color(0.72, 0.56, 1, 1)
+[sub_resource type="PrismMesh" id="ShardMesh"]
+size = Vector3(0.12, 0.46, 0.1)
+
+[node name="Effect" type="Node3D"]
+[node name="Core" type="MeshInstance3D" parent="."]
+mesh = SubResource("CoreMesh")
+material_override = SubResource("CoreMaterial")
+[node name="ShockRing" type="MeshInstance3D" parent="."]
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("RingMesh")
+material_override = SubResource("RingMaterial")
+[node name="Shard_01" type="MeshInstance3D" parent="."]
+position = Vector3(0.42000, 0, 0.00000)
+rotation = Vector3(0, 0.00000, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_02" type="MeshInstance3D" parent="."]
+position = Vector3(0.29698, 0, 0.29698)
+rotation = Vector3(0, -0.78540, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_03" type="MeshInstance3D" parent="."]
+position = Vector3(0.00000, 0, 0.42000)
+rotation = Vector3(0, -1.57080, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_04" type="MeshInstance3D" parent="."]
+position = Vector3(-0.29698, 0, 0.29698)
+rotation = Vector3(0, -2.35619, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_05" type="MeshInstance3D" parent="."]
+position = Vector3(-0.42000, 0, 0.00000)
+rotation = Vector3(0, -3.14159, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_06" type="MeshInstance3D" parent="."]
+position = Vector3(-0.29698, 0, -0.29698)
+rotation = Vector3(0, -3.92699, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_07" type="MeshInstance3D" parent="."]
+position = Vector3(-0.00000, 0, -0.42000)
+rotation = Vector3(0, -4.71239, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")
+[node name="Shard_08" type="MeshInstance3D" parent="."]
+position = Vector3(0.29698, 0, -0.29698)
+rotation = Vector3(0, -5.49779, -0.48)
+mesh = SubResource("ShardMesh")
+material_override = SubResource("CoreMaterial")

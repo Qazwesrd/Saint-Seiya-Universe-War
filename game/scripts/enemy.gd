@@ -214,6 +214,27 @@ func _ready() -> void:
     telegraph_mesh.material_override = telegraph_material
     telegraph_mesh.visible = false
     add_child(telegraph_mesh)
+    _load_authored_enemy_model()
+
+func _load_authored_enemy_model() -> void:
+    # Optional GLB bundle; a clean source checkout remains playable via procedural visuals.
+    var model_path := "res://assets/enemies/%s/model/enemy.glb" % archetype_id
+    if not ResourceLoader.exists(model_path):
+        return
+    var packed := load(model_path) as PackedScene
+    if packed == null:
+        push_warning("Enemy model could not be loaded; using procedural fallback: " + model_path)
+        return
+    var authored_model := packed.instantiate()
+    if authored_model == null:
+        push_warning("Enemy model could not be instantiated; using procedural fallback: " + model_path)
+        return
+    authored_model.name = "AuthoredEnemyModel"
+    authored_model.scale = Vector3.ONE * (1.12 if is_boss else 1.0)
+    for child in get_children():
+        if child is MeshInstance3D and child != telegraph_mesh:
+            (child as MeshInstance3D).visible = false
+    add_child(authored_model)
 
 func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
     var part := MeshInstance3D.new()
