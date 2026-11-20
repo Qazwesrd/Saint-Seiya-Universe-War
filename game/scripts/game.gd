@@ -6,6 +6,8 @@ const GuideNpcScript = preload("res://scripts/guide_npc.gd")
 const TeleportPointScript = preload("res://scripts/teleport_point.gd")
 const FollowerScript = preload("res://scripts/follower_actor.gd")
 const SkillSummonScript = preload("res://scripts/skill_summon.gd")
+const SkillFieldScript = preload("res://scripts/skill_field.gd")
+const SkillProjectileScript = preload("res://scripts/skill_projectile.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
@@ -693,8 +695,15 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     if "反击" in ability_type or "反制" in ability_type:
         player.call("apply_temporary_buff", 0.12, 0.35, 2.5)
 
-    if "召唤" in ability_type:
-        _spawn_skill_summon(class_id, ability)
+    match str(effect_profile.get("action", "strike")):
+        "summon":
+            _spawn_skill_summon(class_id, ability)
+        "field":
+            _spawn_skill_field(class_id, ability, false)
+        "trap":
+            _spawn_skill_field(class_id, ability, true)
+        "homing_projectile":
+            _spawn_skill_projectile(class_id, ability)
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
@@ -729,6 +738,48 @@ func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
     summon.global_position = player.global_position + (-player.global_transform.basis.z * 1.5) + Vector3.UP * 1.8
     add_child(summon)
     show_notice(str(ability.get("name", "召唤技能")) + "：召唤灵体加入战斗")
+
+func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) -> void:
+    if not is_instance_valid(player):
+        return
+    var field := Node3D.new()
+    field.set_script(SkillFieldScript)
+    var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    field.set("game", self)
+    field.set("owner_player", player)
+    field.set("radius", float(profile.get("field_radius", 4.0)))
+    field.set("life_time", float(profile.get("field_lifetime", 5.0)))
+    field.set("lifetime", float(profile.get("field_lifetime", 5.0)))
+    field.set("tick_interval", float(profile.get("field_tick_interval", 0.8)))
+    field.set("damage", maxf(3.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("field_damage_ratio", 0.3)) * SkillSystem.get_skill_damage_multiplier(class_id)))
+    field.set("mode", "trap" if is_trap else "field")
+    field.set("field_color", class_data.get("color", Color(0.35, 0.75, 1.0)))
+    var ability_type := str(ability.get("type", ""))
+    field.set("status", "freeze" if "冰" in ability_type or "冻结" in ability_type else ("burn" if "灼烧" in ability_type or "火" in ability_type else "slow"))
+    field.set("status_duration", 1.8 if is_trap else 1.35)
+    field.set("status_power", 0.24 if is_trap else 0.18)
+    field.global_position = player.global_position + (-player.global_transform.basis.z * (2.2 if is_trap else 1.5))
+    add_child(field)
+    show_notice(str(ability.get("name", "领域技能")) + ("：陷阱已布置" if is_trap else "：领域已展开"))
+
+func _spawn_skill_projectile(class_id: String, ability: Dictionary) -> void:
+    if not is_instance_valid(player):
+        return
+    var projectile := Node3D.new()
+    projectile.set_script(SkillProjectileScript)
+    var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    projectile.set("game", self)
+    projectile.set("owner_player", player)
+    projectile.set("speed", float(profile.get("projectile_speed", 12.0)))
+    projectile.set("damage", maxf(4.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("projectile_damage_ratio", 1.15)) * SkillSystem.get_skill_damage_multiplier(class_id)))
+    projectile.set("projectile_color", class_data.get("color", Color(0.45, 0.8, 1.0)))
+    projectile.global_position = player.global_position + (-player.global_transform.basis.z * 1.2) + Vector3.UP * 1.2
+    add_child(projectile)
+    show_notice(str(ability.get("name", "追踪技能")) + "：追踪攻击已发射")
 
 func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance: float) -> void:
     var ability_id := str(ability.get("id", ""))
