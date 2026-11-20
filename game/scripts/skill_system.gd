@@ -1129,7 +1129,7 @@ func get_armor_catalog() -> Array:
 
 
 func get_divine_support_profile(class_id: String) -> Dictionary:
-    if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) != "神明":
+    if str(get_class_skill(class_id).get("tier", "")) != "神明":
         return {}
     var profile := {
         "damage_bonus": 0.08,
