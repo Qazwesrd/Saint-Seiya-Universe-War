@@ -26,6 +26,8 @@ var mount_indicator: MeshInstance3D
 var temporary_damage_bonus := 0.0
 var temporary_damage_reduction := 0.0
 var temporary_buff_timer := 0.0
+var divine_guard_shield := 0.0
+var divine_guard_timer := 0.0
 var ability_cooldowns: Dictionary = {}
 var custom_combo_index := 0
 var custom_combo_timer := 0.0
@@ -112,6 +114,9 @@ func _physics_process(delta: float) -> void:
     dodge_time = maxf(0.0, dodge_time - delta)
     invulnerable = maxf(0.0, invulnerable - delta)
     temporary_buff_timer = maxf(0.0, temporary_buff_timer - delta)
+    divine_guard_timer = maxf(0.0, divine_guard_timer - delta)
+    if divine_guard_timer <= 0.0:
+        divine_guard_shield = 0.0
     for ability_id in ability_cooldowns.keys():
         ability_cooldowns[ability_id] = maxf(0.0, float(ability_cooldowns[ability_id]) - delta)
     if temporary_buff_timer <= 0.0:
@@ -262,14 +267,25 @@ func receive_damage(amount: float) -> void:
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
-    health = maxf(0.0, health - final_damage)
-    CombatSessionManager.record_damage_taken(final_damage)
-    ArmorSystem.damage_random_part(1)
-    _flash(Color(1.0, 0.12, 0.12))
+    var absorbed_damage := minf(divine_guard_shield, final_damage)
+    divine_guard_shield = maxf(0.0, divine_guard_shield - absorbed_damage)
+    var health_damage := maxf(0.0, final_damage - absorbed_damage)
+    health = maxf(0.0, health - health_damage)
+    CombatSessionManager.record_damage_taken(health_damage)
+    if health_damage > 0.0:
+        ArmorSystem.damage_random_part(1)
+        _flash(Color(1.0, 0.12, 0.12))
+    elif absorbed_damage > 0.0:
+        _flash(Color(0.35, 0.8, 1.0))
     if health <= 0.0:
         health = max_health
         global_position = Vector3(0, 0.2, 7)
         game.call("show_notice", "角色倒地，已在训练场复位")
+func apply_divine_guard(shield_ratio: float = 0.18, duration: float = 6.0) -> void:
+    var shield_capacity := max_health * clampf(shield_ratio, 0.0, 0.25)
+    divine_guard_shield = maxf(divine_guard_shield, shield_capacity)
+    divine_guard_timer = maxf(divine_guard_timer, maxf(0.1, duration))
+
 func apply_temporary_buff(damage_bonus: float, damage_reduction: float, duration: float) -> void:
     temporary_damage_bonus = maxf(temporary_damage_bonus, damage_bonus)
     temporary_damage_reduction = maxf(temporary_damage_reduction, damage_reduction)
