@@ -1,0 +1,34 @@
+name: Android APK Export
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Import and validate project
+        run: godot --headless --editor --path game --quit
+
+      - name: Export Android ARM64 debug APK
+        run: |
+          mkdir -p build/android
+          godot --headless --path game --export-debug "Android" build/android/Saint-Seiya-Universe-War-debug.apk
+          test -s build/android/Saint-Seiya-Universe-War-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saint-Seiya-Universe-War-Android-ARM64-debug
+          path: build/android/Saint-Seiya-Universe-War-debug.apk
+          if-no-files-found: error
+          retention-days: 14
