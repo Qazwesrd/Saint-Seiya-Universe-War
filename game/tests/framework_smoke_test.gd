@@ -27,6 +27,15 @@ func _run_tests() -> void:
 	solar_test_enemy.divine_mark_timer = 0.0
 	assert(is_equal_approx(solar_test_enemy.get_divine_mark_burn_multiplier(), 1.0), "expired solar mark no longer amplifies burn")
 	solar_test_enemy.free()
+	var lunar_test_enemy = preload("res://scripts/enemy.gd").new()
+	lunar_test_enemy.divine_mark = "lunar"
+	lunar_test_enemy.divine_mark_timer = 4.0
+	assert(is_equal_approx(lunar_test_enemy.get_divine_mark_damage_multiplier(), 1.12), "Artemis lunar mark grants 12% precision damage against normal enemies")
+	lunar_test_enemy.is_boss = true
+	assert(is_equal_approx(lunar_test_enemy.get_divine_mark_damage_multiplier(), 1.05), "lunar precision damage is reduced against bosses")
+	lunar_test_enemy.divine_mark_timer = 0.0
+	assert(is_equal_approx(lunar_test_enemy.get_divine_mark_damage_multiplier(), 1.0), "expired lunar mark grants no precision damage")
+	lunar_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(str(LocalizationManager.text_for("ui.attack")) != "", "localization service")
 	assert(AudioManager != null, "audio service")
