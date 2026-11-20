@@ -256,6 +256,11 @@ func _run_tests() -> void:
 	assert(float(finisher_profile.get("execute_threshold", 0.0)) == 0.30 and float(finisher_profile.get("execute_bonus", 0.0)) > 0.0, "finishers gain a bounded low-health execution bonus")
 	var throw_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "投技"})
 	assert(str(throw_profile.get("action", "")) == "throw" and float(throw_profile.get("stagger_bonus", 0.0)) > 0.0, "throw skills resolve a dedicated hit reaction")
+	var summon_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "召唤"})
+	assert(str(summon_profile.get("action", "")) == "summon", "summon skills resolve an autonomous combat actor")
+	assert(float(summon_profile.get("summon_lifetime", 0.0)) >= 5.0 and float(summon_profile.get("summon_damage_ratio", 0.0)) > 0.0, "summon duration and damage are configured")
+	assert(load("res://scripts/skill_summon.gd") != null, "offline summon actor script is present")
+	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("tenkishi"), 1.22), "Tenkishi flight profession retains its movement passive")
 	var divine_support_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		if str(class_profile.get("tier", "")) != "神明":
