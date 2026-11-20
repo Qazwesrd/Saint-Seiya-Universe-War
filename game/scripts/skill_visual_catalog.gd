@@ -59,7 +59,7 @@ static func validate_catalog() -> Dictionary:
     var errors: Array[String] = []
     for element in ELEMENTS:
         var profile: Dictionary = ELEMENTS[element]
-        if not profile.get("color") is Color:
+        if typeof(profile.get("color")) != TYPE_COLOR:
             errors.append("%s has no valid color" % element)
         if float(profile.get("glow", -1.0)) < 0.0 or float(profile.get("glow", 0.0)) > 0.6:
             errors.append("%s has invalid glow" % element)
