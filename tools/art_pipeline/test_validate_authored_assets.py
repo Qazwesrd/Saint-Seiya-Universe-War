@@ -97,6 +97,41 @@ class ArtValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "no animation tracks"):
                 check_glb(path, clips=["idle"], require_meshes=False)
 
+    def test_glb_rejects_mesh_without_skin_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "character.glb"
+            write_glb(path, ["Body"])
+            document = json.loads(path.read_bytes()[20:].decode("utf-8").rstrip(" \t\r\n\0"))
+            document["nodes"][0].pop("skin")
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            with self.assertRaisesRegex(ValueError, "not bound to a valid skin"):
+                check_glb(path, require_skin=True)
+
+    def test_animation_rejects_out_of_range_target_node(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "animations.glb"
+            document = {
+                "asset": {"version": "2.0"},
+                "nodes": [{}],
+                "accessors": [{"count": 2}, {"count": 2}],
+                "animations": [{
+                    "name": "idle",
+                    "samplers": [{"input": 0, "output": 1}],
+                    "channels": [{"sampler": 0, "target": {"node": 9, "path": "rotation"}}],
+                }],
+            }
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            with self.assertRaisesRegex(ValueError, "invalid track node"):
+                check_glb(path, clips=["idle"], require_meshes=False)
+
     def test_safe_path_rejects_traversal(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(ValueError):

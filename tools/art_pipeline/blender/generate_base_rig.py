@@ -267,7 +267,8 @@ def export_glb(path, objects):
     if not path.is_file() or path.stat().st_size < 1024:
         raise RuntimeError("GLB export missing or unexpectedly small: " + str(path))
 
-def validate_glb(path, required_nodes=(), require_skin=False, required_clips=()):
+def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
+                 require_independent_skinned_nodes=()):
     data = path.read_bytes()
     if len(data) < 20 or data[:4] != b"glTF":
         raise RuntimeError("Invalid GLB header: " + str(path))
@@ -282,12 +283,63 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=())
         raise RuntimeError("GLB is missing required nodes: " + ", ".join(missing_nodes))
     if require_skin and not document.get("meshes"):
         raise RuntimeError("Rigged character/armor GLB has no meshes: " + str(path))
-    if require_skin and not document.get("skins"):
-        raise RuntimeError("Rigged character/armor GLB has no skin: " + str(path))
-    clip_names = {str(clip.get("name", "")) for clip in document.get("animations", [])}
-    missing_clips = sorted(set(required_clips) - clip_names)
+    nodes = document.get("nodes", [])
+    meshes = document.get("meshes", [])
+    skins = document.get("skins", [])
+    if require_skin:
+        if not skins:
+            raise RuntimeError("Rigged character/armor GLB has no skin: " + str(path))
+        for node_index, node in enumerate(nodes):
+            if "mesh" not in node:
+                continue
+            mesh_index = node.get("mesh")
+            skin_index = node.get("skin")
+            if not isinstance(mesh_index, int) or not 0 <= mesh_index < len(meshes):
+                raise RuntimeError(f"Mesh node {node_index} references an invalid mesh: {path}")
+            if not isinstance(skin_index, int) or not 0 <= skin_index < len(skins):
+                raise RuntimeError(f"Mesh node {node_index} is not bound to a valid skin: {path}")
+            joints = skins[skin_index].get("joints", [])
+            if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
+                raise RuntimeError(f"Mesh node {node_index} has invalid skin joints: {path}")
+    if require_independent_skinned_nodes:
+        by_name = {str(node.get("name", "")): node for node in nodes}
+        mesh_indices = []
+        for node_name in require_independent_skinned_nodes:
+            node = by_name.get(node_name, {})
+            mesh_index = node.get("mesh")
+            skin_index = node.get("skin")
+            if not isinstance(mesh_index, int) or not 0 <= mesh_index < len(meshes):
+                raise RuntimeError(f"Armor part is not an independent mesh node: {node_name}")
+            if not isinstance(skin_index, int) or not 0 <= skin_index < len(skins):
+                raise RuntimeError(f"Armor part is not bound to a valid skin: {node_name}")
+            mesh_indices.append(mesh_index)
+        if len(set(mesh_indices)) != len(require_independent_skinned_nodes):
+            raise RuntimeError("Armor parts do not have unique independent mesh data")
+    animations = document.get("animations", [])
+    by_clip_name = {str(clip.get("name", "")): clip for clip in animations}
+    missing_clips = sorted(set(required_clips) - set(by_clip_name))
     if missing_clips:
         raise RuntimeError("GLB is missing animation clips: " + ", ".join(missing_clips))
+    accessors = document.get("accessors", [])
+    for clip_name in required_clips:
+        clip = by_clip_name[clip_name]
+        if not clip.get("channels") or not clip.get("samplers"):
+            raise RuntimeError(f"Animation clip has no tracks: {clip_name}")
+        for sampler in clip["samplers"]:
+            for accessor_key in ("input", "output"):
+                accessor_index = sampler.get(accessor_key)
+                if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+                    raise RuntimeError(f"Animation clip has invalid {accessor_key} accessor: {clip_name}")
+        for channel in clip["channels"]:
+            target = channel.get("target", {})
+            node_index = target.get("node")
+            sampler_index = channel.get("sampler")
+            if not isinstance(node_index, int) or not 0 <= node_index < len(nodes):
+                raise RuntimeError(f"Animation clip has invalid target node: {clip_name}")
+            if not isinstance(sampler_index, int) or not 0 <= sampler_index < len(clip["samplers"]):
+                raise RuntimeError(f"Animation clip has invalid sampler: {clip_name}")
+            if target.get("path") not in ("translation", "rotation", "scale", "weights"):
+                raise RuntimeError(f"Animation clip has invalid target path: {clip_name}")
     print("Validated GLB:", path.name, "nodes=", len(node_names), "meshes=", len(document.get("meshes", [])), "clips=", len(clip_names))
 
 def main():
@@ -321,6 +373,7 @@ def main():
         armor_model,
         required_nodes=("Humanoid_Base_Rig",) + tuple(obj.name for obj in armor_parts),
         require_skin=True,
+        require_independent_skinned_nodes=tuple(obj.name for obj in armor_parts),
     )
 
     print("ART_PROTOTYPE_EXPORT_PASS")

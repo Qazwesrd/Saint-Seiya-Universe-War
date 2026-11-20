@@ -51,8 +51,28 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
     doc = read_glb(path)
     if require_meshes and not doc.get("meshes"):
         raise ValueError("GLB has no meshes")
-    if require_skin and not doc.get("skins"):
-        raise ValueError("character GLB has no skin/skeleton")
+    nodes = doc.get("nodes", [])
+    meshes = doc.get("meshes", [])
+    skins = doc.get("skins", [])
+    if require_skin:
+        if not skins:
+            raise ValueError("character GLB has no skin/skeleton")
+        skinned_mesh_count = 0
+        for node_index, node in enumerate(nodes):
+            if "mesh" not in node:
+                continue
+            mesh_index = node.get("mesh")
+            if not isinstance(mesh_index, int) or not 0 <= mesh_index < len(meshes):
+                raise ValueError(f"mesh node {node_index} references an invalid mesh")
+            skin_index = node.get("skin")
+            if not isinstance(skin_index, int) or not 0 <= skin_index < len(skins):
+                raise ValueError(f"mesh node {node_index} is not bound to a valid skin")
+            joints = skins[skin_index].get("joints", [])
+            if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
+                raise ValueError(f"mesh node {node_index} references a skin with invalid joints")
+            skinned_mesh_count += 1
+        if skinned_mesh_count == 0:
+            raise ValueError("character GLB has no skinned mesh nodes")
     if clips:
         animations = doc.get("animations", [])
         names = {str(item.get("name", "")) for item in animations}
@@ -64,10 +84,24 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
             clip = by_name[clip_name]
             if not clip.get("channels") or not clip.get("samplers"):
                 raise ValueError(f"animation clip '{clip_name}' has no animation tracks")
+            accessors = doc.get("accessors", [])
+            for sampler in clip["samplers"]:
+                for accessor_key in ("input", "output"):
+                    accessor_index = sampler.get(accessor_key)
+                    if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+                        raise ValueError(f"animation clip '{clip_name}' has an invalid {accessor_key} accessor")
+                if sampler.get("interpolation", "LINEAR") not in ("LINEAR", "STEP", "CUBICSPLINE"):
+                    raise ValueError(f"animation clip '{clip_name}' has an unsupported interpolation")
             for channel in clip["channels"]:
                 target = channel.get("target", {})
-                if not isinstance(target.get("node"), int) or target.get("path") not in ("translation", "rotation", "scale", "weights"):
-                    raise ValueError(f"animation clip '{clip_name}' has an invalid track target")
+                node_index = target.get("node")
+                sampler_index = channel.get("sampler")
+                if not isinstance(node_index, int) or not 0 <= node_index < len(nodes):
+                    raise ValueError(f"animation clip '{clip_name}' has an invalid track node")
+                if not isinstance(sampler_index, int) or not 0 <= sampler_index < len(clip["samplers"]):
+                    raise ValueError(f"animation clip '{clip_name}' has an invalid sampler reference")
+                if target.get("path") not in ("translation", "rotation", "scale", "weights"):
+                    raise ValueError(f"animation clip '{clip_name}' has an invalid track path")
     if required_nodes:
         names = {str(item.get("name", "")) for item in doc.get("nodes", [])}
         names.update(str(item.get("name", "")) for item in doc.get("meshes", []))
