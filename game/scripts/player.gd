@@ -40,6 +40,7 @@ var custom_combo_timer := 0.0
 var custom_combo_auto_running := false
 var custom_combo_run_id := 0
 func _ready() -> void:
+    add_to_group("player")
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
     max_cosmos = float(rpg_stats.get("max_cosmos", 100.0))
