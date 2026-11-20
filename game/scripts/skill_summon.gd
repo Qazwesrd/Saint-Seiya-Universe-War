@@ -12,6 +12,8 @@ var target: Node3D
 var core_node: MeshInstance3D
 var halo_node: MeshInstance3D
 var summon_material: StandardMaterial3D
+var summon_light: OmniLight3D
+var outer_halo_node: MeshInstance3D
 
 func _ready() -> void:
     add_to_group("skill_summons")
@@ -37,20 +39,26 @@ func _ready() -> void:
     halo_node.material_override = summon_material
     add_child(halo_node)
 
-    var outer_halo := MeshInstance3D.new()
+    outer_halo_node = MeshInstance3D.new()
     var outer_ring := TorusMesh.new()
     outer_ring.inner_radius = 0.62
     outer_ring.outer_radius = 0.66
-    outer_halo.mesh = outer_ring
-    outer_halo.rotation_degrees = Vector3(32.0, 0.0, 18.0)
-    outer_halo.material_override = summon_material
-    add_child(outer_halo)
+    outer_halo_node.mesh = outer_ring
+    outer_halo_node.rotation_degrees = Vector3(32.0, 0.0, 18.0)
+    outer_halo_node.material_override = summon_material
+    add_child(outer_halo_node)
+
+    summon_light = OmniLight3D.new()
+    summon_light.light_color = summon_color
+    summon_light.light_energy = 0.7
+    summon_light.omni_range = 3.5
+    add_child(summon_light)
 
 func _physics_process(delta: float) -> void:
     age += delta
     attack_timer = maxf(0.0, attack_timer - delta)
     follow_angle += delta * 1.8
-    _animate_summon()
+    _animate_summon(delta)
     if age >= life_time or not is_instance_valid(owner_player) or not is_instance_valid(game):
         queue_free()
         return
@@ -71,15 +79,22 @@ func _physics_process(delta: float) -> void:
         var desired := owner_player.global_position + orbit_offset
         global_position = global_position.lerp(desired, minf(1.0, delta * 5.0))
 
-func _animate_summon() -> void:
+func _animate_summon(delta: float) -> void:
     var pulse := 1.0 + sin(age * 7.0) * 0.12
     if is_instance_valid(core_node):
         core_node.scale = Vector3.ONE * pulse
     if is_instance_valid(halo_node):
-        halo_node.rotate_y(0.035)
-        halo_node.rotate_z(0.018)
+        halo_node.rotate_y(delta * 1.8)
+        halo_node.rotate_z(delta * 0.9)
+    if is_instance_valid(outer_halo_node):
+        outer_halo_node.rotate_y(-delta * 1.1)
+        outer_halo_node.rotate_x(delta * 0.45)
     if is_instance_valid(summon_material):
-        summon_material.emission = summon_color * (0.58 + (sin(age * 5.0) + 1.0) * 0.22)
+        var energy := 0.58 + (sin(age * 5.0) + 1.0) * 0.22
+        summon_material.emission = summon_color * energy
+        summon_material.emission_energy_multiplier = 1.0 + energy
+    if is_instance_valid(summon_light):
+        summon_light.light_energy = 0.4 + (sin(age * 5.0) + 1.0) * 0.4
 
 func _find_target() -> Node3D:
     var best: Node3D
