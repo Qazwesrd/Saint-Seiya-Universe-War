@@ -30,6 +30,7 @@ var ability_cooldowns: Dictionary = {}
 var custom_combo_index := 0
 var custom_combo_timer := 0.0
 var custom_combo_auto_running := false
+var custom_combo_run_id := 0
 func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
@@ -244,6 +245,10 @@ func toggle_lock() -> void:
 
 func receive_damage(amount: float) -> void:
     if invulnerable > 0.0: return
+    custom_combo_run_id += 1
+    custom_combo_auto_running = false
+    custom_combo_index = 0
+    custom_combo_timer = 0.0
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
@@ -319,22 +324,52 @@ func _run_custom_combo_auto(preset: Dictionary) -> void:
     if custom_combo_auto_running:
         return
     custom_combo_auto_running = true
+    custom_combo_run_id += 1
+    var run_id := custom_combo_run_id
     var steps: Array = preset.get("steps", [])
     for i in range(1, steps.size()):
         await get_tree().create_timer(0.32).timeout
+        if not is_inside_tree() or run_id != custom_combo_run_id:
+            return
         var action_id := str(steps[i])
-        if action_id.begins_with("basic_attack_"):
-            attack()
-        elif action_id == "dodge":
-            dodge()
-        elif action_id == "guard":
-            guard()
-        else:
-            cast_ability(action_id)
+        if not _execute_custom_combo_step(action_id):
+            custom_combo_auto_running = false
+            custom_combo_index = 0
+            custom_combo_timer = 0.0
+            game.call("show_notice", "连招中断：动作冷却中或小宇宙不足")
+            return
+    if run_id != custom_combo_run_id:
+        return
     custom_combo_auto_running = false
     _execute_custom_combo_finisher(preset)
     custom_combo_index = 0
     custom_combo_timer = 0.0
+
+
+func _execute_custom_combo_step(action_id: String) -> bool:
+    if action_id.begins_with("basic_attack_"):
+        if attack_cd > 0.0:
+            return false
+        var requested_step := clampi(int(action_id.get_slice("_", 2)), 1, 3)
+        basic_combo_step = requested_step - 1
+        basic_combo_reset = 0.95
+        attack()
+        return basic_combo_step == requested_step
+    if action_id == "dodge":
+        if dodge_time > 0.0:
+            return false
+        dodge()
+        return true
+    if action_id == "guard":
+        guard()
+        return true
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var ability := SkillSystem.get_ability_data(class_id, action_id)
+    if ability.is_empty() or not SkillSystem.is_ability_learned(class_id, action_id):
+        return false
+    if float(ability_cooldowns.get(action_id, 0.0)) > 0.0 or cosmos < float(ability.get("cost", 12)):
+        return false
+    return cast_ability(action_id)
 
 func _execute_custom_combo_finisher(preset: Dictionary) -> void:
     var steps: Array = preset.get("steps", [])
@@ -363,20 +398,20 @@ func cast_skill_slot(slot_index: int) -> void:
         game.call("show_notice", "技能栏第 %d 格尚未装备技能" % (slot_index + 1))
         return
     cast_ability(ability_id)
-func cast_ability(ability_id: String) -> void:
+func cast_ability(ability_id: String) -> bool:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var ability := SkillSystem.get_ability_data(class_id, ability_id)
     if ability.is_empty() or not SkillSystem.is_ability_learned(class_id, ability_id):
         game.call("show_notice", "技能尚未学习")
-        return
+        return false
     var remaining := float(ability_cooldowns.get(ability_id, 0.0))
     if remaining > 0.0:
         game.call("show_notice", "技能冷却中：%.1f 秒" % remaining)
-        return
+        return false
     var cost := float(ability.get("cost", 12))
     if cosmos < cost:
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % cost)
-        return
+        return false
     cosmos -= cost
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
@@ -397,3 +432,4 @@ func cast_ability(ability_id: String) -> void:
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
     _register_custom_combo_input(ability_id)
+    return true
