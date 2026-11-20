@@ -101,5 +101,33 @@ func get_catalog() -> Array[Dictionary]:
         result.append(entry)
     return result
 
+
+func validate_archetypes() -> Dictionary:
+    var errors: Array[String] = []
+    for archetype_id in ARCHETYPES:
+        var data: Dictionary = ARCHETYPES[archetype_id]
+        if str(data.get("name", "")).is_empty():
+            errors.append("missing enemy name: " + str(archetype_id))
+        if float(data.get("health", 0.0)) <= 0.0:
+            errors.append("non-positive enemy health: " + str(archetype_id))
+        if float(data.get("speed", -1.0)) < 0.0:
+            errors.append("negative enemy speed: " + str(archetype_id))
+        if float(data.get("attack_damage", -1.0)) < 0.0:
+            errors.append("negative enemy attack damage: " + str(archetype_id))
+        if float(data.get("attack_range", 0.0)) <= 0.0 or float(data.get("attack_interval", 0.0)) <= 0.0:
+            errors.append("invalid enemy attack range or interval: " + str(archetype_id))
+        if bool(data.get("is_boss", false)):
+            if float(data.get("boss_windup", 0.0)) <= 0.0:
+                errors.append("boss has no windup: " + str(archetype_id))
+            if int(data.get("boss_heavy_interval", 0)) < 1:
+                errors.append("boss heavy interval is invalid: " + str(archetype_id))
+            if float(data.get("boss_heavy_multiplier", 0.0)) < 1.0:
+                errors.append("boss heavy multiplier is invalid: " + str(archetype_id))
+            if float(data.get("boss_range_multiplier", 0.0)) < 1.0:
+                errors.append("boss range multiplier is invalid: " + str(archetype_id))
+            if float(data.get("boss_recovery", -1.0)) < 0.0:
+                errors.append("boss recovery is invalid: " + str(archetype_id))
+    return {"valid": errors.is_empty(), "archetype_count": ARCHETYPES.size(), "errors": errors}
+
 func has_archetype(archetype_id: String) -> bool:
     return ARCHETYPES.has(archetype_id)
