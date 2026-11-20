@@ -153,21 +153,25 @@ func get_combat_stats() -> Dictionary:
 func exp_to_next_level() -> int:
  return 100+(int(profile.get("level",1))-1)*65
 func add_exp(amount: int) -> int:
- if amount <= 0: return 0
+ if amount <= 0:
+  return 0
+ var previous: Dictionary = profile.duplicate(true)
  var gained_levels := 0
- profile["exp"] = int(profile.get("exp",0))+amount
- while int(profile.get("level",1)) < MAX_LEVEL and int(profile["exp"]) >= exp_to_next_level():
-  profile["exp"] = int(profile["exp"])-exp_to_next_level()
-  profile["level"] = int(profile["level"])+1
+ profile["exp"] = int(profile.get("exp", 0)) + amount
+ while int(profile.get("level", 1)) < MAX_LEVEL and int(profile["exp"]) >= exp_to_next_level():
+  profile["exp"] = int(profile["exp"]) - exp_to_next_level()
+  profile["level"] = int(profile["level"]) + 1
   profile["skill_points"] = int(profile.get("skill_points", 0)) + 1
   gained_levels += 1
- _emit_change()
- save_slot(active_slot)
+ if not _commit_profile(previous):
+  return 0
  return gained_levels
 func add_currency(amount: int) -> void:
- profile["currency"] = maxi(0,int(profile.get("currency",0))+amount)
- _emit_change()
- save_slot(active_slot)
+ if amount == 0:
+  return
+ var previous: Dictionary = profile.duplicate(true)
+ profile["currency"] = maxi(0, int(profile.get("currency", 0)) + amount)
+ _commit_profile(previous)
 func add_item(item_id: String, quantity: int = 1) -> bool:
   return add_items({item_id: quantity})
 
@@ -191,93 +195,128 @@ func add_items(items: Dictionary) -> bool:
 func equip_item(item_id: String) -> bool:
  if not ITEM_DATA.has(item_id):
   return false
- var previous_inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
- var previous_equipment: Dictionary = profile.get("equipment", {}).duplicate(true)
- if int(previous_inventory.get(item_id, 0)) <= 0:
+ var previous: Dictionary = profile.duplicate(true)
+ var inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+ var equipment: Dictionary = profile.get("equipment", {}).duplicate(true)
+ if int(inventory.get(item_id, 0)) <= 0:
   return false
  var slot: String = str(ITEM_DATA[item_id].get("slot", ""))
  if slot == "" or slot == "consumable":
   return false
- var inventory: Dictionary = previous_inventory.duplicate(true)
- var equipment: Dictionary = previous_equipment.duplicate(true)
  var old_id := str(equipment.get(slot, ""))
  if old_id != "":
   inventory[old_id] = int(inventory.get(old_id, 0)) + 1
  inventory[item_id] = int(inventory[item_id]) - 1
  if int(inventory[item_id]) <= 0:
   inventory.erase(item_id)
- equipment[slot] = item_id
  profile["inventory"] = inventory
  profile["equipment"] = equipment
- if not save_slot(active_slot):
-  profile["inventory"] = previous_inventory
-  profile["equipment"] = previous_equipment
+ equipment[slot] = item_id
+ profile["equipment"] = equipment
+ if not _commit_profile(previous):
   return false
- _emit_change()
  EventBus.inventory_changed.emit(inventory.duplicate(true))
  EventBus.equipment_changed.emit(equipment.duplicate(true))
  return true
 func enhance_equipment(slot: String) -> bool:
- var equipment: Dictionary = profile.get("equipment",{})
- var item_id: String = str(equipment.get(slot,""))
+ var equipment: Dictionary = profile.get("equipment", {})
+ var item_id: String = str(equipment.get(slot, ""))
  if item_id == "" or not ITEM_DATA.has(item_id):
   return false
- var levels: Dictionary = profile.get("equipment_levels",{})
- var current_level: int = int(levels.get(item_id,0))
+ var levels: Dictionary = profile.get("equipment_levels", {}).duplicate(true)
+ var current_level := int(levels.get(item_id, 0))
  if current_level >= 10:
   return false
- var cost: int = (current_level + 1) * 100
- if int(profile.get("currency",0)) < cost:
+ var cost := (current_level + 1) * 100
+ if int(profile.get("currency", 0)) < cost:
   return false
+ var previous: Dictionary = profile.duplicate(true)
  profile["currency"] = int(profile["currency"]) - cost
  levels[item_id] = current_level + 1
  profile["equipment_levels"] = levels
- _emit_change()
- save_slot(active_slot)
- return true
+ return _commit_profile(previous)
 func upgrade_cosmos() -> bool:
  var class_id := str(profile.get("class_id", "pegasus"))
  var cosmos_data: Dictionary = get_cosmos_profile()
  var level := int(cosmos_data.get("level", 1))
  var cost := int(cosmos_data.get("upgrade_cost", level * 250))
- if level >= int(cosmos_data.get("max_level", 20)) or int(profile.get("currency", 0)) < cost: return false
- profile["currency"] = int(profile.get("currency", 0)) - cost
- var levels: Dictionary = profile.get("cosmos_levels", {})
+ if level >= int(cosmos_data.get("max_level", 20)) or int(profile.get("currency", 0)) < cost:
+  return false
+ var previous: Dictionary = profile.duplicate(true)
+ profile["currency"] = int(profile["currency"]) - cost
+ var levels: Dictionary = profile.get("cosmos_levels", {}).duplicate(true)
  levels[class_id] = level + 1
  profile["cosmos_levels"] = levels
  profile["cosmos_level"] = level + 1
- _emit_change()
- save_slot(active_slot)
- return true
+ return _commit_profile(previous)
 func buy_item(item_id: String) -> bool:
- if not ITEM_DATA.has(item_id): return false
- var price: int = int(ITEM_DATA[item_id].get("price",0))
- if price <= 0 or int(profile.get("currency",0)) < price: return false
- profile["currency"] = int(profile["currency"])-price
- var inventory: Dictionary = profile.get("inventory",{})
- inventory[item_id] = int(inventory.get(item_id,0))+1
+ if not ITEM_DATA.has(item_id):
+  return false
+ var price := int(ITEM_DATA[item_id].get("price", 0))
+ if price <= 0 or int(profile.get("currency", 0)) < price:
+  return false
+ var previous: Dictionary = profile.duplicate(true)
+ var inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+ profile["currency"] = int(profile["currency"]) - price
+ inventory[item_id] = int(inventory.get(item_id, 0)) + 1
  profile["inventory"] = inventory
- _emit_change()
- save_slot(active_slot)
+ if not _commit_profile(previous):
+  return false
+ EventBus.inventory_changed.emit(inventory.duplicate(true))
  return true
 func use_item(item_id: String) -> bool:
- var inventory: Dictionary = profile.get("inventory",{})
- if item_id != "cosmos_potion" or int(inventory.get(item_id,0)) <= 0: return false
- inventory[item_id] = int(inventory[item_id])-1
- if int(inventory[item_id]) <= 0: inventory.erase(item_id)
+ if item_id != "cosmos_potion":
+  return false
+ var inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+ if int(inventory.get(item_id, 0)) <= 0:
+  return false
+ var previous: Dictionary = profile.duplicate(true)
+ inventory[item_id] = int(inventory[item_id]) - 1
+ if int(inventory[item_id]) <= 0:
+  inventory.erase(item_id)
  profile["inventory"] = inventory
- _emit_change()
- save_slot(active_slot)
+ if not _commit_profile(previous):
+  return false
+ EventBus.inventory_changed.emit(inventory.duplicate(true))
  return true
 func _save_path(slot: int) -> String:
- return "user://save_slot_%d.json" % clampi(slot,1,3)
+ return "user://save_slot_%d.json" % clampi(slot, 1, 3)
+
+func _commit_profile(previous: Dictionary) -> bool:
+ if save_slot(active_slot):
+  _emit_change()
+  return true
+ profile = previous
+ return false
 func save_slot(slot: int) -> bool:
- if slot < 1 or slot > 3: return false
- var file := FileAccess.open(_save_path(slot),FileAccess.WRITE)
- if file == null: return false
+ # A save operation may only update the currently loaded character slot.
+ # Creating a different slot must go through create_new_slot().
+ if slot < 1 or slot > 3 or slot != active_slot:
+  return false
+ var final_path := _save_path(slot)
+ var temporary_path := final_path + ".tmp"
+ var previous_path := final_path + ".previous"
+ var file := FileAccess.open(temporary_path, FileAccess.WRITE)
+ if file == null:
+  return false
  file.store_string(JSON.stringify(profile))
+ file.flush()
  file.close()
- active_slot = slot
+ if FileAccess.file_exists(final_path):
+  if FileAccess.file_exists(previous_path):
+   DirAccess.remove_absolute(ProjectSettings.globalize_path(previous_path))
+  if DirAccess.rename_absolute(ProjectSettings.globalize_path(final_path), ProjectSettings.globalize_path(previous_path)) != OK:
+   DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+   return false
+  if DirAccess.rename_absolute(ProjectSettings.globalize_path(temporary_path), ProjectSettings.globalize_path(final_path)) != OK:
+   DirAccess.rename_absolute(ProjectSettings.globalize_path(previous_path), ProjectSettings.globalize_path(final_path))
+   DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+   return false
+  DirAccess.remove_absolute(ProjectSettings.globalize_path(previous_path))
+ else:
+  if DirAccess.rename_absolute(ProjectSettings.globalize_path(temporary_path), ProjectSettings.globalize_path(final_path)) != OK:
+   DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+   return false
  return true
 func load_slot(slot: int) -> bool:
  if slot < 1 or slot > 3 or not FileAccess.file_exists(_save_path(slot)): return false
@@ -358,6 +397,7 @@ func create_new_slot(slot: int) -> bool:
  var previous_slot: int = active_slot
  profile = {}
  _ensure_profile()
+ active_slot = slot
  if not save_slot(slot):
   profile = previous_profile
   active_slot = previous_slot
@@ -365,7 +405,6 @@ func create_new_slot(slot: int) -> bool:
  slot_loaded.emit(slot)
  _emit_change()
  return true
-
 func delete_slot(slot: int) -> bool:
  if not has_slot(slot):
   return false
