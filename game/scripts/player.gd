@@ -268,8 +268,7 @@ func receive_damage(amount: float) -> void:
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     var absorbed_damage := minf(divine_guard_shield, final_damage)
-    divine_guard_shield = maxf(0.0, divine_guard_shield - absorbed_damage)
-    var health_damage := maxf(0.0, final_damage - absorbed_damage)
+    var health_damage := absorb_divine_guard_damage(final_damage)
     health = maxf(0.0, health - health_damage)
     CombatSessionManager.record_damage_taken(health_damage)
     if health_damage > 0.0:
@@ -281,6 +280,11 @@ func receive_damage(amount: float) -> void:
         health = max_health
         global_position = Vector3(0, 0.2, 7)
         game.call("show_notice", "角色倒地，已在训练场复位")
+func absorb_divine_guard_damage(incoming_damage: float) -> float:
+    var absorbed_damage := minf(divine_guard_shield, maxf(0.0, incoming_damage))
+    divine_guard_shield = maxf(0.0, divine_guard_shield - absorbed_damage)
+    return maxf(0.0, incoming_damage - absorbed_damage)
+
 func apply_divine_guard(shield_ratio: float = 0.18, duration: float = 6.0) -> void:
     var shield_capacity := max_health * clampf(shield_ratio, 0.0, 0.25)
     divine_guard_shield = maxf(divine_guard_shield, shield_capacity)
