@@ -809,91 +809,12 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
     var ability_type := str(ability.get("type", ""))
     var ability_name := str(ability.get("name", "神权技能"))
     var is_support: bool = SkillSystem.is_support_ability(ability) or "增益" in ability_type
-    var mark := ""
-    var status := ""
-    var duration := 4.0
-    var power := 0.18
-    match class_id:
-        "apollo", "abel":
-            mark = "solar"
-            status = "burn"
-            duration = 6.0
-            power = maxf(2.0, float(RPGState.get_combat_stats().get("attack", 14.0)) * 0.14)
-        "athena":
-            mark = "aegis"
-            status = "weaken"
-            duration = 4.5
-            power = 0.18
-        "artemis", "pallas":
-            mark = "lunar"
-            status = "slow"
-            duration = 4.5
-            power = 0.42
-        "hades", "lucifer":
-            mark = "soul"
-            status = "weaken"
-            duration = 5.0
-            power = 0.28
-        "poseidon":
-            mark = "tidal"
-            status = "slow"
-            duration = 4.0
-            power = 0.30
-        "zeus", "ares":
-            mark = "storm"
-            status = "burn"
-            duration = 4.0
-            power = 0.24
-        "hypnos":
-            mark = "dream"
-            status = "slow"
-            duration = 5.0
-            power = 0.48
-        "thanatos":
-            mark = "death"
-            status = "weaken"
-            duration = 5.0
-            power = 0.32
-        "odin":
-            mark = "rune"
-            status = "weaken"
-            duration = 3.5
-            power = 0.18
-        "eris":
-            mark = "discord"
-            status = "weaken"
-            duration = 4.5
-            power = 0.24
-        "saturn", "chronos":
-            mark = "time"
-            status = "slow"
-            duration = 4.0
-            power = 0.38
-        "hera":
-            mark = "command"
-            status = "weaken"
-            duration = 4.0
-            power = 0.20
-        "demeter":
-            mark = "harvest"
-            status = "slow"
-            duration = 4.0
-            power = 0.26
-        "hestia", "hephaestus":
-            mark = "forge"
-            status = "burn"
-            duration = 4.0
-            power = 0.20
-        "hermes":
-            mark = "swift"
-            status = "slow"
-            duration = 2.5
-            power = 0.20
-        "aphrodite":
-            mark = "charm"
-            status = "weaken"
-            duration = 4.5
-            power = 0.26
+    var signature_profile: Dictionary = SkillSystem.get_divine_signature_profile(class_id)
+    var mark := str(signature_profile.get("mark", ""))
+    var status := str(signature_profile.get("status", ""))
+    var duration := float(signature_profile.get("duration", 4.0))
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var power := maxf(2.0, attack_power * float(signature_profile.get("status_power", 0.18))) if class_id == "apollo" else float(signature_profile.get("status_power", 0.18))
     if is_support:
         var support_profile: Dictionary = SkillSystem.get_divine_support_profile(class_id)
         if not support_profile.is_empty():
@@ -913,6 +834,11 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             show_notice("%s：神权支援效果已激活" % str(RPGState.CLASS_DATA.get(class_id, {}).get("name", class_id)))
         return
     var affected := 0
+    var chain_applied := false
+    var damage_ratio := float(signature_profile.get("damage_ratio", 0.0))
+    var execute_threshold := float(signature_profile.get("execute_threshold", 0.0))
+    var execute_ratio := float(signature_profile.get("execute_ratio", 0.0))
+    var secondary_status := str(signature_profile.get("secondary_status", ""))
     for enemy in enemies.duplicate():
         if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
             continue
@@ -920,8 +846,57 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             continue
         if status != "" and enemy.has_method("apply_status_effect"):
             enemy.call("apply_status_effect", status, duration, power)
+        if secondary_status != "" and enemy.has_method("apply_status_effect"):
+            enemy.call("apply_status_effect", secondary_status, float(signature_profile.get("secondary_duration", 1.0)), float(signature_profile.get("secondary_power", 0.0)))
         if enemy.has_method("apply_divine_mark"):
-            enemy.call("apply_divine_mark", mark, duration, 0.12 if ability_id.ends_with("_6") or "奥义" in ability_type else 0.06)
+            var mark_power := float(signature_profile.get("mark_power", 0.06))
+            if ability_id.ends_with("_6") or "奥义" in ability_type:
+                mark_power = minf(0.18, mark_power + 0.03)
+            enemy.call("apply_divine_mark", mark, duration, mark_power)
+        var bonus_ratio := damage_ratio
+        if execute_threshold > 0.0 and float(enemy.get("health")) / maxf(1.0, float(enemy.get("max_health"))) <= execute_threshold:
+            bonus_ratio += execute_ratio
+        if bonus_ratio > 0.0 and enemy.has_method("take_damage"):
+            enemy.call("take_damage", attack_power * bonus_ratio)
+        var pull_force := float(signature_profile.get("pull_force", 0.0))
+        var knockback_force := float(signature_profile.get("knockback_force", 0.0))
+        var stagger_force := float(signature_profile.get("stagger_force", 0.0))
+        if enemy.has_method("apply_hit_reaction"):
+            if pull_force > 0.0:
+                var pull_direction: Vector3 = player.global_position - enemy.global_position
+                pull_direction.y = 0.0
+                if pull_direction.length_squared() > 0.001:
+                    enemy.call("apply_hit_reaction", pull_direction.normalized(), pull_force, 0.0, 0.45)
+            elif knockback_force > 0.0:
+                var push_direction: Vector3 = enemy.global_position - player.global_position
+                push_direction.y = 0.0
+                if push_direction.length_squared() > 0.001:
+                    enemy.call("apply_hit_reaction", push_direction.normalized(), knockback_force, 0.7, 0.45)
+            elif stagger_force > 0.0:
+                enemy.call("apply_hit_reaction", Vector3.ZERO, stagger_force, 0.0, 0.5)
+        if not chain_applied and float(signature_profile.get("chain_ratio", 0.0)) > 0.0:
+            var nearest_chain_target: Node3D
+            var nearest_chain_distance := max_distance
+            for candidate in enemies:
+                if not is_instance_valid(candidate) or candidate == enemy or float(candidate.get("health")) <= 0.0:
+                    continue
+                var chain_distance := candidate.global_position.distance_to(enemy.global_position)
+                if chain_distance < nearest_chain_distance:
+                    nearest_chain_target = candidate
+                    nearest_chain_distance = chain_distance
+            if is_instance_valid(nearest_chain_target) and nearest_chain_target.has_method("take_damage"):
+                nearest_chain_target.call("take_damage", attack_power * float(signature_profile.get("chain_ratio", 0.0)))
+                chain_applied = true
         affected += 1
     if affected > 0:
-        show_notice("%s：%s神印命中 %d 个目标" % [ability_name, mark, affected])
+        var heal_ratio := float(signature_profile.get("heal_ratio", 0.0))
+        if heal_ratio > 0.0:
+            player.health = minf(player.max_health, player.health + player.max_health * heal_ratio)
+        var buff_damage := float(signature_profile.get("buff_damage", 0.0))
+        var buff_reduction := float(signature_profile.get("buff_reduction", 0.0))
+        if buff_damage > 0.0 or buff_reduction > 0.0:
+            player.call("apply_temporary_buff", buff_damage, buff_reduction, float(signature_profile.get("buff_duration", 4.0)))
+        var mobility := float(signature_profile.get("mobility", 0.0))
+        if mobility > 0.0:
+            player.velocity += -player.global_transform.basis.z * mobility
+        show_notice("%s：%s神权效果命中 %d 个目标" % [ability_name, str(signature_profile.get("effect", mark)), affected])
