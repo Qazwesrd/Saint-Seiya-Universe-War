@@ -155,6 +155,8 @@ func _run_tests() -> void:
 	assert(RPGState.create_new_slot(2), "create second isolated character slot")
 	assert(QuestManager.status == "not_started", "quest state isolated on new slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "campaign defaults on new slot")
+	assert(not RPGState.save_slot(3), "cannot overwrite a different occupied save slot")
+	assert(RPGState.active_slot == 2, "failed cross-slot save does not switch active slot")
 	assert(RPGState.load_slot(3), "switch back to first character slot")
 	assert(QuestManager.status == "active" and QuestManager.defeated_normal == 1, "restore quest progress from selected slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "restore campaign progress from selected slot")
