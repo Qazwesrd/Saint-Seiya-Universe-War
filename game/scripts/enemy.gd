@@ -32,6 +32,7 @@ var body_material: StandardMaterial3D
 var enemy_arm_nodes: Array[MeshInstance3D] = []
 var enemy_leg_nodes: Array[MeshInstance3D] = []
 var telegraph_mesh: MeshInstance3D
+var telegraph_material: StandardMaterial3D
 var _boss_phase_two := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
@@ -198,7 +199,7 @@ func _ready() -> void:
     ring.outer_radius = attack_range
     telegraph_mesh.mesh = ring
     telegraph_mesh.position.y = 0.06
-    var telegraph_material := StandardMaterial3D.new()
+    telegraph_material = StandardMaterial3D.new()
     telegraph_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     telegraph_material.albedo_color = Color(1.0, 0.18, 0.12, 0.72)
     telegraph_material.emission_enabled = true
@@ -396,6 +397,17 @@ func _animate_enemy_limbs(delta: float) -> void:
     var clock := float(Time.get_ticks_msec()) * 0.009 * maxf(0.6, speed)
     var windup_pose := 1.0 if state == BrainState.WINDUP else 0.0
     var stagger_pose := 1.0 if state == BrainState.STAGGER else 0.0
+    if is_instance_valid(telegraph_mesh):
+        if telegraph_mesh.visible:
+            telegraph_mesh.rotation.y += delta * 0.9
+            var warning_pulse := 0.78 + (sin(clock * 3.2) * 0.5 + 0.5) * 0.42
+            telegraph_mesh.scale = Vector3.ONE * warning_pulse * (boss_range_multiplier if _boss_heavy_attack else 1.0)
+        else:
+            telegraph_mesh.rotation.y = lerp_angle(telegraph_mesh.rotation.y, 0.0, minf(1.0, delta * 4.0))
+    if is_instance_valid(body_material):
+        var state_glow := 0.22 + windup_pose * (0.28 + (sin(clock * 3.2) * 0.5 + 0.5) * 0.18) + stagger_pose * 0.12
+        body_material.emission = _base_color * state_glow
+    rotation.z = lerpf(rotation.z, -0.12 * stagger_pose + 0.035 * windup_pose, minf(1.0, delta * 5.0))
     for limb_index in range(2):
         var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.48 * movement
         var arm_target := lerpf(gait, -0.92, windup_pose)
