@@ -199,14 +199,12 @@ func _play_attack_pose(intensity: float = 1.0) -> void:
     visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.15)
 
 func _get_visual_armor_signature() -> String:
-    var armor_state: Dictionary = RPGState.profile.get("armor_state", {})
-    return "%s|%s|%s|%s|%s" % [
-        str(RPGState.profile.get("class_id", "pegasus")),
-        str(RPGState.profile.get("equipped_relic", "")),
-        str(armor_state.get("current_stage", "bronze")),
-        str(armor_state.get("levels", {})),
-        str(armor_state.get("durability", {}))
-    ]
+    return JSON.stringify({
+        "class_id": RPGState.profile.get("class_id", "pegasus"),
+        "equipped_relic": RPGState.profile.get("equipped_relic", ""),
+        "equipment": RPGState.profile.get("equipment", {}),
+        "armor_state": RPGState.profile.get("armor_state", {})
+    })
 
 func _on_rpg_state_changed() -> void:
     if _get_visual_armor_signature() != visual_armor_signature:
