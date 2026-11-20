@@ -391,6 +391,16 @@ func _run_tests() -> void:
 	assert(asgard_chapter.get("missions", []).size() == 8, "anime Asgard arc is inserted before Poseidon")
 	assert(poseidon_chapter.get("missions", []).size() == 10, "Poseidon arc contains Athena rescue, seven generals, pillars and final battle")
 	assert(int(asgard_chapter.get("order", 0)) < int(poseidon_chapter.get("order", 0)), "Asgard precedes Poseidon in anime chronology")
+	var hades_chapter: Dictionary = CampaignDatabase.get_chapter("hades")
+	var heaven_chapter: Dictionary = CampaignDatabase.get_chapter("heaven")
+	var original_chapter: Dictionary = CampaignDatabase.get_chapter("original_final")
+	assert(int(poseidon_chapter.get("order", 0)) < int(hades_chapter.get("order", 0)), "Hades follows Poseidon in story chronology")
+	assert(int(hades_chapter.get("order", 0)) < int(heaven_chapter.get("order", 0)) and int(heaven_chapter.get("order", 0)) < int(original_chapter.get("order", 0)), "Heaven and original finale follow Hades in order")
+	assert(hades_chapter.get("missions", []).size() >= 7 and heaven_chapter.get("missions", []).size() >= 7 and original_chapter.get("missions", []).size() >= 5, "Hades, Heaven and original finale have complete mission arcs")
+	for mission_id in ["ha_003", "ha_006", "ha_007", "he_002", "he_004", "he_005", "he_006", "he_007", "of_002", "of_004", "of_005"]:
+		assert(not CampaignDatabase.get_mission(mission_id).get("encounter", {}).get("waves", []).is_empty(), "late story boss encounter is configured: " + mission_id)
+	for archetype_id in ["hades_specter", "hades_wraith", "judge_griffin", "judge_garuda", "judge_wyvern", "cocytus_guard", "wailing_wall_guard", "hypnos_guardian", "thanatos_reaper", "hades_emperor", "heaven_gatekeeper", "heavenly_angel", "heavenly_warden", "celestial_trial", "apollo_trial", "zeus_trial", "cosmos_warden", "divine_echo", "primordial_void", "universe_arbiter"]:
+		assert(EnemyDatabase.has_archetype(archetype_id), "late campaign enemy archetype exists: " + archetype_id)
 	for archetype_id in ["god_warrior_thor", "god_warrior_fenrir", "god_warrior_hagen", "god_warrior_mime", "god_warrior_alberich", "god_warrior_syd", "god_warrior_bud", "god_warrior_siegfried", "mariner_baian", "mariner_io", "mariner_krishna", "mariner_kasa", "mariner_isaac", "mariner_sorrento", "mariner_kanon", "poseidon_emperor"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "Asgard/Poseidon boss archetype: " + archetype_id)
 	for mission_id in ["po_002", "po_003", "po_004", "po_005", "po_006", "po_007", "po_008", "po_010"]:
