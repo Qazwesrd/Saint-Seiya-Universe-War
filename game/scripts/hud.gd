@@ -20,6 +20,10 @@ var skill_slot_buttons: Array[Button] = []
 var flight_button: Button
 var flight_up_button: Button
 var flight_down_button: Button
+var camera_finger_id := -1
+var camera_last_position := Vector2.ZERO
+var touch_layout_left_handed := false
+var stick_default_position := Vector2(42, 520)
 func _ready() -> void:
     var root := Control.new()
     root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -132,6 +136,8 @@ func _ready() -> void:
     flight_button.visible = false
     flight_up_button.visible = false
     flight_down_button.visible = false
+    SettingsManager.settings_changed.connect(_on_hud_setting_changed)
+    _apply_touch_layout()
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
     _button(root, "防御", Vector2(-370, -94), Vector2(-278, -22), func(): _call_player("guard"), Color(0.16, 0.34, 0.38))
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
@@ -163,15 +169,20 @@ func _style_panel(panel: Panel, color: Color, border: Color) -> void:
 func _button(root: Control, label: String, tl: Vector2, br: Vector2, action: Callable, color: Color) -> Button:
     var b := Button.new()
     b.text = label
-    b.anchor_left = 1.0
-    b.anchor_right = 1.0
-    b.anchor_top = 1.0
-    b.anchor_bottom = 1.0
+    b.anchor_left = 1.0 if tl.x < 0.0 else 0.0
+    b.anchor_right = 1.0 if br.x < 0.0 else 0.0
+    b.anchor_top = 1.0 if tl.y < 0.0 else 0.0
+    b.anchor_bottom = 1.0 if br.y < 0.0 else 0.0
     b.offset_left = tl.x
     b.offset_top = tl.y
     b.offset_right = br.x
     b.offset_bottom = br.y
     b.add_theme_font_size_override("font_size", 18)
+    b.add_to_group("hud_mirror_buttons")
+    b.set_meta("default_anchor_left", b.anchor_left)
+    b.set_meta("default_anchor_right", b.anchor_right)
+    b.set_meta("default_offset_left", b.offset_left)
+    b.set_meta("default_offset_right", b.offset_right)
     var style := StyleBoxFlat.new()
     style.bg_color = color
     style.border_color = Color(0.65, 0.82, 1.0, 0.85)
@@ -184,18 +195,80 @@ func _button(root: Control, label: String, tl: Vector2, br: Vector2, action: Cal
     return b
 func _input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
-        var t := event as InputEventScreenTouch
-        if t.pressed and t.position.x < 230.0 and t.position.y > get_viewport().size.y * 0.55 and finger_id == -1:
-            finger_id = t.index
-            _move_stick(t.position)
-        elif not t.pressed and t.index == finger_id:
-            finger_id = -1
-            stick_value = Vector2.ZERO
-            _send_move(Vector2.ZERO)
-            stick_knob.position = stick_base.position + Vector2(46, 46)
+        var touch := event as InputEventScreenTouch
+        var viewport_width := get_viewport().get_visible_rect().size.x
+        var viewport_height := get_viewport().get_visible_rect().size.y
+        var left_handed := bool(SettingsManager.get_value("controls", "left_handed", false))
+        var stick_side := touch.position.x > viewport_width - 230.0 if left_handed else touch.position.x < 230.0
+        if touch.pressed and stick_side and touch.position.y > viewport_height * 0.55 and finger_id == -1:
+            finger_id = touch.index
+            _move_stick(touch.position)
+        elif touch.pressed and not _is_touch_over_button(touch.position) and camera_finger_id == -1:
+            var camera_side := touch.position.x < viewport_width * 0.55 if left_handed else touch.position.x > viewport_width * 0.45
+            if camera_side:
+                camera_finger_id = touch.index
+                camera_last_position = touch.position
+        elif not touch.pressed:
+            if touch.index == finger_id:
+                finger_id = -1
+                stick_value = Vector2.ZERO
+                _send_move(Vector2.ZERO)
+                _reset_stick_knob()
+            if touch.index == camera_finger_id:
+                camera_finger_id = -1
     elif event is InputEventScreenDrag:
-        var d := event as InputEventScreenDrag
-        if d.index == finger_id: _move_stick(d.position)
+        var drag := event as InputEventScreenDrag
+        if drag.index == finger_id:
+            _move_stick(drag.position)
+        elif drag.index == camera_finger_id:
+            var delta_position := drag.position - camera_last_position
+            camera_last_position = drag.position
+            if is_instance_valid(game.player):
+                game.player.call("rotate_camera", delta_position)
+
+func _is_touch_over_button(position: Vector2) -> bool:
+    for control in get_tree().get_nodes_in_group("hud_mirror_buttons"):
+        if is_instance_valid(control) and control is Control and control.get_global_rect().has_point(position):
+            return true
+    return false
+
+func _reset_stick_knob() -> void:
+    var center := stick_base.position + stick_base.size * 0.5
+    stick_knob.position = center - stick_knob.size * 0.5
+
+func _on_hud_setting_changed(section: String, key: String, _value: Variant) -> void:
+    if section == "controls" and key in ["left_handed", "button_scale"]:
+        _apply_touch_layout()
+
+func _apply_touch_layout() -> void:
+    var viewport_width := get_viewport().get_visible_rect().size.x
+    var left_handed := bool(SettingsManager.get_value("controls", "left_handed", false))
+    var button_scale := clampf(float(SettingsManager.get_value("controls", "button_scale", 1.0)), 0.75, 1.5)
+    if left_handed != touch_layout_left_handed:
+        for button in get_tree().get_nodes_in_group("hud_mirror_buttons"):
+            if not is_instance_valid(button) or not button is Control:
+                continue
+            if left_handed:
+                var rect := button.get_global_rect()
+                button.anchor_left = 0.0
+                button.anchor_right = 0.0
+                button.offset_left = viewport_width - rect.position.x - rect.size.x
+                button.offset_right = viewport_width - rect.position.x
+            else:
+                button.anchor_left = float(button.get_meta("default_anchor_left", 0.0))
+                button.anchor_right = float(button.get_meta("default_anchor_right", 0.0))
+                button.offset_left = float(button.get_meta("default_offset_left", 0.0))
+                button.offset_right = float(button.get_meta("default_offset_right", 0.0))
+        touch_layout_left_handed = left_handed
+    for button in get_tree().get_nodes_in_group("hud_mirror_buttons"):
+        if is_instance_valid(button) and button is Control:
+            button.scale = Vector2.ONE * button_scale
+    if is_instance_valid(stick_base) and is_instance_valid(stick_knob):
+        stick_base.position = Vector2(viewport_width - stick_default_position.x - stick_base.size.x, stick_default_position.y) if left_handed else stick_default_position
+        stick_base.scale = Vector2.ONE * button_scale
+        stick_knob.scale = Vector2.ONE * button_scale
+        _reset_stick_knob()
+
 func _move_stick(pos: Vector2) -> void:
     var center := stick_base.position + stick_base.size * 0.5
     stick_value = ((pos - center).limit_length(58.0)) / 58.0
