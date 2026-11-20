@@ -422,6 +422,14 @@ func _run_tests() -> void:
 	assert(QuestManager.status == "active" and QuestManager.defeated_normal == 1, "restore quest progress from selected slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "restore campaign progress from selected slot")
 	assert(RPGState.load_slot(2), "load isolated slot for tutorial reward test")
+	CampaignManager.progress["unlocked_chapters"] = ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades"]
+	CampaignManager.progress["active_mission"] = "ha_003"
+	CampaignManager.progress["objective_counts"] = {}
+	assert(CampaignManager._save(), "prepare Hades three-judge encounter mission")
+	assert(CampaignManager.add_objective_progress("defeat_three_judges", 3), "record all three judge defeats")
+	assert(CampaignManager.can_complete_active_mission(), "encounter objective completion is recognized")
+	var judge_mission_result: Dictionary = CampaignManager.complete_active_mission()
+	assert(bool(judge_mission_result.get("success", false)) and str(judge_mission_result.get("next_mission", {}).get("id", "")) == "ha_004", "completed Hades boss mission advances and grants its reward")
 	QuestManager.status = "ready_to_return"
 	QuestManager.defeated_normal = 2
 	QuestManager.boss_defeated = true
