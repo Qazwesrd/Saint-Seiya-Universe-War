@@ -28,6 +28,7 @@ var temporary_damage_reduction := 0.0
 var temporary_buff_timer := 0.0
 var divine_guard_shield := 0.0
 var divine_guard_timer := 0.0
+var class_passive_guard_cooldown := 0.0
 var ability_cooldowns: Dictionary = {}
 var custom_combo_index := 0
 var custom_combo_timer := 0.0
@@ -115,6 +116,7 @@ func _physics_process(delta: float) -> void:
     invulnerable = maxf(0.0, invulnerable - delta)
     temporary_buff_timer = maxf(0.0, temporary_buff_timer - delta)
     divine_guard_timer = maxf(0.0, divine_guard_timer - delta)
+    class_passive_guard_cooldown = maxf(0.0, class_passive_guard_cooldown - delta)
     if divine_guard_timer <= 0.0:
         divine_guard_shield = 0.0
     for ability_id in ability_cooldowns.keys():
@@ -267,6 +269,11 @@ func receive_damage(amount: float) -> void:
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
     var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
+    var class_guard_ratio := SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
+    if class_guard_ratio > 0.0 and class_passive_guard_cooldown <= 0.0 and divine_guard_shield <= 0.0 and health - final_damage <= max_health * 0.35:
+        apply_divine_guard(class_guard_ratio, 4.0)
+        class_passive_guard_cooldown = 18.0
+        game.call("show_notice", "星云守护：生命危急，自动展开12%生命护盾")
     var absorbed_damage := minf(divine_guard_shield, final_damage)
     var health_damage := absorb_divine_guard_damage(final_damage)
     health = maxf(0.0, health - health_damage)
