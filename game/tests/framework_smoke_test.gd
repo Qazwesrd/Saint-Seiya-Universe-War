@@ -184,6 +184,21 @@ func _run_tests() -> void:
 	assert(RPGState.load_slot(3), "switch back to first character slot")
 	assert(QuestManager.status == "active" and QuestManager.defeated_normal == 1, "restore quest progress from selected slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "restore campaign progress from selected slot")
+	assert(RPGState.load_slot(2), "load isolated slot for tutorial reward test")
+	QuestManager.status = "ready_to_return"
+	QuestManager.defeated_normal = 2
+	QuestManager.boss_defeated = true
+	assert(QuestManager._save_progress(), "save tutorial quest ready state")
+	var tutorial_exp_before := int(RPGState.profile.get("exp", 0))
+	var tutorial_coins_before := int(RPGState.profile.get("currency", 0))
+	assert(str(QuestManager.interact_with_guide().get("action", "")) == "complete", "complete tutorial quest and grant rewards")
+	assert(int(RPGState.profile.get("exp", 0)) >= tutorial_exp_before, "tutorial experience reward committed")
+	assert(int(RPGState.profile.get("currency", 0)) == tutorial_coins_before + 300, "tutorial currency reward committed")
+	var completed_exp := int(RPGState.profile.get("exp", 0))
+	var completed_coins := int(RPGState.profile.get("currency", 0))
+	assert(str(QuestManager.interact_with_guide().get("action", "")) == "completed", "completed tutorial does not grant rewards again")
+	assert(int(RPGState.profile.get("exp", 0)) == completed_exp and int(RPGState.profile.get("currency", 0)) == completed_coins, "tutorial reward cannot be claimed twice")
+	assert(RPGState.load_slot(3), "restore original character after tutorial reward test")
 	assert(RPGState.delete_slot(2), "remove second isolated slot")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://backup_slot_2.json"))
 
