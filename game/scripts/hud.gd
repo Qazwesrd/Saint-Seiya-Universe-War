@@ -374,10 +374,11 @@ func _refresh_skill_cooldown_display() -> void:
         var button := skill_slot_buttons[i]
         var ability_id := str(slots[i]) if i < slots.size() else ""
         var ability: Dictionary = SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
-        var remaining := maxf(0.0, float(cooldowns.get(ability_id, 0.0)))
-        if ability_id == "":
+        if ability_id == "" or ability.is_empty():
+            button.text = "技能 %d\n未装备" % [i + 1]
             button.modulate = Color(0.58, 0.62, 0.7)
             continue
+        var remaining := maxf(0.0, float(cooldowns.get(ability_id, 0.0)))
         var ability_name := str(ability.get("name", "技能"))
         if remaining > 0.0:
             button.text = "技能 %d\n%s\n%.1fs" % [i + 1, ability_name, snappedf(remaining, 0.1)]
@@ -390,11 +391,13 @@ func refresh_skill_slots() -> void:
     if skill_slot_buttons.is_empty():
         return
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var slots := SkillSystem.get_equipped_abilities(class_id)
+    var slots: Array = SkillSystem.get_equipped_abilities(class_id)
     for i in range(mini(4, skill_slot_buttons.size())):
-        var ability_id := str(slots[i])
-        var ability := SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
-        skill_slot_buttons[i].text = "技能 %d\n%s" % [i + 1, str(ability.get("name", "未装备"))]
+        var ability_id := str(slots[i]) if i < slots.size() else ""
+        var ability: Dictionary = SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
+        var ability_name := str(ability.get("name", "未装备")) if not ability.is_empty() else "未装备"
+        skill_slot_buttons[i].text = "技能 %d\n%s" % [i + 1, ability_name]
+    _refresh_skill_cooldown_display()
 
 func set_enemy_count(count: int) -> void:
     enemy_label.text = "剩余目标：" + str(count)
