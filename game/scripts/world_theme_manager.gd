@@ -59,7 +59,8 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
     decor_root.name = "ChapterDecorations"
     add_child(decor_root)
     var primary: Color = theme["ring"]
-    var secondary: Color = theme["floor"].lightened(0.42)
+    var floor_color: Color = theme["floor"]
+    var secondary: Color = floor_color.lightened(0.42)
     var pillar_height := float(theme["height"])
     for index in range(8):
         var angle := TAU * float(index) / 8.0
