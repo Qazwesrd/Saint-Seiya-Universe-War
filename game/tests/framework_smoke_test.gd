@@ -291,6 +291,21 @@ func _run_tests() -> void:
 	assert(float(active_aerial_profile.get("damage_multiplier", 1.0)) > 1.0 and float(active_aerial_profile.get("range_bonus", 0.0)) > 0.0 and float(active_aerial_profile.get("launch_bonus", 0.0)) > 0.0, "Tenkishi flight enables bounded aerial combat bonuses")
 	var other_class_aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile("pegasus", true)
 	assert(is_equal_approx(float(other_class_aerial_profile.get("damage_multiplier", 0.0)), 1.0), "non-Tenkishi classes cannot receive aerial combat bonuses")
+	var divine_signature_effects: Dictionary = {}
+	var divine_signature_count := 0
+	for divine_class in SkillSystem.get_class_skill_catalog():
+		if str(divine_class.get("tier", "")) != "神明":
+			continue
+		var signature_id := str(divine_class.get("id", ""))
+		var signature_profile: Dictionary = SkillSystem.get_divine_signature_profile(signature_id)
+		var signature_effect := str(signature_profile.get("effect", ""))
+		assert(not signature_effect.is_empty() and not divine_signature_effects.has(signature_effect), signature_id + " has a distinct divine signature effect")
+		assert(not str(signature_profile.get("mark", "")).is_empty() and not str(signature_profile.get("status", "")).is_empty(), signature_id + " divine signature defines mark and status")
+		assert(float(signature_profile.get("damage_ratio", -1.0)) >= 0.0 and float(signature_profile.get("damage_ratio", 1.0)) <= 0.20, signature_id + " divine signature direct damage is bounded")
+		assert(float(signature_profile.get("execute_ratio", -1.0)) >= 0.0 and float(signature_profile.get("execute_ratio", 1.0)) <= 0.20, signature_id + " divine execute damage is bounded")
+		divine_signature_effects[signature_effect] = true
+		divine_signature_count += 1
+	assert(divine_signature_count == 22 and divine_signature_effects.size() == 22, "all 22 divine professions have distinct signature combat effects")
 	var divine_support_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		if str(class_profile.get("tier", "")) != "神明":
