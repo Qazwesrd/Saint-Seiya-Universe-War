@@ -113,14 +113,28 @@ func claim_reward() -> Dictionary:
 	if bool(state.get("reward_claimed", false)):
 		return {"success": false, "reason": "今日奖励已经领取"}
 	var boss := _boss_for_cycle(str(state.get("cycle_id", "")))
-	var previous := state.duplicate(true)
+	var reward_exp := maxi(0, int(boss.get("exp", 0)))
+	var reward_coins := maxi(0, int(boss.get("coins", 0)))
+	var previous_profile: Dictionary = RPGState.profile.duplicate(true)
+	var previous_state: Dictionary = state.duplicate(true)
+
+	# Commit the claim marker and both rewards in one save transaction. This prevents
+	# a claimed reward from being lost if a later independent currency/XP save fails.
 	state["reward_claimed"] = true
-	if not _save_state():
-		state = previous
-		return {"success": false, "reason": "奖励状态保存失败"}
-	RPGState.add_exp(int(boss.get("exp", 0)))
-	RPGState.add_currency(int(boss.get("coins", 0)))
-	return {"success": true, "exp": int(boss.get("exp", 0)), "coins": int(boss.get("coins", 0))}
+	RPGState.profile["exp"] = int(RPGState.profile.get("exp", 0)) + reward_exp
+	RPGState.profile["currency"] = maxi(0, int(RPGState.profile.get("currency", 0)) + reward_coins)
+	while int(RPGState.profile.get("level", 1)) < RPGState.MAX_LEVEL and int(RPGState.profile["exp"]) >= RPGState.exp_to_next_level():
+		RPGState.profile["exp"] = int(RPGState.profile["exp"]) - RPGState.exp_to_next_level()
+		RPGState.profile["level"] = int(RPGState.profile.get("level", 1)) + 1
+		RPGState.profile["skill_points"] = int(RPGState.profile.get("skill_points", 0)) + 1
+	RPGState.profile[SAVE_KEY] = state.duplicate(true)
+	if not RPGState.save_slot(RPGState.active_slot):
+		RPGState.profile = previous_profile
+		state = previous_state
+		return {"success": false, "reason": "奖励保存失败，奖励未发放"}
+	RPGState._emit_change()
+	daily_boss_changed.emit(get_state())
+	return {"success": true, "exp": reward_exp, "coins": reward_coins}
 
 func get_rotation_catalog() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
