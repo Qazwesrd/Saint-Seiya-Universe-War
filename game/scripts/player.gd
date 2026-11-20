@@ -220,7 +220,8 @@ func cosmos_burst() -> void:
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
     var skill_data: Dictionary = SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus")))
-    game.call("damage_nearby_combat", 24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0, float(skill_data.get("burst_range", 5.0)), 360.0, float(skill_data.get("burst_knockback", 12.0)), float(skill_data.get("burst_launch", 4.5)), float(skill_data.get("stagger", 1.0)))
+    var burst_damage := (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(str(RPGState.profile.get("class_id", "pegasus"))) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
+    game.call("damage_nearby_combat", burst_damage, float(skill_data.get("burst_range", 5.0)), 360.0, float(skill_data.get("burst_knockback", 12.0)), float(skill_data.get("burst_launch", 4.5)), float(skill_data.get("stagger", 1.0)))
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
 func dodge() -> void:
