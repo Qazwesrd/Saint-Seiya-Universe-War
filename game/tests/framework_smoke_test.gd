@@ -65,6 +65,7 @@ func _run_tests() -> void:
 	assert(is_equal_approx(forge_test_enemy.get_divine_mark_burn_multiplier(), 1.08), "forge burn amplification is reduced against bosses")
 	forge_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
+	assert(bool(ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", false)), "Android ETC2 ASTC texture compression is enabled")
 	assert(load("res://scripts/loot_pickup.gd") != null, "manual offline loot pickup actor is present")
 	var armor_palette_ids := ["bronze", "silver", "gold", "sea_scale", "surplice", "god_cloth", "god_armor"]
 	for armor_palette_id in armor_palette_ids:
