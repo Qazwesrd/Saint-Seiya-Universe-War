@@ -5,6 +5,15 @@ func _ready() -> void:
 	call_deferred("_run_tests")
 
 func _run_tests() -> void:
+    var guard_test_player = preload("res://scripts/player.gd").new()
+    guard_test_player.max_health = 100.0
+    guard_test_player.apply_divine_guard(0.18, 6.0)
+    assert(is_equal_approx(guard_test_player.divine_guard_shield, 18.0), "Athena divine guard grants 18% max-health shield")
+    assert(is_equal_approx(guard_test_player.divine_guard_timer, 6.0), "Athena divine guard lasts six seconds")
+    guard_test_player.apply_divine_guard(0.5, 2.0)
+    assert(is_equal_approx(guard_test_player.divine_guard_shield, 18.0), "divine guard refresh cannot exceed existing shield capacity")
+    assert(is_equal_approx(guard_test_player.divine_guard_timer, 6.0), "divine guard refresh cannot shorten duration")
+    guard_test_player.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(str(LocalizationManager.text_for("ui.attack")) != "", "localization service")
 	assert(AudioManager != null, "audio service")
