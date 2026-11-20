@@ -1189,6 +1189,8 @@ func get_damage_reduction(class_id: String) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "damage_reduction":
         return clampf(float(passive.get("value", 0.0)), 0.0, 0.60 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明" else (0.25 if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "天斗士" else 0.35))
+    if class_id == "tenkishi":
+        return 0.14
     return 0.0
 
 func get_passive_stagger_multiplier(class_id: String) -> float:
@@ -1201,6 +1203,8 @@ func get_passive_speed_multiplier(class_id: String) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "speed":
         return 1.0 + clampf(float(passive.get("value", 0.0)), 0.0, 0.40)
+    if class_id == "tenkishi":
+        return 1.22
     return 1.0
 
 func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
