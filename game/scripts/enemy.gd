@@ -15,6 +15,11 @@ var speed := 2.5
 var attack_damage := 7.0
 var attack_range := 2.0
 var attack_interval := 1.6
+var boss_windup := 1.05
+var boss_heavy_interval := 3
+var boss_heavy_multiplier := 1.55
+var boss_range_multiplier := 1.5
+var boss_recovery := 0.72
 var state: BrainState = BrainState.CHASE
 var state_timer := 0.0
 var attack_cooldown := 0.8
@@ -51,6 +56,11 @@ func _ready() -> void:
     attack_damage = float(archetype.get("attack_damage", 7.0)) * level_scale
     attack_range = float(archetype.get("attack_range", 2.0))
     attack_interval = float(archetype.get("attack_interval", 1.6))
+    boss_windup = float(archetype.get("boss_windup", 1.05))
+    boss_heavy_interval = maxi(1, int(archetype.get("boss_heavy_interval", 3)))
+    boss_heavy_multiplier = float(archetype.get("boss_heavy_multiplier", 1.55))
+    boss_range_multiplier = float(archetype.get("boss_range_multiplier", 1.5))
+    boss_recovery = float(archetype.get("boss_recovery", 0.72))
     exp_reward = int(archetype.get("exp_reward", 30)) + maxi(0, enemy_level - 1) * 2
     coin_reward = int(archetype.get("coin_reward", 40)) + maxi(0, enemy_level - 1) * 3
     drop_tier = str(archetype.get("drop_tier", "normal"))
@@ -188,10 +198,10 @@ func _begin_attack() -> void:
     _boss_heavy_attack = false
     if is_boss:
         _boss_attack_count += 1
-        var heavy_interval := 2 if _boss_phase_two else 3
+        var heavy_interval := maxi(1, boss_heavy_interval - (1 if _boss_phase_two else 0))
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
-    state_timer = (1.05 if _boss_heavy_attack else 0.68) if is_boss else 0.48
-    telegraph_mesh.scale = Vector3.ONE * (1.5 if _boss_heavy_attack else 1.0)
+    state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
+    telegraph_mesh.scale = Vector3.ONE * (boss_range_multiplier if _boss_heavy_attack else 1.0)
     telegraph_mesh.visible = true
     if is_instance_valid(game):
         var warning := "重击范围预警！及时闪避" if _boss_heavy_attack else "正在蓄力攻击！"
@@ -201,10 +211,10 @@ func _resolve_attack(target: Node3D) -> void:
     telegraph_mesh.visible = false
     telegraph_mesh.scale = Vector3.ONE
     var current_distance := global_position.distance_to(target.global_position)
-    var attack_reach := attack_range * (1.5 if _boss_heavy_attack else 1.0) + 0.35
+    var attack_reach := attack_range * (boss_range_multiplier if _boss_heavy_attack else 1.0) + 0.35
     if current_distance <= attack_reach:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
-        var damage_multiplier := 1.55 if _boss_heavy_attack else 1.0
+        var damage_multiplier := boss_heavy_multiplier if _boss_heavy_attack else 1.0
         var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
         target.call("receive_damage", outgoing_attack)
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
@@ -214,7 +224,7 @@ func _resolve_attack(target: Node3D) -> void:
                 target.call("apply_enemy_knockback", push.normalized(), 9.0 if _boss_heavy_attack else (7.0 if is_boss else 4.5))
     attack_cooldown = attack_interval * (0.78 if _boss_phase_two else 1.0)
     state = BrainState.RECOVERY
-    state_timer = 0.72 if _boss_heavy_attack else (0.5 if is_boss else 0.34)
+    state_timer = boss_recovery if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
 
 func take_damage(amount: float) -> void:
