@@ -27,6 +27,13 @@ var camera_node: Camera3D
 var camera_pitch := -9.0
 var visual_root: Node3D
 var visual_pose_tween: Tween
+var upper_arm_nodes: Array[MeshInstance3D] = []
+var forearm_nodes: Array[MeshInstance3D] = []
+var leg_nodes: Array[MeshInstance3D] = []
+var combat_pose_timer := 0.0
+var combat_pose_duration := 0.0
+var combat_pose_strength := 0.0
+var combat_pose_motion := "strike"
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var armor_root: Node3D
@@ -104,6 +111,7 @@ func _ready() -> void:
         upper_arm.rotation.z = -side * 0.18
         upper_arm.material_override = skin_material
         visual_root.add_child(upper_arm)
+        upper_arm_nodes.append(upper_arm)
         var forearm := MeshInstance3D.new()
         forearm.mesh = limb_mesh
         forearm.scale = Vector3(0.88, 0.82, 0.88)
@@ -111,6 +119,7 @@ func _ready() -> void:
         forearm.rotation.z = -side * 0.10
         forearm.material_override = skin_material
         visual_root.add_child(forearm)
+        forearm_nodes.append(forearm)
         var leg_mesh := CapsuleMesh.new()
         leg_mesh.radius = 0.16
         leg_mesh.height = 0.76
@@ -119,6 +128,7 @@ func _ready() -> void:
         leg.position = Vector3(side * 0.21, 0.40, 0.015)
         leg.material_override = skin_material
         visual_root.add_child(leg)
+        leg_nodes.append(leg)
         var boot := MeshInstance3D.new()
         var boot_mesh := BoxMesh.new()
         boot_mesh.size = Vector3(0.28, 0.16, 0.42)
@@ -187,6 +197,31 @@ func _animate_visual_motion(delta: float) -> void:
     var target_pitch := move_input.y * 0.055
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
     visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
+    combat_pose_timer = maxf(0.0, combat_pose_timer - delta)
+    var pose_progress := 1.0 - combat_pose_timer / maxf(0.001, combat_pose_duration)
+    var pose_weight := sin(clampf(pose_progress, 0.0, 1.0) * PI) * combat_pose_strength
+    for limb_index in range(2):
+        var side := -1.0 if limb_index == 0 else 1.0
+        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.42 * movement_ratio
+        var arm_target := gait
+        var forearm_target := -0.12 * movement_ratio
+        var leg_target := -gait * 0.9
+        if combat_pose_motion in ["strike", "heavy", "dash", "leap", "aerial_strike"]:
+            arm_target = lerpf(arm_target, -0.95 if limb_index == 1 else -0.28, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.42 if limb_index == 1 else -0.18, pose_weight)
+        elif combat_pose_motion == "guard":
+            arm_target = lerpf(arm_target, -0.58, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.72, pose_weight)
+        elif combat_pose_motion in ["cast", "spin"]:
+            arm_target = lerpf(arm_target, -0.38, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.24, pose_weight)
+        if limb_index < upper_arm_nodes.size():
+            upper_arm_nodes[limb_index].rotation.x = lerp_angle(upper_arm_nodes[limb_index].rotation.x, arm_target, minf(1.0, delta * 12.0))
+            upper_arm_nodes[limb_index].rotation.z = lerp_angle(upper_arm_nodes[limb_index].rotation.z, -side * (0.18 + pose_weight * 0.08), minf(1.0, delta * 10.0))
+        if limb_index < forearm_nodes.size():
+            forearm_nodes[limb_index].rotation.x = lerp_angle(forearm_nodes[limb_index].rotation.x, forearm_target, minf(1.0, delta * 12.0))
+        if limb_index < leg_nodes.size():
+            leg_nodes[limb_index].rotation.x = lerp_angle(leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
 
 func _play_skill_pose(profile: Dictionary) -> void:
     if not is_instance_valid(visual_root):
@@ -196,6 +231,10 @@ func _play_skill_pose(profile: Dictionary) -> void:
     var base_scale: Vector3 = visual_root.scale
     var base_yaw := visual_root.rotation.y
     var pose_scale := clampf(float(profile.get("pose_scale", 1.08)), 1.0, 1.24)
+    combat_pose_duration = maxf(0.24, float(profile.get("total_duration", 0.7)))
+    combat_pose_timer = combat_pose_duration
+    combat_pose_strength = 1.0
+    combat_pose_motion = str(profile.get("motion", "strike"))
     var rotation_target := base_yaw + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
     var startup := clampf(float(profile.get("startup", 0.2)), 0.1, 0.8)
     var active := clampf(float(profile.get("active", 0.2)), 0.18, 1.0)
@@ -213,6 +252,10 @@ func _play_attack_pose(intensity: float = 1.0) -> void:
     if is_instance_valid(visual_pose_tween):
         visual_pose_tween.kill()
     visual_root.scale = Vector3.ONE
+    combat_pose_duration = 0.22
+    combat_pose_timer = combat_pose_duration
+    combat_pose_strength = clampf(intensity, 0.35, 1.4)
+    combat_pose_motion = "strike"
     visual_pose_tween = create_tween()
     var recoil := Vector3(1.0 + 0.055 * intensity, 1.0 - 0.075 * intensity, 1.0 + 0.055 * intensity)
     visual_pose_tween.tween_property(visual_root, "scale", recoil, 0.065)
