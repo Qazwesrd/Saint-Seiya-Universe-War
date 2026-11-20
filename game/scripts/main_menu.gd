@@ -166,6 +166,7 @@ func _build_settings_panel() -> PanelContainer:
 	_add_settings_section(content, "声音")
 	_add_slider_setting(content, "总音量", "audio", "master", 0.0, 1.0, 0.05)
 	_add_slider_setting(content, "音乐音量", "audio", "music", 0.0, 1.0, 0.05)
+	_add_slider_setting(content, "环境音量", "audio", "ambience", 0.0, 1.0, 0.05)
 	_add_slider_setting(content, "战斗音效", "audio", "sfx", 0.0, 1.0, 0.05)
 	_add_slider_setting(content, "界面音效", "audio", "ui", 0.0, 1.0, 0.05)
 	_add_settings_section(content, "镜头")
