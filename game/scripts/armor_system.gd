@@ -135,6 +135,31 @@ func awaken_current() -> bool:
  data["awakened"] = true
  RPGState.profile["armor_state"] = data
  return _commit(previous)
+func get_part_condition(part: String) -> float:
+    if not (part in PARTS):
+        return 0.0
+    var durability: Dictionary = _ensure_data().get("durability", {})
+    return clampf(float(durability.get(part, 100)) / 100.0, 0.0, 1.0)
+
+func get_condition_ratio() -> float:
+    var durability: Dictionary = _ensure_data().get("durability", {})
+    var total := 0.0
+    for part in PARTS:
+        total += clampf(float(durability.get(part, 100)) / 100.0, 0.0, 1.0)
+    return total / float(PARTS.size())
+
+static func get_visual_wear_profile(condition_ratio: float) -> Dictionary:
+    var condition := clampf(condition_ratio, 0.0, 1.0)
+    var wear := 1.0 - condition
+    return {
+        "condition": condition,
+        "wear": wear,
+        "metallic_multiplier": lerpf(0.58, 1.0, condition),
+        "roughness": lerpf(0.62, 0.22, condition),
+        "tint": Color(0.22, 0.18, 0.16).lerp(Color.WHITE, condition),
+        "cracked": condition <= 0.25
+    }
+
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_data()
  var stage_id := str(data.get("current_stage","bronze"))
