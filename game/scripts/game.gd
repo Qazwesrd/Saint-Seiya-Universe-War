@@ -285,7 +285,7 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
         if offset.length() <= reach and (offset.length() < 0.1 or forward.dot(offset.normalized()) >= cos(deg_to_rad(cone_degrees * 0.5))):
-            var target_multiplier := SkillSystem.get_target_condition_multiplier(str(RPGState.profile.get("class_id", "pegasus")), enemy)
+            var target_multiplier: float = SkillSystem.get_target_condition_multiplier(str(RPGState.profile.get("class_id", "pegasus")), enemy)
             enemy.call("take_damage", damage * target_multiplier)
 func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knockback: float, launch: float, stagger: float) -> void:
     if not is_instance_valid(player):
@@ -302,7 +302,7 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
         if distance >= 0.1 and forward.dot(offset.normalized()) < cos(deg_to_rad(cone_degrees * 0.5)):
             continue
         var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-        var target_multiplier := SkillSystem.get_target_condition_multiplier(class_id, enemy)
+        var target_multiplier: float = SkillSystem.get_target_condition_multiplier(class_id, enemy)
         var target_forward: Vector3 = -enemy.global_transform.basis.z
         var toward_attacker: Vector3 = player.global_position - enemy.global_position
         toward_attacker.y = 0.0
@@ -310,7 +310,7 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
         var position_multiplier := SkillSystem.get_position_damage_multiplier(class_id, target_facing_dot, bool(enemy.get("is_boss")))
         enemy.call("take_damage", damage * target_multiplier * position_multiplier)
         if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
-            var passive_stagger := SkillSystem.get_passive_stagger_multiplier(class_id)
+            var passive_stagger: float = SkillSystem.get_passive_stagger_multiplier(class_id)
             enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger * passive_stagger)
 
 
@@ -584,7 +584,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_duration = 2.0
         status_power = 0.18
 
-    var is_support_ability := SkillSystem.is_support_ability(ability)
+    var is_support_ability: bool = SkillSystem.is_support_ability(ability)
 
     # Core classes retain their signature control identities.
     if not is_support_ability and class_id == "tenmou":
@@ -673,7 +673,7 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
     var ability_id := str(ability.get("id", ""))
     var ability_type := str(ability.get("type", ""))
     var ability_name := str(ability.get("name", "神权技能"))
-    var is_support := SkillSystem.is_support_ability(ability) or "增益" in ability_type
+    var is_support: bool = SkillSystem.is_support_ability(ability) or "增益" in ability_type
     var mark := ""
     var status := ""
     var duration := 4.0
