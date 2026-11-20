@@ -3,8 +3,10 @@ Run with Blender 4.x:
 blender --background --python tools/art_pipeline/blender/generate_base_rig.py
 Outputs are prototypes, not final profession-specific art.
 """
+import json
 import math
 import os
+import struct
 from pathlib import Path
 
 import bpy
@@ -184,8 +186,10 @@ def make_animation_library(rig):
         action = bpy.data.actions.new(name=clip)
         rig.animation_data.action = action
         scene.frame_set(1)
-        # Explicit neutral keys prevent empty NLA strips and keep clips editable.
-        key_pose(rig, 1, {"Spine": (0, 0, 0), "Chest": (0, 0, 0), "Head": (0, 0, 0)})
+        # Reset and key every bone so a clip never inherits the previous
+        # action's pose on bones that this clip does not animate.
+        neutral_pose = {bone.name: (0, 0, 0) for bone in rig.pose.bones}
+        key_pose(rig, 1, neutral_pose)
         if clip == "idle":
             for frame, breath in ((1, 0.0), (12, -0.025), (24, 0.0)):
                 key_pose(rig, frame, {"Spine": (breath, 0, 0), "Chest": (breath * 0.6, 0, 0)})
