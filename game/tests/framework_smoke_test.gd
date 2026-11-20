@@ -1,4 +1,5 @@
 extends Node
+const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 ## Headless scene-based smoke test so project AutoLoads are initialized normally.
 
 func _ready() -> void:
@@ -64,18 +65,18 @@ func _run_tests() -> void:
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(load("res://scripts/loot_pickup.gd") != null, "manual offline loot pickup actor is present")
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
-	    var animation_profile_count := 0
-	    for class_entry in SkillSystem.get_class_skill_catalog():
-	        var animation_class_id := str(class_entry.get("id", ""))
-	        for animation_ability in SkillSystem.get_ability_catalog(animation_class_id):
-	            var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(animation_class_id, animation_ability)
-	            assert(float(animation_profile.get("startup", 0.0)) > 0.0, "skill animation has startup timing")
-	            assert(float(animation_profile.get("active", 0.0)) > 0.0, "skill animation has active timing")
-	            assert(float(animation_profile.get("recovery", 0.0)) > 0.0, "skill animation has recovery timing")
-	            assert(float(animation_profile.get("total_duration", 0.0)) >= float(animation_profile.get("startup", 0.0)), "skill animation total duration is consistent")
-	            assert(str(animation_profile.get("weapon_socket", "")) != "", "skill animation has an attachment socket")
-	            animation_profile_count += 1
-	    assert(animation_profile_count == 768, "animation profiles generated for all 768 abilities")
+	var animation_profile_count := 0
+	for class_entry in SkillSystem.get_class_skill_catalog():
+		var animation_class_id := str(class_entry.get("id", ""))
+		for animation_ability in SkillSystem.get_ability_catalog(animation_class_id):
+			var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(animation_class_id, animation_ability)
+			assert(float(animation_profile.get("startup", 0.0)) > 0.0, "skill animation has startup timing")
+			assert(float(animation_profile.get("active", 0.0)) > 0.0, "skill animation has active timing")
+			assert(float(animation_profile.get("recovery", 0.0)) > 0.0, "skill animation has recovery timing")
+			assert(float(animation_profile.get("total_duration", 0.0)) >= float(animation_profile.get("startup", 0.0)), "skill animation total duration is consistent")
+			assert(str(animation_profile.get("weapon_socket", "")) != "", "skill animation has an attachment socket")
+			animation_profile_count += 1
+	assert(animation_profile_count == 768, "animation profiles generated for all 768 abilities")
 	assert(load("res://scripts/world_theme_manager.gd") != null, "procedural chapter world theme manager is present")
 	var world_theme_test_root := Node3D.new()
 	add_child(world_theme_test_root)
