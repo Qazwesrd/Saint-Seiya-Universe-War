@@ -238,6 +238,11 @@ func take_damage(amount: float) -> void:
     var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
     var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier)
     health = maxf(0.0, health - applied_damage)
+    var lifesteal_ratio := get_divine_mark_lifesteal_ratio()
+    if lifesteal_ratio > 0.0 and is_instance_valid(game):
+        var marked_attacker: Node = game.get("player")
+        if is_instance_valid(marked_attacker):
+            marked_attacker.health = minf(float(marked_attacker.max_health), float(marked_attacker.health) + applied_damage * lifesteal_ratio)
     CombatSessionManager.record_damage_dealt(applied_damage)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
@@ -265,7 +270,7 @@ func take_damage(amount: float) -> void:
         var push := global_position - attacker.global_position
         push.y = 0.0
         if push.length_squared() > 0.001:
-            knockback_velocity = push.normalized() * (3.5 if is_boss else 7.0)
+            knockback_velocity = push.normalized() * (3.5 if is_boss else 7.0) * get_divine_mark_knockback_multiplier()
     # Damage alone must not cancel a boss's clearly telegraphed attack or recovery.
     if not is_boss or (state != BrainState.WINDUP and state != BrainState.RECOVERY):
         state = BrainState.STAGGER
@@ -335,6 +340,17 @@ func apply_status_effect(effect: String, duration: float, power: float = 0.0) ->
 
 func is_controlled() -> bool:
     return freeze_timer > 0.0 or slow_timer > 0.0 or state == BrainState.STAGGER
+
+func get_divine_mark_lifesteal_ratio() -> float:
+    return 0.025 if divine_mark in ["soul", "death"] else 0.0
+
+func get_divine_mark_knockback_multiplier() -> float:
+    match divine_mark:
+        "tidal":
+            return 1.35
+        "storm", "swift":
+            return 1.15
+    return 1.0
 
 func apply_divine_mark(mark: String, duration: float, power: float) -> void:
     if state == BrainState.DEAD:
