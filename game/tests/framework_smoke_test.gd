@@ -242,6 +242,7 @@ func _run_tests() -> void:
 	var field_action_count := 0
 	var trap_action_count := 0
 	var homing_action_count := 0
+	var ranged_action_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		var profile_class_id := str(class_profile.get("id", ""))
 		for catalog_ability in SkillSystem.get_ability_catalog(profile_class_id):
@@ -256,9 +257,11 @@ func _run_tests() -> void:
 					trap_action_count += 1
 				"homing_projectile":
 					homing_action_count += 1
+				"projectile":
+					ranged_action_count += 1
 			profiled_ability_count += 1
 	assert(profiled_ability_count == 768, "all 768 abilities resolve to a combat profile")
-	assert(field_action_count > 0 and trap_action_count > 0 and homing_action_count > 0, "catalog includes real field, trap and homing actions")
+	assert(field_action_count > 0 and trap_action_count > 0 and homing_action_count > 0 and ranged_action_count > 0, "catalog includes real field, trap, ranged and homing actions")
 	var multi_hit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "多段"})
 	assert(str(multi_hit_profile.get("action", "")) == "multi_hit" and int(multi_hit_profile.get("extra_hits", 0)) == 2, "multi-hit skills resolve two follow-up strikes")
 	var pursuit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "追击"})
