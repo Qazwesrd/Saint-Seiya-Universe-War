@@ -1195,6 +1195,43 @@ func get_divine_support_profile(class_id: String) -> Dictionary:
             profile["mobility"] = 3.5
     return profile
 
+func get_ability_effect_profile(ability: Dictionary) -> Dictionary:
+    var ability_type := str(ability.get("type", "攻击"))
+    var ability_name := str(ability.get("name", ""))
+    var profile := {
+        "action": "strike",
+        "extra_hits": 0,
+        "extra_hit_ratio": 0.0,
+        "controlled_bonus": 0.0,
+        "execute_threshold": 0.0,
+        "execute_bonus": 0.0,
+        "stagger_bonus": 0.0
+    }
+    if "多段" in ability_type:
+        profile["action"] = "multi_hit"
+        profile["extra_hits"] = 2
+        profile["extra_hit_ratio"] = 0.34
+    elif "连击" in ability_type:
+        profile["action"] = "combo_strike"
+        profile["extra_hits"] = 2
+        profile["extra_hit_ratio"] = 0.28
+    elif "追击" in ability_type:
+        profile["action"] = "pursuit"
+        profile["extra_hits"] = 1
+        profile["extra_hit_ratio"] = 0.48
+        profile["controlled_bonus"] = 0.22
+    elif "投技" in ability_type:
+        profile["action"] = "throw"
+        profile["stagger_bonus"] = 0.45
+    elif "重击" in ability_type:
+        profile["action"] = "heavy_strike"
+        profile["stagger_bonus"] = 0.30
+    if "终结" in ability_type or "终结" in ability_name:
+        profile["execute_threshold"] = 0.30
+        profile["execute_bonus"] = 0.25
+    return profile
+
+
 func is_support_ability(ability: Dictionary) -> bool:
     var ability_type := str(ability.get("type", ""))
     var ability_role := str(ability.get("role", ""))
