@@ -134,6 +134,7 @@ func _ready() -> void:
         var slot_button := _button(root, "技能 %d\n未装备" % (slot + 1), Vector2(left, top), Vector2(left + 86.0, top + 72.0), func(): _cast_skill_slot(slot), Color(0.16, 0.28, 0.52))
         skill_slot_buttons.append(slot_button)
     _button(root, "连招", Vector2(-420, -98), Vector2(-300, -4), func(): _call_player("combo_skill"), Color(0.48, 0.2, 0.58))
+    _button(root, "连招设置", Vector2(-548, -98), Vector2(-428, -4), func(): _open_combo_editor(root), Color(0.28, 0.22, 0.52))
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
     _button(root, "个人圣域", Vector2(236, 154), Vector2(350, 214), func(): _open_sanctuary(root), Color(0.22, 0.16, 0.42))
     _button(root, "骑乘 / 下马", Vector2(354, 154), Vector2(488, 214), func(): _call_player("toggle_mount"), Color(0.12, 0.34, 0.38))
@@ -337,6 +338,164 @@ func set_notice(message: String) -> void:
 func _on_resize() -> void:
     stick_base.position = Vector2(42, get_viewport().size.y - 200)
     stick_knob.position = stick_base.position + Vector2(46, 46)
+
+
+func _open_combo_editor(root: Control) -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var popup := PopupPanel.new()
+    popup.size = Vector2(620, 620)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(600, 590)
+    popup.add_child(scroll)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 8)
+    scroll.add_child(box)
+    var title := Label.new()
+    title.text = "自定义连招 · " + str(RPGState.CLASS_DATA.get(class_id, {}).get("name", class_id))
+    title.add_theme_font_size_override("font_size", 23)
+    box.add_child(title)
+    var presets := ComboPresetManager.get_presets(class_id)
+    var preset_picker := OptionButton.new()
+    preset_picker.add_item("新建连招方案")
+    for preset in presets:
+        preset_picker.add_item(str(preset.get("name", "未命名连招")))
+        preset_picker.set_item_metadata(preset_picker.item_count - 1, str(preset.get("id", "")))
+    box.add_child(preset_picker)
+    var name_input := LineEdit.new()
+    name_input.placeholder_text = "连招名称（最多24字）"
+    name_input.text = "我的连招"
+    box.add_child(name_input)
+    var mode_picker := OptionButton.new()
+    for mode in ComboPresetManager.VALID_MODES:
+        mode_picker.add_item(mode)
+    box.add_child(mode_picker)
+    var window_picker := SpinBox.new()
+    window_picker.min_value = ComboPresetManager.MIN_WINDOW
+    window_picker.max_value = ComboPresetManager.MAX_WINDOW
+    window_picker.step = 0.05
+    window_picker.value = 0.65
+    box.add_child(_gm_labeled_row("技能衔接窗口（秒）", window_picker))
+    var available := OptionButton.new()
+    available.add_item("选择要加入的动作 / 已学习技能")
+    for action_id in ComboPresetManager.BUILTIN_STEPS:
+        available.add_item("动作：" + action_id)
+        available.set_item_metadata(available.item_count - 1, action_id)
+    for ability in SkillSystem.get_ability_catalog(class_id):
+        var ability_id := str(ability.get("id", ""))
+        if SkillSystem.is_ability_learned(class_id, ability_id):
+            available.add_item(str(ability.get("name", ability_id)))
+            available.set_item_metadata(available.item_count - 1, ability_id)
+    box.add_child(available)
+    var steps: Array[String] = []
+    var step_list := ItemList.new()
+    step_list.custom_minimum_size = Vector2(560, 190)
+    step_list.select_mode = ItemList.SELECT_SINGLE
+    box.add_child(step_list)
+    var refresh_steps := func() -> void:
+        step_list.clear()
+        for i in range(steps.size()):
+            step_list.add_item("%d. %s" % [i + 1, steps[i]])
+    var edit_row := HBoxContainer.new()
+    var add_step := Button.new()
+    add_step.text = "添加动作"
+    add_step.pressed.connect(func():
+        if available.selected <= 0 or available.get_item_metadata(available.selected) == null:
+            set_notice("请先选择一个动作或已学习技能")
+            return
+        var chosen := str(available.get_item_metadata(available.selected))
+        if steps.size() >= ComboPresetManager.MAX_STEPS or steps.has(chosen):
+            set_notice("连招最多8步，且不能重复同一动作")
+            return
+        steps.append(chosen)
+        refresh_steps.call()
+    )
+    edit_row.add_child(add_step)
+    var up := Button.new()
+    up.text = "上移"
+    up.pressed.connect(func():
+        var selected := step_list.get_selected_items()
+        if selected.is_empty() or selected[0] <= 0:
+            return
+        var index := selected[0]
+        var temp := steps[index - 1]
+        steps[index - 1] = steps[index]
+        steps[index] = temp
+        refresh_steps.call()
+        step_list.select(index - 1)
+    )
+    edit_row.add_child(up)
+    var down := Button.new()
+    down.text = "下移"
+    down.pressed.connect(func():
+        var selected := step_list.get_selected_items()
+        if selected.is_empty() or selected[0] >= steps.size() - 1:
+            return
+        var index := selected[0]
+        var temp := steps[index + 1]
+        steps[index + 1] = steps[index]
+        steps[index] = temp
+        refresh_steps.call()
+        step_list.select(index + 1)
+    )
+    edit_row.add_child(down)
+    var remove := Button.new()
+    remove.text = "删除选中"
+    remove.pressed.connect(func():
+        var selected := step_list.get_selected_items()
+        if selected.is_empty():
+            return
+        steps.remove_at(selected[0])
+        refresh_steps.call()
+    )
+    edit_row.add_child(remove)
+    box.add_child(edit_row)
+    preset_picker.item_selected.connect(func(index: int):
+        steps.clear()
+        if index > 0:
+            var preset_id := str(preset_picker.get_item_metadata(index))
+            for preset in ComboPresetManager.get_presets(class_id):
+                if str(preset.get("id", "")) == preset_id:
+                    name_input.text = str(preset.get("name", ""))
+                    steps.assign(preset.get("steps", []))
+                    var mode_index := ComboPresetManager.VALID_MODES.find(str(preset.get("trigger_mode", "")))
+                    if mode_index >= 0:
+                        mode_picker.select(mode_index)
+                    window_picker.value = float(preset.get("input_window", 0.65))
+                    break
+        refresh_steps.call()
+    )
+    var save := Button.new()
+    save.text = "保存连招方案"
+    save.pressed.connect(func():
+        if steps.is_empty():
+            set_notice("请至少添加一个连招步骤")
+            return
+        var selected_index := preset_picker.selected
+        var preset_id := str(preset_picker.get_item_metadata(selected_index)) if selected_index > 0 else "custom_" + str(Time.get_ticks_msec())
+        var ok := ComboPresetManager.save_preset(class_id, preset_id, name_input.text, steps, mode_picker.get_item_text(mode_picker.selected), window_picker.value)
+        set_notice("连招方案已保存" if ok else "保存失败：检查方案数量、技能解锁和步骤设置")
+        if ok:
+            popup.queue_free()
+    )
+    box.add_child(save)
+    var activate := Button.new()
+    activate.text = "设为当前职业使用方案"
+    activate.pressed.connect(func():
+        if preset_picker.selected <= 0:
+            set_notice("请先选择已保存的方案")
+            return
+        var preset_id := str(preset_picker.get_item_metadata(preset_picker.selected))
+        var ok := ComboPresetManager.set_active_preset(class_id, preset_id)
+        set_notice("当前连招方案已切换" if ok else "切换失败")
+        popup.queue_free()
+    )
+    box.add_child(activate)
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
 
 func _open_daily_boss(root: Control) -> void:
     var state: Dictionary = DailyBossManager.get_state()
