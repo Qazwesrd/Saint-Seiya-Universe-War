@@ -206,12 +206,16 @@ func attack() -> void:
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
     var multipliers := [0.85, 1.0, 1.45]
     var passive_multiplier: float = SkillSystem.get_skill_damage_multiplier(class_id)
-    var damages: float = (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier * (1.0 + temporary_damage_bonus)
+    var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
+    var damages: float = (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
     var push_forces := [1.8, 2.8, float(skill_data.get("knockback", 3.5)) * 1.7]
     var lift_forces := [0.0, 0.0, float(skill_data.get("launch", 1.2)) * 1.5]
+    if tenkishi_flight_active and class_id == "tenkishi":
+        lift_forces = [0.55, 0.9, float(skill_data.get("launch", 1.2)) * 1.5 + float(aerial_profile.get("launch_bonus", 1.0))]
     var basic_names: Array = skill_data.get("basic_attacks", ["第一段", "第二段", "第三段"])
     _flash(skill_data.get("color", Color(1.0, 0.82, 0.35)))
-    game.call("damage_nearby_combat", damages, 2.8 if basic_combo_step < 3 else 3.2, 125.0, push_forces[basic_combo_step - 1], lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else float(skill_data.get("stagger", 0.55)) * 0.6)
+    var attack_reach: float = (2.8 if basic_combo_step < 3 else 3.2) + float(aerial_profile.get("range_bonus", 0.0))
+    game.call("damage_nearby_combat", damages, attack_reach, 150.0 if tenkishi_flight_active else 125.0, push_forces[basic_combo_step - 1] + float(aerial_profile.get("knockback_bonus", 0.0)), lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else float(skill_data.get("stagger", 0.55)) * 0.6)
     game.call("show_notice", str(basic_names[basic_combo_step - 1]) + "！")
     _register_custom_combo_input("basic_attack_%d" % basic_combo_step)
 func skill() -> void:
@@ -230,11 +234,13 @@ func skill() -> void:
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var skill_level: int = SkillSystem.get_skill_level(class_id)
-    var damage_multiplier: float = float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
+    var damage_multiplier: float = float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
+    var skill_reach: float = float(skill_data.get("range", 7.0)) + float(aerial_profile.get("range_bonus", 0.0))
     _flash(skill_color)
-    game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, float(skill_data.get("range", 7.0)), float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)), float(skill_data.get("launch", 1.2)), float(skill_data.get("stagger", 0.55)))
-    game.call("apply_class_skill_effect", class_id, float(skill_data.get("range", 7.0)))
+    game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, skill_reach, float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("launch", 1.2)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 0.55)))
+    game.call("apply_class_skill_effect", class_id, skill_reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
     _register_custom_combo_input(class_id + "_skill_1")
@@ -498,14 +504,15 @@ func cast_ability(ability_id: String) -> bool:
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
     var type_scale := 1.25 if ("奥义" in ability_type or "终结" in ability_type) else (0.72 if ("防御" in ability_type or "治疗" in ability_type or "守护" in ability_type) else 1.0)
-    var damage: float = (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
-    var reach := float(class_data.get("range", 7.0))
+    var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
+    var damage: float = (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
+    var reach := float(class_data.get("range", 7.0)) + float(aerial_profile.get("range_bonus", 0.0))
     if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
         reach += 2.0
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
     _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
     if not SkillSystem.is_support_ability(ability):
-        game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15, float(class_data.get("launch", 1.0)), float(class_data.get("stagger", 0.5)))
+        game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15 + float(aerial_profile.get("knockback_bonus", 0.0)), float(class_data.get("launch", 1.0)) + float(aerial_profile.get("launch_bonus", 0.0)), float(class_data.get("stagger", 0.5)))
     game.call("apply_ability_effect", class_id, ability, reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
