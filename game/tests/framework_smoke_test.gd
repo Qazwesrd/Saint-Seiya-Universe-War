@@ -84,6 +84,9 @@ func _run_tests() -> void:
 			assert(float(animation_profile.get("recovery", 0.0)) > 0.0, "skill animation has recovery timing")
 			assert(float(animation_profile.get("total_duration", 0.0)) >= float(animation_profile.get("startup", 0.0)), "skill animation total duration is consistent")
 			assert(str(animation_profile.get("weapon_socket", "")) != "", "skill animation has an attachment socket")
+			assert(SkillAnimationCatalog.validate_profile(animation_profile), "skill animation timeline and hit windows are valid: " + str(animation_ability.get("id", "")))
+			assert(animation_profile.get("hit_windows", []).size() == int(animation_profile.get("hit_count", 0)), "skill hit windows match hit count")
+			assert(not animation_profile.get("timeline", []).is_empty(), "skill animation exposes ordered event markers")
 			animation_profile_count += 1
 	assert(animation_profile_count == 768, "animation profiles generated for all 768 abilities")
 	assert(load("res://scripts/world_theme_manager.gd") != null, "procedural chapter world theme manager is present")
