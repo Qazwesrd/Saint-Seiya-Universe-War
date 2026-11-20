@@ -63,12 +63,18 @@ jobs:
           path: game/assets
       - name: Verify complete generated model bundle
         run: |
-          set -euo pipefail
-          test "$(find game/assets/environments -name environment.glb -type f | wc -l)" -eq 7
-          test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
-          test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
-          test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
-          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
+          set -eu
+          environment_count="$(find game/assets/environments -name environment.glb -type f | wc -l | tr -d " " )"
+          character_count="$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l | tr -d " " )"
+          animation_count="$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l | tr -d " " )"
+          armor_count="$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l | tr -d " " )"
+          enemy_count="$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l | tr -d " " )"
+          echo "Generated bundle: environments=$environment_count/7 characters=$character_count/32 animation_libraries=$animation_count/32 armors=$armor_count/49 enemies=$enemy_count/50"
+          test "$environment_count" -eq 7
+          test "$character_count" -eq 32
+          test "$animation_count" -eq 32
+          test "$armor_count" -eq 49
+          test "$enemy_count" -eq 50
 
       - name: Import and validate project
         env:
