@@ -1377,6 +1377,11 @@ func get_passive_speed_multiplier(class_id: String) -> float:
         return 1.22
     return 1.0
 
+func get_aerial_combat_profile(class_id: String, flight_active: bool) -> Dictionary:
+    if class_id != "tenkishi" or not flight_active:
+        return {"damage_multiplier": 1.0, "range_bonus": 0.0, "launch_bonus": 0.0, "knockback_bonus": 0.0}
+    return {"damage_multiplier": 1.18, "range_bonus": 1.2, "launch_bonus": 1.0, "knockback_bonus": 0.5}
+
 func get_skill_unlock_level(class_id: String, ability_id: String) -> int:
     for ability in get_ability_catalog(class_id):
         if str(ability.get("id", "")) == ability_id:
