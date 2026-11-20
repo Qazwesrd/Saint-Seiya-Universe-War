@@ -8,6 +8,7 @@ const FollowerScript = preload("res://scripts/follower_actor.gd")
 const SkillSummonScript = preload("res://scripts/skill_summon.gd")
 const SkillFieldScript = preload("res://scripts/skill_field.gd")
 const SkillProjectileScript = preload("res://scripts/skill_projectile.gd")
+const LootPickupScript = preload("res://scripts/loot_pickup.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
@@ -420,11 +421,16 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     var coin_reward := int(enemy.get("coin_reward"))
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
-    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)))
+    var auto_pickup := bool(SettingsManager.get_value("controls", "auto_pickup", true))
+    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)), auto_pickup)
+    if not auto_pickup:
+        for drop in drops:
+            _spawn_loot_pickup(enemy.global_position, drop)
     refresh_player_stats()
     var reward_text := "获得经验 %d、星币 %d" % [exp_reward, coin_reward]
     for drop in drops:
-        reward_text += "、%s×%d" % [str(drop.get("name", "物品")), int(drop.get("quantity", 1))]
+        var drop_prefix := "" if auto_pickup else "掉落"
+        reward_text += "、%s%s×%d" % [drop_prefix, str(drop.get("name", "物品")), int(drop.get("quantity", 1))]
     if level_gains > 0:
         reward_text += "，等级提升 %d 级！" % level_gains
     show_notice(reward_text)
@@ -446,6 +452,16 @@ func update_hud() -> void:
                 boss_max = enemy.get("max_health")
                 break
         hud.call("set_boss_status", boss_hp, boss_max)
+func _spawn_loot_pickup(at: Vector3, drop: Dictionary) -> void:
+    var pickup := Area3D.new()
+    pickup.set_script(LootPickupScript)
+    pickup.set("game", self)
+    pickup.set("item_id", str(drop.get("item_id", "")))
+    pickup.set("item_name", str(drop.get("name", "战利品")))
+    pickup.set("quantity", maxi(1, int(drop.get("quantity", 1))))
+    pickup.global_position = at + Vector3(randf_range(-0.8, 0.8), 0.15, randf_range(-0.8, 0.8))
+    add_child(pickup)
+
 func _on_graphics_setting_changed(section: String, key: String, value: Variant) -> void:
     if section == "graphics" and key == "shadows":
         var sun := get_node_or_null("DirectionalLight3D") as DirectionalLight3D
