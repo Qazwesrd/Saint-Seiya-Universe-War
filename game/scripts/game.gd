@@ -189,7 +189,7 @@ func start_daily_boss_challenge() -> void:
     CombatSessionManager.begin_encounter(_daily_boss_challenge_id)
     _spawn_enemy(Vector3(0, 0.1, -9), true)
     var daily_enemy := enemies.back()
-    var level_bonus := int(DailyBossManager._boss_for_cycle(str(daily_state.get("cycle_id", ""))).get("level_offset", 0))
+    var level_bonus := int(daily_state.get("level_offset", 0))
     daily_enemy.set("display_name", str(daily_state.get("boss_name", "每日首领")))
     daily_enemy.set("max_health", float(daily_enemy.get("max_health")) * (1.0 + float(level_bonus) * 0.035))
     daily_enemy.set("health", daily_enemy.get("max_health"))
