@@ -61,7 +61,7 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system(),"quest_progress":{},"campaign_progress":{}}
+ profile = {"version":1,"character_name":"星之战士","class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system(),"quest_progress":{},"campaign_progress":{}}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
@@ -396,10 +396,11 @@ func get_slot_summary(slot: int) -> Dictionary:
   "valid": true,
   "class_id": class_id,
   "class_name": str(class_data.get("name", class_id)),
+  "character_name": str(parsed.get("character_name", "星之战士")),
   "level": int(parsed.get("level", 1)),
   "currency": int(parsed.get("currency", 0)),
   "saved_at": str(parsed.get("updated_at", parsed.get("created_at", "未知"))),
-  "label": "%s · Lv.%d · 星币 %d" % [str(class_data.get("name", class_id)), int(parsed.get("level", 1)), int(parsed.get("currency", 0))]
+  "label": "%s · %s Lv.%d · 星币 %d" % [str(parsed.get("character_name", "星之战士")), str(class_data.get("name", class_id)), int(parsed.get("level", 1)), int(parsed.get("currency", 0))]
  }
 
 func create_new_slot(slot: int) -> bool:
