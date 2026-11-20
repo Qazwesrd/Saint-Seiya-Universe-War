@@ -68,7 +68,7 @@ jobs:
           test -s /root/debug.keystore
           test -x "$JAVA_HOME/bin/java"
           mkdir -p build/android
-          godot --headless --path game --export-debug "Android" build/android/Saint-Seiya-Universe-War-debug.apk
+          godot --headless --verbose --path game --export-debug "Android" build/android/Saint-Seiya-Universe-War-debug.apk
           test -s build/android/Saint-Seiya-Universe-War-debug.apk
 
       - name: Upload APK artifact
