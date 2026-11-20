@@ -401,6 +401,16 @@ func _run_tests() -> void:
 		assert(not CampaignDatabase.get_mission(mission_id).get("encounter", {}).get("waves", []).is_empty(), "late story boss encounter is configured: " + mission_id)
 	for archetype_id in ["hades_specter", "hades_wraith", "judge_griffin", "judge_garuda", "judge_wyvern", "cocytus_guard", "wailing_wall_guard", "hypnos_guardian", "thanatos_reaper", "hades_emperor", "heaven_gatekeeper", "heavenly_angel", "heavenly_warden", "celestial_trial", "apollo_trial", "zeus_trial", "cosmos_warden", "divine_echo", "primordial_void", "universe_arbiter"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "late campaign enemy archetype exists: " + archetype_id)
+	var campaign_order_ids: Dictionary = {}
+	for chapter_entry in CampaignDatabase.get_chapters():
+		var chapter_order := int(chapter_entry.get("order", 0))
+		assert(chapter_order > 0 and not campaign_order_ids.has(chapter_order), "campaign chapter order is positive and unique")
+		campaign_order_ids[chapter_order] = true
+		for campaign_mission_entry in chapter_entry.get("missions", []):
+			for campaign_wave in campaign_mission_entry.get("encounter", {}).get("waves", []):
+				for campaign_spawn in campaign_wave.get("spawns", []):
+					var campaign_archetype := str(campaign_spawn.get("archetype_id", ""))
+					assert(EnemyDatabase.has_archetype(campaign_archetype), "campaign spawn resolves to an offline enemy archetype: " + campaign_archetype)
 	for archetype_id in ["god_warrior_thor", "god_warrior_fenrir", "god_warrior_hagen", "god_warrior_mime", "god_warrior_alberich", "god_warrior_syd", "god_warrior_bud", "god_warrior_siegfried", "mariner_baian", "mariner_io", "mariner_krishna", "mariner_kasa", "mariner_isaac", "mariner_sorrento", "mariner_kanon", "poseidon_emperor"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "Asgard/Poseidon boss archetype: " + archetype_id)
 	for mission_id in ["po_002", "po_003", "po_004", "po_005", "po_006", "po_007", "po_008", "po_010"]:
