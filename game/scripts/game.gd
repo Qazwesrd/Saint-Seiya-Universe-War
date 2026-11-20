@@ -678,7 +678,7 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             mark = "solar"
             status = "burn"
             duration = 6.0
-            power = 0.32
+            power = maxf(2.0, float(RPGState.get_combat_stats().get("attack", 14.0)) * 0.14)
         "athena":
             mark = "aegis"
             status = "weaken"
