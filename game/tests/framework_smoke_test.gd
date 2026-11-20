@@ -242,6 +242,9 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_passive_guard_ratio("pegasus"), 0.0), "non-Andromeda classes do not receive the emergency guard")
 	assert(is_equal_approx(SkillSystem.get_passive_burn_multiplier("phoenix"), 1.12), "Phoenix passive amplifies burn ticks")
 	assert(is_equal_approx(SkillSystem.get_passive_burn_sustain_ratio("phoenix"), 0.04), "Phoenix passive restores a small amount of health from burn ticks")
+	assert(is_equal_approx(SkillSystem.get_damage_reduction("dragon", 1.0), 0.12), "Dragon Shield reduces frontal incoming damage")
+	assert(is_equal_approx(SkillSystem.get_damage_reduction("dragon", 0.0), 0.0), "Dragon Shield does not reduce rear or flank attacks")
+	assert(is_equal_approx(SkillSystem.get_damage_reduction("andromeda", 0.0), 0.08), "Andromeda passive guard remains omnidirectional")
 	for class_id in ["pegasus", "dragon", "apollo", "athena", "hades", "poseidon", "zeus", "tenkishi"]:
 		for ability in SkillSystem.get_ability_catalog(class_id):
 			assert(not str(ability.get("branch", "")).is_empty(), class_id + " skill branch is normalized")
