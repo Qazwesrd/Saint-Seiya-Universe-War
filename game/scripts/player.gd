@@ -136,7 +136,9 @@ func _physics_process(delta: float) -> void:
         else:
             direction = target_offset.normalized()
     var base_speed := float(RPGState.get_combat_stats().get("speed",12.0)) * 0.52
-    var speed := base_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var passive_speed := SkillSystem.get_passive_speed_multiplier(class_id)
+    var speed := base_speed * passive_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 24.0 * delta)
     velocity.x = direction.x * speed + knockback_velocity.x
     velocity.z = direction.z * speed + knockback_velocity.z
