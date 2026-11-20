@@ -1205,9 +1205,15 @@ func get_ability_effect_profile(ability: Dictionary) -> Dictionary:
         "controlled_bonus": 0.0,
         "execute_threshold": 0.0,
         "execute_bonus": 0.0,
-        "stagger_bonus": 0.0
+        "stagger_bonus": 0.0,
+        "summon_lifetime": 0.0,
+        "summon_damage_ratio": 0.0
     }
-    if "多段" in ability_type:
+    if "召唤" in ability_type:
+        profile["action"] = "summon"
+        profile["summon_lifetime"] = 9.0
+        profile["summon_damage_ratio"] = 0.72
+    elif "多段" in ability_type:
         profile["action"] = "multi_hit"
         profile["extra_hits"] = 2
         profile["extra_hit_ratio"] = 0.34
