@@ -287,7 +287,31 @@ func _run_tests() -> void:
 		"universe_arbiter": "void_drain",
 		"judge_griffin": "gravity_crush",
 		"judge_garuda": "judge_combo",
-		"judge_wyvern": "wing_slam"
+		"judge_wyvern": "wing_slam",
+		"gold_taurus": "gravity_crush",
+		"gold_cancer": "soul_leech",
+		"gold_leo_controlled": "lightning_followup",
+		"gold_virgo": "dream_drain",
+		"gold_scorpio": "death_burst",
+		"gold_capricorn": "wing_slam",
+		"gold_aquarius": "rift_drain",
+		"gold_pisces": "tidal_pull",
+		"pope_saga": "void_drain",
+		"god_warrior_thor": "gravity_crush",
+		"god_warrior_fenrir": "wing_slam",
+		"god_warrior_hagen": "solar_flare",
+		"god_warrior_mime": "dream_drain",
+		"god_warrior_alberich": "rift_drain",
+		"god_warrior_syd": "lightning_followup",
+		"god_warrior_bud": "death_burst",
+		"god_warrior_siegfried": "judge_combo",
+		"mariner_baian": "tidal_pull",
+		"mariner_io": "judge_combo",
+		"mariner_krishna": "gravity_crush",
+		"mariner_kasa": "dream_drain",
+		"mariner_isaac": "rift_drain",
+		"mariner_sorrento": "dream_drain",
+		"mariner_kanon": "void_drain"
 	}
 	for boss_id in expected_boss_specials:
 		assert(str(EnemyDatabase.get_archetype(boss_id).get("boss_special", "")) == str(expected_boss_specials[boss_id]), "major boss has a unique heavy-attack signature: " + boss_id)
