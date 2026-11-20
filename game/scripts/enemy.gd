@@ -29,6 +29,8 @@ var attack_cooldown := 0.8
 var knockback_velocity := Vector3.ZERO
 var display_name := "训练对手"
 var body_material: StandardMaterial3D
+var enemy_arm_nodes: Array[MeshInstance3D] = []
+var enemy_leg_nodes: Array[MeshInstance3D] = []
 var telegraph_mesh: MeshInstance3D
 var _boss_phase_two := false
 var _boss_attack_count := 0
@@ -106,6 +108,26 @@ func _ready() -> void:
     head.position.y = height * 0.84
     head.material_override = body_material
     add_child(head)
+
+    var arm_mesh := CapsuleMesh.new()
+    arm_mesh.radius = radius * 0.17
+    arm_mesh.height = height * 0.27
+    var leg_mesh := CapsuleMesh.new()
+    leg_mesh.radius = radius * 0.19
+    leg_mesh.height = height * 0.25
+    for side in [-1.0, 1.0]:
+        var arm := MeshInstance3D.new()
+        arm.mesh = arm_mesh
+        arm.position = Vector3(side * radius * 0.78, height * 0.45, 0.0)
+        arm.material_override = body_material
+        add_child(arm)
+        enemy_arm_nodes.append(arm)
+        var leg := MeshInstance3D.new()
+        leg.mesh = leg_mesh
+        leg.position = Vector3(side * radius * 0.28, height * 0.15, 0.0)
+        leg.material_override = body_material
+        add_child(leg)
+        enemy_leg_nodes.append(leg)
 
     var chest_plate := MeshInstance3D.new()
     var chest_mesh := BoxMesh.new()
@@ -284,6 +306,7 @@ func is_targetable() -> bool:
 func _physics_process(delta: float) -> void:
     if state == BrainState.DEAD:
         return
+    _animate_enemy_limbs(delta)
 
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
@@ -366,6 +389,22 @@ func _physics_process(delta: float) -> void:
 
     _apply_gravity(delta)
     move_and_slide()
+
+func _animate_enemy_limbs(delta: float) -> void:
+    var planar_speed := Vector2(velocity.x, velocity.z).length()
+    var movement := clampf(planar_speed / maxf(1.0, speed), 0.0, 1.0)
+    var clock := float(Time.get_ticks_msec()) * 0.009 * maxf(0.6, speed)
+    var windup_pose := 1.0 if state == BrainState.WINDUP else 0.0
+    var stagger_pose := 1.0 if state == BrainState.STAGGER else 0.0
+    for limb_index in range(2):
+        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.48 * movement
+        var arm_target := lerpf(gait, -0.92, windup_pose)
+        arm_target = lerpf(arm_target, 0.58, stagger_pose)
+        var leg_target := -gait * (1.0 - windup_pose)
+        if limb_index < enemy_arm_nodes.size():
+            enemy_arm_nodes[limb_index].rotation.x = lerp_angle(enemy_arm_nodes[limb_index].rotation.x, arm_target, minf(1.0, delta * 10.0))
+        if limb_index < enemy_leg_nodes.size():
+            enemy_leg_nodes[limb_index].rotation.x = lerp_angle(enemy_leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
 
 func _apply_gravity(delta: float) -> void:
     if not is_on_floor():
