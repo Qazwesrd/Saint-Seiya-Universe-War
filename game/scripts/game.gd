@@ -579,16 +579,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_duration = 2.0
         status_power = 0.18
 
-    var is_support_ability := (
-        "防御" in ability_type or "护盾" in ability_type or "屏障" in ability_type or
-        "守护" in ability_type or "格挡" in ability_type or "霸体" in ability_type or
-        "治疗" in ability_type or "恢复" in ability_type or "复苏" in ability_type or
-        "保命" in ability_type or "减伤" in ability_type or "反伤" in ability_type or
-        "回能" in ability_type or "资源" in ability_type or "净化" in ability_type or
-        "闪避" in ability_type or "替身" in ability_type or "脱身" in ability_type or
-        "生存" in ability_role or "恢复" in ability_role or "治疗" in ability_role or
-        "护盾" in ability_role or "减伤" in ability_role or "防御" in ability_role
-    )
+    var is_support_ability := SkillSystem.is_support_ability(ability)
 
     # Core classes retain their signature control identities.
     if not is_support_ability and class_id == "tenmou":
@@ -677,7 +668,7 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
     var ability_id := str(ability.get("id", ""))
     var ability_type := str(ability.get("type", ""))
     var ability_name := str(ability.get("name", "神权技能"))
-    var is_support := "防御" in ability_type or "护盾" in ability_type or "治疗" in ability_type or "复苏" in ability_type or "增益" in ability_type
+    var is_support := SkillSystem.is_support_ability(ability) or "增益" in ability_type
     var mark := ""
     var status := ""
     var duration := 4.0
