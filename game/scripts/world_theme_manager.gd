@@ -281,14 +281,12 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
 func _add_chapter_atmosphere(chapter_id: String, primary: Color) -> void:
     if chapter_id not in ["asgard", "poseidon", "hades", "heaven", "original_final"]:
         return
-    var weather := CPUParticles3D.new()
+    var weather := GPUParticles3D.new()
     weather.name = "ChapterAtmosphere"
     weather.amount = 42 if chapter_id in ["heaven", "original_final"] else 56
     weather.lifetime = 4.2
     weather.preprocess = 1.0
     weather.explosiveness = 0.0
-    weather.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-    weather.emission_box_extents = Vector3(18.0, 7.0, 18.0)
     weather.position = Vector3(0.0, 3.5, 0.0)
     weather.visibility_aabb = AABB(Vector3(-22.0, -2.0, -22.0), Vector3(44.0, 16.0, 44.0))
     var particle_material := ParticleProcessMaterial.new()
