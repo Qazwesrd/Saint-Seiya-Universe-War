@@ -108,6 +108,10 @@ func _run_tests() -> void:
 	assert(CombatSessionManager != null, "combat session service")
 	assert(DailyBossManager != null, "offline daily boss service")
 	assert(EncounterDirector != null, "encounter director service")
+	assert(not EncounterDirector.start("invalid_empty_wave", [{"spawns": []}]), "reject encounters containing empty waves")
+	assert(not EncounterDirector.start("invalid_unknown_enemy", [{"spawns": [{"archetype_id": "missing_enemy", "count": 1}]}]), "reject unknown enemy archetypes")
+	assert(not EncounterDirector.start("invalid_zero_spawn", [{"spawns": [{"archetype_id": "arena_guard", "count": 0}]}]), "reject zero-count waves that could stall progression")
+	assert(not EncounterDirector.active, "invalid encounter definitions do not activate the director")
 	var test_waves: Array[Dictionary] = [{"spawns": [{"archetype_id": "arena_guard", "count": 1}]}, {"spawns": [{"archetype_id": "arena_elite", "count": 1}]}]
 	assert(EncounterDirector.start("smoke_two_wave", test_waves), "start two-wave encounter")
 	assert(int(EncounterDirector.get_current_wave().get("wave_number", 0)) == 1, "first wave begins")
