@@ -137,7 +137,18 @@ def validate_armor_manifest(data: dict, model: Path) -> None:
         raise ValueError("armor parts must declare exactly the nine required detachable pieces")
     if any(parts[name] != "complete" for name in ARMOR_PART_NODES):
         raise ValueError("not all nine armor parts are marked complete")
-    check_glb(model, required_nodes=tuple(ARMOR_PART_NODES.values()))
+    doc = check_glb(model, require_skin=True, required_nodes=tuple(ARMOR_PART_NODES.values()))
+    nodes = {str(item.get("name", "")): item for item in doc.get("nodes", [])}
+    mesh_indices = []
+    for part_name, node_name in ARMOR_PART_NODES.items():
+        node = nodes.get(node_name, {})
+        if not isinstance(node.get("mesh"), int):
+            raise ValueError(f"armor part '{part_name}' is not an independent mesh node")
+        if not isinstance(node.get("skin"), int):
+            raise ValueError(f"armor part '{part_name}' is not bound to the character skeleton")
+        mesh_indices.append(node["mesh"])
+    if len(set(mesh_indices)) != len(ARMOR_PART_NODES):
+        raise ValueError("each detachable armor part must use its own mesh")
 
 def validate_vfx_manifest(data: dict, scene: Path) -> None:
     tiers = data.get("quality_tiers")

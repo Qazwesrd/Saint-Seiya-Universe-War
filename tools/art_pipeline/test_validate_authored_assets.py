@@ -17,7 +17,8 @@ def write_glb(path: Path, nodes: list[str]) -> None:
     document = {
         "asset": {"version": "2.0"},
         "meshes": [{"name": name} for name in nodes],
-        "nodes": [{"name": name, "mesh": index} for index, name in enumerate(nodes)],
+        "skins": [{"joints": [0]}],
+        "nodes": [{"name": name, "mesh": index, "skin": 0} for index, name in enumerate(nodes)],
     }
     payload = json.dumps(document).encode("utf-8")
     payload += b" " * ((4 - len(payload) % 4) % 4)
@@ -48,6 +49,21 @@ class ArtValidatorTests(unittest.TestCase):
             validate_armor_manifest(data, path)
             data["parts"]["helmet"] = "pending"
             with self.assertRaisesRegex(ValueError, "not all nine"):
+                validate_armor_manifest(data, path)
+
+    def test_armor_parts_must_be_independent_skinned_meshes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "armor.glb"
+            write_glb(path, list(ARMOR_PART_NODES.values()))
+            document = json.loads((path.read_bytes()[20:]).decode("utf-8").rstrip(" \t\r\n\0"))
+            document["nodes"][1]["mesh"] = document["nodes"][0]["mesh"]
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            data = {"parts": {key: "complete" for key in ARMOR_PART_NODES}}
+            with self.assertRaisesRegex(ValueError, "own mesh"):
                 validate_armor_manifest(data, path)
 
     def test_vfx_manifest_requires_three_quality_tiers_and_budget(self):
