@@ -236,6 +236,7 @@ func take_damage(amount: float) -> void:
     if state == BrainState.DEAD or health <= 0.0:
         return
     var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
+    mark_multiplier *= get_divine_mark_damage_multiplier()
     var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier)
     health = maxf(0.0, health - applied_damage)
     var lifesteal_ratio := get_divine_mark_lifesteal_ratio()
@@ -348,6 +349,14 @@ func get_divine_mark_burn_multiplier() -> float:
     if divine_mark != "solar" or divine_mark_timer <= 0.0:
         return 1.0
     return 0.75 if is_boss else 1.2
+
+func get_divine_mark_damage_multiplier() -> float:
+    if divine_mark_timer <= 0.0:
+        return 1.0
+    match divine_mark:
+        "lunar":
+            return 1.05 if is_boss else 1.12
+    return 1.0
 
 func get_divine_mark_knockback_multiplier() -> float:
     match divine_mark:
