@@ -73,33 +73,48 @@ const CHAPTERS := [
         ]
     },
     {
+        {
         "id": "hades",
         "name": "冥王篇",
-        "order": 4,
-        "description": "深入冥界区域，面对冥斗士与冥界首领。",
+        "order": 5,
+        "description": "海皇篇之后，圣斗士深入冥界，突破冥斗士与冥界三巨头防线，穿越八狱并前往极乐净土，迎战冥王。",
         "missions": [
-            {"id":"ha_001","name":"冥界入口","type":"main","level":35,"description":"寻找冥界通路并突破守卫。","objectives":[{"id":"clear_underworld_gate","text":"清理冥界入口守卫","target":4}],"rewards":{"exp":1800,"coins":1300}},
-            {"id":"ha_002","name":"冥界决战","type":"boss","level":42,"description":"在多阶段战斗中击败冥界首领。","objectives":[{"id":"defeat_underworld_boss","text":"击败冥界首领","target":1}],"rewards":{"exp":2600,"coins":1900}}
+            {"id":"ha_001","name":"冥界异动","type":"main","level":50,"description":"海界危机结束后，冥界力量再度侵入大地；调查通往冥界的入口与结界。","story_beat":"确认冥界势力正在集结，寻找进入冥界的道路。","objectives":[{"id":"find_underworld_route","text":"调查冥界入口与结界","target":1}],"rewards":{"exp":5200,"coins":3800}},
+            {"id":"ha_002","name":"冥界入口：冥斗士先锋","type":"story_battle","level":52,"description":"突破冥界入口的冥斗士先锋与亡魂守卫，阻止敌军封锁通道。","encounter":{"waves":[{"spawns":[{"archetype_id":"hades_specter","count":5},{"archetype_id":"hades_wraith","count":2}]}]},"objectives":[{"id":"clear_specter_vanguard","text":"击退冥斗士先锋","target":7}],"rewards":{"exp":6000,"coins":4300}},
+            {"id":"ha_003","name":"冥界三巨头","type":"boss","level":56,"description":"依次挑战天雄星艾亚哥斯、天猛星拉达曼迪斯与天贵星米诺斯，突破冥界审判官防线。","encounter":{"waves":[{"spawns":[{"archetype_id":"judge_griffin","count":1,"boss":true}]},{"spawns":[{"archetype_id":"judge_garuda","count":1,"boss":true}]},{"spawns":[{"archetype_id":"judge_wyvern","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_three_judges","text":"击败冥界三巨头","target":3}],"rewards":{"exp":7200,"coins":5200}},
+            {"id":"ha_004","name":"八狱试炼：冰地狱","type":"story_battle","level":59,"description":"穿越冥界冰狱，击退守卫并承受持续寒冷与范围攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"cocytus_guard","count":4},{"archetype_id":"wailing_wall_guard","count":1}]}]},"objectives":[{"id":"cross_cocytus","text":"突破冰狱守卫","target":5}],"rewards":{"exp":7600,"coins":5500}},
+            {"id":"ha_005","name":"叹息之墙","type":"story","level":62,"description":"集结力量开启通往极乐净土的道路，完成叹息之墙前的剧情试炼。","story_beat":"冥界最深处的屏障成为通往最终战场的最后阻碍。","objectives":[{"id":"open_wailing_wall","text":"完成叹息之墙的开启仪式","target":1}],"rewards":{"exp":8200,"coins":6000}},
+            {"id":"ha_006","name":"极乐净土：双神守门","type":"boss","level":66,"description":"先后面对睡神修普诺斯与死神达纳托斯，破解睡眠封锁与死亡压迫。","encounter":{"waves":[{"spawns":[{"archetype_id":"hypnos_guardian","count":1,"boss":true}]},{"spawns":[{"archetype_id":"thanatos_reaper","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_twin_gods","text":"击败睡神与死神","target":2}],"rewards":{"exp":9200,"coins":6800}},
+            {"id":"ha_007","name":"冥王哈迪斯","type":"final_boss","level":70,"description":"在极乐净土迎战冥王哈迪斯，阻止冥界力量吞噬现世。","encounter":{"waves":[{"spawns":[{"archetype_id":"hades_emperor","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_hades_emperor","text":"击败冥王哈迪斯","target":1}],"rewards":{"exp":12000,"coins":9000}}
         ]
     },
     {
         "id": "heaven",
         "name": "天界篇",
-        "order": 5,
-        "description": "进入天界领域，挑战更高阶的试炼。",
+        "order": 6,
+        "description": "冥王篇之后，圣斗士踏入天界，面对天界守军、神域试炼与更高层次的神明力量。",
         "missions": [
-            {"id":"he_001","name":"天界之门","type":"main","level":55,"description":"寻找开启天界之门的方法。","objectives":[{"id":"activate_heaven_gate","text":"激活天界装置","target":3}],"rewards":{"exp":3500,"coins":2500}},
-            {"id":"he_002","name":"神域试炼","type":"boss","level":62,"description":"完成神域首领战，掌握高强度战斗节奏。","objectives":[{"id":"defeat_divine_trial","text":"完成神域试炼","target":1}],"rewards":{"exp":4800,"coins":3400}}
+            {"id":"he_001","name":"天界之门","type":"main","level":72,"description":"寻找开启天界之门的方法，收集三处神域印记并稳定通道。","objectives":[{"id":"activate_heaven_gate","text":"激活三处天界印记","target":3}],"rewards":{"exp":9000,"coins":6500}},
+            {"id":"he_002","name":"天界守门者","type":"boss","level":74,"description":"挑战守卫天界入口的神将，破解其光翼突袭与圣光屏障。","encounter":{"waves":[{"spawns":[{"archetype_id":"heaven_gatekeeper","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_heaven_gatekeeper","text":"击败天界守门者","target":1}],"rewards":{"exp":9800,"coins":7200}},
+            {"id":"he_003","name":"光翼军团","type":"story_battle","level":76,"description":"突破天界光翼军团的封锁，躲避多方向远程圣光攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"heavenly_angel","count":4}]}]},"objectives":[{"id":"clear_heavenly_angel","text":"击退光翼军团","target":4}],"rewards":{"exp":10200,"coins":7500}},
+            {"id":"he_004","name":"神域审判者","type":"boss","level":78,"description":"面对天界审判者的多阶段神域压制，抓住蓄力后的反击窗口。","encounter":{"waves":[{"spawns":[{"archetype_id":"heavenly_warden","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_heavenly_warden","text":"击败神域审判者","target":1}],"rewards":{"exp":10800,"coins":7900}},
+            {"id":"he_005","name":"神明试炼","type":"boss","level":80,"description":"在天界试炼场承受神力投射、领域压制与终结攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"celestial_trial","count":1,"boss":true}]}]},"objectives":[{"id":"complete_celestial_trial","text":"完成神明试炼","target":1}],"rewards":{"exp":11400,"coins":8300}},
+            {"id":"he_006","name":"太阳神的裁断","type":"boss","level":82,"description":"面对天界太阳神力的试炼，破解持续灼烧与大范围光束攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"apollo_trial","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_apollo_trial","text":"通过太阳神试炼","target":1}],"rewards":{"exp":12200,"coins":9000}},
+            {"id":"he_007","name":"天界终极神威","type":"final_boss","level":85,"description":"迎战天界最终守护者，完成天界篇的最终战斗并为原创终章揭开道路。","encounter":{"waves":[{"spawns":[{"archetype_id":"zeus_trial","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_zeus_trial","text":"击败天界终极守护者","target":1}],"rewards":{"exp":14000,"coins":10500}}
         ]
     },
     {
         "id": "original_final",
         "name": "原创终极篇",
-        "order": 6,
-        "description": "围绕九大职业的命运展开原创终局故事。",
+        "order": 7,
+        "description": "完全原创的终局篇章：九大基础职业与神明、天斗士的力量共同面对宇宙裂隙与原初虚空。",
         "missions": [
-            {"id":"of_001","name":"九星共鸣","type":"class","level":75,"description":"完成当前职业的专属试炼，唤醒九星共鸣。","objectives":[{"id":"complete_class_trial","text":"完成职业专属试炼","target":1}],"rewards":{"exp":6000,"coins":4200}},
-            {"id":"of_002","name":"宇宙之战","type":"final_boss","level":85,"description":"迎战原创终极敌人，完成最终挑战。","objectives":[{"id":"defeat_final_boss","text":"击败终极敌人","target":1}],"rewards":{"exp":10000,"coins":8000}}
+            {"id":"of_001","name":"九星共鸣","type":"class","level":86,"description":"完成当前职业的专属试炼，唤醒九星共鸣并解锁终章战斗强化。","objectives":[{"id":"complete_class_trial","text":"完成职业专属试炼","target":1}],"rewards":{"exp":9000,"coins":6500}},
+            {"id":"of_002","name":"宇宙裂隙守卫","type":"boss","level":88,"description":"封锁撕裂时空的宇宙裂隙，击败守卫并稳定裂隙核心。","encounter":{"waves":[{"spawns":[{"archetype_id":"cosmos_warden","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_cosmos_warden","text":"击败裂隙守卫","target":1}],"rewards":{"exp":10500,"coins":7800}},
+            {"id":"of_003","name":"神明回响","type":"story_battle","level":90,"description":"迎战被裂隙扭曲的神明回响，阻止其力量侵蚀现实。","encounter":{"waves":[{"spawns":[{"archetype_id":"divine_echo","count":3}]}]},"objectives":[{"id":"clear_divine_echo","text":"净化神明回响","target":3}],"rewards":{"exp":11200,"coins":8400}},
+            {"id":"of_004","name":"原初虚空","type":"boss","level":93,"description":"进入原初虚空，击破吞噬小宇宙的核心意志。","encounter":{"waves":[{"spawns":[{"archetype_id":"primordial_void","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_primordial_void","text":"击败原初虚空意志","target":1}],"rewards":{"exp":12800,"coins":9600}},
+            {"id":"of_005","name":"宇宙之战","type":"final_boss","level":95,"description":"迎战原创终极敌人宇宙裁决者，完成全篇最终挑战。","encounter":{"waves":[{"spawns":[{"archetype_id":"universe_arbiter","count":1,"boss":true}]}]},"objectives":[{"id":"defeat_final_boss","text":"击败宇宙裁决者","target":1}],"rewards":{"exp":18000,"coins":14000}},
+            {"id":"of_006","name":"星辰归位","type":"story","level":95,"description":"终局战后稳定宇宙秩序，完成最后的剧情交接与角色结局。","objectives":[{"id":"restore_cosmic_order","text":"完成星辰归位仪式","target":1}],"rewards":{"exp":5000,"coins":5000}}
         ]
     }
 ]
