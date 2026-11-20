@@ -451,10 +451,13 @@ func delete_slot(slot: int) -> bool:
   push_error("删除存档槽 %d 失败，临时文件清理错误：%d" % [slot, remove_error])
   return false
  if active_slot == slot:
+  # A deleted active slot must not be recreated by profile-change listeners.
+  # Use slot 0 as the explicit "no character loaded" state until the player
+  # selects or restores another save from the main menu.
+  active_slot = 0
   profile = {}
-  _ensure_profile()
-  slot_loaded.emit(active_slot)
-  _emit_change()
+  state_changed.emit()
+  EventBus.player_profile_changed.emit({})
  return true
 func has_backup_slot(slot: int) -> bool:
  return slot >= 1 and slot <= 3 and FileAccess.file_exists("user://backup_slot_%d.json" % slot)
