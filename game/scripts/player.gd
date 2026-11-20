@@ -146,7 +146,10 @@ func _physics_process(delta: float) -> void:
     if auto_target_timer <= 0.0:
         auto_target_timer = 0.25
         if bool(SettingsManager.get_value("gameplay", "auto_target", false)):
-            if not is_instance_valid(locked_target) or float(locked_target.get("health")) <= 0.0:
+            var should_retarget := not is_instance_valid(locked_target)
+            if not should_retarget:
+                should_retarget = float(locked_target.get("health")) <= 0.0 or global_position.distance_to(locked_target.global_position) > 32.0
+            if should_retarget:
                 locked_target = CombatTargeting.select_target(self, locked_target, false)
     if divine_guard_timer <= 0.0:
         divine_guard_shield = 0.0
