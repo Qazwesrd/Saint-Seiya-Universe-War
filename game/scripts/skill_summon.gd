@@ -14,6 +14,7 @@ var halo_node: MeshInstance3D
 var summon_material: StandardMaterial3D
 var summon_light: OmniLight3D
 var outer_halo_node: MeshInstance3D
+var impact_pulse_timer := 0.0
 
 func _ready() -> void:
     add_to_group("skill_summons")
@@ -57,6 +58,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
     age += delta
     attack_timer = maxf(0.0, attack_timer - delta)
+    impact_pulse_timer = maxf(0.0, impact_pulse_timer - delta)
     follow_angle += delta * 1.8
     _animate_summon(delta)
     if age >= life_time or not is_instance_valid(owner_player) or not is_instance_valid(game):
@@ -69,6 +71,7 @@ func _physics_process(delta: float) -> void:
         if offset.length() > 1.8:
             global_position += offset.normalized() * minf(7.0 * delta, offset.length() - 1.8)
         elif attack_timer <= 0.0:
+            impact_pulse_timer = 0.32
             if target.has_method("take_damage"):
                 target.call("take_damage", summon_damage)
             if game.has_method("spawn_effect"):
@@ -81,20 +84,24 @@ func _physics_process(delta: float) -> void:
 
 func _animate_summon(delta: float) -> void:
     var pulse := 1.0 + sin(age * 7.0) * 0.12
+    var impact_strength := clampf(impact_pulse_timer / 0.32, 0.0, 1.0)
+    var impact_scale := 1.0 + (1.0 - impact_strength) * 0.22
     if is_instance_valid(core_node):
-        core_node.scale = Vector3.ONE * pulse
+        core_node.scale = Vector3.ONE * pulse * (1.0 + impact_strength * 0.28)
     if is_instance_valid(halo_node):
-        halo_node.rotate_y(delta * 1.8)
+        halo_node.rotate_y(delta * (1.8 + impact_strength * 5.0))
         halo_node.rotate_z(delta * 0.9)
+        halo_node.scale = Vector3.ONE * impact_scale
     if is_instance_valid(outer_halo_node):
-        outer_halo_node.rotate_y(-delta * 1.1)
+        outer_halo_node.rotate_y(-delta * (1.1 + impact_strength * 3.2))
         outer_halo_node.rotate_x(delta * 0.45)
+        outer_halo_node.scale = Vector3.ONE * (1.0 + impact_strength * 0.16)
     if is_instance_valid(summon_material):
-        var energy := 0.58 + (sin(age * 5.0) + 1.0) * 0.22
+        var energy := 0.58 + (sin(age * 5.0) + 1.0) * 0.22 + impact_strength * 1.25
         summon_material.emission = summon_color * energy
         summon_material.emission_energy_multiplier = 1.0 + energy
     if is_instance_valid(summon_light):
-        summon_light.light_energy = 0.4 + (sin(age * 5.0) + 1.0) * 0.4
+        summon_light.light_energy = 0.4 + (sin(age * 5.0) + 1.0) * 0.4 + impact_strength * 1.1
 
 func _find_target() -> Node3D:
     var best: Node3D
