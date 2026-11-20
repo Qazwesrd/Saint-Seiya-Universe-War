@@ -345,6 +345,107 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     clip_names = sorted(by_clip_name)
     print("Validated GLB:", path.name, "nodes=", len(node_names), "meshes=", len(document.get("meshes", [])), "clips=", len(clip_names))
 
+
+CHAPTER_THEMES = (
+    "galaxy_wars", "sanctuary_twelve_houses", "asgard",
+    "poseidon", "hades", "heaven", "original_final",
+)
+
+def build_chapter_environment(theme_id, index):
+    """Create a distinct, loadable environment blockout for each campaign chapter."""
+    palettes = {
+        "galaxy_wars": ((0.10, 0.14, 0.24), (0.72, 0.48, 0.20)),
+        "sanctuary_twelve_houses": ((0.48, 0.39, 0.25), (0.92, 0.72, 0.34)),
+        "asgard": ((0.28, 0.48, 0.62), (0.72, 0.88, 1.0)),
+        "poseidon": ((0.04, 0.25, 0.42), (0.18, 0.72, 0.86)),
+        "hades": ((0.16, 0.10, 0.24), (0.58, 0.34, 0.72)),
+        "heaven": ((0.42, 0.48, 0.62), (0.96, 0.84, 0.56)),
+        "original_final": ((0.12, 0.12, 0.20), (0.92, 0.30, 0.22)),
+    }
+    ground_color, accent_color = palettes[theme_id]
+    ground_mat = material("ENV_" + theme_id + "_Ground", ground_color, 0.22, 0.72)
+    accent_mat = material("ENV_" + theme_id + "_Architecture", accent_color, 0.58, 0.32)
+    trim_mat = material("ENV_" + theme_id + "_Trim", (0.72, 0.76, 0.82), 0.72, 0.25)
+    created = []
+
+    def cube(name, location, scale, mat, bevel=0.0):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=location)
+        obj = bpy.context.object
+        obj.name = name
+        obj.dimensions = scale
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        obj.data.materials.append(mat)
+        if bevel:
+            mod = obj.modifiers.new("Architectural_Edges", "BEVEL")
+            mod.width = bevel
+            mod.segments = 2
+        created.append(obj)
+        return obj
+
+    def cylinder(name, location, radius, depth, mat, vertices=16):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=location)
+        obj = bpy.context.object
+        obj.name = name
+        obj.data.materials.append(mat)
+        created.append(obj)
+        return obj
+
+    cube(theme_id + "_Ground", (0, 0, -0.28), (24, 24, 0.5), ground_mat, 0.12)
+    # A central combat plaza and radial approach paths form a navigable greybox.
+    cube(theme_id + "_Central_Arena", (0, 0, 0.02), (8, 8, 0.22), accent_mat, 0.18)
+    for arm in range(4):
+        angle = arm * math.pi / 2
+        obj = cube(theme_id + "_Approach_" + str(arm), (math.sin(angle) * 6.2, math.cos(angle) * 6.2, -0.02), (3.2, 8.0, 0.16), trim_mat, 0.08)
+        obj.rotation_euler[2] = -angle
+
+    # Theme-specific landmark silhouette: arena pylons, sanctuary columns,
+    # Asgard towers, sea pillars, underworld gates, celestial spires, or a rift.
+    for side in (-1, 1):
+        for row in range(3):
+            x = side * (5.2 + (row % 2) * 0.45)
+            y = (row - 1) * 4.0
+            height = 2.8 + ((row + index) % 3) * 0.8
+            if theme_id == "poseidon":
+                cylinder(theme_id + "_Sea_Pillar_" + str(side) + "_" + str(row), (x, y, height / 2), 0.72, height, accent_mat, 12)
+                cylinder(theme_id + "_Pillar_Capital_" + str(side) + "_" + str(row), (x, y, height), 1.0, 0.28, trim_mat, 12)
+            elif theme_id in ("heaven", "original_final"):
+                cylinder(theme_id + "_Spire_" + str(side) + "_" + str(row), (x, y, height / 2), 0.62, height, accent_mat, 8)
+                cylinder(theme_id + "_Spire_Crown_" + str(side) + "_" + str(row), (x, y, height + 0.5), 0.22, 1.0, trim_mat, 6)
+            else:
+                cube(theme_id + "_Landmark_" + str(side) + "_" + str(row), (x, y, height / 2), (1.25, 1.25, height), accent_mat, 0.12)
+                cube(theme_id + "_Landmark_Cap_" + str(side) + "_" + str(row), (x, y, height + 0.12), (1.6, 1.6, 0.24), trim_mat, 0.06)
+
+    # A chapter-specific focal structure anchors navigation and boss staging.
+    if theme_id == "galaxy_wars":
+        for radius in (2.8, 3.3):
+            bpy.ops.mesh.primitive_torus_add(major_radius=radius, minor_radius=0.10, location=(0, 0, 0.45))
+            obj = bpy.context.object
+            obj.name = theme_id + "_Tournament_Ring"
+            obj.data.materials.append(trim_mat)
+            created.append(obj)
+    elif theme_id == "sanctuary_twelve_houses":
+        for step in range(5):
+            cube(theme_id + "_Sanctuary_Stair_" + str(step), (0, -5.0 + step * 0.8, 0.18 + step * 0.28), (5.0 - step * 0.45, 1.0, 0.35), trim_mat, 0.05)
+    elif theme_id == "asgard":
+        for x in (-1.8, 1.8):
+            cylinder(theme_id + "_Odin_Tower", (x, 5.5, 2.6), 0.42, 5.2, accent_mat, 8)
+    elif theme_id == "hades":
+        cube(theme_id + "_Underworld_Gate", (0, 7.0, 2.4), (5.0, 0.7, 4.8), accent_mat, 0.15)
+        cube(theme_id + "_Gate_Opening", (0, 6.58, 1.5), (2.1, 0.18, 3.0), ground_mat)
+    else:
+        cylinder(theme_id + "_Boss_Podium", (0, 0, 0.55), 2.2, 0.8, trim_mat, 32)
+
+    return created
+
+def export_chapter_environments():
+    output_root = ROOT / "game" / "assets" / "environments"
+    for index, theme_id in enumerate(CHAPTER_THEMES):
+        reset_scene()
+        objects = build_chapter_environment(theme_id, index)
+        destination = output_root / theme_id / "environment.glb"
+        export_glb(destination, objects)
+        print("CHAPTER_ENVIRONMENT_EXPORTED", theme_id, destination.stat().st_size)
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     reset_scene()
@@ -379,6 +480,7 @@ def main():
         require_independent_skinned_nodes=tuple(obj.name for obj in armor_parts),
     )
 
+    export_chapter_environments()
     print("ART_PROTOTYPE_EXPORT_PASS")
     print("Character rigged GLB:", character_model)
     print("Separate animation library GLB:", animation_library)
