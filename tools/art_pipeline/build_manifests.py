@@ -14,10 +14,10 @@ def catalog_ids(path: Path, marker: str) -> list[str]:
     start = source.find(marker)
     if start < 0:
         raise ValueError(f"catalog marker not found: {marker}")
-    match = re.search(r"\\n(.*?)^\\}", source[start:], re.S | re.M)
+    match = re.search(r"\n(.*?)^\}, source[start:], re.S | re.M)
     if not match:
         raise ValueError(f"catalog block is not closed: {marker}")
-    return re.findall(r'^\\s*"([^"]+)"\\s*:\\s*\\{', match.group(1), re.M)
+    return re.findall(r'^\s*"([^"]+)"\\s*:\\s*\\{', match.group(1), re.M)
 
 def manifest(kind: str, asset_id: str) -> dict:
     data = {
@@ -74,7 +74,7 @@ def main() -> int:
             missing.append(path)
             if not args.check:
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             continue
         try:
             current = json.loads(path.read_text(encoding="utf-8"))
