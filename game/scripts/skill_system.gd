@@ -1120,6 +1120,15 @@ func get_armor_catalog() -> Array:
     return result
 
 
+func is_support_ability(ability: Dictionary) -> bool:
+    var ability_type := str(ability.get("type", ""))
+    var ability_role := str(ability.get("role", ""))
+    for keyword in ["防御", "护盾", "屏障", "守护", "格挡", "霸体", "治疗", "恢复", "复苏", "保命", "减伤", "反伤", "回能", "资源", "净化", "闪避", "替身", "脱身"]:
+        if keyword in ability_type:
+            return true
+    return ability_role in ["生存", "恢复", "治疗", "护盾", "减伤", "防御", "保命", "资源", "反制"]
+
+
 func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
     var result: Array = data.get("abilities", []).duplicate(true)
