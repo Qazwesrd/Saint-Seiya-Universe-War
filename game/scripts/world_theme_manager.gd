@@ -26,11 +26,30 @@ func apply_theme(chapter_id: String) -> bool:
     var theme: Dictionary = THEMES[chapter_id]
     if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
         var environment := world_environment.environment
-        environment.background_mode = Environment.BG_COLOR
+        var sky_material := ProceduralSkyMaterial.new()
+        sky_material.sky_top_color = theme["background"].lightened(0.16)
+        sky_material.sky_horizon_color = theme["background"].lightened(0.42)
+        sky_material.ground_bottom_color = theme["floor"].darkened(0.28)
+        sky_material.ground_horizon_color = theme["background"].lightened(0.12)
+        sky_material.sun_angle_max = 24.0
+        sky_material.sun_curve = 0.18
+        var sky := Sky.new()
+        sky.sky_material = sky_material
+        environment.sky = sky
+        environment.background_mode = Environment.BG_SKY
         environment.background_color = theme["background"]
         environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
         environment.ambient_light_color = theme["ambient"]
         environment.ambient_light_energy = 0.82
+        environment.reflected_light_source = Environment.REFLECTION_SOURCE_BG
+        environment.glow_enabled = true
+        environment.glow_intensity = 0.42
+        environment.glow_strength = 0.72
+        environment.glow_bloom = 0.08
+        environment.adjustment_enabled = true
+        environment.adjustment_brightness = 1.02
+        environment.adjustment_contrast = 1.06
+        environment.adjustment_saturation = 1.08
         environment.fog_enabled = true
         environment.fog_light_color = theme["fog"]
         environment.fog_density = 0.006 if chapter_id in ["asgard", "poseidon"] else 0.003
@@ -38,6 +57,8 @@ func apply_theme(chapter_id: String) -> bool:
     if is_instance_valid(sun):
         sun.light_color = theme["sun"]
         sun.light_energy = 1.18 if chapter_id == "hades" else 1.35
+        sun.shadow_enabled = true
+        sun.directional_shadow_max_distance = 72.0
     if is_instance_valid(floor_material):
         floor_material.albedo_color = theme["floor"]
         floor_material.metallic = float(theme["metallic"])
