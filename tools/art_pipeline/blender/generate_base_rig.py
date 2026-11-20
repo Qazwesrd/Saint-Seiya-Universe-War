@@ -157,6 +157,8 @@ def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR):
     return obj
 
 def build_armor(rig):
+    # Keep every armor component as its own mesh object. Joining these objects
+    # would make the exported kit impossible to equip/remove piece by piece.
     parts = []
     parts.append(armor_piece("Armor_Helmet", (0, -0.005, 1.83), (0.16, 0.145, 0.19), "Head", rig, GOLD))
     parts.append(armor_piece("Armor_Chest", (0, -0.13, 1.36), (0.29, 0.075, 0.27), "Chest", rig, GOLD))
@@ -166,20 +168,7 @@ def build_armor(rig):
         parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", rig, ARMOR))
         parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", rig, ARMOR))
     parts.append(armor_piece("Armor_Waist", (0, -0.11, 0.94), (0.25, 0.09, 0.12), "Hips", rig, GOLD))
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in parts:
-        obj.select_set(True)
-    bpy.context.view_layer.objects.active = parts[0]
-    bpy.ops.object.join()
-    mesh = bpy.context.object
-    mesh.name = "Modular_Armor_Kit_Prototype"
-    for mod in list(mesh.modifiers):
-        if mod.type == "ARMATURE":
-            mesh.modifiers.remove(mod)
-    mod = mesh.modifiers.new("Armor_Rig", "ARMATURE")
-    mod.object = rig
-    return mesh
-
+    return parts
 def key_pose(rig, frame, values):
     for bone_name, rotation in values.items():
         bone = rig.pose.bones[bone_name]
@@ -189,18 +178,18 @@ def key_pose(rig, frame, values):
 
 def make_animation_library(rig):
     scene = bpy.context.scene
-    scene.frame_start, scene.frame_end = 1, 24
     for clip in REQUIRED_CLIPS:
-        bpy.ops.object.select_all(action="DESELECT")
-        rig.select_set(True)
-        bpy.context.view_layer.objects.active = rig
         if rig.animation_data is None:
             rig.animation_data_create()
         action = bpy.data.actions.new(name=clip)
         rig.animation_data.action = action
         scene.frame_set(1)
-        key_pose(rig, 1, {"Hips": (0, 0, 0)})
-        if clip in ("walk", "run"):
+        # Explicit neutral keys prevent empty NLA strips and keep clips editable.
+        key_pose(rig, 1, {"Spine": (0, 0, 0), "Chest": (0, 0, 0), "Head": (0, 0, 0)})
+        if clip == "idle":
+            for frame, breath in ((1, 0.0), (12, -0.025), (24, 0.0)):
+                key_pose(rig, frame, {"Spine": (breath, 0, 0), "Chest": (breath * 0.6, 0, 0)})
+        elif clip in ("walk", "run"):
             amount = 0.42 if clip == "walk" else 0.78
             for frame, sign in ((1, 1), (7, -1), (13, 1), (19, -1), (25, 1)):
                 key_pose(rig, frame, {
@@ -208,8 +197,20 @@ def make_animation_library(rig):
                     "RightThigh": (-amount * sign, 0, 0),
                     "LeftUpperArm": (-amount * sign * 0.7, 0, 0),
                     "RightUpperArm": (amount * sign * 0.7, 0, 0),
+                    "Chest": (0.035 if sign > 0 else -0.035, 0, 0),
                 })
-            scene.frame_end = 25
+        elif clip == "jump":
+            key_pose(rig, 1, {})
+            key_pose(rig, 7, {"LeftThigh": (-0.55, 0, 0), "RightThigh": (-0.55, 0, 0), "LeftUpperArm": (0.45, 0, 0), "RightUpperArm": (0.45, 0, 0)})
+            key_pose(rig, 16, {"LeftThigh": (-0.25, 0, 0), "RightThigh": (-0.25, 0, 0), "LeftUpperArm": (0.7, 0, 0), "RightUpperArm": (0.7, 0, 0)})
+            key_pose(rig, 24, {})
+        elif clip == "fall":
+            key_pose(rig, 6, {"Chest": (0.65, 0, 0), "Head": (0.25, 0, 0), "LeftUpperArm": (-0.8, 0, 0), "RightUpperArm": (-0.8, 0, 0)})
+            key_pose(rig, 24, {"Chest": (1.1, 0, 0), "Head": (0.45, 0, 0), "LeftUpperArm": (-1.1, 0, 0), "RightUpperArm": (-1.1, 0, 0)})
+        elif clip == "land":
+            key_pose(rig, 5, {"LeftThigh": (-0.65, 0, 0), "RightThigh": (-0.65, 0, 0), "Chest": (0.25, 0, 0)})
+            key_pose(rig, 12, {"LeftThigh": (-0.25, 0, 0), "RightThigh": (-0.25, 0, 0), "Chest": (0.12, 0, 0)})
+            key_pose(rig, 24, {})
         elif clip.startswith("basic_attack"):
             factor = (0.55, 0.9, 1.25)[int(clip[-1]) - 1]
             key_pose(rig, 1, {"RightUpperArm": (-0.8, 0, 0)})
@@ -222,36 +223,30 @@ def make_animation_library(rig):
             key_pose(rig, 24, {})
         elif clip in ("hit_light", "hit_heavy"):
             kick = 0.25 if clip == "hit_light" else 0.55
-            key_pose(rig, 1, {})
             key_pose(rig, 7, {"Chest": (kick, 0, 0), "Head": (kick * 0.5, 0, 0)})
             key_pose(rig, 24, {})
         elif clip == "dodge":
-            key_pose(rig, 1, {})
             key_pose(rig, 8, {"Hips": (0, 0, -0.5), "Chest": (0, 0, -0.25)})
             key_pose(rig, 18, {"Hips": (0, 0, 0.3)})
             key_pose(rig, 24, {})
         elif clip == "block":
-            key_pose(rig, 1, {})
             key_pose(rig, 10, {"LeftUpperArm": (-1.0, 0, 0), "RightUpperArm": (-1.0, 0, 0)})
             key_pose(rig, 24, {"LeftUpperArm": (-1.0, 0, 0), "RightUpperArm": (-1.0, 0, 0)})
         elif clip == "victory":
-            key_pose(rig, 1, {})
             key_pose(rig, 12, {"LeftUpperArm": (-2.4, 0, 0), "RightUpperArm": (-2.4, 0, 0)})
             key_pose(rig, 24, {"LeftUpperArm": (-2.4, 0, 0), "RightUpperArm": (-2.4, 0, 0)})
         elif clip == "defeat":
-            key_pose(rig, 1, {})
             key_pose(rig, 18, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
             key_pose(rig, 24, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
         else:
-            key_pose(rig, 24, {"Hips": (0, 0, 0)})
+            key_pose(rig, 24, {"Spine": (0, 0, 0)})
+        scene.frame_start, scene.frame_end = 1, 25 if clip in ("walk", "run") else 24
         track = rig.animation_data.nla_tracks.new()
         track.name = clip
         strip = track.strips.new(clip, 1, action)
         strip.name = clip
         rig.animation_data.action = None
-        scene.frame_end = 24
     scene.frame_set(1)
-
 def export_glb(path, objects):
     path.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action="DESELECT")
@@ -275,11 +270,13 @@ def main():
     body = build_body(rig)
     make_animation_library(rig)
     export_glb(CHARACTER / "humanoid_base.glb", [rig, body])
-    armor = build_armor(rig)
-    export_glb(ARMOR / "modular_armor_kit.glb", [rig, armor])
+    armor_parts = build_armor(rig)
+    export_glb(ARMOR / "modular_armor_kit.glb", [rig] + armor_parts)
     print("ART_PROTOTYPE_EXPORT_PASS")
     print("Character rigged GLB:", CHARACTER / "humanoid_base.glb")
     print("Modular armor GLB:", ARMOR / "modular_armor_kit.glb")
+    print("Detachable armor mesh objects:", len(armor_parts))
+    print("Armor objects:", ", ".join(obj.name for obj in armor_parts))
     print("Animation actions:", len(REQUIRED_CLIPS))
     print("Prototype geometry only; not final profession-specific art.")
 
