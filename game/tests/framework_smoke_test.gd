@@ -84,6 +84,11 @@ func _run_tests() -> void:
 	assert(bool(broken_armor_wear.get("cracked", false)), "critically damaged armor is marked cracked")
 	assert(float(broken_armor_wear.get("metallic_multiplier", 1.1)) < float(pristine_armor_wear.get("metallic_multiplier", 0.0)), "damaged armor loses metallic finish")
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
+	var art_coverage_report: Dictionary = ArtAssetAudit.build_report()
+	assert(int(art_coverage_report.get("class_count", 0)) == 32, "art asset audit scans all 32 playable classes")
+	for coverage_key in ["model_coverage", "portrait_coverage", "animation_coverage"]:
+		assert(float(art_coverage_report.get(coverage_key, -1.0)) >= 0.0 and float(art_coverage_report.get(coverage_key, 1.1)) <= 1.0, "art asset coverage is a valid ratio: " + coverage_key)
+	assert(art_coverage_report.has("missing_models") and art_coverage_report.has("missing_portraits") and art_coverage_report.has("missing_animations"), "art asset audit reports missing deliverables explicitly")
 	var animation_profile_count := 0
 	for class_entry in SkillSystem.get_class_skill_catalog():
 		var animation_class_id := str(class_entry.get("id", ""))
