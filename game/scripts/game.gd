@@ -285,7 +285,8 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
         if offset.length() <= reach and (offset.length() < 0.1 or forward.dot(offset.normalized()) >= cos(deg_to_rad(cone_degrees * 0.5))):
-            enemy.call("take_damage", damage)
+            var target_multiplier := SkillSystem.get_target_condition_multiplier(str(RPGState.profile.get("class_id", "pegasus")), enemy)
+        enemy.call("take_damage", damage * target_multiplier)
 func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knockback: float, launch: float, stagger: float) -> void:
     if not is_instance_valid(player):
         return
