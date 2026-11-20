@@ -120,6 +120,7 @@ func _ready() -> void:
     root.add_child(stick_knob)
     _button(root, "GM管理", Vector2(-190, 18), Vector2(-22, 72), func(): _open_gm(root), Color(0.42, 0.12, 0.28))
     _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): _open_shop(root), Color(0.28, 0.22, 0.08))
+    _button(root, "每日首领", Vector2(118, 154), Vector2(230, 214), func(): _open_daily_boss(root), Color(0.42, 0.16, 0.12))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
     _button(root, "伙伴图鉴", Vector2(118, 224), Vector2(230, 284), func(): _open_collection(root), Color(0.28, 0.18, 0.45))
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
@@ -336,6 +337,67 @@ func set_notice(message: String) -> void:
 func _on_resize() -> void:
     stick_base.position = Vector2(42, get_viewport().size.y - 200)
     stick_knob.position = stick_base.position + Vector2(46, 46)
+
+func _open_daily_boss(root: Control) -> void:
+    var state: Dictionary = DailyBossManager.get_state()
+    var popup := PopupPanel.new()
+    popup.size = Vector2(480, 360)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 12)
+    popup.add_child(box)
+    var title := Label.new()
+    title.text = "每日首领挑战"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 26)
+    box.add_child(title)
+    var boss_name := Label.new()
+    boss_name.text = str(state.get("boss_name", "今日首领"))
+    boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    boss_name.add_theme_font_size_override("font_size", 22)
+    box.add_child(boss_name)
+    var remaining := int(state.get("seconds_until_refresh", 0))
+    var countdown := Label.new()
+    countdown.text = "每日 05:00 刷新    下次刷新倒计时：%02d:%02d:%02d" % [remaining / 3600, (remaining % 3600) / 60, remaining % 60]
+    countdown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    box.add_child(countdown)
+    var status := Label.new()
+    if bool(state.get("reward_claimed", false)):
+        status.text = "今日挑战已完成，奖励已领取"
+    elif bool(state.get("defeated", false)):
+        status.text = "首领已击败，可以领取今日奖励"
+    else:
+        status.text = "尚未击败今日首领"
+    status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    box.add_child(status)
+    var challenge := Button.new()
+    challenge.text = "挑战今日首领"
+    challenge.disabled = not DailyBossManager.can_challenge()
+    challenge.custom_minimum_size = Vector2(220, 48)
+    challenge.pressed.connect(func():
+        popup.queue_free()
+        game.call("start_daily_boss_challenge")
+    )
+    box.add_child(challenge)
+    var claim := Button.new()
+    claim.text = "领取每日奖励"
+    claim.disabled = not bool(state.get("defeated", false)) or bool(state.get("reward_claimed", false))
+    claim.custom_minimum_size = Vector2(220, 48)
+    claim.pressed.connect(func():
+        var result: Dictionary = DailyBossManager.claim_reward()
+        if bool(result.get("success", false)):
+            set_notice("每日奖励已领取：经验 %d，星币 %d" % [int(result.get("exp", 0)), int(result.get("coins", 0))])
+        else:
+            set_notice(str(result.get("reason", "领取失败")))
+        popup.queue_free()
+        _open_daily_boss(root)
+    )
+    box.add_child(claim)
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
 
 func _open_shop(root: Control) -> void:
     var popup := PopupPanel.new()
