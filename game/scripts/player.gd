@@ -31,6 +31,7 @@ var body_mat: StandardMaterial3D
 var armor_root: Node3D
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
+var visual_armor_signature := ""
 var is_mounted := false
 var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
@@ -135,9 +136,17 @@ func _play_attack_pose(intensity: float = 1.0) -> void:
     visual_pose_tween.tween_property(visual_root, "scale", recoil, 0.065)
     visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.15)
 
+func _get_visual_armor_signature() -> String:
+    var armor_state: Dictionary = RPGState.profile.get("armor_state", {})
+    return "%s|%s|%s|%s" % [
+        str(RPGState.profile.get("class_id", "pegasus")),
+        str(armor_state.get("current_stage", "bronze")),
+        str(armor_state.get("levels", {})),
+        str(armor_state.get("durability", {}))
+    ]
+
 func _on_rpg_state_changed() -> void:
-    var current_class := str(RPGState.profile.get("class_id", "pegasus"))
-    if current_class != visual_class_id:
+    if _get_visual_armor_signature() != visual_armor_signature:
         _build_armor_visuals()
 
 func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72) -> MeshInstance3D:
@@ -174,9 +183,9 @@ func _build_armor_visuals() -> void:
     var dark := armor_base_color.darkened(0.42)
     var stage_state: Dictionary = ArmorSystem.get_state()
     var stage_id := str(stage_state.get("current_stage", "bronze"))
-    var stage_data: Dictionary = ArmorSystem.STAGES.get(stage_id, ArmorSystem.STAGES["bronze"])
     var stage_metallic := clampf(float(visual_profile.get("metallic", 0.82)) + (0.08 if stage_id in ["gold", "god_cloth", "god_armor"] else 0.0), 0.0, 1.0)
     var stage_glow := float(visual_profile.get("glow", 0.1)) + (0.12 if stage_id in ["god_cloth", "god_armor"] else 0.0)
+    visual_armor_signature = _get_visual_armor_signature()
 
     if is_instance_valid(body_mat):
         body_mat.albedo_color = armor_base_color
