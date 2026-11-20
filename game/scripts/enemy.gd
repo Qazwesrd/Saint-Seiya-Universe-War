@@ -312,11 +312,20 @@ func _resolve_attack(target: Node3D) -> void:
     state_timer = boss_recovery if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
 
+func _drain_target_cosmos(target: Node, amount: float) -> void:
+    if not is_instance_valid(target):
+        return
+    for property_info in target.get_property_list():
+        if str(property_info.get("name", "")) == "cosmos":
+            target.set("cosmos", maxf(0.0, float(target.get("cosmos")) - maxf(0.0, amount)))
+            return
+
 func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
-    var cosmos := float(target.get("cosmos"))
+    if not is_instance_valid(target):
+        return
     match boss_special:
         "dream_drain":
-            target.set("cosmos", maxf(0.0, cosmos - 8.0))
+            _drain_target_cosmos(target, 8.0)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动梦境侵蚀：小宇宙减少")
         "soul_leech":
@@ -324,7 +333,7 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "汲取生命，恢复了部分体力")
         "death_burst":
-            target.call("receive_damage", base_damage * 0.18, global_position)
+            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.18, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动死亡追加斩击")
         "tidal_pull":
@@ -336,29 +345,29 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "掀起潮汐，将目标拉向自身")
         "solar_flare":
-            target.call("receive_damage", base_damage * 0.16, global_position)
+            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.16, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "释放太阳神追加光爆")
         "lightning_followup":
-            target.call("receive_damage", base_damage * 0.22, global_position)
+            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.22, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "召来雷霆追击")
         "void_drain":
-            target.set("cosmos", maxf(0.0, cosmos - 12.0))
+            _drain_target_cosmos(target, 12.0)
             health = minf(max_health, health + base_damage * 0.06)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "吞噬小宇宙并恢复体力")
         "rift_drain":
-            target.set("cosmos", maxf(0.0, cosmos - 10.0))
+            _drain_target_cosmos(target, 10.0)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "撕裂小宇宙护盾")
         "gravity_crush":
-            target.set("cosmos", maxf(0.0, cosmos - 6.0))
-            target.call("receive_damage", base_damage * 0.10, global_position)
+            _drain_target_cosmos(target, 6.0)
+            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.10, global_position)
         "judge_combo":
             target.call("receive_damage", base_damage * 0.16, global_position)
         "judgment_combo":
-            target.call("receive_damage", base_damage * 0.20, global_position)
+            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.20, global_position)
         "wing_slam":
             if target.has_method("apply_enemy_knockback"):
                 var slam_direction := target.global_position - global_position
