@@ -1,5 +1,7 @@
 extends CharacterBody3D
 
+const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
+
 enum BrainState { CHASE, WINDUP, RECOVERY, STAGGER, DEAD }
 
 var game: Variant
@@ -129,6 +131,9 @@ func _ready() -> void:
         shoulder.material_override = armor_material
         add_child(shoulder)
 
+    var visual_profile: Dictionary = EnemyVisualCatalog.get_profile(archetype_id, is_boss, _base_color)
+    _build_enemy_armor_visuals(visual_profile, radius, height)
+
     if is_boss:
         var crown_mesh := CylinderMesh.new()
         crown_mesh.top_radius = 0.025
@@ -180,6 +185,98 @@ func _ready() -> void:
     telegraph_mesh.material_override = telegraph_material
     telegraph_mesh.visible = false
     add_child(telegraph_mesh)
+
+func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	part.mesh = mesh
+	part.position = local_position
+	part.scale = local_scale
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.metallic = clampf(metallic, 0.0, 1.0)
+	material.roughness = 0.24
+	material.emission_enabled = true
+	material.emission = color * 0.055
+	part.material_override = material
+	add_child(part)
+	return part
+
+func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: float) -> void:
+	var accent: Color = profile.get("accent", _base_color.lightened(0.3))
+	var secondary: Color = profile.get("secondary", _base_color.darkened(0.3))
+	var metallic := float(profile.get("metallic", 0.72))
+	var width := float(profile.get("shoulder_width", 1.0))
+	var helmet := SphereMesh.new()
+	helmet.radius = radius * 0.52
+	helmet.height = radius * 0.72
+	_add_enemy_visual(helmet, Vector3(0.0, height * 0.84, -radius * 0.08), Vector3(1.0, 0.82, 0.92), accent, metallic)
+	var waist := BoxMesh.new()
+	waist.size = Vector3(radius * 1.32, height * 0.12, radius * 0.68)
+	_add_enemy_visual(waist, Vector3(0.0, height * 0.39, -radius * 0.18), Vector3.ONE, secondary, metallic * 0.9)
+	var forearm := CylinderMesh.new()
+	forearm.top_radius = radius * 0.19
+	forearm.bottom_radius = radius * 0.25
+	forearm.height = height * 0.2
+	for side in [-1.0, 1.0]:
+		var guard := _add_enemy_visual(forearm, Vector3(side * radius * 0.72, height * 0.43, -radius * 0.42), Vector3.ONE, accent, metallic)
+		guard.rotation.z = side * 0.12
+		var greave := BoxMesh.new()
+		greave.size = Vector3(radius * 0.34, height * 0.22, radius * 0.48)
+		_add_enemy_visual(greave, Vector3(side * radius * 0.28, height * 0.15, -radius * 0.12), Vector3.ONE, secondary, metallic * 0.82)
+		var shoulder_scale := Vector3(width, 1.0, 1.0)
+		var shoulder_cap := SphereMesh.new()
+		shoulder_cap.radius = radius * 0.38
+		shoulder_cap.height = radius * 0.62
+		_add_enemy_visual(shoulder_cap, Vector3(side * radius * 0.82, height * 0.69, 0.0), shoulder_scale, accent, metallic)
+	var crest := str(profile.get("crest", "crest"))
+	var crest_mesh: Mesh
+	match crest:
+		"horn":
+			var horn := PrismMesh.new()
+			horn.size = Vector3(radius * 0.2, radius * 0.72, radius * 0.2)
+			crest_mesh = horn
+		"fin":
+			var fin := PrismMesh.new()
+			fin.size = Vector3(radius * 0.22, radius * 0.82, radius * 0.16)
+			crest_mesh = fin
+		"rune":
+			var rune := TorusMesh.new()
+			rune.inner_radius = radius * 0.12
+			rune.outer_radius = radius * 0.22
+			crest_mesh = rune
+		"halo":
+			var crest_halo := TorusMesh.new()
+			crest_halo.inner_radius = radius * 0.28
+			crest_halo.outer_radius = radius * 0.36
+			crest_mesh = crest_halo
+		"void":
+			var void_spike := PrismMesh.new()
+			void_spike.size = Vector3(radius * 0.34, radius * 0.9, radius * 0.3)
+			crest_mesh = void_spike
+		_:
+			var crest_plate := PrismMesh.new()
+			crest_plate.size = Vector3(radius * 0.48, radius * 0.56, radius * 0.18)
+			crest_mesh = crest_plate
+	var crest_node := _add_enemy_visual(crest_mesh, Vector3(0.0, height * 1.04, -radius * 0.05), Vector3.ONE, accent, metallic)
+	if crest in ["horn", "fin", "void"]:
+		crest_node.rotation.z = PI
+	elif crest == "rune":
+		crest_node.rotation.x = deg_to_rad(90.0)
+	if bool(profile.get("winged", false)):
+		var wing := PrismMesh.new()
+		wing.size = Vector3(radius * 0.72, height * 0.48, radius * 0.18)
+		for side in [-1.0, 1.0]:
+			var wing_node := _add_enemy_visual(wing, Vector3(side * radius * 0.88, height * 0.76, radius * 0.24), Vector3(1.0, 1.0, 0.62), accent, metallic)
+			wing_node.rotation.z = -side * 0.42
+	if bool(profile.get("halo", false)):
+		var halo_mesh := TorusMesh.new()
+		halo_mesh.inner_radius = radius * 0.72
+		halo_mesh.outer_radius = radius * 0.84
+		var halo_node := _add_enemy_visual(halo_mesh, Vector3(0.0, height * 1.12, 0.0), Vector3.ONE, accent, metallic)
+		halo_node.rotation.x = deg_to_rad(72.0)
+		var halo_material := halo_node.material_override as StandardMaterial3D
+		halo_material.emission = accent * float(profile.get("glow", 0.2))
+		halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
 func is_targetable() -> bool:
     return state != BrainState.DEAD and health > 0.0 and is_inside_tree()
