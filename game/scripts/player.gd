@@ -259,10 +259,12 @@ func combo_skill() -> void:
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
     var skill_level: int = SkillSystem.get_skill_level(class_id)
-    var damage: float = float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
+    var damage: float = float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
     var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
+    var combo_range: float = float(skill_data.get("combo_range", 8.5)) + float(aerial_profile.get("range_bonus", 0.0))
     _flash(Color(1.0, 0.9, 0.55))
-    game.call("damage_nearby_combat", damage, float(skill_data.get("combo_range", 8.5)), 180.0, float(skill_data.get("combo_knockback", 9.0)), float(skill_data.get("combo_launch", 3.8)), float(skill_data.get("stagger", 0.85)) * 1.2)
+    game.call("damage_nearby_combat", damage, combo_range, 180.0, float(skill_data.get("combo_knockback", 9.0)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("combo_launch", 3.8)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 0.85)) * 1.2)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.5) + Vector3.UP, skill_color, 4.0)
     game.call("show_notice", str(skill_data.get("combo", "职业连招")) + "！")
 func cosmos_burst() -> void:
@@ -272,9 +274,12 @@ func cosmos_burst() -> void:
     cosmos -= 35.0
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
-    var skill_data: Dictionary = SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus")))
-    var burst_damage: float = (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(str(RPGState.profile.get("class_id", "pegasus"))) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
-    game.call("damage_nearby_combat", burst_damage, float(skill_data.get("burst_range", 5.0)), 360.0, float(skill_data.get("burst_knockback", 12.0)), float(skill_data.get("burst_launch", 4.5)), float(skill_data.get("stagger", 1.0)))
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
+    var burst_damage: float = (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
+    var burst_range: float = float(skill_data.get("burst_range", 5.0)) + float(aerial_profile.get("range_bonus", 0.0))
+    game.call("damage_nearby_combat", burst_damage, burst_range, 360.0, float(skill_data.get("burst_knockback", 12.0)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("burst_launch", 4.5)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 1.0)))
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
 func dodge() -> void:
