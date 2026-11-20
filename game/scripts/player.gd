@@ -270,7 +270,7 @@ func _build_armor_visuals() -> void:
     var shoulder_mesh := SphereMesh.new()
     shoulder_mesh.radius = 0.28
     shoulder_mesh.height = 0.42
-    var shoulder_scale: Vector3 = visual_profile.get("shoulder_scale", Vector3.ONE)
+    var shoulder_scale: Vector3 = relic_visual_profile.get("shoulder_scale", visual_profile.get("shoulder_scale", Vector3.ONE))
     _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
     _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
     var shoulder_spike := PrismMesh.new()
@@ -374,7 +374,8 @@ func _build_armor_visuals() -> void:
 
     # Every class receives its own heraldic crest and chest sigil.
     var crest_mesh: Mesh
-    match str(visual_profile.get("crest", "star")):
+    var crest_id := str(relic_visual_profile.get("crest", visual_profile.get("crest", "star")))
+    match crest_id:
         "horn", "spear", "trident", "ice", "flame", "anvil":
             var crest_prism := PrismMesh.new()
             crest_prism.size = Vector3(0.20, 0.42, 0.16)
@@ -391,7 +392,7 @@ func _build_armor_visuals() -> void:
             crest_cone.height = 0.34
             crest_mesh = crest_cone
     var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic)
-    if str(visual_profile.get("crest", "")) in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
+    if crest_id in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
         crest.rotation.x = -0.18
     var emblem_mesh := SphereMesh.new()
     emblem_mesh.radius = 0.11
@@ -399,7 +400,7 @@ func _build_armor_visuals() -> void:
     _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), accent, 0.96)
 
     # Back ornaments are built as low-poly feather/fin plates, scaled per class.
-    var wing_span := float(visual_profile.get("wing_span", 0.0))
+    var wing_span := float(relic_visual_profile.get("wing_span", visual_profile.get("wing_span", 0.0)))
     if wing_span > 0.0:
         var feather_mesh := PrismMesh.new()
         feather_mesh.size = Vector3(0.16, 0.72, 0.10)
