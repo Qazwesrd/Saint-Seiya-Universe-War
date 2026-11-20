@@ -244,25 +244,21 @@ func _apply_touch_layout() -> void:
     var viewport_width := get_viewport().get_visible_rect().size.x
     var left_handed := bool(SettingsManager.get_value("controls", "left_handed", false))
     var button_scale := clampf(float(SettingsManager.get_value("controls", "button_scale", 1.0)), 0.75, 1.5)
-    if left_handed != touch_layout_left_handed:
-        for button in get_tree().get_nodes_in_group("hud_mirror_buttons"):
-            if not is_instance_valid(button) or not button is Control:
-                continue
-            if left_handed:
-                var rect := button.get_global_rect()
-                button.anchor_left = 0.0
-                button.anchor_right = 0.0
-                button.offset_left = viewport_width - rect.position.x - rect.size.x
-                button.offset_right = viewport_width - rect.position.x
-            else:
-                button.anchor_left = float(button.get_meta("default_anchor_left", 0.0))
-                button.anchor_right = float(button.get_meta("default_anchor_right", 0.0))
-                button.offset_left = float(button.get_meta("default_offset_left", 0.0))
-                button.offset_right = float(button.get_meta("default_offset_right", 0.0))
-        touch_layout_left_handed = left_handed
     for button in get_tree().get_nodes_in_group("hud_mirror_buttons"):
-        if is_instance_valid(button) and button is Control:
-            button.scale = Vector2.ONE * button_scale
+        if not is_instance_valid(button) or not button is Control:
+            continue
+        button.anchor_left = float(button.get_meta("default_anchor_left", 0.0))
+        button.anchor_right = float(button.get_meta("default_anchor_right", 0.0))
+        button.offset_left = float(button.get_meta("default_offset_left", 0.0))
+        button.offset_right = float(button.get_meta("default_offset_right", 0.0))
+        if left_handed:
+            var original_rect := button.get_global_rect()
+            button.anchor_left = 0.0
+            button.anchor_right = 0.0
+            button.offset_left = viewport_width - original_rect.position.x - original_rect.size.x
+            button.offset_right = viewport_width - original_rect.position.x
+        button.scale = Vector2.ONE * button_scale
+    touch_layout_left_handed = left_handed
     if is_instance_valid(stick_base) and is_instance_valid(stick_knob):
         stick_base.position = Vector2(viewport_width - stick_default_position.x - stick_base.size.x, stick_default_position.y) if left_handed else stick_default_position
         stick_base.scale = Vector2.ONE * button_scale
