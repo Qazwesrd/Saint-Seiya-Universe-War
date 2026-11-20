@@ -363,6 +363,10 @@ func _run_tests() -> void:
 		if str(equipment_entry.get("category", "")) == "黄金圣衣 Gold Cloth":
 			gold_cloth_count += 1
 	assert(gold_cloth_count == 12, "equipment archive contains all twelve zodiac Gold Cloths")
+	var zodiac_gold_ids := ["aries_gold_cloth", "taurus_gold_cloth", "gemini_gold_cloth", "cancer_gold_cloth", "leo_gold_cloth", "virgo_gold_cloth", "libra_gold_cloth", "scorpio_gold_cloth", "sagittarius_gold_cloth", "capricorn_gold_cloth", "aquarius_gold_cloth", "pisces_gold_cloth"]
+	for zodiac_gold_id in zodiac_gold_ids:
+		var zodiac_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": zodiac_gold_id, "category": "黄金圣衣 Gold Cloth"})
+		assert(zodiac_visual.has("crest") and zodiac_visual.has("shoulder_scale"), zodiac_gold_id + " has a dedicated armor silhouette")
 	var gold_cloth_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "aries_gold_cloth", "category": "黄金圣衣 Gold Cloth"})
 	assert(str(gold_cloth_visual.get("ornament", "")) == "royal_wings", "Gold Cloth uses the royal armor visual family")
 	var silver_cloth_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "silver_cloth_archive", "category": "白银圣衣 Silver Cloth"})
