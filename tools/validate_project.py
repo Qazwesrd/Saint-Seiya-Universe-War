@@ -3,6 +3,7 @@
 from pathlib import Path
 import re
 import sys
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME = ROOT / "game"
@@ -94,6 +95,15 @@ scripts = list((GAME / "scripts").glob("*.gd"))
 require(bool(scripts), "game/scripts 中没有 GDScript 文件")
 for script in scripts:
     require(script.stat().st_size > 0, f"脚本为空：{script.relative_to(ROOT)}")
+
+# Ensure every catalog entry has an explicit art-delivery manifest.
+manifest_check = subprocess.run(
+    [sys.executable, str(ROOT / "tools" / "art_pipeline" / "build_manifests.py"), "--check"],
+    cwd=ROOT, capture_output=True, text=True
+)
+checks += 1
+if manifest_check.returncode != 0:
+    errors.append("美术交付清单检查失败：" + (manifest_check.stdout + manifest_check.stderr).strip())
 
 print(f"项目静态检查：{checks} 项")
 if errors:

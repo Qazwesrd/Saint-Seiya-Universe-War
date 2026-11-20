@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Validate project structure and resource references
+      - name: Generate art delivery manifests\n        run: python3 tools/art_pipeline/build_manifests.py\n      - name: Validate project structure and resource references
         run: python3 tools/validate_project.py
 
   godot-headless:
