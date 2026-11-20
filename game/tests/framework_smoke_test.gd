@@ -357,6 +357,18 @@ func _run_tests() -> void:
 	assert(str(chronos_armor_visual.get("ornament", "")) == "time_rings", "Chronos divine relic selects time-ring ornaments")
 	var unknown_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "unlisted_visual_item", "category": "unlisted"})
 	assert(unknown_armor_visual.is_empty(), "unknown equipment does not invent a visual identity")
+	var gold_cloth_count := 0
+	for equipment_id in EquipmentDatabase.EQUIPMENT:
+		var equipment_entry: Dictionary = EquipmentDatabase.EQUIPMENT[equipment_id]
+		if str(equipment_entry.get("category", "")) == "黄金圣衣 Gold Cloth":
+			gold_cloth_count += 1
+	assert(gold_cloth_count == 12, "equipment archive contains all twelve zodiac Gold Cloths")
+	var gold_cloth_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "aries_gold_cloth", "category": "黄金圣衣 Gold Cloth"})
+	assert(str(gold_cloth_visual.get("ornament", "")) == "royal_wings", "Gold Cloth uses the royal armor visual family")
+	var silver_cloth_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "silver_cloth_archive", "category": "白银圣衣 Silver Cloth"})
+	assert(str(silver_cloth_visual.get("ornament", "")) == "feather", "Silver Cloth uses the silver armor visual family")
+	var surplice_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "surplice_general", "category": "冥衣 Surplice"})
+	assert(str(surplice_visual.get("ornament", "")) == "soul_wings", "Surplice uses the underworld armor visual family")
 	var skill_visual_script = preload("res://scripts/skill_visual_catalog.gd")
 	var skill_visual_audit: Dictionary = skill_visual_script.validate_catalog()
 	assert(bool(skill_visual_audit.get("valid", false)), "elemental skill VFX catalog is valid: " + str(skill_visual_audit.get("errors", [])))
