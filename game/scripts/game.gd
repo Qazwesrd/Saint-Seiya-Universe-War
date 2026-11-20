@@ -479,12 +479,16 @@ func update_hud() -> void:
         hud.call("set_quest_text", QuestManager.get_tracker_text())
         var boss_hp := 0.0
         var boss_max := 1.0
+        var boss_name := "训练 Boss"
+        var boss_phase_two := false
         for enemy in enemies:
-            if is_instance_valid(enemy) and enemy.get("is_boss"):
-                boss_hp = enemy.get("health")
-                boss_max = enemy.get("max_health")
+            if is_instance_valid(enemy) and bool(enemy.get("is_boss")):
+                boss_hp = float(enemy.get("health"))
+                boss_max = float(enemy.get("max_health"))
+                boss_name = str(enemy.get("display_name"))
+                boss_phase_two = bool(enemy.get("_boss_phase_two"))
                 break
-        hud.call("set_boss_status", boss_hp, boss_max)
+        hud.call("set_boss_status", boss_hp, boss_max, boss_name, boss_phase_two)
 func _spawn_loot_pickup(at: Vector3, drop: Dictionary) -> void:
     var pickup := Area3D.new()
     pickup.set_script(LootPickupScript)
