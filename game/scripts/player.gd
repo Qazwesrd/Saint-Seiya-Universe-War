@@ -45,6 +45,10 @@ var combat_feedback_material: StandardMaterial3D
 var combat_feedback_timer := 0.0
 var combat_feedback_duration := 0.0
 var combat_feedback_color := Color.WHITE
+var guard_shield_node: MeshInstance3D
+var guard_shield_material: StandardMaterial3D
+var guard_shield_timer := 0.0
+var guard_shield_duration := 0.0
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var visual_flash_timer := 0.0
@@ -211,6 +215,15 @@ func _animate_visual_motion(delta: float) -> void:
             combat_feedback_node.scale = Vector3.ONE * feedback_scale
             combat_feedback_material.albedo_color = Color(combat_feedback_color.r, combat_feedback_color.g, combat_feedback_color.b, 0.42 * feedback_ratio)
             combat_feedback_material.emission = combat_feedback_color * (0.45 + feedback_ratio * 1.8)
+    guard_shield_timer = maxf(0.0, guard_shield_timer - delta)
+    if is_instance_valid(guard_shield_node) and is_instance_valid(guard_shield_material):
+        guard_shield_node.visible = guard_shield_timer > 0.0
+        if guard_shield_timer > 0.0:
+            var shield_ratio := guard_shield_timer / maxf(0.001, guard_shield_duration)
+            var shield_pulse := 1.0 + sin(float(Time.get_ticks_msec()) * 0.018) * 0.045
+            guard_shield_node.scale = Vector3(0.58, 0.78, 0.12) * shield_pulse
+            guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.18 + shield_ratio * 0.24)
+            guard_shield_material.emission_energy_multiplier = 0.8 + shield_ratio * 1.8
     var planar_speed := Vector2(velocity.x, velocity.z).length()
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.012
@@ -263,12 +276,19 @@ func _animate_visual_motion(delta: float) -> void:
         var arm_target := gait
         var forearm_target := -0.12 * movement_ratio
         var leg_target := -gait * 0.9
-        if combat_pose_motion in ["strike", "heavy", "dash", "leap", "aerial_strike"]:
+        if combat_pose_motion == "dash":
+            arm_target = lerpf(arm_target, 0.52 if limb_index == 1 else 0.34, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.62, pose_weight)
+            leg_target = lerpf(leg_target, -0.28 if limb_index == 1 else 0.48, pose_weight)
+        elif combat_pose_motion == "heavy":
+            arm_target = lerpf(arm_target, -1.18 if limb_index == 1 else -0.62, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.58 if limb_index == 1 else -0.30, pose_weight)
+        elif combat_pose_motion in ["strike", "leap", "aerial_strike"]:
             arm_target = lerpf(arm_target, -0.95 if limb_index == 1 else -0.28, pose_weight)
             forearm_target = lerpf(forearm_target, -0.42 if limb_index == 1 else -0.18, pose_weight)
         elif combat_pose_motion == "guard":
-            arm_target = lerpf(arm_target, -0.58, pose_weight)
-            forearm_target = lerpf(forearm_target, -0.72, pose_weight)
+            arm_target = lerpf(arm_target, -0.82 if limb_index == 1 else -0.48, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.88, pose_weight)
         elif combat_pose_motion == "hit":
             arm_target = lerpf(arm_target, 0.42 if limb_index == 1 else 0.18, pose_weight)
             forearm_target = lerpf(forearm_target, -0.12, pose_weight)
@@ -304,6 +324,24 @@ func _build_combat_feedback_visual() -> void:
     combat_feedback_node.material_override = combat_feedback_material
     combat_feedback_node.visible = false
     visual_root.add_child(combat_feedback_node)
+    guard_shield_node = MeshInstance3D.new()
+    guard_shield_node.name = "GuardShieldFlash"
+    var shield_mesh := SphereMesh.new()
+    shield_mesh.radius = 0.5
+    shield_mesh.height = 1.0
+    guard_shield_node.mesh = shield_mesh
+    guard_shield_node.position = Vector3(0.0, 1.05, -0.52)
+    guard_shield_node.visible = false
+    guard_shield_material = StandardMaterial3D.new()
+    guard_shield_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    guard_shield_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.3)
+    guard_shield_material.emission_enabled = true
+    guard_shield_material.emission = Color(1.0, 0.62, 0.12)
+    guard_shield_material.emission_energy_multiplier = 1.4
+    guard_shield_node.material_override = guard_shield_material
+    guard_shield_node.scale = Vector3(0.58, 0.78, 0.12)
+    visual_root.add_child(guard_shield_node)
 
 func _play_combat_feedback(color: Color, duration: float = 0.34) -> void:
     if not is_instance_valid(combat_feedback_node):
@@ -337,7 +375,7 @@ func _play_skill_pose(profile: Dictionary) -> void:
     visual_pose_tween.tween_property(visual_root, "scale", base_scale, recovery)
     visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", base_yaw, minf(0.22, recovery))
 
-func _play_attack_pose(intensity: float = 1.0) -> void:
+func _play_attack_pose(intensity: float = 1.0, motion: String = "strike") -> void:
     if not is_instance_valid(visual_root):
         return
     if is_instance_valid(visual_pose_tween):
@@ -346,7 +384,7 @@ func _play_attack_pose(intensity: float = 1.0) -> void:
     combat_pose_duration = 0.22
     combat_pose_timer = combat_pose_duration
     combat_pose_strength = clampf(intensity, 0.35, 1.4)
-    combat_pose_motion = "strike"
+    combat_pose_motion = motion
     visual_pose_tween = create_tween()
     var recoil := Vector3(1.0 + 0.055 * intensity, 1.0 - 0.075 * intensity, 1.0 + 0.055 * intensity)
     visual_pose_tween.tween_property(visual_root, "scale", recoil, 0.065)
@@ -776,7 +814,9 @@ func attack() -> void:
     basic_combo_step = (basic_combo_step % 3) + 1
     basic_combo_reset = 0.95
     attack_cd = 0.28 if basic_combo_step < 3 else 0.52
-    _play_attack_pose(0.85 if basic_combo_step < 3 else 1.15)
+    var combo_motion := "strike" if basic_combo_step == 1 else ("aerial_strike" if basic_combo_step == 2 else "heavy")
+    var combo_intensity := 0.82 if basic_combo_step == 1 else (1.0 if basic_combo_step == 2 else 1.28)
+    _play_attack_pose(combo_intensity, combo_motion)
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
@@ -789,7 +829,9 @@ func attack() -> void:
     if tenkishi_flight_active and class_id == "tenkishi":
         lift_forces = [0.55, 0.9, float(skill_data.get("launch", 1.2)) * 1.5 + float(aerial_profile.get("launch_bonus", 1.0))]
     var basic_names: Array = skill_data.get("basic_attacks", ["第一段", "第二段", "第三段"])
-    _flash(skill_data.get("color", Color(1.0, 0.82, 0.35)))
+    var attack_color: Color = skill_data.get("color", Color(1.0, 0.82, 0.35))
+    _flash(attack_color)
+    _play_combat_feedback(attack_color.lightened(0.12), 0.30 if basic_combo_step < 3 else 0.52)
     var attack_reach: float = (2.8 if basic_combo_step < 3 else 3.2) + float(aerial_profile.get("range_bonus", 0.0))
     game.call("damage_nearby_combat", damages, attack_reach, 150.0 if tenkishi_flight_active else 125.0, push_forces[basic_combo_step - 1] + float(aerial_profile.get("knockback_bonus", 0.0)), lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else float(skill_data.get("stagger", 0.55)) * 0.6)
     game.call("show_notice", str(basic_names[basic_combo_step - 1]) + "！")
@@ -871,7 +913,7 @@ func dodge() -> void:
     direction.y = 0
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * (15.0 if not heavenly_wings else 18.0)
-    _play_attack_pose(0.7)
+    _play_attack_pose(0.7, "dash")
     _play_combat_feedback(Color(0.28, 0.88, 1.0) if not heavenly_wings else Color(0.72, 0.94, 1.0), 0.42)
     game.call("show_notice", "闪避！短暂无敌" if not heavenly_wings else "光翼闪身！天衣短暂无敌")
     _register_custom_combo_input("dodge")
@@ -973,7 +1015,11 @@ func guard() -> void:
     combat_pose_duration = 0.42
     combat_pose_timer = combat_pose_duration
     combat_pose_strength = 1.0
-    _play_combat_feedback(Color(1.0, 0.72, 0.24), 0.38)
+    guard_shield_duration = 0.48
+    guard_shield_timer = guard_shield_duration
+    if is_instance_valid(guard_shield_node):
+        guard_shield_node.visible = true
+    _play_combat_feedback(Color(1.0, 0.72, 0.24), 0.48)
     game.call("show_notice", "架势防御！")
     _register_custom_combo_input("guard")
 
@@ -1065,6 +1111,8 @@ func _execute_custom_combo_finisher(preset: Dictionary) -> void:
     var reach := float(class_data.get("combo_range", 8.5))
     var color: Color = class_data.get("color", Color(0.35, 0.75, 1.0))
     CombatSessionManager.record_skill_cast(true)
+    _play_attack_pose(1.42, "heavy")
+    _play_combat_feedback(Color(1.0, 0.82, 0.3), 0.68)
     _flash(Color(1.0, 0.88, 0.42))
     game.call("damage_nearby_combat", damage, reach, 180.0, float(class_data.get("combo_knockback", 7.0)), float(class_data.get("combo_launch", 2.8)), float(class_data.get("stagger", 0.7)))
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, color, 3.2)
