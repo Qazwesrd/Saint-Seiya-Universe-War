@@ -301,10 +301,15 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
             continue
         if distance >= 0.1 and forward.dot(offset.normalized()) < cos(deg_to_rad(cone_degrees * 0.5)):
             continue
-        var target_multiplier := SkillSystem.get_target_condition_multiplier(str(RPGState.profile.get("class_id", "pegasus")), enemy)
-        enemy.call("take_damage", damage * target_multiplier)
+        var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+        var target_multiplier := SkillSystem.get_target_condition_multiplier(class_id, enemy)
+        var target_forward: Vector3 = -enemy.global_transform.basis.z
+        var toward_attacker: Vector3 = player.global_position - enemy.global_position
+        toward_attacker.y = 0.0
+        var target_facing_dot := target_forward.dot(toward_attacker.normalized()) if toward_attacker.length_squared() > 0.001 else 1.0
+        var position_multiplier := SkillSystem.get_position_damage_multiplier(class_id, target_facing_dot, bool(enemy.get("is_boss")))
+        enemy.call("take_damage", damage * target_multiplier * position_multiplier)
         if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
-            var class_id := str(RPGState.profile.get("class_id", "pegasus"))
             var passive_stagger := SkillSystem.get_passive_stagger_multiplier(class_id)
             enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger * passive_stagger)
 
