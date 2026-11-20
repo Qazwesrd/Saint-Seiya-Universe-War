@@ -2,6 +2,7 @@ extends CharacterBody3D
 const CombatTargeting = preload("res://scripts/combat_targeting.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
+const SkillVisualCatalog = preload("res://scripts/skill_visual_catalog.gd")
 var game: Variant
 var move_input := Vector2.ZERO
 var auto_move_target := Vector3.ZERO
@@ -1145,9 +1146,12 @@ func cast_ability(ability_id: String) -> bool:
     cosmos -= cost
     var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(class_id, ability)
+    var visual_profile: Dictionary = SkillVisualCatalog.get_profile(class_id, ability)
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var visual_color: Color = visual_profile.get("color", class_data.get("color", Color(0.3, 0.72, 1.0)))
     _play_skill_pose(animation_profile)
-    _play_combat_feedback(Color(class_data.get("color", Color(0.3, 0.72, 1.0))), 0.46)
+    var feedback_duration := clampf(float(animation_profile.get("startup", 0.2)) + float(animation_profile.get("active", 0.2)) * 0.55, 0.32, 0.9)
+    _play_combat_feedback(visual_color, feedback_duration)
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
     var ability_type := str(ability.get("type", "攻击"))
@@ -1161,11 +1165,20 @@ func cast_ability(ability_id: String) -> bool:
         reach += 2.0
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
     var projectile_action := str(ability_profile.get("action", "")) in ["projectile", "homing_projectile"]
-    _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
+    _flash(visual_color)
     if not SkillSystem.is_support_ability(ability) and not projectile_action:
         game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15 + float(aerial_profile.get("knockback_bonus", 0.0)), float(class_data.get("launch", 1.0)) + float(aerial_profile.get("launch_bonus", 0.0)), float(class_data.get("stagger", 0.5)))
     game.call("apply_ability_effect", class_id, ability, reach)
-    game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
+    var vfx_anchor := str(animation_profile.get("vfx_anchor", "upper_body"))
+    var effect_position := global_position + (-global_transform.basis.z * 2.5) + Vector3.UP
+    if vfx_anchor == "ground":
+        effect_position = global_position + Vector3.UP * 0.12
+    elif vfx_anchor == "target" and is_instance_valid(locked_target):
+        effect_position = locked_target.global_position + Vector3.UP
+    elif vfx_anchor == "upper_body":
+        effect_position = global_position + Vector3.UP * 1.15 + (-global_transform.basis.z * 1.4)
+    var impact_scale := clampf(float(visual_profile.get("impact_scale", 1.0)), 0.5, 1.5)
+    game.call("spawn_effect", effect_position, visual_color, clampf(2.2 * impact_scale, 1.2, 3.3))
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
     _register_custom_combo_input(ability_id)
     return true
