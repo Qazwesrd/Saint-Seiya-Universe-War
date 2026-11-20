@@ -172,12 +172,16 @@ func attack() -> void:
     game.call("show_notice", str(basic_names[basic_combo_step - 1]) + "！")
     _register_custom_combo_input("basic_attack_%d" % basic_combo_step)
 func skill() -> void:
-    if skill_cd > 0.0 or cosmos < 18.0:
-        game.call("show_notice", "小宇宙不足或技能冷却中")
+    if skill_cd > 0.0:
+        game.call("show_notice", "职业技能冷却中")
         return
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
-    cosmos -= float(skill_data.get("cost", 18))
+    var skill_cost := float(skill_data.get("cost", 18))
+    if cosmos < skill_cost:
+        game.call("show_notice", "小宇宙不足，需要 %.0f 点" % skill_cost)
+        return
+    cosmos -= skill_cost
     CombatSessionManager.record_skill_cast()
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
