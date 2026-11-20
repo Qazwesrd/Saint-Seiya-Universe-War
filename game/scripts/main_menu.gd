@@ -16,6 +16,7 @@ var pending_creation_slot := 0
 
 func _ready() -> void:
 	_build_interface()
+	_apply_menu_theme()
 	_update_status()
 
 func _build_interface() -> void:
@@ -85,10 +86,58 @@ func _build_interface() -> void:
 func _add_button(parent: VBoxContainer, caption: String, action: Callable) -> void:
 	var button := Button.new()
 	button.text = caption
-	button.custom_minimum_size = Vector2(0, 54)
+	button.custom_minimum_size = Vector2(0, 58)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override("font_size", 19)
+	button.add_theme_color_override("font_color", Color(0.91, 0.95, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.88, 0.55))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.96, 0.82))
+	button.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.07, 0.9))
+	button.add_theme_stylebox_override("normal", _make_menu_button_style(Color(0.045, 0.085, 0.18), Color(0.24, 0.48, 0.82)))
+	button.add_theme_stylebox_override("hover", _make_menu_button_style(Color(0.075, 0.14, 0.27), Color(0.92, 0.72, 0.32)))
+	button.add_theme_stylebox_override("pressed", _make_menu_button_style(Color(0.025, 0.055, 0.12), Color(0.96, 0.78, 0.4)))
+	button.add_theme_stylebox_override("disabled", _make_menu_button_style(Color(0.08, 0.09, 0.12), Color(0.25, 0.29, 0.36)))
 	button.pressed.connect(action)
 	parent.add_child(button)
+
+func _make_menu_button_style(fill_color: Color, border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill_color
+	style.border_color = border_color
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 18.0
+	style.content_margin_right = 18.0
+	style.content_margin_top = 10.0
+	style.content_margin_bottom = 10.0
+	style.shadow_color = Color(0.0, 0.015, 0.06, 0.38)
+	style.shadow_size = 7
+	style.shadow_offset = Vector2(0.0, 3.0)
+	style.anti_aliasing = true
+	return style
+
+func _apply_menu_theme() -> void:
+	for panel in [settings_panel, slots_panel, character_creation_panel]:
+		if not is_instance_valid(panel):
+			continue
+		var panel_style := StyleBoxFlat.new()
+		panel_style.bg_color = Color(0.018, 0.035, 0.09, 0.97)
+		panel_style.border_color = Color(0.42, 0.66, 0.98, 0.9)
+		panel_style.set_border_width_all(2)
+		panel_style.set_corner_radius_all(18)
+		panel_style.content_margin_left = 18.0
+		panel_style.content_margin_right = 18.0
+		panel_style.content_margin_top = 16.0
+		panel_style.content_margin_bottom = 16.0
+		panel_style.shadow_color = Color(0.0, 0.0, 0.025, 0.65)
+		panel_style.shadow_size = 18
+		panel_style.shadow_offset = Vector2(0.0, 6.0)
+		panel.add_theme_stylebox_override("panel", panel_style)
+	for label in find_children("*", "Label", true, false):
+		(label as Label).add_theme_color_override("font_color", Color(0.88, 0.93, 1.0))
+		(label as Label).add_theme_color_override("font_shadow_color", Color(0.0, 0.015, 0.06, 0.9))
+		(label as Label).add_theme_constant_override("shadow_offset_x", 1)
+		(label as Label).add_theme_constant_override("shadow_offset_y", 2)
 
 func _build_settings_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
