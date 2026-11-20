@@ -1437,49 +1437,73 @@ func show_battle_result(summary: Dictionary, rewards: Dictionary = {}) -> void:
     var root := get_child(0) as Control
     var panel := Panel.new()
     panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    panel.offset_left = -270
-    panel.offset_right = 270
-    panel.offset_top = -230
-    panel.offset_bottom = 230
+    panel.offset_left = -290
+    panel.offset_right = 290
+    panel.offset_top = -265
+    panel.offset_bottom = 265
     panel.z_index = 30
-    _style_panel(panel, Color(0.012, 0.02, 0.065, 0.98), Color(0.9, 0.68, 0.22))
+    _style_panel(panel, Color(0.012, 0.02, 0.065, 0.985), Color(0.9, 0.68, 0.22))
     root.add_child(panel)
     var box := VBoxContainer.new()
     box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    box.add_theme_constant_override("separation", 12)
+    box.add_theme_constant_override("separation", 10)
     panel.add_child(box)
+    var encounter := Label.new()
+    encounter.text = str(summary.get("encounter_id", "自由战斗")).replace("_", " ")
+    encounter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    encounter.add_theme_font_size_override("font_size", 14)
+    encounter.add_theme_color_override("font_color", Color(0.55, 0.72, 0.9))
+    box.add_child(encounter)
     var title := Label.new()
     title.text = "战斗结算"
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     title.add_theme_font_size_override("font_size", 30)
     title.add_theme_color_override("font_color", Color(1.0, 0.82, 0.38))
     box.add_child(title)
+    var grade_value := str(summary.get("grade", "未完成"))
     var grade := Label.new()
-    grade.text = "战斗评价：%s" % str(summary.get("grade", "未完成"))
+    grade.text = "战斗评价：%s" % grade_value
     grade.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    grade.add_theme_font_size_override("font_size", 26)
+    grade.add_theme_font_size_override("font_size", 27)
+    var grade_colors := {"S": Color(1.0, 0.82, 0.28), "A": Color(0.35, 0.92, 0.65), "B": Color(0.38, 0.72, 1.0), "C": Color(0.82, 0.72, 0.62), "未完成": Color(0.68, 0.72, 0.8)}
+    grade.add_theme_color_override("font_color", grade_colors.get(grade_value, Color.WHITE))
     box.add_child(grade)
+    var duration := maxi(0, int(summary.get("duration_seconds", 0)))
+    var minutes := int(duration / 60)
+    var seconds := duration % 60
+    var damage := float(summary.get("damage_dealt", 0.0))
+    var dps := damage / maxf(1.0, float(duration))
     var stats := Label.new()
-    stats.text = "造成伤害：%.0f\n承受伤害：%.0f\n击败敌人：%d（Boss：%d）\n技能释放：%d    连招：%d\n战斗时长：%d 秒" % [
-        float(summary.get("damage_dealt", 0.0)),
+    stats.text = "造成伤害：%.0f    平均秒伤：%.1f\n承受伤害：%.0f    治疗恢复：%.0f\n击败敌人：%d（Boss：%d）\n技能释放：%d    连招：%d    暴击：%d\n战斗时长：%02d:%02d" % [
+        damage,
+        dps,
         float(summary.get("damage_taken", 0.0)),
+        float(summary.get("healing_received", 0.0)),
         int(summary.get("enemies_defeated", 0)),
         int(summary.get("bosses_defeated", 0)),
         int(summary.get("skills_cast", 0)),
         int(summary.get("combos_used", 0)),
-        int(summary.get("duration_seconds", 0))
+        int(summary.get("critical_hits", 0)),
+        minutes,
+        seconds
     ]
     stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    stats.add_theme_font_size_override("font_size", 18)
+    stats.add_theme_font_size_override("font_size", 17)
+    stats.add_theme_color_override("font_color", Color(0.82, 0.88, 0.98))
     box.add_child(stats)
+    var divider := HSeparator.new()
+    divider.add_theme_color_override("separator", Color(0.55, 0.42, 0.2, 0.8))
+    box.add_child(divider)
     var reward := Label.new()
     reward.text = "本场奖励：经验 %d    星币 %d" % [int(rewards.get("exp", 0)), int(rewards.get("coins", 0))]
     reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     reward.add_theme_font_size_override("font_size", 18)
+    reward.add_theme_color_override("font_color", Color(1.0, 0.84, 0.42))
     box.add_child(reward)
     var close := Button.new()
-    close.text = "返回竞技场"
-    close.custom_minimum_size = Vector2(180, 48)
+    close.text = "返回战场"
+    close.custom_minimum_size = Vector2(190, 50)
+    close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
     close.pressed.connect(func():
         if is_instance_valid(panel):
             panel.queue_free()
