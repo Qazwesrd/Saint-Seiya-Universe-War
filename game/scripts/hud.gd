@@ -252,7 +252,7 @@ func _apply_touch_layout() -> void:
         button.offset_right = float(button.get_meta("default_offset_right", 0.0))
         button.scale = Vector2.ONE
         if left_handed:
-            var original_rect := button.get_global_rect()
+            var original_rect: Rect2 = (button as Control).get_global_rect()
             button.anchor_left = 0.0
             button.anchor_right = 0.0
             button.offset_left = viewport_width - original_rect.position.x - original_rect.size.x
