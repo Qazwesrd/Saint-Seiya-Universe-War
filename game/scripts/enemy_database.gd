@@ -41,6 +41,16 @@ const ARCHETYPES := {
         "drop_tier": "boss",
         "color": Color(0.36, 0.08, 0.55)
     }
+    "gold_taurus": {"name":"金牛座阿鲁迪巴","is_boss":true,"health":520.0,"speed":1.9,"attack_damage":24.0,"attack_range":3.0,"attack_interval":2.0,"exp_reward":180,"coin_reward":150,"drop_tier":"boss","color":Color(0.72,0.48,0.12)},
+    "gemini_illusion": {"name":"双子宫异次元幻象","is_boss":false,"health":110.0,"speed":2.7,"attack_damage":13.0,"attack_range":2.2,"attack_interval":1.35,"exp_reward":45,"coin_reward":35,"drop_tier":"normal","color":Color(0.28,0.32,0.72)},
+    "gold_cancer": {"name":"巨蟹座迪斯马斯克","is_boss":true,"health":560.0,"speed":2.15,"attack_damage":26.0,"attack_range":2.7,"attack_interval":1.85,"exp_reward":210,"coin_reward":170,"drop_tier":"boss","color":Color(0.22,0.58,0.42)},
+    "gold_leo_controlled": {"name":"受控制的狮子座艾欧里亚","is_boss":true,"health":610.0,"speed":3.0,"attack_damage":28.0,"attack_range":2.8,"attack_interval":1.45,"exp_reward":230,"coin_reward":180,"drop_tier":"boss","color":Color(0.86,0.62,0.16)},
+    "gold_virgo": {"name":"处女座沙加","is_boss":true,"health":640.0,"speed":2.1,"attack_damage":30.0,"attack_range":3.2,"attack_interval":2.1,"exp_reward":250,"coin_reward":190,"drop_tier":"boss","color":Color(0.78,0.72,0.38)},
+    "gold_scorpio": {"name":"天蝎座米罗","is_boss":true,"health":660.0,"speed":2.85,"attack_damage":29.0,"attack_range":2.5,"attack_interval":1.35,"exp_reward":270,"coin_reward":205,"drop_tier":"boss","color":Color(0.72,0.12,0.22)},
+    "gold_capricorn": {"name":"摩羯座修罗","is_boss":true,"health":690.0,"speed":2.6,"attack_damage":33.0,"attack_range":3.4,"attack_interval":1.7,"exp_reward":290,"coin_reward":220,"drop_tier":"boss","color":Color(0.58,0.62,0.68)},
+    "gold_aquarius": {"name":"水瓶座卡妙","is_boss":true,"health":710.0,"speed":2.0,"attack_damage":32.0,"attack_range":3.1,"attack_interval":2.0,"exp_reward":310,"coin_reward":235,"drop_tier":"boss","color":Color(0.24,0.72,0.88)},
+    "gold_pisces": {"name":"双鱼座阿布罗狄","is_boss":true,"health":730.0,"speed":2.35,"attack_damage":34.0,"attack_range":2.9,"attack_interval":1.8,"exp_reward":330,"coin_reward":250,"drop_tier":"boss","color":Color(0.82,0.36,0.68)},
+    "pope_saga": {"name":"教皇撒加","is_boss":true,"health":980.0,"speed":2.4,"attack_damage":42.0,"attack_range":3.6,"attack_interval":1.65,"exp_reward":500,"coin_reward":380,"drop_tier":"boss","color":Color(0.48,0.22,0.72)}
 }
 
 func get_archetype(archetype_id: String) -> Dictionary:
