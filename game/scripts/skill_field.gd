@@ -14,14 +14,22 @@ var elapsed := 0.0
 var tick_timer := 0.0
 var triggered := false
 var field_color := Color(0.35, 0.75, 1.0)
+var field_shape := "ring"
 
 func _ready() -> void:
     var visual := MeshInstance3D.new()
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = radius
-    mesh.bottom_radius = radius
-    mesh.height = 0.12
-    visual.mesh = mesh
+    if field_shape in ["ring", "halo", "pulse", "wave", "crescent", "time"]:
+        var ring := TorusMesh.new()
+        ring.inner_radius = maxf(0.1, radius - 0.16)
+        ring.outer_radius = radius
+        visual.mesh = ring
+        visual.rotation.x = deg_to_rad(90.0)
+    else:
+        var mesh := CylinderMesh.new()
+        mesh.top_radius = radius
+        mesh.bottom_radius = radius
+        mesh.height = 0.12
+        visual.mesh = mesh
     var material := StandardMaterial3D.new()
     material.albedo_color = Color(field_color.r, field_color.g, field_color.b, 0.24)
     material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
