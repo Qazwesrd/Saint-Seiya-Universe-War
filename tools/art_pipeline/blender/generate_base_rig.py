@@ -44,7 +44,7 @@ def material(name, color, metallic=0.0, roughness=0.55):
 
 SKIN = material("Prototype_Skin", (0.48, 0.29, 0.20), 0.0, 0.68)
 CLOTH = material("Prototype_Undersuit", (0.075, 0.10, 0.16), 0.05, 0.78)
-ARMOR = material("Prototype_Armor_Silver", (0.48, 0.58, 0.68), 0.78, 0.28)
+ARMOR_MAT = material("Prototype_Armor_Silver", (0.48, 0.58, 0.68), 0.78, 0.28)
 GOLD = material("Prototype_Armor_Gold", (0.78, 0.48, 0.12), 0.82, 0.24)
 ACCENT = material("Prototype_Accent", (0.12, 0.48, 0.72), 0.45, 0.3)
 
@@ -154,7 +154,7 @@ def build_body(rig):
         parts.append(add_weighted_ellipsoid(side + "FootMesh", (x(0.15), -0.10, 0.08), (0.075, 0.15, 0.065), side + "Foot", CLOTH, rig))
     return join_meshes(parts, "Humanoid_Base_Mesh", rig)
 
-def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR):
+def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR_MAT):
     obj = add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=12, rings=8)
     return obj
 
@@ -167,8 +167,8 @@ def build_armor(rig):
     for side, sign in (("Left", 1), ("Right", -1)):
         x = lambda v: v * sign
         parts.append(armor_piece("Armor_" + side + "_Shoulder", (x(0.33), -0.02, 1.48), (0.17, 0.16, 0.12), side + "Shoulder", rig, GOLD))
-        parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", rig, ARMOR))
-        parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", rig, ARMOR))
+        parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", rig, ARMOR_MAT))
+        parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", rig, ARMOR_MAT))
     parts.append(armor_piece("Armor_Waist", (0, -0.11, 0.94), (0.25, 0.09, 0.12), "Hips", rig, GOLD))
     return parts
 def key_pose(rig, frame, values):
