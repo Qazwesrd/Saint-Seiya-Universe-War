@@ -110,12 +110,13 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
         "hit_stop": 0.075 if finisher else (0.045 if action in ["heavy_strike", "throw"] else 0.025),
         "hit_count": hit_count,
         "weapon_socket": socket,
-        "vfx_anchor": "ground" if action in ["field", "trap"] else ("target" if action in ["projectile", "homing_projectile"] else "upper_body"),
+        "vfx_anchor": "ground" if action in ["field", "trap"] else ("target" if action in ["projectile", "homing_projectile"] else ("upper_body" if motion in ["chain", "bow", "instrument", "divine", "cast", "summon"] else "ground" if motion in ["heavy", "axe", "throw"] else "upper_body")),
         "finisher": finisher
     }
 
 static func _resolve_motion(class_id: String, ability_type: String, action: String, ability_name: String) -> String:
-    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or action == "guard":
+    var text_value := ability_type + " " + ability_name
+    if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or action == "guard":
         return "guard"
     if "旋" in ability_name or "风暴" in ability_name or "漩涡" in ability_name:
         return "spin"
@@ -123,9 +124,26 @@ static func _resolve_motion(class_id: String, ability_type: String, action: Stri
         return "dash"
     if "挑空" in ability_type or "跃" in ability_type or "跳" in ability_name:
         return "leap"
-    if action in ["projectile", "homing_projectile", "field", "trap", "summon"]:
+    if action == "throw" or "投技" in ability_type:
+        return "throw"
+    if action == "heavy_strike" or "重击" in ability_type:
+        return "axe" if class_id in ["ares", "hephaestus", "tenmou"] else "heavy"
+    if class_id == "andromeda":
+        return "chain"
+    if class_id == "lyra":
+        return "instrument"
+    if class_id == "artemis":
+        return "bow"
+    if class_id == "dragon" and ("攻击" in ability_type or "反击" in ability_type):
+        return "shield_strike"
+    if class_id in ["apollo", "athena", "hades", "poseidon", "zeus", "hypnos", "thanatos", "odin", "eris", "abel", "lucifer", "saturn", "pallas", "chronos", "hera", "demeter", "hestia", "hermes", "aphrodite"]:
+        if action in ["projectile", "homing_projectile", "field", "trap", "summon"] or "奥义" in ability_type or "神" in ability_name:
+            return "divine"
+    if action == "summon":
+        return "summon"
+    if action in ["projectile", "homing_projectile", "field", "trap"]:
         return "cast"
-    if action in ["heavy_strike", "throw"]:
+    if action in ["heavy_strike"]:
         return "heavy"
     if class_id == "tenkishi":
         return "aerial_strike"
