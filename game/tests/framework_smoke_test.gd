@@ -74,6 +74,14 @@ func _run_tests() -> void:
 		var awakened_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(armor_palette_id, true)
 		assert(float(awakened_palette.get("glow", 0.0)) >= float(armor_palette.get("glow", 0.0)), "awakening increases or preserves armor glow: " + armor_palette_id)
 	assert(armor_palette_ids.size() == ArmorSystem.get_stage_ids().size(), "visual palettes cover every armor progression stage")
+	var pristine_armor_wear: Dictionary = ArmorSystem.get_visual_wear_profile(1.0)
+	var damaged_armor_wear: Dictionary = ArmorSystem.get_visual_wear_profile(0.35)
+	var broken_armor_wear: Dictionary = ArmorSystem.get_visual_wear_profile(0.1)
+	assert(is_equal_approx(float(pristine_armor_wear.get("wear", 1.0)), 0.0), "pristine armor has no visible wear")
+	assert(float(damaged_armor_wear.get("wear", 0.0)) > 0.0, "damaged armor exposes visible wear")
+	assert(float(damaged_armor_wear.get("roughness", 0.0)) > float(pristine_armor_wear.get("roughness", 1.0)), "damaged armor becomes rougher")
+	assert(bool(broken_armor_wear.get("cracked", false)), "critically damaged armor is marked cracked")
+	assert(float(broken_armor_wear.get("metallic_multiplier", 1.1)) < float(pristine_armor_wear.get("metallic_multiplier", 0.0)), "damaged armor loses metallic finish")
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	var animation_profile_count := 0
 	for class_entry in SkillSystem.get_class_skill_catalog():
