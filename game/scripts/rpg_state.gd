@@ -379,9 +379,15 @@ func delete_slot(slot: int) -> bool:
  backup_file.close()
  if typeof(backup_data) != TYPE_DICTIONARY or int(backup_data.get("version", 0)) != 1:
   return false
- var absolute_save_path := ProjectSettings.globalize_path(_save_path(slot))
- var remove_error := DirAccess.remove_absolute(absolute_save_path)
+ var user_directory := DirAccess.open("user://")
+ if user_directory == null:
+  return false
+ var remove_error := user_directory.remove("save_slot_%d.json" % slot)
+ if remove_error != OK:
+  # Fallback for platforms where relative user:// removal is unsupported.
+  remove_error = DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path(slot)))
  if remove_error != OK or FileAccess.file_exists(_save_path(slot)):
+  push_error("删除存档槽 %d 失败，错误码：%d" % [slot, remove_error])
   return false
  if active_slot == slot:
   profile = {}
