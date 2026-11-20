@@ -127,7 +127,8 @@ func _run_tests() -> void:
 	for theme_id in ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]:
 		assert(world_theme_test.apply_theme(theme_id), "campaign world theme applies: " + theme_id)
 		assert(world_theme_test.decor_root.get_child_count() >= 20, "chapter environment builds visible structures: " + theme_id)
-	assert(test_world_environment.environment.background_mode == Environment.BG_COLOR, "chapter theme configures its own sky background")
+	assert(test_world_environment.environment.background_mode == Environment.BG_SKY, "chapter theme configures a procedural sky")
+	assert(test_world_environment.environment.glow_enabled, "chapter theme enables controlled cosmic glow")
 	world_theme_test_root.queue_free()
 	var hud_layout_test = preload("res://scripts/hud.gd").new()
 	var hud_layout_root := Control.new()
