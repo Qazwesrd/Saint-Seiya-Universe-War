@@ -262,12 +262,15 @@ func _build_armor_visuals() -> void:
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
     visual_class_id = class_id
     var accent: Color = relic_visual_profile.get("accent", visual_profile.get("accent", Color(1.0, 0.78, 0.28)))
-    var bright := armor_base_color.lightened(0.32)
-    var dark := armor_base_color.darkened(0.42)
     var stage_state: Dictionary = ArmorSystem.get_state()
     var stage_id := str(stage_state.get("current_stage", "bronze"))
-    var stage_metallic := clampf(float(visual_profile.get("metallic", 0.82)) + (0.08 if stage_id in ["gold", "god_cloth", "god_armor"] else 0.0), 0.0, 1.0)
-    var stage_glow := float(visual_profile.get("glow", 0.1)) + (0.12 if stage_id in ["god_cloth", "god_armor"] else 0.0)
+    var stage_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(stage_id, bool(stage_state.get("awakened", false)))
+    var stage_metal_color: Color = stage_palette.get("metal", armor_base_color)
+    var stage_trim_color: Color = stage_palette.get("trim", accent)
+    var bright: Color = stage_metal_color.lightened(0.22).lerp(armor_base_color, 0.16)
+    var dark: Color = stage_metal_color.darkened(0.38)
+    var stage_metallic := clampf(float(stage_palette.get("metallic", 0.8)) + float(visual_profile.get("metallic", 0.82)) * 0.06, 0.0, 1.0)
+    var stage_glow := minf(0.6, float(visual_profile.get("glow", 0.1)) + float(stage_palette.get("glow", 0.0)))
     visual_armor_signature = _get_visual_armor_signature()
 
     if is_instance_valid(body_mat):
@@ -382,6 +385,12 @@ func _build_armor_visuals() -> void:
     var waist_plate := BoxMesh.new()
     waist_plate.size = Vector3(0.72, 0.22, 0.16)
     _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic)
+    var skirt_plate := PrismMesh.new()
+    skirt_plate.size = Vector3(0.28, 0.42, 0.16)
+    for skirt_side in [-1.0, 1.0]:
+        for skirt_offset in [-1.0, 1.0]:
+            var skirt_piece := _add_armor_piece(skirt_plate, Vector3(skirt_side * 0.22, 0.48, skirt_offset * 0.16), Vector3(1.0, 1.0, 0.72), dark if skirt_offset > 0.0 else bright, stage_metallic)
+            skirt_piece.rotation.z = -skirt_side * 0.12
     var shin_mesh := BoxMesh.new()
     shin_mesh.size = Vector3(0.24, 0.48, 0.18)
     _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
@@ -414,6 +423,14 @@ func _build_armor_visuals() -> void:
     var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic)
     if crest_id in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
         crest.rotation.x = -0.18
+    var helmet_brow := BoxMesh.new()
+    helmet_brow.size = Vector3(0.54, 0.11, 0.12)
+    _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic)
+    var helmet_guard := PrismMesh.new()
+    helmet_guard.size = Vector3(0.16, 0.34, 0.20)
+    for helmet_side in [-1.0, 1.0]:
+        var helmet_guard_piece := _add_armor_piece(helmet_guard, Vector3(helmet_side * 0.24, 1.84, -0.04), Vector3.ONE, bright, stage_metallic)
+        helmet_guard_piece.rotation.z = -helmet_side * 0.12
     var emblem_mesh := SphereMesh.new()
     emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
