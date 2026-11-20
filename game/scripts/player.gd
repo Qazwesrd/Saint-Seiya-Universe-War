@@ -20,6 +20,9 @@ var invulnerable := 0.0
 var knockback_velocity := Vector3.ZERO
 var locked_target: Node3D
 var pivot: Node3D
+var camera_arm: SpringArm3D
+var camera_node: Camera3D
+var camera_pitch := -9.0
 var body_mat: StandardMaterial3D
 var is_mounted := false
 var tenkishi_flight_active := false
@@ -85,13 +88,32 @@ func _ready() -> void:
     pivot = Node3D.new()
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     game.add_child(pivot)
-    var arm := SpringArm3D.new()
-    arm.spring_length = 7.5
-    pivot.add_child(arm)
-    var cam := Camera3D.new()
-    cam.rotation_degrees.x = -9
-    arm.add_child(cam)
-    cam.current = true
+    camera_arm = SpringArm3D.new()
+    pivot.add_child(camera_arm)
+    camera_node = Camera3D.new()
+    camera_node.rotation_degrees.x = camera_pitch
+    camera_arm.add_child(camera_node)
+    camera_node.current = true
+    SettingsManager.settings_changed.connect(_on_camera_setting_changed)
+    _apply_camera_settings()
+func _on_camera_setting_changed(section: String, _key: String, _value: Variant) -> void:
+    if section == "camera":
+        _apply_camera_settings()
+
+func _apply_camera_settings() -> void:
+    if is_instance_valid(camera_arm):
+        camera_arm.spring_length = clampf(float(SettingsManager.get_value("camera", "distance", 7.5)), 3.0, 14.0)
+
+func rotate_camera(screen_delta: Vector2) -> void:
+    if not is_instance_valid(pivot) or not is_instance_valid(camera_node):
+        return
+    var sensitivity := clampf(float(SettingsManager.get_value("camera", "sensitivity", 1.0)), 0.2, 3.0)
+    var invert_y := bool(SettingsManager.get_value("camera", "invert_y", false))
+    pivot.rotation.y -= screen_delta.x * 0.005 * sensitivity
+    var vertical_sign := -1.0 if invert_y else 1.0
+    camera_pitch = clampf(camera_pitch - screen_delta.y * 0.10 * sensitivity * vertical_sign, -35.0, 18.0)
+    camera_node.rotation_degrees.x = camera_pitch
+
 func set_move_input(value: Vector2) -> void:
     move_input = value.limit_length(1.0)
 
