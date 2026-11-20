@@ -341,6 +341,14 @@ func _run_tests() -> void:
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	var visual_catalog_script = preload("res://scripts/character_visual_catalog.gd")
+	var visual_audit: Dictionary = visual_catalog_script.validate_catalog()
+	assert(bool(visual_audit.get("valid", false)), "all 32 classes have validated visual identity profiles: " + str(visual_audit.get("errors", [])))
+	assert(int(visual_audit.get("class_count", 0)) == 32, "visual catalog covers all 32 playable classes")
+	for visual_class in SkillSystem.get_class_skill_catalog():
+		var visual_class_id := str(visual_class.get("id", ""))
+		var visual_profile: Dictionary = visual_catalog_script.get_profile(visual_class_id)
+		assert(visual_profile.has("accent") and visual_profile.has("crest") and visual_profile.has("ornament"), visual_class_id + " has complete visual identity")
 	var profiled_ability_count := 0
 	var field_action_count := 0
 	var trap_action_count := 0
