@@ -44,9 +44,10 @@ func _process(delta: float) -> void:
 	if remaining_lifetime <= 0.0:
 		queue_free()
 		return
-	var visual := get_child(1) as Node3D if get_child_count() > 1 else null
-	if is_instance_valid(visual):
-		visual.rotate_y(delta * 1.8)
+	if get_child_count() > 1:
+		var visual := get_child(1) as Node3D
+		if is_instance_valid(visual):
+			visual.rotate_y(delta * 1.8)
 
 func _on_body_entered(body: Node3D) -> void:
 	if not body.is_in_group("player") or item_id.is_empty():
