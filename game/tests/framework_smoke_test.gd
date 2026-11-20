@@ -85,6 +85,10 @@ func _run_tests() -> void:
 	assert(bool(broken_armor_wear.get("cracked", false)), "critically damaged armor is marked cracked")
 	assert(float(broken_armor_wear.get("metallic_multiplier", 1.1)) < float(pristine_armor_wear.get("metallic_multiplier", 0.0)), "damaged armor loses metallic finish")
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
+	assert(SkillAnimationCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback animation profiles")
+	assert(SkillVisualCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback visual profiles")
+	assert(SkillAnimationCatalog.get_profile("pegasus", {}).is_empty(), "empty abilities cannot produce animation profiles")
+	assert(SkillVisualCatalog.get_profile("pegasus", {}).is_empty(), "empty abilities cannot produce visual profiles")
 	var art_coverage_report: Dictionary = ArtAssetAudit.build_report()
 	assert(int(art_coverage_report.get("class_count", 0)) == 32, "art asset audit scans all 32 playable classes")
 	for coverage_key in ["model_coverage", "portrait_coverage", "animation_coverage", "armor_model_coverage", "armor_icon_coverage", "armor_manifest_coverage", "enemy_model_coverage", "enemy_portrait_coverage", "chapter_scene_coverage", "skill_effect_coverage", "authored_asset_coverage"]:

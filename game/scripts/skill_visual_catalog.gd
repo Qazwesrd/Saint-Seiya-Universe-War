@@ -17,6 +17,8 @@ const ELEMENTS := {
 }
 
 static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
+    if not SkillSystem.has_class(class_id) or ability.is_empty() or str(ability.get("id", "")).is_empty():
+        return {}
     var text_value := "%s %s %s %s" % [
         str(ability.get("name", "")),
         str(ability.get("description", "")),
