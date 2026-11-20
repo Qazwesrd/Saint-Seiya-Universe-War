@@ -343,6 +343,14 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
         flight_down_button.visible = is_tenkishi
     hp_bar.max_value = hp_max
     hp_bar.value = hp
+    var health_ratio := clampf(hp / maxf(1.0, hp_max), 0.0, 1.0)
+    if health_ratio <= 0.25:
+        var warning_pulse := 0.78 + (sin(float(Time.get_ticks_msec()) * 0.012) * 0.5 + 0.5) * 0.32
+        hp_bar.modulate = Color(1.0, warning_pulse, warning_pulse)
+    elif health_ratio <= 0.5:
+        hp_bar.modulate = Color(1.0, 0.86, 0.72)
+    else:
+        hp_bar.modulate = Color.WHITE
     cosmos_bar.max_value = cosmos_max
     cosmos_bar.value = cosmos
     if is_instance_valid(skill_button):
