@@ -56,7 +56,8 @@ jobs:
           ls -la /root/.config/godot/
           cat /root/.config/godot/editor_settings-4.4.tres
           ls -la /root/.local/share/godot/export_templates/4.4.1.stable/
-          ls -la /root/debug.keystore /usr/lib/android-sdk /usr/lib/jvm/java-17-openjdk-amd64/bin/java\n          find /usr/lib/android-sdk/ndk /usr/lib/android-sdk/cmake -maxdepth 2 -type d
+          ls -la /root/debug.keystore /usr/lib/android-sdk /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+          find /usr/lib/android-sdk/ndk /usr/lib/android-sdk/cmake -maxdepth 2 -type d
 
       - name: Export Android ARM64 debug APK
         env:
