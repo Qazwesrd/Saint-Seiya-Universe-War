@@ -30,6 +30,9 @@ var visual_pose_tween: Tween
 var upper_arm_nodes: Array[MeshInstance3D] = []
 var forearm_nodes: Array[MeshInstance3D] = []
 var leg_nodes: Array[MeshInstance3D] = []
+var armor_wing_nodes: Array[MeshInstance3D] = []
+var armor_wing_base_angles: Array[float] = []
+var armor_aura_node: MeshInstance3D
 var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
@@ -194,6 +197,18 @@ func _animate_visual_motion(delta: float) -> void:
     if tenkishi_flight_active:
         bob += sin(clock * 0.72) * 0.045
     visual_root.position.y = lerpf(visual_root.position.y, bob, minf(1.0, delta * 9.0))
+    var wing_motion := sin(clock * (1.35 if tenkishi_flight_active else 0.82)) * (0.16 + movement_ratio * 0.18)
+    if tenkishi_flight_active:
+        wing_motion *= 1.65
+    for wing_index in range(armor_wing_nodes.size()):
+        var wing_side := -1.0 if wing_index % 2 == 0 else 1.0
+        var wing_base := armor_wing_base_angles[wing_index] if wing_index < armor_wing_base_angles.size() else 0.0
+        var wing_target := wing_base + wing_side * wing_motion
+        armor_wing_nodes[wing_index].rotation.z = lerp_angle(armor_wing_nodes[wing_index].rotation.z, wing_target, minf(1.0, delta * 5.5))
+    if is_instance_valid(armor_aura_node):
+        armor_aura_node.rotation.y += delta * (0.28 + movement_ratio * 0.42)
+        var aura_pulse := 1.0 + sin(clock * 1.7) * 0.035
+        armor_aura_node.scale = Vector3.ONE * aura_pulse
     var target_roll := -move_input.x * 0.10
     var target_pitch := move_input.y * 0.055
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
@@ -295,6 +310,9 @@ func _build_armor_visuals() -> void:
         return
     if is_instance_valid(armor_root):
         armor_root.queue_free()
+    armor_wing_nodes.clear()
+    armor_wing_base_angles.clear()
+    armor_aura_node = null
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
     visual_root.add_child(armor_root)
@@ -494,11 +512,14 @@ func _build_armor_visuals() -> void:
                 var feather := _add_armor_piece(feather_mesh, feather_position, feather_scale, bright if feather_index == 0 else accent, stage_metallic)
                 feather.rotation.z = -side * (0.38 + float(feather_index) * 0.18)
                 feather.rotation.x = -0.22
+                armor_wing_nodes.append(feather)
+                armor_wing_base_angles.append(feather.rotation.z)
     if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings"]:
         var aura_ring := TorusMesh.new()
         aura_ring.inner_radius = 0.68
         aura_ring.outer_radius = 0.73
         var aura := _add_armor_piece(aura_ring, Vector3(0.0, 1.55, 0.34), Vector3.ONE, accent, 0.92)
+        armor_aura_node = aura
         aura.rotation.x = deg_to_rad(72.0)
     if stage_glow > 0.0:
         var glow_mesh := SphereMesh.new()
