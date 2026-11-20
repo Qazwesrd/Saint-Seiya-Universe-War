@@ -134,8 +134,12 @@ func interact_with_guide() -> void:
         return
     var dialogue: Dictionary = QuestManager.interact_with_guide()
     var campaign_mission: Dictionary = CampaignManager.get_active_mission()
-    if str(campaign_mission.get("id", "")) == "gw_001":
-        CampaignManager.add_objective_progress("talk_guide", 1)
+    if not campaign_mission.is_empty() and campaign_mission.get("encounter", {}).is_empty():
+        var campaign_state := CampaignManager.get_mission_progress(str(campaign_mission.get("id", "")))
+        for objective in campaign_state.get("objectives", []):
+            if not bool(objective.get("completed", false)):
+                CampaignManager.add_objective_progress(str(objective.get("id", "")), 1)
+                break
         if CampaignManager.can_complete_active_mission():
             var campaign_result: Dictionary = CampaignManager.complete_active_mission()
             if bool(campaign_result.get("success", false)):
