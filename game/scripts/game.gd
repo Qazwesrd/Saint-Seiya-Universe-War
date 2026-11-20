@@ -713,6 +713,15 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
         _apply_divine_signature(class_id, ability, max_distance)
 
+func _get_ability_actor_damage(class_id: String, damage_ratio: float) -> float:
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
+    var cosmos_scale := 1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))
+    var temporary_bonus := float(player.get("temporary_damage_bonus")) if is_instance_valid(player) else 0.0
+    var base_damage := 10.0 + attack_power * float(class_data.get("damage", 1.5)) * level_scale
+    return maxf(1.0, base_damage * damage_ratio * SkillSystem.get_skill_damage_multiplier(class_id) * cosmos_scale * (1.0 + temporary_bonus))
+
 func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
     if not is_instance_valid(player):
         return
@@ -731,9 +740,7 @@ func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
     summon.set("owner_player", player)
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var summon_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
-    var summon_power := float(RPGState.get_combat_stats().get("attack", 14.0))
-    summon_power *= float(class_data.get("damage", 1.5)) * float(summon_profile.get("summon_damage_ratio", 0.72))
-    summon_power *= SkillSystem.get_skill_damage_multiplier(class_id)
+    var summon_power := _get_ability_actor_damage(class_id, float(summon_profile.get("summon_damage_ratio", 0.72)))
     summon.set("summon_damage", maxf(4.0, summon_power))
     summon.set("life_time", float(summon_profile.get("summon_lifetime", 9.0)))
     summon.set("summon_color", class_data.get("color", Color(0.35, 0.8, 1.0)))
@@ -751,13 +758,12 @@ func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) ->
     field.set_script(SkillFieldScript)
     var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
-    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     field.set("game", self)
     field.set("owner_player", player)
     field.set("radius", float(profile.get("field_radius", 4.0)))
     field.set("lifetime", float(profile.get("field_lifetime", 5.0)))
     field.set("tick_interval", float(profile.get("field_tick_interval", 0.8)))
-    field.set("damage", maxf(3.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("field_damage_ratio", 0.3)) * SkillSystem.get_skill_damage_multiplier(class_id)))
+    field.set("damage", _get_ability_actor_damage(class_id, float(profile.get("field_damage_ratio", 0.3))))
     field.set("mode", "trap" if is_trap else "field")
     field.set("field_color", class_data.get("color", Color(0.35, 0.75, 1.0)))
     var ability_type := str(ability.get("type", ""))
@@ -778,12 +784,20 @@ func _spawn_skill_projectile(class_id: String, ability: Dictionary, homing: bool
     projectile.set_script(SkillProjectileScript)
     var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
-    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     projectile.set("game", self)
     projectile.set("owner_player", player)
     projectile.set("speed", float(profile.get("projectile_speed", 12.0)))
     projectile.set("homing_enabled", homing)
-    projectile.set("damage", maxf(4.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("projectile_damage_ratio", 1.15)) * SkillSystem.get_skill_damage_multiplier(class_id)))
+    var ability_type := str(ability.get("type", ""))
+    if "火" in ability_type or "灼烧" in ability_type or "烈焰" in str(ability.get("name", "")):
+        projectile.set("status", "burn")
+        projectile.set("status_duration", 3.0)
+        projectile.set("status_power", maxf(1.5, float(RPGState.get_combat_stats().get("attack", 14.0)) * 0.08))
+    elif "冻结" in ability_type or "冰" in ability_type:
+        projectile.set("status", "freeze")
+        projectile.set("status_duration", 1.2)
+        projectile.set("status_power", 0.0)
+    projectile.set("damage", _get_ability_actor_damage(class_id, float(profile.get("projectile_damage_ratio", 1.15))))
     projectile.set("projectile_color", class_data.get("color", Color(0.45, 0.8, 1.0)))
     projectile.global_position = player.global_position + (-player.global_transform.basis.z * 1.2) + Vector3.UP * 1.2
     add_child(projectile)
