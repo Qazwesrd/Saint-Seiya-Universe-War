@@ -50,7 +50,100 @@ func apply_theme(chapter_id: String) -> bool:
                 ring_material.emission = theme["ring"] * 0.45
                 ring.material_override = ring_material
     _rebuild_decorations(theme, chapter_id)
+    _build_chapter_landmarks(theme, chapter_id)
     return true
+
+func _build_chapter_landmarks(theme: Dictionary, chapter_id: String) -> void:
+    var primary: Color = theme["ring"]
+    var secondary: Color = theme["floor"].lightened(0.5)
+    match chapter_id:
+        "galaxy_wars":
+            var arena_ring := TorusMesh.new()
+            arena_ring.inner_radius = 7.4
+            arena_ring.outer_radius = 7.62
+            _add_landmark(arena_ring, Vector3(0.0, 0.08, 0.0), Vector3.ONE, primary, 0.62)
+            for index in range(8):
+                var angle := TAU * float(index) / 8.0
+                var stand := BoxMesh.new()
+                stand.size = Vector3(2.8, 0.55, 1.1)
+                var node := _add_landmark(stand, Vector3(cos(angle) * 10.5, 0.26, sin(angle) * 10.5), Vector3.ONE, secondary, 0.28)
+                node.rotation.y = -angle
+        "sanctuary_twelve_houses":
+            for index in range(12):
+                var angle := TAU * float(index) / 12.0
+                var arch := TorusMesh.new()
+                arch.inner_radius = 1.15
+                arch.outer_radius = 1.28
+                var node := _add_landmark(arch, Vector3(cos(angle) * 9.5, 2.2, sin(angle) * 9.5), Vector3(1.0, 1.35, 0.55), primary, 0.5)
+                node.rotation.y = -angle
+        "asgard":
+            for index in range(5):
+                var angle := TAU * float(index) / 5.0
+                var spire := PrismMesh.new()
+                spire.size = Vector3(1.15, 4.0 + float(index % 2), 1.0)
+                var node := _add_landmark(spire, Vector3(cos(angle) * 10.0, 2.1, sin(angle) * 10.0), Vector3.ONE, secondary, 0.72)
+                node.rotation.y = angle
+            for ring_index in range(2):
+                var aurora := TorusMesh.new()
+                aurora.inner_radius = 6.5 + float(ring_index) * 1.4
+                aurora.outer_radius = aurora.inner_radius + 0.035
+                var node := _add_landmark(aurora, Vector3(0.0, 5.0 + float(ring_index), 0.0), Vector3.ONE, primary, 0.35)
+                node.rotation.x = deg_to_rad(68.0 + float(ring_index) * 18.0)
+        "poseidon":
+            for index in range(7):
+                var angle := TAU * float(index) / 7.0
+                var pillar := CylinderMesh.new()
+                pillar.top_radius = 0.32
+                pillar.bottom_radius = 0.5
+                pillar.height = 4.2
+                _add_landmark(pillar, Vector3(cos(angle) * 8.8, 2.1, sin(angle) * 8.8), Vector3.ONE, secondary, 0.82)
+            for ring_index in range(3):
+                var tide := TorusMesh.new()
+                tide.inner_radius = 5.0 + float(ring_index) * 1.2
+                tide.outer_radius = tide.inner_radius + 0.045
+                var node := _add_landmark(tide, Vector3.ZERO, Vector3.ONE, primary, 0.68)
+                node.rotation.x = deg_to_rad(76.0)
+        "hades":
+            for index in range(9):
+                var angle := TAU * float(index) / 9.0
+                var grave := BoxMesh.new()
+                grave.size = Vector3(0.72, 1.8 + float(index % 3) * 0.35, 0.35)
+                var node := _add_landmark(grave, Vector3(cos(angle) * 9.0, 0.9, sin(angle) * 9.0), Vector3.ONE, secondary.darkened(0.35), 0.34)
+                node.rotation.y = -angle
+            var underworld_gate := TorusMesh.new()
+            underworld_gate.inner_radius = 2.6
+            underworld_gate.outer_radius = 2.82
+            var gate := _add_landmark(underworld_gate, Vector3(0.0, 2.6, -11.0), Vector3(1.0, 1.35, 0.45), primary, 0.58)
+            gate.rotation.y = PI
+        "heaven":
+            for index in range(3):
+                var gate_mesh := TorusMesh.new()
+                gate_mesh.inner_radius = 2.8 + float(index) * 1.25
+                gate_mesh.outer_radius = gate_mesh.inner_radius + 0.16
+                var gate := _add_landmark(gate_mesh, Vector3(0.0, 3.2 + float(index) * 0.35, -9.0 - float(index) * 0.7), Vector3(1.0, 1.35, 0.55), primary, 0.88)
+                gate.rotation.y = PI
+        "original_final":
+            for index in range(6):
+                var orbit := TorusMesh.new()
+                orbit.inner_radius = 4.0 + float(index) * 1.05
+                orbit.outer_radius = orbit.inner_radius + 0.025
+                var node := _add_landmark(orbit, Vector3.ZERO, Vector3.ONE, primary, 0.5)
+                node.rotation = Vector3(deg_to_rad(24.0 + index * 17.0), deg_to_rad(index * 31.0), deg_to_rad(index * 13.0))
+
+func _add_landmark(mesh: Mesh, at: Vector3, scale_value: Vector3, color_value: Color, metallic_value: float) -> MeshInstance3D:
+    var instance := MeshInstance3D.new()
+    instance.mesh = mesh
+    instance.position = at
+    instance.scale = scale_value
+    var material := StandardMaterial3D.new()
+    material.albedo_color = color_value
+    material.metallic = metallic_value
+    material.roughness = 0.34
+    material.emission_enabled = true
+    material.emission = color_value * 0.08
+    instance.material_override = material
+    decor_root.add_child(instance)
+    return instance
 
 func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
     if is_instance_valid(decor_root):
