@@ -119,12 +119,15 @@ func accept_mission(mission_id: String) -> bool:
     var chapter := _chapter_for_mission(mission_id)
     if chapter.is_empty() or not str(chapter["id"]) in progress["unlocked_chapters"]:
         return false
+    var previous_progress: Dictionary = progress.duplicate(true)
     progress["active_mission"] = mission_id
     var counts: Dictionary = progress["objective_counts"]
     if not counts.has(mission_id):
         counts[mission_id] = {}
     progress["objective_counts"] = counts
-    _save()
+    if not _save():
+        progress = previous_progress
+        return false
     return true
 
 func add_objective_progress(objective_id: String, amount: int = 1) -> bool:
@@ -140,6 +143,7 @@ func add_objective_progress(objective_id: String, amount: int = 1) -> bool:
             break
     if not valid:
         return false
+    var previous_progress: Dictionary = progress.duplicate(true)
     var counts: Dictionary = progress["objective_counts"]
     var mission_counts: Dictionary = counts.get(str(mission["id"]), {})
     var target := 1
@@ -150,7 +154,9 @@ func add_objective_progress(objective_id: String, amount: int = 1) -> bool:
     mission_counts[objective_id] = mini(target, int(mission_counts.get(objective_id, 0)) + amount)
     counts[str(mission["id"])] = mission_counts
     progress["objective_counts"] = counts
-    _save()
+    if not _save():
+        progress = previous_progress
+        return false
     return true
 
 func can_complete_active_mission() -> bool:
@@ -247,8 +253,13 @@ func get_chapter_overview() -> Array:
         })
     return result
 
-func _save() -> void:
+func _save() -> bool:
+    var previous_campaign: Dictionary = RPGState.profile.get("campaign_progress", {}).duplicate(true)
     RPGState.profile["campaign_progress"] = progress.duplicate(true)
     if not RPGState.save_slot(RPGState.active_slot):
+        RPGState.profile["campaign_progress"] = previous_campaign
         SystemHealthManager.report_error("save", "剧情进度保存失败", "slot=%d" % RPGState.active_slot)
+        return false
+    RPGState.state_changed.emit()
     campaign_changed.emit()
+    return true
