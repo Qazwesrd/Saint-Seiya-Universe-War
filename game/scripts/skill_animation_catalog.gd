@@ -5,14 +5,14 @@ class_name SkillAnimationCatalog
 
 const CLASS_STYLE := {
     "pegasus": "拳击", "dragon": "盾拳", "cygnus": "冰拳", "andromeda": "锁链",
-    "phoenix": "火焰拳", "sea_dragon": "次元掌", "lyra": "乐器", "tenkishi": "空战",
-    "apollo": "神圣", "athena": "神圣", "hades": "暗影", "poseidon": "海潮",
-    "zeus": "雷霆", "odin": "寒霜", "artemis": "月弓", "ares": "战斧",
-    "hermes": "迅捷", "hephaestus": "锻造", "hestia": "圣焰", "hera": "神圣",
-    "demeter": "自然", "eris": "混沌", "hypnos": "梦境", "thanatos": "死亡",
-    "thanatos_divine": "死亡", "hypnos_divine": "梦境", "chronos": "时空",
-    "saturn": "时空", "tartarus": "深渊", "nyx": "暗夜", "eos": "黎明",
-    "helios": "日耀"
+    "phoenix": "火焰拳", "sea_dragon": "次元掌", "tenmou": "重装拳", "lyra": "乐器",
+    "sea_swallow": "疾风", "tenkishi": "空战",
+    "apollo": "日耀", "athena": "神圣", "hades": "暗影", "poseidon": "海潮",
+    "zeus": "雷霆", "artemis": "月弓", "hypnos": "梦境", "thanatos": "死亡",
+    "odin": "寒霜", "ares": "战斧", "eris": "混沌", "abel": "太阳",
+    "lucifer": "堕天", "saturn": "时空", "pallas": "神圣", "chronos": "时空",
+    "hera": "神圣", "demeter": "自然", "hestia": "圣焰", "hermes": "迅捷",
+    "hephaestus": "锻造", "aphrodite": "玫瑰"
 }
 
 static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
