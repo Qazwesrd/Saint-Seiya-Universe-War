@@ -140,6 +140,7 @@ func _get_visual_armor_signature() -> String:
     var armor_state: Dictionary = RPGState.profile.get("armor_state", {})
     return "%s|%s|%s|%s" % [
         str(RPGState.profile.get("class_id", "pegasus")),
+        str(RPGState.profile.get("equipped_relic", "")),
         str(armor_state.get("current_stage", "bronze")),
         str(armor_state.get("levels", {})),
         str(armor_state.get("durability", {}))
@@ -176,9 +177,11 @@ func _build_armor_visuals() -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var visual_profile := CharacterVisualCatalog.get_profile(class_id)
+    var relic_visual_profile := CharacterVisualCatalog.get_equipment_profile(EquipmentDatabase.get_equipped_relic())
+    var ornament_id := str(relic_visual_profile.get("ornament", visual_profile.get("ornament", "")))
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
     visual_class_id = class_id
-    var accent: Color = visual_profile.get("accent", Color(1.0, 0.78, 0.28))
+    var accent: Color = relic_visual_profile.get("accent", visual_profile.get("accent", Color(1.0, 0.78, 0.28)))
     var bright := armor_base_color.lightened(0.32)
     var dark := armor_base_color.darkened(0.42)
     var stage_state: Dictionary = ArmorSystem.get_state()
@@ -283,7 +286,7 @@ func _build_armor_visuals() -> void:
                 var feather := _add_armor_piece(feather_mesh, feather_position, feather_scale, bright if feather_index == 0 else accent, stage_metallic)
                 feather.rotation.z = -side * (0.38 + float(feather_index) * 0.18)
                 feather.rotation.x = -0.22
-    if str(visual_profile.get("ornament", "")) in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings"]:
+    if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings"]:
         var aura_ring := TorusMesh.new()
         aura_ring.inner_radius = 0.68
         aura_ring.outer_radius = 0.73
