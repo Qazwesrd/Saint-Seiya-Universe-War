@@ -851,6 +851,7 @@ func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) ->
     field.set("damage", _get_ability_actor_damage(class_id, float(profile.get("field_damage_ratio", 0.3))))
     field.set("mode", "trap" if is_trap else "field")
     field.set("field_color", visual_profile.get("color", class_data.get("color", Color(0.35, 0.75, 1.0))))
+    field.set("field_shape", visual_profile.get("shape", "ring"))
     var ability_type := str(ability.get("type", ""))
     field.set("status", "freeze" if "冰" in ability_type or "冻结" in ability_type else ("burn" if "灼烧" in ability_type or "火" in ability_type else "slow"))
     field.set("status_duration", 1.8 if is_trap else 1.35)
@@ -890,6 +891,8 @@ func _spawn_skill_projectile(class_id: String, ability: Dictionary, homing: bool
         projectile.set("status_power", 0.14)
     projectile.set("damage", _get_ability_actor_damage(class_id, float(profile.get("projectile_damage_ratio", 1.15))))
     projectile.set("projectile_color", visual_profile.get("color", class_data.get("color", Color(0.45, 0.8, 1.0))))
+    projectile.set("projectile_shape", visual_profile.get("shape", "star"))
+    projectile.set("impact_scale", visual_profile.get("impact_scale", 1.0))
     projectile.global_position = player.global_position + (-player.global_transform.basis.z * 1.2) + Vector3.UP * 1.2
     add_child(projectile)
     projectile.look_at(projectile.global_position - player.global_transform.basis.z, Vector3.UP)
