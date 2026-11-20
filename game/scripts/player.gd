@@ -195,9 +195,13 @@ func _animate_visual_motion(delta: float) -> void:
     var planar_speed := Vector2(velocity.x, velocity.z).length()
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.012
-    var bob := sin(clock) * 0.035 * movement_ratio
+    var idle_breath := sin(clock * 0.72) * 0.012
+    var bob := idle_breath + sin(clock) * 0.035 * movement_ratio
     if tenkishi_flight_active:
         bob += sin(clock * 0.72) * 0.045
+    if is_instance_valid(body_mat):
+        var breath_glow := 0.92 + (sin(clock * 0.72) * 0.5 + 0.5) * 0.12
+        body_mat.emission = armor_base_color * 0.035 * breath_glow
     visual_root.position.y = lerpf(visual_root.position.y, bob, minf(1.0, delta * 9.0))
     var wing_motion := sin(clock * (1.35 if tenkishi_flight_active else 0.82)) * (0.16 + movement_ratio * 0.18)
     if tenkishi_flight_active:
