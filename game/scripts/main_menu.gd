@@ -11,6 +11,7 @@ var delete_dialog: ConfirmationDialog
 var character_creation_panel: PanelContainer
 var character_name_input: LineEdit
 var character_class_picker: OptionButton
+var creation_notice: Label
 var pending_creation_slot := 0
 
 func _ready() -> void:
@@ -232,6 +233,10 @@ func _build_character_creation_panel() -> PanelContainer:
 		character_class_picker.add_item(str(class_data.get("name", class_id)))
 		character_class_picker.set_item_metadata(character_class_picker.item_count - 1, str(class_id))
 	outer.add_child(character_class_picker)
+	creation_notice = Label.new()
+	creation_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	creation_notice.add_theme_color_override("font_color", Color(1.0, 0.72, 0.42))
+	outer.add_child(creation_notice)
 	var actions := HBoxContainer.new()
 	var confirm := Button.new()
 	confirm.text = "创建角色并开始"
@@ -251,6 +256,7 @@ func _build_character_creation_panel() -> PanelContainer:
 func _open_character_creation(slot: int) -> void:
 	pending_creation_slot = slot
 	character_name_input.text = ""
+	creation_notice.text = ""
 	if character_class_picker.item_count > 0:
 		character_class_picker.select(0)
 	slots_panel.visible = false
@@ -265,20 +271,20 @@ func _cancel_character_creation() -> void:
 func _confirm_character_creation() -> void:
 	var character_name := character_name_input.text.strip_edges()
 	if character_name.is_empty() or character_name.length() > 16:
-		status_label.text = "角色名称必须为1至16个字符。"
+		creation_notice.text = "角色名称必须为1至16个字符。"
 		return
 	if pending_creation_slot < 1 or pending_creation_slot > 3:
-		status_label.text = "存档槽选择无效，请重新选择。"
+		creation_notice.text = "存档槽选择无效，请返回重新选择。"
 		return
 	var selected_class := str(character_class_picker.get_item_metadata(character_class_picker.selected))
 	if not RPGState.create_new_slot(pending_creation_slot):
-		status_label.text = "创建失败：存档槽可能已被占用。"
+		slot_notice.text = "创建失败：存档槽可能已被占用。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
 		return
 	if not RPGState.select_class(selected_class):
-		status_label.text = "初始职业设置失败；已保留新存档，请返回重新读取。"
+		slot_notice.text = "初始职业设置失败；已保留新存档，请重新读取后再试。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
@@ -288,7 +294,7 @@ func _confirm_character_creation() -> void:
 	if not RPGState.save_slot(pending_creation_slot):
 		RPGState.profile["character_name"] = previous_name
 		RPGState.save_slot(pending_creation_slot)
-		status_label.text = "角色名称保存失败；存档已保留，请检查本地存储空间。"
+		slot_notice.text = "角色名称保存失败；存档已保留，请检查本地存储空间。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
