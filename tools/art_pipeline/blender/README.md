@@ -1,25 +1,13 @@
-# Blender 人物与圣衣资产交付规范
+# Blender 原型生成器
 
-目标格式：Blender 4.x 源文件（.blend）和 Godot 4.4.1 可导入的 glTF 2.0 GLB。
+需要安装 Blender 4.x（包含 glTF 2.0 导出插件）。在仓库根目录执行：
 
-## 人物模型
-- 使用米制单位，角色高度约 1.8m；骨架根骨骼为 Root。
-- GLB 必须包含真实网格、Armature、Skin 和可用权重。
-- 动作库必须提供 idle、walk、run、jump、fall、land、basic_attack_1/2/3、skill_cast、hit_light、hit_heavy、dodge、block、victory、defeat。
-- 每个职业必须具有可辨识的轮廓、头饰、身体比例或专属结构差异；只换颜色不算独立职业模型。
-- 提供 LOD0/1/2，并在 Android 目标设备检查动画变形、穿模和帧率。
+```bash
+blender --background --python tools/art_pipeline/blender/generate_base_rig.py
+```
 
-## 圣衣模型
-- 拆分头盔、胸甲、左右肩甲、左右护臂、腰甲、左右腿甲。
-- 部件绑定统一角色骨架，保留独立材质槽、图标和 LOD。
-- 未核实的原作装备名称或造型保持待核实，不将原创补充宣称为官方设定。
+脚本生成两个可导入 Godot 的 GLB：
+- `game/assets/_source_templates/humanoid_base/humanoid_base.glb`：带骨架、蒙皮和16类动作轨道的基础人形原型。
+- `game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb`：绑定同一骨架的可拆分圣衣部件原型。
 
-## 技能特效
-- 每类元素交付 Godot 可复用特效场景、命中特效及低/中/高画质配置。
-- 特效只负责表现；伤害、碰撞和控制仍由游戏逻辑负责。
-- 移动端建议每个效果最多 96 粒子、3 层透明叠加、2.5 秒生命周期，复杂技能需实机性能验证。
-
-## 验收规则
-- manifest、README、空文件和占位模型不算正式资产。
-- 只有真实模型/动画/肖像或图标/特效文件存在且通过校验后，才能设置 delivery_status=complete 和 authored_asset=true。
-- 来源和授权未核实的素材不得进入正式发布包。
+该生成器用程序化几何搭建绑定验证原型，主要用于验证骨骼命名、蒙皮、动作轨道、GLB导出和Godot导入链路。它不是32个职业的最终角色美术，也不是最终圣衣造型；正式美术仍需逐职业设计轮廓、精细拓扑、UV/PBR贴图、面部、发型、饰件、LOD和动作修型。输出文件默认不自动覆盖各职业正式资源清单。
