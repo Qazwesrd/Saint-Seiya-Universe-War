@@ -45,6 +45,22 @@ func _run_tests() -> void:
 	dream_test_enemy.divine_mark_timer = 0.0
 	assert(is_equal_approx(dream_test_enemy.get_divine_mark_attack_rate_multiplier(), 1.0), "expired dream mark no longer slows attack cadence")
 	dream_test_enemy.free()
+	var time_test_enemy = preload("res://scripts/enemy.gd").new()
+	time_test_enemy.divine_mark = "time"
+	time_test_enemy.divine_mark_timer = 4.0
+	assert(is_equal_approx(time_test_enemy.get_divine_mark_attack_rate_multiplier(), 0.82), "Chronos time mark slows normal enemy attack cadence by 18%")
+	time_test_enemy.is_boss = true
+	assert(is_equal_approx(time_test_enemy.get_divine_mark_attack_rate_multiplier(), 0.92), "time mark has reduced attack cadence effect against bosses")
+	time_test_enemy.divine_mark_timer = 0.0
+	assert(is_equal_approx(time_test_enemy.get_divine_mark_attack_rate_multiplier(), 1.0), "expired time mark restores attack cadence")
+	time_test_enemy.free()
+	var forge_test_enemy = preload("res://scripts/enemy.gd").new()
+	forge_test_enemy.divine_mark = "forge"
+	forge_test_enemy.divine_mark_timer = 3.0
+	assert(is_equal_approx(forge_test_enemy.get_divine_mark_burn_multiplier(), 1.15), "Hephaestus forge mark strengthens burn damage")
+	forge_test_enemy.is_boss = true
+	assert(is_equal_approx(forge_test_enemy.get_divine_mark_burn_multiplier(), 1.08), "forge burn amplification is reduced against bosses")
+	forge_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(str(LocalizationManager.text_for("ui.attack")) != "", "localization service")
 	assert(AudioManager != null, "audio service")
