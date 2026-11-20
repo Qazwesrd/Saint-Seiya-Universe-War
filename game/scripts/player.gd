@@ -455,12 +455,13 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
     return piece
 
 func _build_armor_wear_cracks() -> void:
+    # Crack anchors follow the visible front-facing plates for each durability part.
     var crack_layout := {
-        "head": [Vector3(-0.12, 2.00, -0.285), Vector3(0.12, 1.91, -0.285)],
-        "chest": [Vector3(-0.20, 1.40, -0.445), Vector3(0.18, 1.20, -0.445)],
-        "arms": [Vector3(-0.55, 1.08, -0.205), Vector3(0.55, 1.08, -0.205)],
-        "waist": [Vector3(-0.18, 0.66, -0.365), Vector3(0.18, 0.66, -0.365)],
-        "legs": [Vector3(-0.22, 0.37, -0.325), Vector3(0.22, 0.37, -0.325)]
+        "head": [Vector3(-0.14, 2.03, -0.255), Vector3(0.13, 1.94, -0.255), Vector3(0.0, 2.12, -0.13)],
+        "chest": [Vector3(-0.22, 1.42, -0.445), Vector3(0.18, 1.25, -0.445), Vector3(0.0, 1.12, -0.405)],
+        "arms": [Vector3(-0.49, 1.08, -0.205), Vector3(0.49, 1.08, -0.205), Vector3(-0.55, 1.48, -0.16), Vector3(0.55, 1.48, -0.16)],
+        "waist": [Vector3(-0.20, 0.66, -0.365), Vector3(0.20, 0.66, -0.365), Vector3(0.0, 0.59, -0.365)],
+        "legs": [Vector3(-0.22, 0.38, -0.325), Vector3(0.22, 0.38, -0.325), Vector3(-0.22, 0.55, -0.29), Vector3(0.22, 0.55, -0.29)]
     }
     for part_id in ArmorSystem.PARTS:
         var wear: Dictionary = ArmorSystem.get_part_visual_wear_profile(str(part_id))
@@ -471,15 +472,15 @@ func _build_armor_wear_cracks() -> void:
         var anchors: Array = crack_layout.get(part_id, [])
         for anchor_index in range(anchors.size()):
             var anchor: Vector3 = anchors[anchor_index]
-            for segment_index in range(2):
+            for segment_index in range(3):
                 var crack_mesh := BoxMesh.new()
-                crack_mesh.size = Vector3(0.018, 0.10 + severity * 0.07, 0.012)
+                crack_mesh.size = Vector3(0.014 + severity * 0.006, 0.075 + severity * 0.09, 0.014)
                 var crack := MeshInstance3D.new()
                 crack.mesh = crack_mesh
-                crack.position = anchor + Vector3((float(segment_index) - 0.5) * 0.035, -float(segment_index) * 0.045, 0.0)
-                crack.rotation.z = (-0.35 if (anchor_index + segment_index) % 2 == 0 else 0.35)
+                crack.position = anchor + Vector3((float(segment_index) - 1.0) * 0.026, -float(segment_index) * 0.035, 0.0)
+                crack.rotation.z = (-0.42 if (anchor_index + segment_index) % 2 == 0 else 0.42)
                 var crack_material := StandardMaterial3D.new()
-                crack_material.albedo_color = Color(0.055, 0.025, 0.035, 0.45 + severity * 0.5)
+                crack_material.albedo_color = Color(0.055, 0.025, 0.035, 0.5 + severity * 0.45)
                 crack_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
                 crack_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
                 crack_material.emission_enabled = true
@@ -697,15 +698,25 @@ func _build_armor_visuals() -> void:
             skirt_piece.rotation.z = -skirt_side * 0.12
             armor_skirt_nodes.append(skirt_piece)
             armor_skirt_base_angles.append(skirt_piece.rotation.z)
+    var thigh_mesh := PrismMesh.new()
+    thigh_mesh.size = Vector3(0.25 * silhouette_waist, 0.30 * silhouette_height, 0.17)
     var shin_mesh := BoxMesh.new()
-    shin_mesh.size = Vector3(0.24, 0.48, 0.18)
-    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
-    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
+    shin_mesh.size = Vector3(0.24 * stage_structure, 0.48 * silhouette_height, 0.18)
+    for leg_side in [-1.0, 1.0]:
+        var thigh_plate := _add_armor_piece(thigh_mesh, Vector3(leg_side * 0.22, 0.54, -0.17), Vector3.ONE, dark, stage_metallic, "legs")
+        thigh_plate.rotation.z = -leg_side * 0.08
+        _add_armor_piece(shin_mesh, Vector3(leg_side * 0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
     var knee_mesh := SphereMesh.new()
     knee_mesh.radius = 0.15
     knee_mesh.height = 0.12
-    _add_armor_piece(knee_mesh, Vector3(-0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic, "legs")
-    _add_armor_piece(knee_mesh, Vector3(0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic, "legs")
+    for leg_side in [-1.0, 1.0]:
+        _add_armor_piece(knee_mesh, Vector3(leg_side * 0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic, "legs")
+    var ankle_mesh := TorusMesh.new()
+    ankle_mesh.inner_radius = 0.105
+    ankle_mesh.outer_radius = 0.145
+    for leg_side in [-1.0, 1.0]:
+        var ankle_guard := _add_armor_piece(ankle_mesh, Vector3(leg_side * 0.22, 0.105, 0.0), Vector3(1.0, 0.72, 1.0), stage_trim_color, stage_metallic, "legs")
+        ankle_guard.rotation.x = deg_to_rad(90.0)
 
     # Every class receives its own heraldic crest and chest sigil.
     var crest_mesh: Mesh
@@ -745,14 +756,23 @@ func _build_armor_visuals() -> void:
         crest.rotation.x = -0.18
     elif crest_id == "crescent":
         crest.rotation.z = PI * 0.5
+    var helmet_cap := SphereMesh.new()
+    helmet_cap.radius = 0.245
+    helmet_cap.height = 0.20
+    _add_armor_piece(helmet_cap, Vector3(0.0, 2.075, 0.015), Vector3(1.0, 0.62, 0.88), bright, stage_metallic, "head")
     var helmet_brow := BoxMesh.new()
-    helmet_brow.size = Vector3(0.54, 0.11, 0.12)
+    helmet_brow.size = Vector3(0.54 * silhouette_width, 0.11, 0.12)
     _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic, "head")
     var helmet_guard := PrismMesh.new()
-    helmet_guard.size = Vector3(0.16, 0.34, 0.20)
+    helmet_guard.size = Vector3(0.16, 0.34 * silhouette_height, 0.20)
     for helmet_side in [-1.0, 1.0]:
-        var helmet_guard_piece := _add_armor_piece(helmet_guard, Vector3(helmet_side * 0.24, 1.84, -0.04), Vector3.ONE, bright, stage_metallic, "head")
+        var helmet_guard_piece := _add_armor_piece(helmet_guard, Vector3(helmet_side * 0.24 * silhouette_width, 1.84, -0.04), Vector3.ONE, bright, stage_metallic, "head")
         helmet_guard_piece.rotation.z = -helmet_side * 0.12
+    var helmet_temple := BoxMesh.new()
+    helmet_temple.size = Vector3(0.10, 0.24, 0.18)
+    for temple_side in [-1.0, 1.0]:
+        var temple_plate := _add_armor_piece(helmet_temple, Vector3(temple_side * 0.205, 1.91, -0.12), Vector3.ONE, dark, stage_metallic, "head")
+        temple_plate.rotation.z = temple_side * 0.16
     var emblem_mesh := SphereMesh.new()
     emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
