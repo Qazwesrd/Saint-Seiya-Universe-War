@@ -1057,8 +1057,15 @@ func validate_all_class_skill_catalogs() -> Dictionary:
         if str(class_entry.get("class_name", "")) == "" or str(class_entry.get("style", "")) == "":
             errors.append(class_id + "：职业名称或战斗定位缺失")
         var passive: Dictionary = class_entry.get("passive", {})
-        if passive.is_empty() or str(passive.get("effect", "")) == "":
+        var passive_effect := str(passive.get("effect", ""))
+        var supported_passive_effects := ["damage", "combo_damage", "damage_reduction", "control_damage", "stagger", "speed"]
+        if passive.is_empty() or passive_effect == "":
             errors.append(class_id + "：职业被动未定义")
+        elif not supported_passive_effects.has(passive_effect):
+            errors.append(class_id + "：未接入的被动效果类型 " + passive_effect)
+        var passive_value := float(passive.get("value", -1.0))
+        if passive_value < 0.0 or passive_value > 0.60:
+            errors.append(class_id + "：被动数值超出安全范围")
         var abilities := get_ability_catalog(class_id)
         if abilities.size() != 24:
             errors.append("%s：技能数量应为24，实际为%d" % [class_id, abilities.size()])
@@ -1083,6 +1090,7 @@ func validate_all_class_skill_catalogs() -> Dictionary:
         "valid": errors.is_empty() and class_catalog.size() == 32 and total_abilities == 768,
         "class_count": class_catalog.size(),
         "ability_count": total_abilities,
+        "passive_count": seen_classes.size(),
         "errors": errors
     }
 
