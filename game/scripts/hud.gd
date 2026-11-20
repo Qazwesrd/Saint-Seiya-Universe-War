@@ -736,6 +736,85 @@ func _open_character(root: Control) -> void:
     armor_info.text = "当前圣衣：" + ArmorSystem.get_current_stage_name() + "\n耐久：头盔 %d / 胸甲 %d / 护腕 %d / 腰甲 %d / 腿甲 %d" % [int(armor_durability.get("head",100)),int(armor_durability.get("chest",100)),int(armor_durability.get("arms",100)),int(armor_durability.get("waist",100)),int(armor_durability.get("legs",100))]
     box.add_child(armor_info)
 
+    var armor_section := Label.new()
+    armor_section.text = "圣衣成长与形态解锁"
+    armor_section.add_theme_font_size_override("font_size", 18)
+    box.add_child(armor_section)
+    var unlocked_armor_stages: Array = armor_state.get("unlocked_stages", ["bronze"])
+    for raw_stage_id in ArmorSystem.get_stage_ids():
+        var stage_id := str(raw_stage_id)
+        var stage_data: Dictionary = ArmorSystem.STAGES[stage_id]
+        var stage_unlocked := stage_id in unlocked_armor_stages
+        var stage_current := str(armor_state.get("current_stage", "bronze")) == stage_id
+        var stage_row := HBoxContainer.new()
+        var stage_label := Label.new()
+        stage_label.text = str(stage_data.get("name", stage_id))
+        stage_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        stage_row.add_child(stage_label)
+        var stage_button := Button.new()
+        stage_button.text = "当前穿戴" if stage_current else ("穿戴" if stage_unlocked else "解锁（等级/剧情）")
+        stage_button.disabled = stage_current
+        var selected_stage_id := stage_id
+        var selected_stage_unlocked := stage_unlocked
+        stage_button.pressed.connect(func():
+            var ok := ArmorSystem.equip_stage(selected_stage_id) if selected_stage_unlocked else ArmorSystem.unlock_stage(selected_stage_id)
+            if ok:
+                game.call("refresh_player_stats")
+            set_notice(("已穿戴：" if selected_stage_unlocked else "已解锁：") + str(ArmorSystem.STAGES[selected_stage_id].get("name", selected_stage_id)) if ok else "尚未满足该圣衣的等级或剧情解锁条件")
+            popup.queue_free()
+        )
+        stage_row.add_child(stage_button)
+        box.add_child(stage_row)
+
+    var armor_actions := HBoxContainer.new()
+    var repair_button := Button.new()
+    repair_button.text = "修复全部部件"
+    repair_button.pressed.connect(func():
+        var ok := ArmorSystem.repair_all()
+        if ok:
+            game.call("refresh_player_stats")
+        set_notice("圣衣部件已全部修复" if ok else "无需修复或星币不足")
+        popup.queue_free()
+    )
+    armor_actions.add_child(repair_button)
+    var awaken_button := Button.new()
+    awaken_button.text = "圣衣觉醒（满足条件时）"
+    awaken_button.disabled = bool(armor_state.get("awakened", false)) or not str(armor_state.get("current_stage", "bronze")) in ["gold", "god_cloth", "god_armor"]
+    awaken_button.pressed.connect(func():
+        var ok := ArmorSystem.awaken_current()
+        if ok:
+            game.call("refresh_player_stats")
+        set_notice("圣衣觉醒成功" if ok else "当前形态不可觉醒或星币不足")
+        popup.queue_free()
+    )
+    armor_actions.add_child(awaken_button)
+    box.add_child(armor_actions)
+
+    var armor_levels: Dictionary = armor_state.get("levels", {})
+    var armor_upgrade_title := Label.new()
+    armor_upgrade_title.text = "圣衣部件强化（每件最高 +10）"
+    box.add_child(armor_upgrade_title)
+    for raw_part in ArmorSystem.PARTS:
+        var part_id := str(raw_part)
+        var part_level := int(armor_levels.get(part_id, 0))
+        var part_row := HBoxContainer.new()
+        var part_label := Label.new()
+        part_label.text = str(ArmorSystem.PART_NAMES.get(part_id, part_id)) + " +" + str(part_level)
+        part_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        part_row.add_child(part_label)
+        var part_button := Button.new()
+        part_button.text = "强化（%d 星币）" % ((part_level + 1) * 180)
+        part_button.disabled = part_level >= 10 or int(profile.get("currency", 0)) < (part_level + 1) * 180
+        part_button.pressed.connect(func():
+            var ok := ArmorSystem.enhance_part(part_id)
+            if ok:
+                game.call("refresh_player_stats")
+            set_notice("圣衣部件强化成功" if ok else "星币不足或部件已达强化上限")
+            popup.queue_free()
+        )
+        part_row.add_child(part_button)
+        box.add_child(part_row)
+
     var inventory_title := Label.new()
     inventory_title.text = "背包与装备（点击装备即可穿戴）"
     inventory_title.add_theme_font_size_override("font_size", 19)
