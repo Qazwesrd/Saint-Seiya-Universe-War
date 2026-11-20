@@ -1207,12 +1207,34 @@ func get_ability_effect_profile(ability: Dictionary) -> Dictionary:
         "execute_bonus": 0.0,
         "stagger_bonus": 0.0,
         "summon_lifetime": 0.0,
-        "summon_damage_ratio": 0.0
+        "summon_damage_ratio": 0.0,
+        "field_lifetime": 0.0,
+        "field_radius": 0.0,
+        "field_tick_interval": 0.8,
+        "field_damage_ratio": 0.0,
+        "projectile_speed": 12.0,
+        "projectile_damage_ratio": 0.0
     }
     if "召唤" in ability_type:
         profile["action"] = "summon"
         profile["summon_lifetime"] = 9.0
         profile["summon_damage_ratio"] = 0.72
+    elif "领域" in ability_type:
+        profile["action"] = "field"
+        profile["field_lifetime"] = 5.5
+        profile["field_radius"] = 4.2
+        profile["field_tick_interval"] = 0.85
+        profile["field_damage_ratio"] = 0.32
+    elif "陷阱" in ability_type:
+        profile["action"] = "trap"
+        profile["field_lifetime"] = 12.0
+        profile["field_radius"] = 2.8
+        profile["field_tick_interval"] = 1.0
+        profile["field_damage_ratio"] = 0.95
+    elif "追踪" in ability_type or "制导" in ability_type or "锁定弹" in ability_name:
+        profile["action"] = "homing_projectile"
+        profile["projectile_speed"] = 13.5
+        profile["projectile_damage_ratio"] = 1.15
     elif "多段" in ability_type:
         profile["action"] = "multi_hit"
         profile["extra_hits"] = 2
