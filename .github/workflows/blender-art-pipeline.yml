@@ -17,7 +17,7 @@ permissions:
 jobs:
   export-prototype-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,12 +30,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tools/art_pipeline/build_manifests.py
           blender --background --python tools/art_pipeline/blender/generate_base_rig.py 2>&1 | tee blender-export.log
           grep -q "ART_PROTOTYPE_EXPORT_PASS" blender-export.log
           test -s game/assets/_source_templates/humanoid_base/humanoid_base.glb
           test -s game/assets/_source_templates/humanoid_animation_library/animation_library.glb
           test -s game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb
           test "$(find game/assets/environments -name environment.glb -type f | wc -l)" -eq 7
+          test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
+          test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
+          test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4
         with:
@@ -45,5 +49,10 @@ jobs:
             game/assets/_source_templates/humanoid_animation_library/animation_library.glb
             game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb
             game/assets/environments/*/environment.glb
+            game/assets/characters/*/model/character.glb
+            game/assets/characters/*/animations/animation_library.glb
+            game/assets/armors/*/model/armor.glb
+            game/assets/characters/*/manifest.json
+            game/assets/armors/*/manifest.json
           if-no-files-found: error
           retention-days: 14

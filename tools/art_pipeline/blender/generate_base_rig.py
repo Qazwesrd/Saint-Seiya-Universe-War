@@ -446,6 +446,107 @@ def export_chapter_environments():
         export_glb(destination, objects)
         print("CHAPTER_ENVIRONMENT_EXPORTED", theme_id, destination.stat().st_size)
 
+
+def catalog_ids(gd_path, marker):
+    import re
+    source = gd_path.read_text(encoding="utf-8")
+    start = source.find(marker)
+    if start < 0:
+        raise RuntimeError("catalog marker missing: " + marker)
+    match = re.search(r"\\n(.*?)^\\}", source[start:], re.S | re.M)
+    if not match:
+        raise RuntimeError("catalog block malformed: " + marker)
+    return re.findall(r'^\\s*"([^"]+)"\\s*:\\s*\\{', match.group(1), re.M)
+
+def build_profession_models():
+    """Export one distinct rigged silhouette per playable profession (prototype quality)."""
+    classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
+    animation_source = ANIMATIONS / "animation_library.glb"
+    if not animation_source.is_file():
+        raise RuntimeError("shared animation library must be exported before profession models")
+    output_root = ROOT / "game/assets/characters"
+    for index, class_id in enumerate(classes):
+        reset_scene()
+        rig = create_rig()
+        body = build_body(rig)
+        # Profession-specific proportions are baked into each mesh, not merely a tint.
+        width = 0.88 + (index % 5) * 0.075
+        height = 0.94 + ((index * 3) % 7) * 0.035
+        body.scale = (width, 1.0 + (index % 3) * 0.045, height)
+        body.data.materials.clear()
+        profession_mat = material("Profession_" + class_id, (
+            0.25 + ((index * 37) % 65) / 100.0,
+            0.22 + ((index * 19) % 60) / 100.0,
+            0.30 + ((index * 29) % 60) / 100.0
+        ), 0.38 + (index % 5) * 0.1, 0.34)
+        body.data.materials.append(profession_mat)
+        ornaments = []
+        shoulder_factor = 1.0 + (index % 6) * 0.12
+        for side, sign in (("Left", 1), ("Right", -1)):
+            ornaments.append(add_weighted_ellipsoid(
+                class_id + "_" + side + "_Signature_Pauldron",
+                (sign * (0.34 * shoulder_factor), -0.015, 1.48),
+                (0.13 * shoulder_factor, 0.14, 0.12 + (index % 4) * 0.025),
+                side + "Shoulder", profession_mat, rig, segments=12, rings=8
+            ))
+        # Every profession receives a unique crest; winged archetypes receive
+        # additional back silhouettes with geometry and bone weights.
+        crest_radius = 0.045 + (index % 4) * 0.018
+        ornaments.append(add_weighted_ellipsoid(
+            class_id + "_Signature_Crest",
+            (0, -0.12, 1.96 + (index % 3) * 0.025),
+            (crest_radius, crest_radius * 0.7, 0.11 + (index % 4) * 0.035),
+            "Head", profession_mat, rig, segments=10, rings=8
+        ))
+        if index % 3 != 0:
+            span = 0.34 + (index % 6) * 0.10
+            for side, sign in (("Left", 1), ("Right", -1)):
+                ornaments.append(add_weighted_ellipsoid(
+                    class_id + "_" + side + "_Back_Wing",
+                    (sign * span * 0.52, 0.10, 1.40),
+                    (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
+                    "Chest", profession_mat, rig, segments=12, rings=8
+                ))
+        merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
+        destination = output_root / class_id / "model/character.glb"
+        export_glb(destination, [rig, merged])
+        validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"), require_skin=True)
+        animation_dest = output_root / class_id / "animations/animation_library.glb"
+        animation_dest.parent.mkdir(parents=True, exist_ok=True)
+        import shutil
+        shutil.copy2(animation_source, animation_dest)
+        print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size)
+
+def build_equipment_models():
+    """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""
+    equipment_ids = catalog_ids(ROOT / "game/scripts/equipment_database.gd", "const EQUIPMENT := {")
+    output_root = ROOT / "game/assets/armors"
+    for index, equipment_id in enumerate(equipment_ids):
+        reset_scene()
+        rig = create_rig()
+        pieces = build_armor(rig)
+        variation = 0.88 + (index % 7) * 0.045
+        accent_mat = material("Armor_" + equipment_id + "_Accent", (
+            0.36 + ((index * 31) % 55) / 100.0,
+            0.30 + ((index * 17) % 58) / 100.0,
+            0.24 + ((index * 23) % 62) / 100.0
+        ), 0.82, 0.28)
+        for part_index, piece in enumerate(pieces):
+            factor = variation + (part_index % 3) * 0.035
+            piece.scale = (factor, 0.92 + (index % 4) * 0.035, factor)
+            if part_index % 2 == index % 2:
+                piece.data.materials.clear()
+                piece.data.materials.append(accent_mat)
+        destination = output_root / equipment_id / "model/armor.glb"
+        export_glb(destination, [rig] + pieces)
+        validate_glb(
+            destination,
+            required_nodes=("Humanoid_Base_Rig",) + tuple(piece.name for piece in pieces),
+            require_skin=True,
+            require_independent_skinned_nodes=tuple(piece.name for piece in pieces),
+        )
+        print("EQUIPMENT_MODEL_EXPORTED", equipment_id, destination.stat().st_size)
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     reset_scene()
@@ -481,6 +582,8 @@ def main():
     )
 
     export_chapter_environments()
+    build_profession_models()
+    build_equipment_models()
     print("ART_PROTOTYPE_EXPORT_PASS")
     print("Character rigged GLB:", character_model)
     print("Separate animation library GLB:", animation_library)
