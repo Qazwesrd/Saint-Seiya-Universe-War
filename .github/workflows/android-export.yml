@@ -11,6 +11,10 @@ on:
       - game/project.godot
       - game/**
 
+concurrency:
+  group: android-apk-export-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
