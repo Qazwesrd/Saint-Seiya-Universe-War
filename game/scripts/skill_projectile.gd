@@ -1,0 +1,63 @@
+extends Node3D
+
+var game: Node3D
+var owner_player: Node3D
+var target: Node3D
+var speed := 12.0
+var damage := 18.0
+var lifetime := 4.0
+var turn_rate := 5.0
+var projectile_color := Color(0.45, 0.8, 1.0)
+var age := 0.0
+
+func _ready() -> void:
+    var orb := MeshInstance3D.new()
+    var sphere := SphereMesh.new()
+    sphere.radius = 0.22
+    sphere.height = 0.44
+    orb.mesh = sphere
+    var material := StandardMaterial3D.new()
+    material.albedo_color = projectile_color
+    material.emission_enabled = true
+    material.emission = projectile_color
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    orb.material_override = material
+    add_child(orb)
+
+func _physics_process(delta: float) -> void:
+    age += delta
+    if age >= lifetime or not is_instance_valid(owner_player) or not is_instance_valid(game):
+        queue_free()
+        return
+    if not is_instance_valid(target) or float(target.get("health")) <= 0.0:
+        target = _find_target()
+    if not is_instance_valid(target):
+        global_position += -owner_player.global_transform.basis.z * speed * delta
+        return
+    var offset := target.global_position + Vector3.UP * 0.8 - global_position
+    if offset.length() <= 0.65:
+        if target.has_method("take_damage"):
+            target.call("take_damage", damage)
+        if target.has_method("apply_status_effect"):
+            target.call("apply_status_effect", "slow", 1.2, 0.12)
+        if game.has_method("spawn_effect"):
+            game.call("spawn_effect", target.global_position + Vector3.UP, projectile_color, 0.9)
+        queue_free()
+        return
+    var direction := offset.normalized()
+    var current := (-global_transform.basis.z).normalized()
+    var steering := current.lerp(direction, minf(1.0, turn_rate * delta)).normalized()
+    look_at(global_position + steering, Vector3.UP)
+    global_position += steering * speed * delta
+
+func _find_target() -> Node3D:
+    var best: Node3D
+    var best_distance := 22.0
+    for candidate in game.get("enemies"):
+        if not is_instance_valid(candidate) or float(candidate.get("health")) <= 0.0:
+            continue
+        var distance := global_position.distance_to(candidate.global_position)
+        if distance < best_distance:
+            best = candidate
+            best_distance = distance
+    return best
