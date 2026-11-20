@@ -238,6 +238,19 @@ func _run_tests() -> void:
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	var divine_support_count := 0
+	for class_profile in SkillSystem.get_class_skill_catalog():
+		if str(class_profile.get("tier", "")) != "神明":
+			continue
+		var divine_id := str(class_profile.get("id", ""))
+		var support_profile: Dictionary = SkillSystem.get_divine_support_profile(divine_id)
+		assert(not support_profile.is_empty(), divine_id + " divine support profile exists")
+		assert(float(support_profile.get("damage_bonus", -1.0)) >= 0.0 and float(support_profile.get("damage_bonus", 1.0)) <= 0.25, divine_id + " support damage buff is bounded")
+		assert(float(support_profile.get("damage_reduction", -1.0)) >= 0.0 and float(support_profile.get("damage_reduction", 1.0)) <= 0.20, divine_id + " support mitigation is bounded")
+		assert(float(support_profile.get("heal_ratio", -1.0)) >= 0.0 and float(support_profile.get("heal_ratio", 1.0)) <= 0.20, divine_id + " support healing is bounded")
+		assert(float(support_profile.get("shield_ratio", -1.0)) >= 0.0 and float(support_profile.get("shield_ratio", 1.0)) <= 0.25, divine_id + " support shield is bounded")
+		divine_support_count += 1
+	assert(divine_support_count == 22, "all 22 divine professions have a tested support combat profile")
 	assert(is_equal_approx(SkillSystem.get_passive_guard_ratio("andromeda"), 0.12), "Andromeda passive emergency guard ratio is defined")
 	assert(is_equal_approx(SkillSystem.get_passive_guard_ratio("pegasus"), 0.0), "non-Andromeda classes do not receive the emergency guard")
 	assert(is_equal_approx(SkillSystem.get_passive_burn_multiplier("phoenix"), 1.12), "Phoenix passive amplifies burn ticks")
