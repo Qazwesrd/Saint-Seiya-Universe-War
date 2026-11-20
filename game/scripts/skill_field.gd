@@ -30,6 +30,7 @@ func _ready() -> void:
     visual.material_override = material
     visual.position.y = 0.08
     add_child(visual)
+    add_to_group("skill_fields")
 
 func _physics_process(delta: float) -> void:
     elapsed += delta
