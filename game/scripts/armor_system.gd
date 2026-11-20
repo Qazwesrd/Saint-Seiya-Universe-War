@@ -157,7 +157,7 @@ static func get_visual_wear_profile(condition_ratio: float) -> Dictionary:
         "metallic_multiplier": lerpf(0.58, 1.0, condition),
         "roughness": lerpf(0.62, 0.22, condition),
         "tint": Color(0.22, 0.18, 0.16).lerp(Color.WHITE, condition),
-        "cracked": condition <= 0.25
+        "cracked": condition <= 0.35
     }
 
 func get_part_visual_wear_profile(part: String) -> Dictionary:
