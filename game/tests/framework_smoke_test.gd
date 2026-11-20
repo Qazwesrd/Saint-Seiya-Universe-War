@@ -166,5 +166,12 @@ func _run_tests() -> void:
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
 	RPGState.delete_slot(3)
 
+
+	var combo_steps: Array = ["basic_attack_1", "pegasus_skill_1", "dodge"]
+	assert(ComboPresetManager.save_preset("pegasus", "smoke_combo", "测试连招", combo_steps), "save player combo preset")
+	assert(ComboPresetManager.get_active_preset("pegasus").get("steps", []) == combo_steps, "read active combo preset")
+	assert(ComboPresetManager.set_active_preset("pegasus", "smoke_combo"), "switch active combo preset")
+	assert(ComboPresetManager.delete_preset("pegasus", "smoke_combo"), "delete combo preset")
+	assert(not ComboPresetManager.save_preset("pegasus", "invalid_combo", "非法连招", ["not_unlocked"]), "reject unlearned skill in combo")
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)
