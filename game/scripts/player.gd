@@ -294,7 +294,8 @@ func absorb_divine_guard_damage(incoming_damage: float) -> float:
 
 func apply_divine_guard(shield_ratio: float = 0.18, duration: float = 6.0) -> void:
     var shield_capacity := max_health * clampf(shield_ratio, 0.0, 0.25)
-    divine_guard_shield = maxf(divine_guard_shield, shield_capacity)
+    if divine_guard_shield <= 0.0:
+        divine_guard_shield = shield_capacity
     divine_guard_timer = maxf(divine_guard_timer, maxf(0.1, duration))
 
 func apply_temporary_buff(damage_bonus: float, damage_reduction: float, duration: float) -> void:
