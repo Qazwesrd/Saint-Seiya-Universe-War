@@ -206,6 +206,15 @@ func _run_tests() -> void:
 	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
 	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
 	var boss_health_before_mark := float(test_boss.health)
+    test_boss.divine_mark = "soul"
+    assert(is_equal_approx(float(test_boss.get_divine_mark_lifesteal_ratio()), 0.025), "Hades soul marks grant a small life-steal effect")
+    test_boss.divine_mark = "death"
+    assert(is_equal_approx(float(test_boss.get_divine_mark_lifesteal_ratio()), 0.025), "Thanatos death marks grant a small life-steal effect")
+    test_boss.divine_mark = "tidal"
+    assert(is_equal_approx(float(test_boss.get_divine_mark_knockback_multiplier()), 1.35), "Poseidon tidal marks increase knockback")
+    test_boss.divine_mark = "storm"
+    assert(is_equal_approx(float(test_boss.get_divine_mark_knockback_multiplier()), 1.15), "storm marks add a lighter knockback bonus")
+    test_boss.divine_mark = "solar"
 	test_boss.apply_divine_mark("solar", 6.0, 0.12)
 	assert(str(test_boss.divine_mark) == "solar", "divine mark identity is retained")
 	assert(float(test_boss.divine_mark_timer) < 6.0, "boss divine mark duration is resisted")
