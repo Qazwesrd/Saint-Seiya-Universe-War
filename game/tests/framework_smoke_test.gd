@@ -367,6 +367,7 @@ func _run_tests() -> void:
 		for visual_ability in SkillSystem.get_ability_catalog(visual_class_id):
 			var ability_visual: Dictionary = skill_visual_script.get_profile(visual_class_id, visual_ability)
 			assert(typeof(ability_visual.get("color")) == TYPE_COLOR, visual_class_id + " ability has a valid VFX color")
+			assert(str(ability_visual.get("shape", "")).strip_edges() != "", visual_class_id + " ability has a visible VFX shape")
 			assert(float(ability_visual.get("glow", -1.0)) >= 0.0 and float(ability_visual.get("glow", 1.0)) <= 0.6, visual_class_id + " ability VFX glow stays within mobile budget")
 			assert(float(ability_visual.get("impact_scale", 0.0)) >= 0.5 and float(ability_visual.get("impact_scale", 2.0)) <= 1.5, visual_class_id + " ability impact scale is bounded")
 			skill_visual_count += 1
