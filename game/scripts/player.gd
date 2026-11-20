@@ -40,6 +40,11 @@ var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
 var combat_pose_motion := "strike"
+var combat_feedback_node: MeshInstance3D
+var combat_feedback_material: StandardMaterial3D
+var combat_feedback_timer := 0.0
+var combat_feedback_duration := 0.0
+var combat_feedback_color := Color.WHITE
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var visual_flash_timer := 0.0
@@ -167,6 +172,7 @@ func _ready() -> void:
     visual_root.add_child(eye_band)
 
     _build_armor_visuals()
+    _build_combat_feedback_visual()
     RPGState.state_changed.connect(_on_rpg_state_changed)
     mount_indicator = MeshInstance3D.new()
     var mount_ring := TorusMesh.new()
@@ -195,6 +201,16 @@ func _ready() -> void:
 func _animate_visual_motion(delta: float) -> void:
     if not is_instance_valid(visual_root):
         return
+    if is_instance_valid(combat_feedback_node):
+        combat_feedback_timer = maxf(0.0, combat_feedback_timer - delta)
+        var feedback_ratio := combat_feedback_timer / maxf(0.001, combat_feedback_duration)
+        combat_feedback_node.visible = combat_feedback_timer > 0.0
+        if combat_feedback_timer > 0.0:
+            var feedback_progress := 1.0 - feedback_ratio
+            var feedback_scale := lerpf(0.72, 1.55, feedback_progress)
+            combat_feedback_node.scale = Vector3.ONE * feedback_scale
+            combat_feedback_material.albedo_color = Color(combat_feedback_color.r, combat_feedback_color.g, combat_feedback_color.b, 0.42 * feedback_ratio)
+            combat_feedback_material.emission = combat_feedback_color * (0.45 + feedback_ratio * 1.8)
     var planar_speed := Vector2(velocity.x, velocity.z).length()
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.012
@@ -263,6 +279,37 @@ func _animate_visual_motion(delta: float) -> void:
             forearm_nodes[limb_index].rotation.x = lerp_angle(forearm_nodes[limb_index].rotation.x, forearm_target, minf(1.0, delta * 12.0))
         if limb_index < leg_nodes.size():
             leg_nodes[limb_index].rotation.x = lerp_angle(leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
+
+func _build_combat_feedback_visual() -> void:
+    if not is_instance_valid(visual_root):
+        return
+    combat_feedback_node = MeshInstance3D.new()
+    combat_feedback_node.name = "CombatFeedbackRing"
+    var ring := TorusMesh.new()
+    ring.inner_radius = 0.56
+    ring.outer_radius = 0.72
+    combat_feedback_node.mesh = ring
+    combat_feedback_node.position = Vector3(0.0, 0.12, 0.0)
+    combat_feedback_node.rotation.x = PI * 0.5
+    combat_feedback_material = StandardMaterial3D.new()
+    combat_feedback_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    combat_feedback_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    combat_feedback_material.albedo_color = Color(0.25, 0.8, 1.0, 0.0)
+    combat_feedback_material.emission_enabled = true
+    combat_feedback_material.emission = Color(0.25, 0.8, 1.0)
+    combat_feedback_material.emission_energy_multiplier = 1.4
+    combat_feedback_node.material_override = combat_feedback_material
+    combat_feedback_node.visible = false
+    visual_root.add_child(combat_feedback_node)
+
+func _play_combat_feedback(color: Color, duration: float = 0.34) -> void:
+    if not is_instance_valid(combat_feedback_node):
+        return
+    combat_feedback_color = color
+    combat_feedback_duration = maxf(0.12, duration)
+    combat_feedback_timer = combat_feedback_duration
+    combat_feedback_node.visible = true
+    combat_feedback_node.scale = Vector3.ONE * 0.72
 
 func _play_skill_pose(profile: Dictionary) -> void:
     if not is_instance_valid(visual_root):
@@ -822,6 +869,7 @@ func dodge() -> void:
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * (15.0 if not heavenly_wings else 18.0)
     _play_attack_pose(0.7)
+    _play_combat_feedback(Color(0.28, 0.88, 1.0) if not heavenly_wings else Color(0.72, 0.94, 1.0), 0.42)
     game.call("show_notice", "闪避！短暂无敌" if not heavenly_wings else "光翼闪身！天衣短暂无敌")
     _register_custom_combo_input("dodge")
 func toggle_lock() -> void:
@@ -913,6 +961,11 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
 
 func guard() -> void:
     apply_temporary_buff(0.0, 0.35, 1.2)
+    combat_pose_motion = "guard"
+    combat_pose_duration = 0.42
+    combat_pose_timer = combat_pose_duration
+    combat_pose_strength = 1.0
+    _play_combat_feedback(Color(1.0, 0.72, 0.24), 0.38)
     game.call("show_notice", "架势防御！")
     _register_custom_combo_input("guard")
 
@@ -1037,6 +1090,7 @@ func cast_ability(ability_id: String) -> bool:
     var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(class_id, ability)
     _play_skill_pose(animation_profile)
+    _play_combat_feedback(Color(class_data.get("color", Color(0.3, 0.72, 1.0))), 0.46)
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
