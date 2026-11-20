@@ -80,17 +80,17 @@ func _save_state() -> bool:
 func get_state() -> Dictionary:
 	var result := state.duplicate(true)
 	result["reset_hour_local"] = RESET_HOUR
-	result["next_refresh_unix"] = _next_refresh_unix()
-	result["seconds_until_refresh"] = maxi(0, _next_refresh_unix() - int(Time.get_unix_time_from_system()))
+	result["seconds_until_refresh"] = _seconds_until_refresh()
+	result["next_refresh_unix"] = int(Time.get_unix_time_from_system()) + int(result["seconds_until_refresh"])
 	result["available"] = not bool(result.get("defeated", false))
 	return result
 
-func _next_refresh_unix() -> int:
-	var now := int(Time.get_unix_time_from_system())
+func _seconds_until_refresh() -> int:
 	var local := Time.get_datetime_dict_from_system()
-	var today_reset := {"year": local.year, "month": local.month, "day": local.day, "hour": RESET_HOUR, "minute": 0, "second": 0}
-	var reset_today := int(Time.get_unix_time_from_datetime_dict(today_reset))
-	return reset_today + (86400 if now >= reset_today else 0)
+	var current_seconds := int(local.hour) * 3600 + int(local.minute) * 60 + int(local.second)
+	var reset_seconds := RESET_HOUR * 3600
+	var remaining := reset_seconds - current_seconds
+	return remaining if remaining > 0 else remaining + 86400
 
 func can_challenge() -> bool:
 	return not state.is_empty() and not bool(state.get("defeated", false))
