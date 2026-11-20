@@ -315,15 +315,15 @@ func apply_status_effect(effect: String, duration: float, power: float = 0.0) ->
         return
     match effect:
         "freeze":
-            var control_scale := _register_boss_control(duration)
-            var effective_duration := duration * (0.35 * control_scale if is_boss else 1.0)
+            var freeze_control_scale := _register_boss_control(duration)
+            var effective_duration := duration * (0.35 * freeze_control_scale if is_boss else 1.0)
             freeze_timer = maxf(freeze_timer, effective_duration)
             if not is_boss:
                 state = BrainState.STAGGER
                 state_timer = maxf(state_timer, freeze_timer)
         "slow":
-            var control_scale := _register_boss_control(duration)
-            slow_timer = maxf(slow_timer, duration * (0.55 * control_scale if is_boss else 1.0))
+            var slow_control_scale := _register_boss_control(duration)
+            slow_timer = maxf(slow_timer, duration * (0.55 * slow_control_scale if is_boss else 1.0))
             slow_factor = clampf(1.0 - power * (0.45 if is_boss else 1.0), 0.25, 0.9)
         "burn":
             burn_timer = maxf(burn_timer, duration)
