@@ -8,6 +8,10 @@ var slots_list: VBoxContainer
 var slot_notice: Label
 var pending_delete_slot: int = 0
 var delete_dialog: ConfirmationDialog
+var character_creation_panel: PanelContainer
+var character_name_input: LineEdit
+var character_class_picker: OptionButton
+var pending_creation_slot := 0
 
 func _ready() -> void:
 	_build_interface()
@@ -63,6 +67,13 @@ func _build_interface() -> void:
 	slots_panel.position = Vector2(-410, -330)
 	slots_panel.custom_minimum_size = Vector2(820, 660)
 	add_child(slots_panel)
+
+	character_creation_panel = _build_character_creation_panel()
+	character_creation_panel.visible = false
+	character_creation_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	character_creation_panel.position = Vector2(-310, -230)
+	character_creation_panel.custom_minimum_size = Vector2(620, 460)
+	add_child(character_creation_panel)
 
 	delete_dialog = ConfirmationDialog.new()
 	delete_dialog.title = "删除存档"
@@ -187,6 +198,103 @@ func _on_reset_settings() -> void:
 		settings_panel.position = Vector2(-340, -305)
 		add_child(settings_panel)
 		settings_panel.visible = true
+func _build_character_creation_panel() -> PanelContainer:
+	var panel := PanelContainer.new()
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 14)
+	panel.add_child(outer)
+	var heading := Label.new()
+	heading.text = "创建你的圣斗士"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 26)
+	outer.add_child(heading)
+	var description := Label.new()
+	description.text = "选择角色名称与初始职业。神明职业和天斗士将在达到解锁条件后开放。"
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	outer.add_child(description)
+	var name_label := Label.new()
+	name_label.text = "角色名称"
+	outer.add_child(name_label)
+	character_name_input = LineEdit.new()
+	character_name_input.placeholder_text = "请输入1至16个字符"
+	character_name_input.max_length = 16
+	character_name_input.text = "星之战士"
+	outer.add_child(character_name_input)
+	var class_label := Label.new()
+	class_label.text = "初始职业（九大基础职业）"
+	outer.add_child(class_label)
+	character_class_picker = OptionButton.new()
+	for class_id in RPGState.CLASS_DATA:
+		var class_data: Dictionary = RPGState.CLASS_DATA[class_id]
+		var tier := str(class_data.get("tier", ""))
+		if tier in ["神明", "天斗士"]:
+			continue
+		character_class_picker.add_item(str(class_data.get("name", class_id)))
+		character_class_picker.set_item_metadata(character_class_picker.item_count - 1, str(class_id))
+	outer.add_child(character_class_picker)
+	var actions := HBoxContainer.new()
+	var confirm := Button.new()
+	confirm.text = "创建角色并开始"
+	confirm.custom_minimum_size.y = 54
+	confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	confirm.pressed.connect(_confirm_character_creation)
+	actions.add_child(confirm)
+	var cancel := Button.new()
+	cancel.text = "返回存档槽"
+	cancel.custom_minimum_size.y = 54
+	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cancel.pressed.connect(_cancel_character_creation)
+	actions.add_child(cancel)
+	outer.add_child(actions)
+	return panel
+
+func _open_character_creation(slot: int) -> void:
+	pending_creation_slot = slot
+	character_name_input.text = ""
+	if character_class_picker.item_count > 0:
+		character_class_picker.select(0)
+	slots_panel.visible = false
+	character_creation_panel.visible = true
+	character_name_input.grab_focus()
+
+func _cancel_character_creation() -> void:
+	character_creation_panel.visible = false
+	slots_panel.visible = true
+	_refresh_slots()
+
+func _confirm_character_creation() -> void:
+	var character_name := character_name_input.text.strip_edges()
+	if character_name.is_empty() or character_name.length() > 16:
+		status_label.text = "角色名称必须为1至16个字符。"
+		return
+	if pending_creation_slot < 1 or pending_creation_slot > 3:
+		status_label.text = "存档槽选择无效，请重新选择。"
+		return
+	var selected_class := str(character_class_picker.get_item_metadata(character_class_picker.selected))
+	if not RPGState.create_new_slot(pending_creation_slot):
+		status_label.text = "创建失败：存档槽可能已被占用。"
+		character_creation_panel.visible = false
+		slots_panel.visible = true
+		_refresh_slots()
+		return
+	if not RPGState.select_class(selected_class):
+		status_label.text = "初始职业设置失败；已保留新存档，请返回重新读取。"
+		character_creation_panel.visible = false
+		slots_panel.visible = true
+		_refresh_slots()
+		return
+	var previous_name := str(RPGState.profile.get("character_name", "星之战士"))
+	RPGState.profile["character_name"] = character_name
+	if not RPGState.save_slot(pending_creation_slot):
+		RPGState.profile["character_name"] = previous_name
+		RPGState.save_slot(pending_creation_slot)
+		status_label.text = "角色名称保存失败；存档已保留，请检查本地存储空间。"
+		character_creation_panel.visible = false
+		slots_panel.visible = true
+		_refresh_slots()
+		return
+	_enter_game("欢迎，%s！已创建%s。" % [character_name, str(RPGState.CLASS_DATA.get(selected_class, {}).get("name", selected_class))])
+
 func _build_slots_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	var outer := VBoxContainer.new()
@@ -272,8 +380,9 @@ func _update_status() -> void:
 	if status_label == null:
 		return
 	var profile: Dictionary = RPGState.profile
-	status_label.text = "本地离线模式  ·  当前槽位 %d  ·  %s Lv.%d" % [
+	status_label.text = "本地离线模式  ·  当前槽位 %d  ·  %s（%s）Lv.%d" % [
 		RPGState.active_slot,
+		str(profile.get("character_name", "星之战士")),
 		str(RPGState.CLASS_DATA.get(str(profile.get("class_id", "pegasus")), {}).get("name", "天马座")),
 		int(profile.get("level", 1))
 	]
@@ -282,6 +391,7 @@ func _show_slots(message: String = "选择一个存档槽进行新建、读取�
 	slot_notice.text = message
 	_refresh_slots()
 	settings_panel.visible = false
+	character_creation_panel.visible = false
 	slots_panel.visible = true
 
 func _on_new_game_pressed() -> void:
@@ -291,11 +401,7 @@ func _on_continue_pressed() -> void:
 	_show_slots("选择已有存档读取，或管理备份。")
 
 func _create_slot(slot: int) -> void:
-	if RPGState.create_new_slot(slot):
-		_enter_game("已在存档槽 %d 创建新角色。" % slot)
-	else:
-		slot_notice.text = "创建失败：槽位可能已有存档，或本地存储不可写。"
-		_refresh_slots()
+	_open_character_creation(slot)
 
 func _load_slot(slot: int) -> void:
 	if RPGState.load_slot(slot):
@@ -329,11 +435,13 @@ func _confirm_delete_slot() -> void:
 func _enter_game(message: String) -> void:
 	status_label.text = message
 	slots_panel.visible = false
+	character_creation_panel.visible = false
 	_update_status()
 	SceneFlowManager.change_scene("res://scenes/main.tscn")
 
 func _on_settings_pressed() -> void:
 	slots_panel.visible = false
+	character_creation_panel.visible = false
 	settings_panel.visible = true
 
 func _on_exit_pressed() -> void:
