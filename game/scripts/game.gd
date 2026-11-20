@@ -538,12 +538,14 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
     shock_ring.material_override = ring_material
     effect_root.add_child(shock_ring)
 
-    for shard_index in range(6):
+    var quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
+    var shard_count := 3 if quality == "low" else (6 if quality == "medium" else 9)
+    for shard_index in range(shard_count):
         var shard := MeshInstance3D.new()
         var shard_mesh := PrismMesh.new()
         shard_mesh.size = Vector3(0.12, 0.46, 0.10)
         shard.mesh = shard_mesh
-        var angle := TAU * float(shard_index) / 6.0
+        var angle := TAU * float(shard_index) / float(shard_count)
         shard.position = Vector3(cos(angle) * 0.42, 0.0, sin(angle) * 0.42)
         shard.rotation.y = -angle
         shard.rotation.z = -0.48
