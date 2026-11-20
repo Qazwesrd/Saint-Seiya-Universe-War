@@ -131,6 +131,10 @@ func _run_tests() -> void:
 	assert(str(CampaignDatabase.get_mission("s12_010").get("type", "")) == "story", "Sagittarius legacy is a story trial, not a living boss fight")
 	for archetype_id in ["gold_taurus", "gemini_illusion", "gold_cancer", "gold_leo_controlled", "gold_virgo", "gold_scorpio", "gold_capricorn", "gold_aquarius", "gold_pisces", "pope_saga"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "Sanctuary encounter archetype: " + archetype_id)
+	var taurus_mission: Dictionary = CampaignDatabase.get_mission("s12_003")
+	assert(not taurus_mission.get("encounter", {}).get("waves", []).is_empty(), "Taurus story mission has a data-driven encounter")
+	assert(str(taurus_mission["encounter"]["waves"][0]["spawns"][0]["archetype_id"]) == "gold_taurus", "Taurus encounter resolves its configured archetype")
+	assert(CampaignDatabase.get_mission("s12_002").get("encounter", {}).is_empty(), "Mu story mission remains interaction-only")
 	assert(not CampaignManager.accept_mission("gw_002"), "cannot skip the first story mission")
 	assert(CampaignManager.accept_mission(first_mission_id), "save campaign progress to character slot")
 	assert(RPGState.create_new_slot(2), "create second isolated character slot")
