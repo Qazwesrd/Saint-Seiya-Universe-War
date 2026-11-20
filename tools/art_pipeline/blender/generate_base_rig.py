@@ -27,7 +27,7 @@ REQUIRED_CLIPS = (
 def reset_scene():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
-    for datablocks in (bpy.data.meshes, bpy.data.curves, bpy.data.armatures, bpy.data.materials, bpy.data.actions):
+    for datablocks in (bpy.data.meshes, bpy.data.curves, bpy.data.armatures, bpy.data.actions):
         for item in list(datablocks):
             if item.users == 0:
                 datablocks.remove(item)

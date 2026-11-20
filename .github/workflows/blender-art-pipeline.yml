@@ -27,7 +27,14 @@ jobs:
           sudo apt-get install --no-install-recommends -y blender
           blender --version
       - name: Generate and structurally validate GLB prototypes
-        run: blender --background --python tools/art_pipeline/blender/generate_base_rig.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py 2>&1 | tee blender-export.log
+          grep -q "ART_PROTOTYPE_EXPORT_PASS" blender-export.log
+          test -s game/assets/_source_templates/humanoid_base/humanoid_base.glb
+          test -s game/assets/_source_templates/humanoid_animation_library/animation_library.glb
+          test -s game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4
         with:
