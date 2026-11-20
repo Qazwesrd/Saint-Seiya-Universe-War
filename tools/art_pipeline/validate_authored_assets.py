@@ -229,7 +229,7 @@ def validate_vfx_scene_catalog() -> list[str]:
         for token in required:
             if token not in source:
                 errors.append(f"{element}: effect scene missing {token}")
-        if f'# element={element} shape={shape}' not in source:
+        if f'metadata/element = "{element}"' not in source or f'metadata/shape = "{shape}"' not in source:
             errors.append(f"{element}: effect scene identity metadata mismatch")
     return errors
 

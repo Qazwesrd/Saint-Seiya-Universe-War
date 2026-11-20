@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - "tools/art_pipeline/blender/**"
+      - "game/scripts/enemy_database.gd"
+      - "game/scripts/character_visual_catalog.gd"
+      - "game/scripts/equipment_database.gd"
       - ".github/workflows/blender-art-pipeline.yml"
   pull_request:
     paths:

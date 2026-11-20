@@ -2,6 +2,9 @@ name: Android APK Export
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Blender Art Prototype Export"]
+    types: [completed]
   push:
     branches:
       - main
@@ -16,10 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
   android-export:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -27,6 +32,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Resolve latest successful Blender asset bundle
+        id: blender_bundle
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: "blender-art-pipeline.yml", status: "success", per_page: 20
+            });
+            const run = runs.data.workflow_runs.find(item => item.conclusion === "success");
+            if (!run) throw new Error("No successful Blender art export run is available.");
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: run.id
+            });
+            const artifact = artifacts.data.artifacts.find(item =>
+              item.name.startsWith("blender-art-prototypes-") && !item.expired
+            );
+            if (!artifact) throw new Error("Latest successful Blender run has no unexpired art bundle.");
+            core.setOutput("run_id", String(run.id));
+            core.setOutput("artifact_name", artifact.name);
+            core.info(`Using Blender run ${run.id}: ${artifact.name}`);
+      - name: Download generated character, armor, environment and enemy models
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.blender_bundle.outputs.artifact_name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.blender_bundle.outputs.run_id }}
+          path: game/assets
+      - name: Verify complete generated model bundle
+        run: |
+          set -euo pipefail
+          test "$(find game/assets/environments -name environment.glb -type f | wc -l)" -eq 7
+          test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
+          test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
+          test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
+          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
 
       - name: Import and validate project
         env:

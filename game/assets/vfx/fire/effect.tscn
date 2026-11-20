@@ -1,6 +1,5 @@
 [gd_scene load_steps=6 format=3]
 
-# element=fire shape=flare
 [sub_resource type="StandardMaterial3D" id="CoreMaterial"]
 shading_mode = 1
 transparency = 1
@@ -22,6 +21,8 @@ emission = Color(1, 0.28, 0.08, 1)
 size = Vector3(0.12, 0.46, 0.1)
 
 [node name="Effect" type="Node3D"]
+metadata/element = "fire"
+metadata/shape = "flare"
 [node name="Core" type="MeshInstance3D" parent="."]
 mesh = SubResource("CoreMesh")
 material_override = SubResource("CoreMaterial")
