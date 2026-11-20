@@ -1128,6 +1128,73 @@ func get_armor_catalog() -> Array:
     return result
 
 
+func get_divine_support_profile(class_id: String) -> Dictionary:
+    if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) != "神明":
+        return {}
+    var profile := {
+        "damage_bonus": 0.08,
+        "damage_reduction": 0.06,
+        "heal_ratio": 0.0,
+        "shield_ratio": 0.0,
+        "duration": 5.0,
+        "mobility": 0.0
+    }
+    match class_id:
+        "apollo", "abel":
+            profile["damage_bonus"] = 0.18
+            profile["damage_reduction"] = 0.04
+        "athena":
+            profile["damage_bonus"] = 0.04
+            profile["damage_reduction"] = 0.12
+            profile["heal_ratio"] = 0.08
+            profile["shield_ratio"] = 0.18
+            profile["duration"] = 6.0
+        "artemis", "pallas":
+            profile["damage_bonus"] = 0.12
+            profile["damage_reduction"] = 0.05
+        "hades", "lucifer":
+            profile["damage_bonus"] = 0.14
+            profile["heal_ratio"] = 0.04
+        "poseidon":
+            profile["damage_bonus"] = 0.08
+            profile["damage_reduction"] = 0.16
+        "zeus", "ares":
+            profile["damage_bonus"] = 0.18
+            profile["damage_reduction"] = 0.04
+            profile["mobility"] = 2.5
+        "hypnos":
+            profile["damage_bonus"] = 0.06
+            profile["damage_reduction"] = 0.12
+        "thanatos":
+            profile["damage_bonus"] = 0.16
+            profile["heal_ratio"] = 0.05
+        "odin":
+            profile["damage_bonus"] = 0.10
+            profile["damage_reduction"] = 0.10
+        "eris":
+            profile["damage_bonus"] = 0.12
+            profile["damage_reduction"] = 0.08
+        "saturn", "chronos":
+            profile["damage_bonus"] = 0.08
+            profile["damage_reduction"] = 0.14
+            profile["duration"] = 6.0
+        "hera", "demeter":
+            profile["damage_bonus"] = 0.06
+            profile["damage_reduction"] = 0.08
+            profile["heal_ratio"] = 0.12
+        "hestia":
+            profile["damage_bonus"] = 0.05
+            profile["damage_reduction"] = 0.12
+            profile["heal_ratio"] = 0.14
+        "hephaestus":
+            profile["damage_bonus"] = 0.12
+            profile["damage_reduction"] = 0.10
+        "hermes":
+            profile["damage_bonus"] = 0.10
+            profile["damage_reduction"] = 0.05
+            profile["mobility"] = 3.5
+    return profile
+
 func is_support_ability(ability: Dictionary) -> bool:
     var ability_type := str(ability.get("type", ""))
     var ability_role := str(ability.get("role", ""))
