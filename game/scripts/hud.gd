@@ -136,8 +136,6 @@ func _ready() -> void:
     flight_button.visible = false
     flight_up_button.visible = false
     flight_down_button.visible = false
-    SettingsManager.settings_changed.connect(_on_hud_setting_changed)
-    _apply_touch_layout()
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
     _button(root, "防御", Vector2(-370, -94), Vector2(-278, -22), func(): _call_player("guard"), Color(0.16, 0.34, 0.38))
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
@@ -154,7 +152,9 @@ func _ready() -> void:
     _button(root, "普攻", Vector2(-150, -166), Vector2(-24, -34), func(): _call_player("attack"), Color(0.62, 0.15, 0.12))
     _button(root, "个人圣域", Vector2(236, 154), Vector2(350, 214), func(): _open_sanctuary(root), Color(0.22, 0.16, 0.42))
     _button(root, "骑乘 / 下马", Vector2(354, 154), Vector2(488, 214), func(): _call_player("toggle_mount"), Color(0.12, 0.34, 0.38))
+    SettingsManager.settings_changed.connect(_on_hud_setting_changed)
     get_viewport().size_changed.connect(_on_resize)
+    _on_resize()
 func _cast_skill_slot(slot_index: int) -> void:
     if is_instance_valid(game.player):
         game.player.call("cast_skill_slot", slot_index)
@@ -432,8 +432,8 @@ func set_boss_status(hp: float, hp_max: float) -> void:
 func set_notice(message: String) -> void:
     if is_instance_valid(notice_label): notice_label.text = message
 func _on_resize() -> void:
-    stick_base.position = Vector2(42, get_viewport().size.y - 200)
-    stick_knob.position = stick_base.position + Vector2(46, 46)
+    stick_default_position = Vector2(42, get_viewport().get_visible_rect().size.y - 200.0)
+    _apply_touch_layout()
 
 
 func _open_combo_editor(root: Control) -> void:
