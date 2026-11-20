@@ -34,7 +34,7 @@ func unlock_stage(stage_id: String) -> bool:
   return false
  var requirements := {
   "silver": {"level": 20, "chapter": "sanctuary_twelve_houses"},
-  "gold": {"level": 25, "chapter": "sanctuary_twelve_houses"},
+  "gold": {"level": 25, "chapter": "sanctuary_twelve_houses", "requires_completion": true},
   "sea_scale": {"level": 30, "chapter": "poseidon"},
   "surplice": {"level": 40, "chapter": "hades"},
   "god_cloth": {"level": 45, "chapter": "hades"},
@@ -45,9 +45,13 @@ func unlock_stage(stage_id: String) -> bool:
   return false
  var chapter_unlocked := false
  for chapter in CampaignManager.get_chapter_overview():
-  if str(chapter.get("id", "")) == str(requirement.get("chapter", "")) and bool(chapter.get("unlocked", false)):
-   chapter_unlocked = true
-   break
+  if str(chapter.get("id", "")) != str(requirement.get("chapter", "")):
+   continue
+  if bool(requirement.get("requires_completion", false)):
+   chapter_unlocked = bool(chapter.get("completed", false))
+  else:
+   chapter_unlocked = bool(chapter.get("unlocked", false))
+  break
  if not chapter_unlocked:
   return false
  var unlocked: Array = data.get("unlocked_stages", []).duplicate()
