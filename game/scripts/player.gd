@@ -27,6 +27,9 @@ var temporary_damage_bonus := 0.0
 var temporary_damage_reduction := 0.0
 var temporary_buff_timer := 0.0
 var ability_cooldowns: Dictionary = {}
+var custom_combo_index := 0
+var custom_combo_timer := 0.0
+var custom_combo_auto_running := false
 func _ready() -> void:
     var rpg_stats: Dictionary = RPGState.get_combat_stats()
     max_health = float(rpg_stats.get("max_health", 110.0))
@@ -101,6 +104,9 @@ func _physics_process(delta: float) -> void:
         basic_combo_step = 0
     skill_cd = maxf(0.0, skill_cd - delta)
     combo_window = maxf(0.0, combo_window - delta)
+    custom_combo_timer = maxf(0.0, custom_combo_timer - delta)
+    if custom_combo_timer <= 0.0:
+        custom_combo_index = 0
     burst_cd = maxf(0.0, burst_cd - delta)
     dodge_time = maxf(0.0, dodge_time - delta)
     invulnerable = maxf(0.0, invulnerable - delta)
@@ -163,6 +169,7 @@ func attack() -> void:
     _flash(skill_data.get("color", Color(1.0, 0.82, 0.35)))
     game.call("damage_nearby_combat", damages, 2.8 if basic_combo_step < 3 else 3.2, 125.0, push_forces[basic_combo_step - 1], lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else float(skill_data.get("stagger", 0.55)) * 0.6)
     game.call("show_notice", str(basic_names[basic_combo_step - 1]) + "！")
+    _register_custom_combo_input("basic_attack_%d" % basic_combo_step)
 func skill() -> void:
     if skill_cd > 0.0 or cosmos < 18.0:
         game.call("show_notice", "小宇宙不足或技能冷却中")
@@ -182,6 +189,7 @@ func skill() -> void:
     game.call("apply_class_skill_effect", class_id, float(skill_data.get("range", 7.0)))
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
+    _register_custom_combo_input(class_id + "_skill_1")
 func combo_skill() -> void:
     if combo_window <= 0.0:
         game.call("show_notice", "先施放职业技能，才能衔接连招")
@@ -223,6 +231,7 @@ func dodge() -> void:
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * 15.0
     game.call("show_notice", "闪避！短暂无敌")
+    _register_custom_combo_input("dodge")
 func toggle_lock() -> void:
     var next_target: Node3D = CombatTargeting.select_target(self, locked_target, true)
     if not is_instance_valid(next_target):
@@ -276,6 +285,74 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
         flat_direction = -global_transform.basis.z
     knockback_velocity = flat_direction.normalized() * force
 
+func guard() -> void:
+    apply_temporary_buff(0.0, 0.35, 1.2)
+    game.call("show_notice", "架势防御！")
+    _register_custom_combo_input("guard")
+
+func _register_custom_combo_input(action_id: String) -> void:
+    if custom_combo_auto_running:
+        return
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var preset := ComboPresetManager.get_active_preset(class_id)
+    var steps: Array = preset.get("steps", [])
+    if steps.is_empty():
+        return
+    if custom_combo_timer <= 0.0:
+        custom_combo_index = 0
+    if str(steps[custom_combo_index]) == action_id:
+        custom_combo_index += 1
+    elif str(steps[0]) == action_id:
+        custom_combo_index = 1
+    else:
+        custom_combo_index = 0
+    custom_combo_timer = float(preset.get("input_window", 0.65))
+    if custom_combo_index >= steps.size():
+        _execute_custom_combo_finisher(preset)
+        custom_combo_index = 0
+        custom_combo_timer = 0.0
+        return
+    if str(preset.get("trigger_mode", "")) == "自动衔接" and custom_combo_index == 1:
+        _run_custom_combo_auto(preset)
+
+func _run_custom_combo_auto(preset: Dictionary) -> void:
+    if custom_combo_auto_running:
+        return
+    custom_combo_auto_running = true
+    var steps: Array = preset.get("steps", [])
+    for i in range(1, steps.size()):
+        await get_tree().create_timer(0.32).timeout
+        var action_id := str(steps[i])
+        if action_id.begins_with("basic_attack_"):
+            attack()
+        elif action_id == "dodge":
+            dodge()
+        elif action_id == "guard":
+            guard()
+        else:
+            cast_ability(action_id)
+    custom_combo_auto_running = false
+    _execute_custom_combo_finisher(preset)
+    custom_combo_index = 0
+    custom_combo_timer = 0.0
+
+func _execute_custom_combo_finisher(preset: Dictionary) -> void:
+    var steps: Array = preset.get("steps", [])
+    if steps.is_empty():
+        return
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var class_data := SkillSystem.get_class_skill(class_id)
+    var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
+    var skill_level := SkillSystem.get_skill_level(class_id)
+    var damage := attack_power * (1.1 + float(steps.size()) * 0.42) * (1.0 + float(skill_level - 1) * 0.05)
+    var reach := float(class_data.get("combo_range", 8.5))
+    var color: Color = class_data.get("color", Color(0.35, 0.75, 1.0))
+    CombatSessionManager.record_skill_cast(true)
+    _flash(Color(1.0, 0.88, 0.42))
+    game.call("damage_nearby_combat", damage, reach, 180.0, float(class_data.get("combo_knockback", 7.0)), float(class_data.get("combo_launch", 2.8)), float(class_data.get("stagger", 0.7)))
+    game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, color, 3.2)
+    game.call("show_notice", str(preset.get("name", "自定义连招")) + " · 连携终结！")
+
 func cast_skill_slot(slot_index: int) -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var slots := SkillSystem.get_equipped_abilities(class_id)
@@ -319,3 +396,4 @@ func cast_ability(ability_id: String) -> void:
     game.call("apply_ability_effect", class_id, ability, reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
+    _register_custom_combo_input(ability_id)
