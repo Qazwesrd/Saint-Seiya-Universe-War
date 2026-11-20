@@ -47,17 +47,27 @@ def read_glb(path: Path) -> dict:
     return json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \t\r\n\0"))
 
 def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None,
-              required_nodes: tuple[str, ...] = ()) -> dict:
+              required_nodes: tuple[str, ...] = (), require_meshes: bool = True) -> dict:
     doc = read_glb(path)
-    if not doc.get("meshes"):
+    if require_meshes and not doc.get("meshes"):
         raise ValueError("GLB has no meshes")
     if require_skin and not doc.get("skins"):
         raise ValueError("character GLB has no skin/skeleton")
     if clips:
-        names = {str(item.get("name", "")) for item in doc.get("animations", [])}
+        animations = doc.get("animations", [])
+        names = {str(item.get("name", "")) for item in animations}
         missing = sorted(set(clips) - names)
         if missing:
             raise ValueError("missing animation clips: " + ", ".join(missing))
+        by_name = {str(item.get("name", "")): item for item in animations}
+        for clip_name in clips:
+            clip = by_name[clip_name]
+            if not clip.get("channels") or not clip.get("samplers"):
+                raise ValueError(f"animation clip '{clip_name}' has no animation tracks")
+            for channel in clip["channels"]:
+                target = channel.get("target", {})
+                if not isinstance(target.get("node"), int) or target.get("path") not in ("translation", "rotation", "scale", "weights"):
+                    raise ValueError(f"animation clip '{clip_name}' has an invalid track target")
     if required_nodes:
         names = {str(item.get("name", "")) for item in doc.get("nodes", [])}
         names.update(str(item.get("name", "")) for item in doc.get("meshes", []))
@@ -65,6 +75,37 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
         if missing:
             raise ValueError("missing required mesh/node objects: " + ", ".join(missing))
     return doc
+
+def validate_character_visual_catalog() -> list[str]:
+    path = ROOT / "game/scripts/character_visual_catalog.gd"
+    source = path.read_text(encoding="utf-8")
+    start = source.find("const PROFILES := {")
+    end = source.find("\n}", start)
+    if start < 0 or end < 0:
+        return ["character visual catalog PROFILES block is missing or malformed"]
+    block = source[start:end]
+    entries = re.findall(r'^\s*"([^"]+)"\s*:\s*\{([^}]+)\}', block, re.M)
+    errors = []
+    if len(entries) != 32:
+        errors.append(f"expected 32 profession visual profiles, found {len(entries)}")
+    signatures = {}
+    required = ("crest", "ornament", "shoulder_scale", "wing_span", "silhouette")
+    for class_id, body in entries:
+        values = {}
+        for key in required:
+            match = re.search(rf'"{key}"\s*:\s*(?:"([^"]+)"|Vector3\(([^)]*)\)|([0-9.]+))', body)
+            if not match:
+                errors.append(f"{class_id}: missing geometry identity field {key}")
+                continue
+            values[key] = next((value for value in match.groups() if value is not None), "")
+        if all(key in values for key in required):
+            signature = tuple(values[key] for key in required)
+            if signature in signatures:
+                errors.append(f"{class_id}: geometry identity duplicates {signatures[signature]}")
+            else:
+                signatures[signature] = class_id
+    return errors
+
 
 def validate_skill_visual_catalog() -> list[str]:
     path = ROOT / "game/scripts/skill_visual_catalog.gd"
@@ -126,7 +167,7 @@ def validate_vfx_manifest(data: dict, scene: Path) -> None:
         raise ValueError("VFX scene must be .glb or .tscn")
 
 def main() -> int:
-    errors = validate_skill_visual_catalog()
+    errors = validate_character_visual_catalog() + validate_skill_visual_catalog()
     specs = expected()
     for manifest_path, spec in specs.items():
         if not manifest_path.is_file():
@@ -154,7 +195,7 @@ def main() -> int:
                 if not model.is_file() or not anim.is_file() or not portrait.is_file():
                     raise ValueError("character model, animation library or portrait is missing")
                 check_glb(model, require_skin=True)
-                check_glb(anim, clips=data["animation_library"]["required_clips"])
+                check_glb(anim, clips=data["animation_library"]["required_clips"], require_meshes=False)
             elif kind == "armor":
                 model = safe_path(base, data["model"]["path"])
                 icon = safe_path(base, data["icon"]["path"])

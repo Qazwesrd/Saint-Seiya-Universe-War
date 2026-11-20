@@ -10,6 +10,7 @@ from validate_authored_assets import (
     safe_path,
     validate_armor_manifest,
     validate_vfx_manifest,
+    validate_character_visual_catalog,
 )
 
 def write_glb(path: Path, nodes: list[str]) -> None:
@@ -61,6 +62,24 @@ class ArtValidatorTests(unittest.TestCase):
             data["quality_tiers"]["high"] = "not_created"
             with self.assertRaisesRegex(ValueError, "all three"):
                 validate_vfx_manifest(data, scene)
+
+    def test_character_catalog_has_32_distinct_geometry_identities(self):
+        self.assertEqual(validate_character_visual_catalog(), [])
+
+    def test_animation_clip_must_contain_real_tracks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "animations.glb"
+            document = {
+                "asset": {"version": "2.0"},
+                "animations": [{"name": "idle", "channels": [], "samplers": []}],
+            }
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            with self.assertRaisesRegex(ValueError, "no animation tracks"):
+                check_glb(path, clips=["idle"], require_meshes=False)
 
     def test_safe_path_rejects_traversal(self):
         with tempfile.TemporaryDirectory() as directory:
