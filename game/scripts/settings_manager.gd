@@ -49,7 +49,7 @@ func set_value(section: String, key: String, value: Variant, persist: bool = tru
 		return false
 	if section == "system" and key == "language":
 		LocalizationManager.set_locale(str(safe_value))
-	if section == "graphics" and key == "fps_limit":
+	if section == "graphics":
 		apply_settings()
 	settings_changed.emit(section, key, safe_value)
 	EventBus.settings_changed.emit(section, key, safe_value)
@@ -85,6 +85,11 @@ func reset_all() -> bool:
 
 func apply_settings() -> void:
 	Engine.max_fps = clampi(int(get_value("graphics", "fps_limit", 60)), 30, 120)
+	var quality := str(get_value("graphics", "quality", "medium"))
+	var quality_ceiling := 0.75 if quality == "low" else (0.9 if quality == "medium" else 1.0)
+	var viewport := get_viewport()
+	if is_instance_valid(viewport):
+		viewport.scaling_3d_scale = minf(clampf(float(get_value("graphics", "render_scale", 1.0)), 0.5, 1.0), quality_ceiling)
 
 func _sanitize_value(section: String, key: String, value: Variant) -> Variant:
 	if section == "graphics":
