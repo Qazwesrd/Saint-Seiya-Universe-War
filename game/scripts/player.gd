@@ -59,6 +59,8 @@ var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
 var visual_armor_signature := ""
+var authored_character_model: Node3D
+var authored_armor_model: Node3D
 var is_mounted := false
 var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
@@ -177,6 +179,8 @@ func _ready() -> void:
     visual_root.add_child(eye_band)
 
     _build_armor_visuals()
+    _load_authored_character_model(str(RPGState.profile.get("class_id", "pegasus")))
+    _load_authored_armor_model()
     _build_combat_feedback_visual()
     RPGState.state_changed.connect(_on_rpg_state_changed)
     mount_indicator = MeshInstance3D.new()
@@ -423,6 +427,8 @@ func _get_visual_armor_signature() -> String:
 func _on_rpg_state_changed() -> void:
     if _get_visual_armor_signature() != visual_armor_signature:
         _build_armor_visuals()
+        _load_authored_character_model(str(RPGState.profile.get("class_id", "pegasus")))
+        _load_authored_armor_model()
 
 func _get_armor_visual_part(piece_position: Vector3) -> String:
     var height := piece_position.y
@@ -1023,6 +1029,60 @@ func _build_armor_visuals() -> void:
 
     _build_armor_wear_cracks()
 
+
+func _load_authored_character_model(class_id: String) -> void:
+    if is_instance_valid(authored_character_model):
+        authored_character_model.queue_free()
+        authored_character_model = null
+    var model_path := "res://assets/characters/%s/model/character.glb" % class_id
+    if not ResourceLoader.exists(model_path):
+        return
+    var packed := load(model_path) as PackedScene
+    if packed == null:
+        push_warning("Profession model could not be loaded; keeping procedural fallback: " + model_path)
+        return
+    var instance := packed.instantiate()
+    if instance == null:
+        push_warning("Profession model could not be instantiated; keeping procedural fallback: " + model_path)
+        return
+    authored_character_model = instance
+    authored_character_model.name = "AuthoredProfessionModel"
+    authored_character_model.position = Vector3.ZERO
+    authored_character_model.scale = Vector3.ONE
+    visual_root.add_child(authored_character_model)
+    # Keep gameplay feedback nodes and modular armor; hide only the base mannequin meshes.
+    for child in visual_root.get_children():
+        if child is MeshInstance3D and child not in [combat_feedback_node, guard_shield_node, mount_indicator]:
+            child.visible = false
+
+func _load_authored_armor_model() -> void:
+    if is_instance_valid(authored_armor_model):
+        authored_armor_model.queue_free()
+        authored_armor_model = null
+    if is_instance_valid(armor_root):
+        armor_root.visible = true
+    var relic: Dictionary = EquipmentDatabase.get_equipped_relic()
+    var equipment_id := str(relic.get("id", ""))
+    if equipment_id.is_empty():
+        return
+    var model_path := "res://assets/armors/%s/model/armor.glb" % equipment_id
+    if not ResourceLoader.exists(model_path):
+        return
+    var packed := load(model_path) as PackedScene
+    if packed == null:
+        push_warning("Armor model could not be loaded; keeping modular armor fallback: " + model_path)
+        return
+    var instance := packed.instantiate()
+    if instance == null:
+        push_warning("Armor model could not be instantiated; keeping modular armor fallback: " + model_path)
+        return
+    authored_armor_model = instance
+    authored_armor_model.name = "AuthoredArmorModel"
+    authored_armor_model.position = Vector3.ZERO
+    authored_armor_model.scale = Vector3.ONE
+    visual_root.add_child(authored_armor_model)
+    if is_instance_valid(armor_root):
+        armor_root.visible = false
 
 func _on_camera_setting_changed(section: String, _key: String, _value: Variant) -> void:
     if section == "camera":

@@ -6,6 +6,7 @@ var floor_material: StandardMaterial3D
 var ring_root: Node3D
 var decor_root: Node3D
 var active_theme_id := ""
+var authored_environment_model: Node3D
 var _graphics_signal_connected := false
 var _decor_animation_clock := 0.0
 
@@ -74,6 +75,7 @@ func apply_theme(chapter_id: String) -> bool:
     if active_theme_id == chapter_id:
         return true
     active_theme_id = chapter_id
+    _load_authored_chapter_environment(chapter_id)
     var theme: Dictionary = THEMES[chapter_id]
     if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
         var environment := world_environment.environment
@@ -125,6 +127,27 @@ func apply_theme(chapter_id: String) -> bool:
     _build_chapter_landmarks(theme, chapter_id)
     _apply_visual_quality()
     return true
+
+func _load_authored_chapter_environment(chapter_id: String) -> void:
+    if is_instance_valid(authored_environment_model):
+        authored_environment_model.queue_free()
+        authored_environment_model = null
+    var model_path := "res://assets/environments/%s/environment.glb" % chapter_id
+    if not ResourceLoader.exists(model_path):
+        return
+    var packed := load(model_path) as PackedScene
+    if packed == null:
+        push_warning("Chapter environment model could not be loaded; keeping procedural landmarks: " + model_path)
+        return
+    var instance := packed.instantiate()
+    if instance == null:
+        push_warning("Chapter environment model could not be instantiated; keeping procedural landmarks: " + model_path)
+        return
+    authored_environment_model = instance
+    authored_environment_model.name = "AuthoredChapterEnvironment"
+    authored_environment_model.position = Vector3.ZERO
+    authored_environment_model.scale = Vector3.ONE
+    add_child(authored_environment_model)
 
 func _build_chapter_landmarks(theme: Dictionary, chapter_id: String) -> void:
     var primary: Color = theme["ring"]
