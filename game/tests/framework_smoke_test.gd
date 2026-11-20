@@ -357,6 +357,20 @@ func _run_tests() -> void:
 	assert(str(chronos_armor_visual.get("ornament", "")) == "time_rings", "Chronos divine relic selects time-ring ornaments")
 	var unknown_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "unlisted_visual_item", "category": "unlisted"})
 	assert(unknown_armor_visual.is_empty(), "unknown equipment does not invent a visual identity")
+	var skill_visual_script = preload("res://scripts/skill_visual_catalog.gd")
+	var skill_visual_audit: Dictionary = skill_visual_script.validate_catalog()
+	assert(bool(skill_visual_audit.get("valid", false)), "elemental skill VFX catalog is valid: " + str(skill_visual_audit.get("errors", [])))
+	assert(int(skill_visual_audit.get("element_count", 0)) >= 10, "skill VFX covers all elemental families")
+	var skill_visual_count := 0
+	for visual_class in SkillSystem.get_class_skill_catalog():
+		var visual_class_id := str(visual_class.get("id", ""))
+		for visual_ability in SkillSystem.get_ability_catalog(visual_class_id):
+			var ability_visual: Dictionary = skill_visual_script.get_profile(visual_class_id, visual_ability)
+			assert(typeof(ability_visual.get("color")) == TYPE_COLOR, visual_class_id + " ability has a valid VFX color")
+			assert(float(ability_visual.get("glow", -1.0)) >= 0.0 and float(ability_visual.get("glow", 1.0)) <= 0.6, visual_class_id + " ability VFX glow stays within mobile budget")
+			assert(float(ability_visual.get("impact_scale", 0.0)) >= 0.5 and float(ability_visual.get("impact_scale", 2.0)) <= 1.5, visual_class_id + " ability impact scale is bounded")
+			skill_visual_count += 1
+	assert(skill_visual_count == 768, "all 768 abilities resolve a visual effect profile")
 	var profiled_ability_count := 0
 	var field_action_count := 0
 	var trap_action_count := 0
