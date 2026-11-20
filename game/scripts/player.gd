@@ -424,21 +424,68 @@ func _on_rpg_state_changed() -> void:
     if _get_visual_armor_signature() != visual_armor_signature:
         _build_armor_visuals()
 
+func _get_armor_visual_part(piece_position: Vector3) -> String:
+    var height := piece_position.y
+    if height >= 1.82:
+        return "head"
+    if absf(piece_position.x) >= 0.40 and height >= 0.68 and height < 1.82:
+        return "arms"
+    if height >= 0.86:
+        return "chest"
+    if height >= 0.56:
+        return "waist"
+    return "legs"
+
 func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72) -> MeshInstance3D:
     var piece := MeshInstance3D.new()
     piece.mesh = mesh
     piece.position = piece_position
     piece.scale = piece_scale
+    var part_id := _get_armor_visual_part(piece_position)
+    var part_wear: Dictionary = ArmorSystem.get_part_visual_wear_profile(part_id)
     var material := StandardMaterial3D.new()
-    var wear_tint: Color = armor_visual_wear_profile.get("tint", Color.WHITE)
+    var wear_tint: Color = part_wear.get("tint", Color.WHITE)
     material.albedo_color = piece_color * wear_tint
-    material.metallic = clampf(metallic * float(armor_visual_wear_profile.get("metallic_multiplier", 1.0)), 0.0, 1.0)
-    material.roughness = clampf(float(armor_visual_wear_profile.get("roughness", 0.24)), 0.18, 0.72)
+    material.metallic = clampf(metallic * float(part_wear.get("metallic_multiplier", 1.0)), 0.0, 1.0)
+    material.roughness = clampf(float(part_wear.get("roughness", 0.24)), 0.18, 0.72)
     material.emission_enabled = true
-    material.emission = piece_color * 0.06 * float(armor_visual_wear_profile.get("condition", 1.0))
+    material.emission = piece_color * 0.06 * float(part_wear.get("condition", 1.0))
     piece.material_override = material
     armor_root.add_child(piece)
     return piece
+
+func _build_armor_wear_cracks() -> void:
+    var crack_layout := {
+        "head": [Vector3(-0.12, 2.00, -0.285), Vector3(0.12, 1.91, -0.285)],
+        "chest": [Vector3(-0.20, 1.40, -0.445), Vector3(0.18, 1.20, -0.445)],
+        "arms": [Vector3(-0.55, 1.08, -0.205), Vector3(0.55, 1.08, -0.205)],
+        "waist": [Vector3(-0.18, 0.66, -0.365), Vector3(0.18, 0.66, -0.365)],
+        "legs": [Vector3(-0.22, 0.37, -0.325), Vector3(0.22, 0.37, -0.325)]
+    }
+    for part_id in ArmorSystem.PARTS:
+        var wear: Dictionary = ArmorSystem.get_part_visual_wear_profile(str(part_id))
+        var condition := float(wear.get("condition", 1.0))
+        if condition > 0.35:
+            continue
+        var severity := clampf((0.35 - condition) / 0.35, 0.0, 1.0)
+        var anchors: Array = crack_layout.get(part_id, [])
+        for anchor_index in range(anchors.size()):
+            var anchor: Vector3 = anchors[anchor_index]
+            for segment_index in range(2):
+                var crack_mesh := BoxMesh.new()
+                crack_mesh.size = Vector3(0.018, 0.10 + severity * 0.07, 0.012)
+                var crack := MeshInstance3D.new()
+                crack.mesh = crack_mesh
+                crack.position = anchor + Vector3((float(segment_index) - 0.5) * 0.035, -float(segment_index) * 0.045, 0.0)
+                crack.rotation.z = (-0.35 if (anchor_index + segment_index) % 2 == 0 else 0.35)
+                var crack_material := StandardMaterial3D.new()
+                crack_material.albedo_color = Color(0.055, 0.025, 0.035, 0.45 + severity * 0.5)
+                crack_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+                crack_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+                crack_material.emission_enabled = true
+                crack_material.emission = Color(0.16, 0.025, 0.035) * severity
+                crack.material_override = crack_material
+                armor_root.add_child(crack)
 
 func _build_armor_visuals() -> void:
     if not is_instance_valid(visual_root):
@@ -693,6 +740,8 @@ func _build_armor_visuals() -> void:
         glow_material.emission_enabled = true
         glow_material.emission = accent * stage_glow
         glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+    _build_armor_wear_cracks()
 
 
 func _on_camera_setting_changed(section: String, _key: String, _value: Variant) -> void:

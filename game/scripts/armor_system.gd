@@ -160,6 +160,15 @@ static func get_visual_wear_profile(condition_ratio: float) -> Dictionary:
         "cracked": condition <= 0.25
     }
 
+func get_part_visual_wear_profile(part: String) -> Dictionary:
+    return get_visual_wear_profile(get_part_condition(part))
+
+func get_part_durability(part: String) -> int:
+    if not (part in PARTS):
+        return 0
+    var durability: Dictionary = _ensure_data().get("durability", {})
+    return clampi(int(durability.get(part, 100)), 0, 100)
+
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_data()
  var stage_id := str(data.get("current_stage","bronze"))
