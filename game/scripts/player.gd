@@ -1,6 +1,7 @@
 extends CharacterBody3D
 const CombatTargeting = preload("res://scripts/combat_targeting.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
+const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 var game: Variant
 var move_input := Vector2.ZERO
 var auto_move_target := Vector3.ZERO
@@ -186,6 +187,21 @@ func _animate_visual_motion(delta: float) -> void:
     var target_pitch := move_input.y * 0.055
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
     visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
+
+func _play_skill_pose(profile: Dictionary) -> void:
+    if not is_instance_valid(visual_root):
+        return
+    if is_instance_valid(visual_pose_tween):
+        visual_pose_tween.kill()
+    var pose_scale := clampf(float(profile.get("pose_scale", 1.08)), 1.0, 1.24)
+    var rotation_target := visual_root.rotation.y + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
+    var startup := clampf(float(profile.get("startup", 0.2)), 0.1, 0.8)
+    var recovery := clampf(float(profile.get("active", 0.2)) + float(profile.get("recovery", 0.3)), 0.18, 1.4)
+    visual_pose_tween = create_tween()
+    visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE * pose_scale, startup)
+    visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", rotation_target, startup)
+    visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE, recovery)
+    visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", 0.0, minf(0.22, recovery))
 
 func _play_attack_pose(intensity: float = 1.0) -> void:
     if not is_instance_valid(visual_root):
@@ -873,7 +889,9 @@ func cast_ability(ability_id: String) -> bool:
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % cost)
         return false
     cosmos -= cost
-    _play_attack_pose(1.2)
+    var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
+    var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(class_id, ability)
+    _play_skill_pose(animation_profile)
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
@@ -887,7 +905,6 @@ func cast_ability(ability_id: String) -> bool:
     if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
         reach += 2.0
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
-    var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var projectile_action := str(ability_profile.get("action", "")) in ["projectile", "homing_projectile"]
     _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
     if not SkillSystem.is_support_ability(ability) and not projectile_action:
