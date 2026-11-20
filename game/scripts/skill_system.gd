@@ -1179,6 +1179,15 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
             return 1.0 + value
     return 1.0
 
+func get_position_damage_multiplier(class_id: String, target_facing_dot: float, target_is_boss: bool = false) -> float:
+	if class_id != "sea_dragon" or target_facing_dot > 0.25:
+		return 1.0
+	var passive := get_passive(class_id)
+	var bonus := clampf(float(passive.get("value", 0.0)), 0.0, 0.25)
+	if target_is_boss:
+		bonus *= 0.5
+	return 1.0 + bonus
+
 func get_combo_damage_multiplier(class_id: String) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "combo_damage":
