@@ -39,13 +39,37 @@ const CHAPTERS := [
         ]
     },
     {
+        "id": "asgard",
+        "name": "北欧仙宫篇（动画篇章）",
+        "order": 3,
+        "description": "承接圣域篇后的动画原创北欧篇章：调查希路达与奥丁圣衣危机，依次面对七名神斗士。",
+        "missions": [
+            {"id":"as_001","name":"北欧的异变","type":"main","level":28,"description":"前往北欧调查希路达祈祷异常与冰雪灾变。","objectives":[{"id":"asgard_investigate","text":"调查北欧异变线索","target":1}],"rewards":{"exp":1500,"coins":1100}},
+            {"id":"as_002","name":"神斗士托尔","type":"boss","level":29,"description":"与阿尔法星神斗士托尔交战，躲避巨斧重击。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_thor","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_thor","text":"通过托尔的巨斧试炼","target":1}],"rewards":{"exp":1700,"coins":1250}},
+            {"id":"as_003","name":"芬里尔的狼群","type":"boss","level":30,"description":"面对贝塔星神斗士芬里尔与狼群协同攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_fenrir","count":1,"boss":true},{"archetype_id":"asgard_wolf","count":2}]}]},"objectives":[{"id":"asgard_fenrir","text":"击退芬里尔与狼群","target":1}],"rewards":{"exp":1800,"coins":1300}},
+            {"id":"as_004","name":"冰河与哈根","type":"boss","level":31,"description":"面对伽马星神斗士哈根的冰火双重攻势。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_hagen","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_hagen","text":"通过哈根的冰火试炼","target":1}],"rewards":{"exp":1900,"coins":1380}},
+            {"id":"as_005","name":"琴声与野心","type":"boss","level":32,"description":"与德尔塔星神斗士米伊美交战，识破音律与幻影。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_mime","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_mime","text":"破解米伊美的音律攻击","target":1}],"rewards":{"exp":2000,"coins":1450}},
+            {"id":"as_006","name":"仙宫的阴谋","type":"boss","level":33,"description":"面对艾普西隆星神斗士阿鲁贝利西的紫水晶封印。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_alberich","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_alberich","text":"突破阿鲁贝利西的封印","target":1}],"rewards":{"exp":2100,"coins":1520}},
+            {"id":"as_007","name":"双子神斗士","type":"boss","level":34,"description":"依次面对齐格弗里德麾下的捷克弗里德与巴度，揭开双子星的秘密。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_syd","count":1,"boss":true}]},{"spawns":[{"archetype_id":"god_warrior_bud","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_syd_bud","text":"通过捷克弗里德与巴度的双重试炼","target":2}],"rewards":{"exp":2300,"coins":1650}},
+            {"id":"as_008","name":"奥丁神斗士齐格弗里德","type":"final_boss","level":35,"description":"迎战最强神斗士齐格弗里德，终结北欧仙宫危机并承接海界篇。","encounter":{"waves":[{"spawns":[{"archetype_id":"god_warrior_siegfried","count":1,"boss":true}]}]},"objectives":[{"id":"asgard_siegfried","text":"击败齐格弗里德","target":1}],"rewards":{"exp":2600,"coins":1900}}
+        ]
+    },
+    {
         "id": "poseidon",
         "name": "海皇篇",
-        "order": 3,
-        "description": "探索海界遗迹，突破海将军的防线。",
+        "order": 4,
+        "description": "承接北欧仙宫篇，救援被海皇势力带走的雅典娜，突破海底神殿七大支柱与七位海将军，最终迎战波塞冬。",
         "missions": [
-            {"id":"po_001","name":"海界异象","type":"main","level":18,"description":"调查海界能量异常并寻找入口。","objectives":[{"id":"investigate_sea_ruins","text":"调查海界遗迹","target":3}],"rewards":{"exp":900,"coins":700}},
-            {"id":"po_002","name":"海将军的试炼","type":"boss","level":22,"description":"击败海界守卫，阻止能量核心失控。","objectives":[{"id":"defeat_mariner_guard","text":"击败海界守卫","target":1}],"rewards":{"exp":1300,"coins":950}}
+            {"id":"po_001","name":"雅典娜被囚与海界入口","type":"main","level":38,"description":"调查海皇势力的行动，确认雅典娜被带往海底神殿，寻找海界入口。","objectives":[{"id":"poseidon_find_entry","text":"找到海底神殿入口","target":1}],"rewards":{"exp":2600,"coins":1850}},
+            {"id":"po_002","name":"海马将军：拜安","type":"boss","level":39,"description":"挑战海马座巴尔安的神风攻击，突破北太平洋之柱防线。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_baian","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_baian","text":"击败海马将军拜安","target":1}],"rewards":{"exp":2800,"coins":2000}},
+            {"id":"po_003","name":"六圣兽：伊奥","type":"boss","level":40,"description":"应对海魔女伊奥的六圣兽组合攻击，逐一破解不同形态。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_io","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_io","text":"击败六圣兽伊奥","target":1}],"rewards":{"exp":3000,"coins":2150}},
+            {"id":"po_004","name":"海皇子：克修拉","type":"boss","level":41,"description":"面对海皇子克修拉的黄金枪与昆达里尼小宇宙防御。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_krishna","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_krishna","text":"击败海皇子克修拉","target":1}],"rewards":{"exp":3200,"coins":2300}},
+            {"id":"po_005","name":"海魔女：卡萨","type":"boss","level":42,"description":"识破卡萨变换外形与读取内心弱点的幻术。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_kasa","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_kasa","text":"识破并击败卡萨","target":1}],"rewards":{"exp":3400,"coins":2450}},
+            {"id":"po_006","name":"海魔兽：艾萨克","type":"boss","level":43,"description":"与海魔兽座艾萨克交锋，躲避冰系突进与寒流攻击。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_isaac","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_isaac","text":"击败海魔兽艾萨克","target":1}],"rewards":{"exp":3600,"coins":2600}},
+            {"id":"po_007","name":"海妖：苏兰特","type":"boss","level":44,"description":"面对海妖座苏兰特的笛声控制与音波压制。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_sorrento","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_sorrento","text":"击败海妖苏兰特","target":1}],"rewards":{"exp":3800,"coins":2750}},
+            {"id":"po_008","name":"海龙：加隆","type":"boss","level":45,"description":"揭开海龙将军加隆的真实身份，经历与其的决战。","encounter":{"waves":[{"spawns":[{"archetype_id":"mariner_kanon","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_kanon","text":"击败海龙将军加隆","target":1}],"rewards":{"exp":4100,"coins":2950}},
+            {"id":"po_009","name":"七大支柱的最终防线","type":"main","level":46,"description":"在海将军防线被突破后，完成七大支柱与主支柱的剧情目标，为最终决战开路。","objectives":[{"id":"poseidon_pillars","text":"完成七大支柱剧情目标","target":7}],"rewards":{"exp":4400,"coins":3200}},
+            {"id":"po_010","name":"海皇波塞冬","type":"final_boss","level":48,"description":"面对觉醒的海皇波塞冬，阻止海水淹没大地并救出雅典娜。","encounter":{"waves":[{"spawns":[{"archetype_id":"poseidon_emperor","count":1,"boss":true}]}]},"objectives":[{"id":"poseidon_final","text":"击败海皇波塞冬并完成海界决战","target":1}],"rewards":{"exp":6000,"coins":4500}}
         ]
     },
     {
