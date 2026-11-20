@@ -16,7 +16,7 @@ const DROP_TABLES := {
 	]
 }
 
-func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
+func roll_enemy_drops(is_boss: bool, enemy_level: int = 1, auto_pickup: bool = true) -> Array[Dictionary]:
 	var table: Array = DROP_TABLES["boss" if is_boss else "normal"]
 	var level_bonus := clampf(float(maxi(1, enemy_level) - 1) * 0.002, 0.0, 0.12)
 	var awarded: Array[Dictionary] = []
@@ -35,7 +35,7 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 				"name": str(RPGState.ITEM_DATA[item_id].get("name", item_id)),
 				"quantity": quantity
 			})
-	if not awarded.is_empty():
+	if not awarded.is_empty() and auto_pickup:
 		if not RPGState.add_items(batch):
 			SystemHealthManager.report_error("loot", "战利品入账失败", JSON.stringify(batch))
 			return []
@@ -45,7 +45,10 @@ func roll_enemy_drops(is_boss: bool, enemy_level: int = 1) -> Array[Dictionary]:
 func grant_drop(item_id: String, quantity: int = 1) -> bool:
 	if not RPGState.ITEM_DATA.has(item_id) or quantity <= 0:
 		return false
-	return RPGState.add_item(item_id, quantity)
+	if not RPGState.add_item(item_id, quantity):
+		return false
+	loot_awarded.emit([{"item_id": item_id, "name": str(RPGState.ITEM_DATA[item_id].get("name", item_id)), "quantity": quantity}])
+	return true
 
 func get_drop_table(is_boss: bool) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
