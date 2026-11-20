@@ -263,18 +263,66 @@ def export_glb(path, objects):
     if not path.is_file() or path.stat().st_size < 1024:
         raise RuntimeError("GLB export missing or unexpectedly small: " + str(path))
 
+def validate_glb(path, required_nodes=(), require_skin=False, required_clips=()):
+    data = path.read_bytes()
+    if len(data) < 20 or data[:4] != b"glTF":
+        raise RuntimeError("Invalid GLB header: " + str(path))
+    version, declared_length = struct.unpack_from("<II", data, 4)
+    chunk_length, chunk_type = struct.unpack_from("<II", data, 12)
+    if version != 2 or declared_length != len(data) or chunk_type != 0x4E4F534A or 20 + chunk_length > len(data):
+        raise RuntimeError("Invalid GLB v2 JSON chunk: " + str(path))
+    document = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    node_names = {str(node.get("name", "")) for node in document.get("nodes", [])}
+    missing_nodes = sorted(set(required_nodes) - node_names)
+    if missing_nodes:
+        raise RuntimeError("GLB is missing required nodes: " + ", ".join(missing_nodes))
+    if require_skin and not document.get("meshes"):
+        raise RuntimeError("Rigged character/armor GLB has no meshes: " + str(path))
+    if require_skin and not document.get("skins"):
+        raise RuntimeError("Rigged character/armor GLB has no skin: " + str(path))
+    clip_names = {str(clip.get("name", "")) for clip in document.get("animations", [])}
+    missing_clips = sorted(set(required_clips) - clip_names)
+    if missing_clips:
+        raise RuntimeError("GLB is missing animation clips: " + ", ".join(missing_clips))
+    print("Validated GLB:", path.name, "nodes=", len(node_names), "meshes=", len(document.get("meshes", [])), "clips=", len(clip_names))
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     reset_scene()
     rig = create_rig()
     body = build_body(rig)
     make_animation_library(rig)
-    export_glb(CHARACTER / "humanoid_base.glb", [rig, body])
+
+    character_model = CHARACTER / "humanoid_base.glb"
+    export_glb(character_model, [rig, body])
+    validate_glb(
+        character_model,
+        required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+        require_skin=True,
+        required_clips=REQUIRED_CLIPS,
+    )
+
+    animation_library = ANIMATIONS / "animation_library.glb"
+    export_glb(animation_library, [rig])
+    validate_glb(
+        animation_library,
+        required_nodes=("Humanoid_Base_Rig",),
+        required_clips=REQUIRED_CLIPS,
+    )
+
     armor_parts = build_armor(rig)
-    export_glb(ARMOR / "modular_armor_kit.glb", [rig] + armor_parts)
+    armor_model = ARMOR / "modular_armor_kit.glb"
+    export_glb(armor_model, [rig] + armor_parts)
+    validate_glb(
+        armor_model,
+        required_nodes=("Humanoid_Base_Rig",) + tuple(obj.name for obj in armor_parts),
+        require_skin=True,
+    )
+
     print("ART_PROTOTYPE_EXPORT_PASS")
-    print("Character rigged GLB:", CHARACTER / "humanoid_base.glb")
-    print("Modular armor GLB:", ARMOR / "modular_armor_kit.glb")
+    print("Character rigged GLB:", character_model)
+    print("Separate animation library GLB:", animation_library)
+    print("Modular armor GLB:", armor_model)
     print("Detachable armor mesh objects:", len(armor_parts))
     print("Armor objects:", ", ".join(obj.name for obj in armor_parts))
     print("Animation actions:", len(REQUIRED_CLIPS))

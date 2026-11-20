@@ -101,6 +101,7 @@ func _run_tests() -> void:
 	assert(art_coverage_report.has("missing_enemy_models") and art_coverage_report.has("missing_enemy_portraits"), "enemy audit reports missing authored assets")
 	assert(int(art_coverage_report.get("chapter_count", 0)) == 7 and art_coverage_report.has("missing_chapter_scenes"), "art audit covers all seven campaign environment themes")
 	assert(int(art_coverage_report.get("skill_count", 0)) == 768, "art audit counts all 768 class abilities")
+	assert(int(art_coverage_report.get("skill_element_count", 0)) == 11, "art audit covers all 11 elemental VFX families, including sound")
 	assert(art_coverage_report.has("missing_skill_effects"), "skill VFX audit reports missing authored element effects")
 	assert(int(art_coverage_report.get("authored_asset_total", 0)) > 0, "art audit reports the total authored asset scope")
 	assert(int(art_coverage_report.get("authored_asset_found", -1)) + int(art_coverage_report.get("authored_asset_missing", -1)) == int(art_coverage_report.get("authored_asset_total", 0)), "art audit found and missing counts reconcile")
