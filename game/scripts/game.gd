@@ -719,11 +719,12 @@ func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
     summon.set("game", self)
     summon.set("owner_player", player)
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var summon_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var summon_power := float(RPGState.get_combat_stats().get("attack", 14.0))
-    summon_power *= float(class_data.get("damage", 1.5)) * 0.72
+    summon_power *= float(class_data.get("damage", 1.5)) * float(summon_profile.get("summon_damage_ratio", 0.72))
     summon_power *= SkillSystem.get_skill_damage_multiplier(class_id)
     summon.set("summon_damage", maxf(4.0, summon_power))
-    summon.set("life_time", 9.0)
+    summon.set("life_time", float(summon_profile.get("summon_lifetime", 9.0)))
     summon.set("summon_color", class_data.get("color", Color(0.35, 0.8, 1.0)))
     summon.global_position = player.global_position + (-player.global_transform.basis.z * 1.5) + Vector3.UP * 1.8
     add_child(summon)
