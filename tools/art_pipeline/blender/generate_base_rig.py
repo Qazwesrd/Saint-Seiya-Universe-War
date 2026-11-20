@@ -453,10 +453,10 @@ def catalog_ids(gd_path, marker):
     start = source.find(marker)
     if start < 0:
         raise RuntimeError("catalog marker missing: " + marker)
-    match = re.search(r"\\n(.*?)^\\}", source[start:], re.S | re.M)
+    match = re.search(r"\n(.*?)^\}", source[start:], re.S | re.M)
     if not match:
         raise RuntimeError("catalog block malformed: " + marker)
-    return re.findall(r'^\\s*"([^"]+)"\\s*:\\s*\\{', match.group(1), re.M)
+    return re.findall(r'^\s*"([^"]+)"\s*:\s*\{', match.group(1), re.M)
 
 def build_profession_models():
     """Export one distinct rigged silhouette per playable profession (prototype quality)."""
