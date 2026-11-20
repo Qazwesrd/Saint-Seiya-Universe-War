@@ -456,6 +456,19 @@ func _run_tests() -> void:
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "restore campaign progress from selected slot")
 	assert(RPGState.load_slot(2), "load isolated slot for tutorial reward test")
 	CampaignManager.progress["unlocked_chapters"] = ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades"]
+	var prior_campaign_missions: Array[String] = []
+	var found_hades_judges := false
+	for chapter_entry in CampaignDatabase.get_chapters():
+		for mission_entry in chapter_entry.get("missions", []):
+			var prior_mission_id := str(mission_entry.get("id", ""))
+			if prior_mission_id == "ha_003":
+				found_hades_judges = true
+				break
+			prior_campaign_missions.append(prior_mission_id)
+		if found_hades_judges:
+			break
+	CampaignManager.progress["completed_missions"] = prior_campaign_missions.duplicate()
+	CampaignManager.progress["claimed_rewards"] = prior_campaign_missions.duplicate()
 	CampaignManager.progress["active_mission"] = "ha_003"
 	CampaignManager.progress["objective_counts"] = {}
 	assert(CampaignManager._save(), "prepare Hades three-judge encounter mission")
