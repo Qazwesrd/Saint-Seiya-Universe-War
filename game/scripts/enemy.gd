@@ -20,6 +20,7 @@ var boss_heavy_interval := 3
 var boss_heavy_multiplier := 1.55
 var boss_range_multiplier := 1.5
 var boss_recovery := 0.72
+var boss_special := "none"
 var state: BrainState = BrainState.CHASE
 var state_timer := 0.0
 var attack_cooldown := 0.8
@@ -64,6 +65,7 @@ func _ready() -> void:
     boss_heavy_multiplier = float(archetype.get("boss_heavy_multiplier", 1.55))
     boss_range_multiplier = float(archetype.get("boss_range_multiplier", 1.5))
     boss_recovery = float(archetype.get("boss_recovery", 0.72))
+    boss_special = str(archetype.get("boss_special", "none"))
     exp_reward = int(archetype.get("exp_reward", 30)) + maxi(0, enemy_level - 1) * 2
     coin_reward = int(archetype.get("coin_reward", 40)) + maxi(0, enemy_level - 1) * 3
     drop_tier = str(archetype.get("drop_tier", "normal"))
@@ -303,10 +305,68 @@ func _resolve_attack(target: Node3D) -> void:
             push.y = 0.0
             if push.length_squared() > 0.001:
                 target.call("apply_enemy_knockback", push.normalized(), 9.0 if _boss_heavy_attack else (7.0 if is_boss else 4.5))
+        if is_boss and _boss_heavy_attack and not player_invulnerable:
+            _apply_boss_attack_signature(target, outgoing_attack)
     attack_cooldown = attack_interval * (0.78 if _boss_phase_two else 1.0)
     state = BrainState.RECOVERY
     state_timer = boss_recovery if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
+
+func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
+    var cosmos := float(target.get("cosmos"))
+    match boss_special:
+        "dream_drain":
+            target.set("cosmos", maxf(0.0, cosmos - 8.0))
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动梦境侵蚀：小宇宙减少")
+        "soul_leech":
+            health = minf(max_health, health + base_damage * 0.08)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "汲取生命，恢复了部分体力")
+        "death_burst":
+            target.call("receive_damage", base_damage * 0.18, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动死亡追加斩击")
+        "tidal_pull":
+            if target.has_method("apply_enemy_knockback"):
+                var pull_direction := global_position - target.global_position
+                pull_direction.y = 0.0
+                if pull_direction.length_squared() > 0.001:
+                    target.call("apply_enemy_knockback", pull_direction.normalized(), 8.5)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "掀起潮汐，将目标拉向自身")
+        "solar_flare":
+            target.call("receive_damage", base_damage * 0.16, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "释放太阳神追加光爆")
+        "lightning_followup":
+            target.call("receive_damage", base_damage * 0.22, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "召来雷霆追击")
+        "void_drain":
+            target.set("cosmos", maxf(0.0, cosmos - 12.0))
+            health = minf(max_health, health + base_damage * 0.06)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "吞噬小宇宙并恢复体力")
+        "rift_drain":
+            target.set("cosmos", maxf(0.0, cosmos - 10.0))
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "撕裂小宇宙护盾")
+        "gravity_crush":
+            target.set("cosmos", maxf(0.0, cosmos - 6.0))
+            target.call("receive_damage", base_damage * 0.10, global_position)
+        "judge_combo":
+            target.call("receive_damage", base_damage * 0.16, global_position)
+        "judgment_combo":
+            target.call("receive_damage", base_damage * 0.20, global_position)
+        "wing_slam":
+            if target.has_method("apply_enemy_knockback"):
+                var slam_direction := target.global_position - global_position
+                slam_direction.y = 0.0
+                if slam_direction.length_squared() > 0.001:
+                    target.call("apply_enemy_knockback", slam_direction.normalized(), 12.0)
+        _:
+            return
 
 func take_damage(amount: float) -> void:
     if state == BrainState.DEAD or health <= 0.0:
