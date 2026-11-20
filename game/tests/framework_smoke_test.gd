@@ -182,6 +182,9 @@ func _run_tests() -> void:
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	for class_id in ["pegasus", "dragon", "apollo", "athena", "hades", "poseidon", "zeus", "tenkishi"]:
+		for ability in SkillSystem.get_ability_catalog(class_id):
+			assert(not str(ability.get("branch", "")).is_empty(), class_id + " skill branch is normalized")
 	assert(SkillSystem.is_support_ability({"type": "护盾", "role": "防御"}), "shield abilities are classified as support")
 	assert(SkillSystem.is_support_ability({"type": "治疗", "role": "恢复"}), "healing abilities are classified as support")
 	assert(SkillSystem.is_support_ability({"type": "回能", "role": "资源"}), "resource abilities are classified as support")
