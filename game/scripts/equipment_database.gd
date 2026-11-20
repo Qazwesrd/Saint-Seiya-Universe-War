@@ -33,7 +33,24 @@ const EQUIPMENT := {
  "hestia_divine_relic":{"name":"赫斯提亚神衣","category":"神明专属神衣","faction":"炉灶女神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":32,"defense":48,"max_health":320,"unlock_level":70},
  "hermes_divine_relic":{"name":"赫尔墨斯神衣","category":"神明专属神衣","faction":"神使","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":44,"defense":32,"max_health":250,"unlock_level":70},
  "hephaestus_divine_relic":{"name":"赫淮斯托斯神衣","category":"神明专属神衣","faction":"锻造之神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":40,"defense":50,"max_health":330,"unlock_level":70},
- "aphrodite_divine_relic":{"name":"阿佛洛狄忒神衣","category":"神明专属神衣","faction":"爱与美之神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":36,"defense":38,"max_health":280,"unlock_level":70}
+ "aphrodite_divine_relic":{"name":"阿佛洛狄忒神衣","category":"神明专属神衣","faction":"爱与美之神","source_work":"希腊神话扩展","canon_status":"游戏原创职业装备，不代表原作正式造型","rank":"扩展神级","attack":36,"defense":38,"max_health":280,"unlock_level":70},
+ "aries_gold_cloth":{"name":"白羊座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":18,"defense":17,"max_health":105,"unlock_level":30},
+ "taurus_gold_cloth":{"name":"金牛座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":19,"defense":20,"max_health":113,"unlock_level":30},
+ "gemini_gold_cloth":{"name":"双子座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":20,"defense":18,"max_health":121,"unlock_level":30},
+ "cancer_gold_cloth":{"name":"巨蟹座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":21,"defense":21,"max_health":129,"unlock_level":30},
+ "leo_gold_cloth":{"name":"狮子座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":18,"defense":19,"max_health":105,"unlock_level":30},
+ "virgo_gold_cloth":{"name":"处女座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":19,"defense":17,"max_health":113,"unlock_level":30},
+ "libra_gold_cloth":{"name":"天秤座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":20,"defense":20,"max_health":121,"unlock_level":30},
+ "scorpio_gold_cloth":{"name":"天蝎座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":21,"defense":18,"max_health":129,"unlock_level":30},
+ "sagittarius_gold_cloth":{"name":"射手座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":18,"defense":21,"max_health":105,"unlock_level":30},
+ "capricorn_gold_cloth":{"name":"摩羯座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":19,"defense":19,"max_health":113,"unlock_level":30},
+ "aquarius_gold_cloth":{"name":"水瓶座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":20,"defense":17,"max_health":121,"unlock_level":30},
+ "pisces_gold_cloth":{"name":"双鱼座黄金圣衣","category":"黄金圣衣 Gold Cloth","faction":"雅典娜军","source_work":"十二宫篇","canon_status":"黄金圣衣星座体系；游戏装备数值，不代表具体角色模型","rank":"黄金级","attack":21,"defense":20,"max_health":129,"unlock_level":30},
+ "bronze_cloth_archive":{"name":"青铜圣衣通用档案","category":"青铜圣衣 Bronze Cloth","faction":"雅典娜军","source_work":"银河战争篇","canon_status":"通用档案；各星座外观由独立资源定义","rank":"青铜级","attack":4,"defense":5,"max_health":35,"unlock_level":1},
+ "silver_cloth_archive":{"name":"白银圣衣通用档案","category":"白银圣衣 Silver Cloth","faction":"雅典娜军","source_work":"圣域篇","canon_status":"通用档案；不虚构未确认持有者","rank":"白银级","attack":10,"defense":11,"max_health":65,"unlock_level":20},
+ "surplice_general":{"name":"冥斗士通用冥衣","category":"冥衣 Surplice","faction":"冥界","source_work":"冥王篇","canon_status":"冥衣体系通用装备档案","rank":"冥界级","attack":18,"defense":17,"max_health":100,"unlock_level":40},
+ "mariner_scale_general":{"name":"海斗士通用鳞衣","category":"鳞衣 Scale","faction":"海界","source_work":"海皇篇","canon_status":"鳞衣体系通用装备档案","rank":"海界级","attack":17,"defense":18,"max_health":105,"unlock_level":35},
+ "god_robe_general":{"name":"神斗士通用神斗衣","category":"神斗衣 God Robe","faction":"北欧仙宫","source_work":"北欧篇","canon_status":"神斗衣体系通用装备档案","rank":"神斗级","attack":20,"defense":20,"max_health":120,"unlock_level":45},
 }
 
 func get_catalog() -> Array:
