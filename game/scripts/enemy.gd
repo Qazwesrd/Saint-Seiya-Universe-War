@@ -346,9 +346,16 @@ func get_divine_mark_lifesteal_ratio() -> float:
     return 0.025 if divine_mark in ["soul", "death"] else 0.0
 
 func get_divine_mark_burn_multiplier() -> float:
-    if divine_mark != "solar" or divine_mark_timer <= 0.0:
+    if divine_mark_timer <= 0.0:
         return 1.0
-    return 0.75 if is_boss else 1.2
+    match divine_mark:
+        "solar":
+            return 0.75 if is_boss else 1.2
+        "forge":
+            return 1.08 if is_boss else 1.15
+        "storm":
+            return 1.04 if is_boss else 1.10
+    return 1.0
 
 func get_divine_mark_damage_multiplier() -> float:
     if divine_mark_timer <= 0.0:
@@ -356,13 +363,24 @@ func get_divine_mark_damage_multiplier() -> float:
     match divine_mark:
         "lunar":
             return 1.05 if is_boss else 1.12
+        "rune", "discord":
+            return 1.04 if is_boss else 1.08
+        "harvest", "forge":
+            return 1.03 if is_boss else 1.06
+        "command", "aegis":
+            return 1.03 if is_boss else 1.05
+        "tidal", "storm":
+            return 1.02 if is_boss else 1.04
     return 1.0
 
 func get_divine_mark_attack_rate_multiplier() -> float:
     if divine_mark_timer <= 0.0:
         return 1.0
-    if divine_mark == "dream":
-        return 0.9 if is_boss else 0.75
+    match divine_mark:
+        "dream":
+            return 0.9 if is_boss else 0.75
+        "time":
+            return 0.92 if is_boss else 0.82
     return 1.0
 
 func get_divine_mark_knockback_multiplier() -> float:
