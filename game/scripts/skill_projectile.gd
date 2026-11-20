@@ -9,6 +9,8 @@ var lifetime := 4.0
 var turn_rate := 5.0
 var homing_enabled := true
 var projectile_color := Color(0.45, 0.8, 1.0)
+var projectile_shape := "star"
+var impact_scale := 1.0
 var status := "slow"
 var status_duration := 1.2
 var status_power := 0.12
@@ -16,10 +18,22 @@ var age := 0.0
 
 func _ready() -> void:
     var orb := MeshInstance3D.new()
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.22
-    sphere.height = 0.44
-    orb.mesh = sphere
+    match projectile_shape:
+        "shard", "bolt":
+            var shard := PrismMesh.new()
+            shard.size = Vector3(0.22, 0.48, 0.18) if projectile_shape == "shard" else Vector3(0.12, 0.58, 0.12)
+            orb.mesh = shard
+        "ring", "halo", "pulse", "wave", "crescent":
+            var ring := TorusMesh.new()
+            ring.inner_radius = 0.13
+            ring.outer_radius = 0.24
+            orb.mesh = ring
+        _:
+            var sphere := SphereMesh.new()
+            sphere.radius = 0.22
+            sphere.height = 0.44
+            orb.mesh = sphere
+    orb.scale = Vector3.ONE * clampf(impact_scale, 0.5, 1.5)
     var material := StandardMaterial3D.new()
     material.albedo_color = projectile_color
     material.emission_enabled = true
@@ -65,7 +79,7 @@ func _hit_target(hit_target: Node3D) -> void:
     if status != "" and hit_target.has_method("apply_status_effect"):
         hit_target.call("apply_status_effect", status, status_duration, status_power)
     if game.has_method("spawn_effect"):
-        game.call("spawn_effect", hit_target.global_position + Vector3.UP, projectile_color, 0.9)
+        game.call("spawn_effect", hit_target.global_position + Vector3.UP, projectile_color, impact_scale)
     queue_free()
 
 func _find_target() -> Node3D:
