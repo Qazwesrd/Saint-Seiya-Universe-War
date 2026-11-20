@@ -238,6 +238,10 @@ func _run_tests() -> void:
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	assert(is_equal_approx(SkillSystem.get_passive_guard_ratio("andromeda"), 0.12), "Andromeda passive emergency guard ratio is defined")
+	assert(is_equal_approx(SkillSystem.get_passive_guard_ratio("pegasus"), 0.0), "non-Andromeda classes do not receive the emergency guard")
+	assert(is_equal_approx(SkillSystem.get_passive_burn_multiplier("phoenix"), 1.12), "Phoenix passive amplifies burn ticks")
+	assert(is_equal_approx(SkillSystem.get_passive_burn_sustain_ratio("phoenix"), 0.04), "Phoenix passive restores a small amount of health from burn ticks")
 	for class_id in ["pegasus", "dragon", "apollo", "athena", "hades", "poseidon", "zeus", "tenkishi"]:
 		for ability in SkillSystem.get_ability_catalog(class_id):
 			assert(not str(ability.get("branch", "")).is_empty(), class_id + " skill branch is normalized")
