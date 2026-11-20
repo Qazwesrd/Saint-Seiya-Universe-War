@@ -13,8 +13,19 @@ func start(new_encounter_id: String, wave_definitions: Array[Dictionary]) -> boo
 	if new_encounter_id.is_empty() or wave_definitions.is_empty() or active:
 		return false
 	for wave in wave_definitions:
-		if not wave.has("spawns") or typeof(wave["spawns"]) != TYPE_ARRAY:
+		if not wave.has("spawns") or typeof(wave["spawns"]) != TYPE_ARRAY or wave["spawns"].is_empty():
 			return false
+		for spawn in wave["spawns"]:
+			if typeof(spawn) != TYPE_DICTIONARY:
+				return false
+			var archetype_id := str(spawn.get("archetype_id", ""))
+			var spawn_count := int(spawn.get("count", 1))
+			if archetype_id.is_empty() or not EnemyDatabase.has_archetype(archetype_id):
+				return false
+			if spawn_count < 1 or spawn_count > 20:
+				return false
+			if spawn.has("position") and typeof(spawn["position"]) != TYPE_VECTOR3:
+				return false
 	encounter_id = new_encounter_id
 	waves = wave_definitions.duplicate(true)
 	wave_index = -1
