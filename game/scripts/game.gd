@@ -703,7 +703,9 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         "trap":
             _spawn_skill_field(class_id, ability, true)
         "homing_projectile":
-            _spawn_skill_projectile(class_id, ability)
+            _spawn_skill_projectile(class_id, ability, true)
+        "projectile":
+            _spawn_skill_projectile(class_id, ability, false)
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
@@ -766,7 +768,7 @@ func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) ->
     add_child(field)
     show_notice(str(ability.get("name", "领域技能")) + ("：陷阱已布置" if is_trap else "：领域已展开"))
 
-func _spawn_skill_projectile(class_id: String, ability: Dictionary) -> void:
+func _spawn_skill_projectile(class_id: String, ability: Dictionary, homing: bool = true) -> void:
     if not is_instance_valid(player):
         return
     var active_projectiles := get_tree().get_nodes_in_group("skill_projectiles")
@@ -780,11 +782,13 @@ func _spawn_skill_projectile(class_id: String, ability: Dictionary) -> void:
     projectile.set("game", self)
     projectile.set("owner_player", player)
     projectile.set("speed", float(profile.get("projectile_speed", 12.0)))
+    projectile.set("homing_enabled", homing)
     projectile.set("damage", maxf(4.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("projectile_damage_ratio", 1.15)) * SkillSystem.get_skill_damage_multiplier(class_id)))
     projectile.set("projectile_color", class_data.get("color", Color(0.45, 0.8, 1.0)))
     projectile.global_position = player.global_position + (-player.global_transform.basis.z * 1.2) + Vector3.UP * 1.2
     add_child(projectile)
-    show_notice(str(ability.get("name", "追踪技能")) + "：追踪攻击已发射")
+    projectile.look_at(projectile.global_position - player.global_transform.basis.z, Vector3.UP)
+    show_notice(str(ability.get("name", "技能")) + ("：追踪攻击已发射" if homing else "：远程攻击已发射"))
 
 func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance: float) -> void:
     var ability_id := str(ability.get("id", ""))
