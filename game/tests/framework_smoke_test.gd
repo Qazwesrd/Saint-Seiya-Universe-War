@@ -181,7 +181,7 @@ func _run_tests() -> void:
 	var skill_audit: Dictionary = SkillSystem.validate_all_class_skill_catalogs()
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
-    assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
 	assert(is_equal_approx(SkillSystem.get_target_condition_multiplier("pegasus", test_boss), 1.0), "unconditional passives are not applied twice per target")
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("lyra"), 1.15), "Lyra stagger passive affects hit reactions")
 	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("sea_swallow"), 1.12), "Sea Swallow speed passive affects movement")
