@@ -439,6 +439,8 @@ func _run_tests() -> void:
 	assert(not CampaignManager.accept_mission("gw_002"), "cannot skip the first story mission")
 	assert(CampaignManager.accept_mission(first_mission_id), "save campaign progress to character slot")
 	assert(RPGState.create_new_slot(2), "create second isolated character slot")
+	assert(str(RPGState.profile.get("character_name", "")) == "星之战士", "new character profile includes a default display name")
+	assert(str(RPGState.get_slot_summary(2).get("character_name", "")) == "星之战士", "save slot summary exposes the character display name")
 	assert(QuestManager.status == "not_started", "quest state isolated on new slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "campaign defaults on new slot")
 	assert(not RPGState.save_slot(3), "cannot overwrite a different occupied save slot")
