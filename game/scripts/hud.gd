@@ -829,6 +829,30 @@ func _open_character(root: Control) -> void:
     armor_info.text = "当前圣衣：" + ArmorSystem.get_current_stage_name() + "\n耐久：头盔 %d / 胸甲 %d / 护腕 %d / 腰甲 %d / 腿甲 %d" % [int(armor_durability.get("head",100)),int(armor_durability.get("chest",100)),int(armor_durability.get("arms",100)),int(armor_durability.get("waist",100)),int(armor_durability.get("legs",100))]
     box.add_child(armor_info)
 
+    var armor_condition := ArmorSystem.get_condition_ratio()
+    var condition_label := Label.new()
+    condition_label.text = "圣衣完整度：%d%% · %s" % [roundi(armor_condition * 100.0), "状态完好" if armor_condition >= 0.8 else ("需要修复" if armor_condition > 0.25 else "严重破损")]
+    condition_label.add_theme_color_override("font_color", Color(0.45, 0.92, 0.68) if armor_condition >= 0.8 else (Color(1.0, 0.78, 0.32) if armor_condition > 0.25 else Color(1.0, 0.38, 0.32)))
+    box.add_child(condition_label)
+    var armor_part_grid := GridContainer.new()
+    armor_part_grid.columns = 2
+    armor_part_grid.add_theme_constant_override("h_separation", 12)
+    armor_part_grid.add_theme_constant_override("v_separation", 6)
+    for armor_part in ArmorSystem.PARTS:
+        var part_row := HBoxContainer.new()
+        var part_label := Label.new()
+        part_label.text = str(ArmorSystem.PART_NAMES.get(armor_part, armor_part))
+        part_label.custom_minimum_size = Vector2(58, 26)
+        part_row.add_child(part_label)
+        var part_bar := ProgressBar.new()
+        part_bar.custom_minimum_size = Vector2(132, 22)
+        part_bar.max_value = 100
+        part_bar.value = float(armor_durability.get(armor_part, 100))
+        part_bar.show_percentage = true
+        part_row.add_child(part_bar)
+        armor_part_grid.add_child(part_row)
+    box.add_child(armor_part_grid)
+
     var armor_section := Label.new()
     armor_section.text = "圣衣成长与形态解锁"
     armor_section.add_theme_font_size_override("font_size", 18)
