@@ -1106,6 +1106,8 @@ func validate_all_class_skill_catalogs() -> Dictionary:
     }
 
 func get_skill_level(class_id: String) -> int:
+    if not has_class(class_id):
+        return 0
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     return clampi(int(levels.get(class_id, 1)), 1, 10)
 
@@ -1495,11 +1497,15 @@ func get_ability_data(class_id: String, ability_id: String) -> Dictionary:
             return ability.duplicate(true)
     return {}
 func get_learned_skills(class_id: String) -> Array:
+    if not has_class(class_id):
+        return []
     var learned: Dictionary = RPGState.profile.get("learned_skills", {})
     return learned.get(class_id, [class_id + "_skill_1"]).duplicate()
 func is_ability_learned(class_id: String, ability_id: String) -> bool:
-    return get_learned_skills(class_id).has(ability_id)
+    return has_class(class_id) and get_learned_skills(class_id).has(ability_id)
 func get_selected_branch(class_id: String) -> String:
+    if not has_class(class_id):
+        return ""
     var branches: Dictionary = RPGState.profile.get("skill_branches", {})
     return str(branches.get(class_id, ""))
 func choose_skill_branch(class_id: String, branch: String) -> bool:
@@ -1548,6 +1554,8 @@ func equip_ability(class_id: String, ability_id: String, slot_index: int) -> boo
     RPGState.profile["skill_slots"] = all_slots
     return _commit_profile(previous)
 func get_equipped_abilities(class_id: String) -> Array:
+    if not has_class(class_id):
+        return []
     var all_slots: Dictionary = RPGState.profile.get("skill_slots", {})
     var slots: Array = all_slots.get(class_id, [class_id + "_skill_1", "", "", ""]).duplicate()
     while slots.size() < 4:
@@ -1578,6 +1586,8 @@ func can_learn_ability(class_id: String, ability_id: String) -> Dictionary:
     return {"allowed": true, "reason": ""}
 
 func get_skill_state(class_id: String) -> Dictionary:
+    if not has_class(class_id):
+        return {"class_id": class_id, "skill_level": 0, "skill_points": int(RPGState.profile.get("skill_points", 0)), "selected_branch": "", "equipped": [], "abilities": []}
     var equipped := get_equipped_abilities(class_id)
     var entries: Array[Dictionary] = []
     for ability in get_ability_catalog(class_id):

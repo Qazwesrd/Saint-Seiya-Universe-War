@@ -16,6 +16,8 @@ const CLASS_STYLE := {
 }
 
 static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
+    if not CLASS_STYLE.has(class_id) or ability.is_empty() or str(ability.get("id", "")).is_empty():
+        return {}
     var ability_type := str(ability.get("type", "攻击"))
     var ability_name := str(ability.get("name", "技能"))
     var effect: Dictionary = SkillSystem.get_ability_effect_profile(ability)

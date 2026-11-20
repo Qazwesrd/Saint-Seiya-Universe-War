@@ -723,6 +723,12 @@ func _run_tests() -> void:
 	assert(SkillSystem.get_class_skill("unknown_class").is_empty(), "unknown class does not silently receive Pegasus skill data")
 	assert(SkillSystem.get_ability_catalog("unknown_class").is_empty(), "unknown class has no inherited ability catalog")
 	assert(not SkillSystem.can_afford_class_skill("unknown_class", 999.0), "unknown class cannot pass skill affordability checks")
+	assert(SkillSystem.get_skill_level("unknown_class") == 0, "unknown class has no skill level")
+	assert(SkillSystem.get_learned_skills("unknown_class").is_empty(), "unknown class has no learned skills")
+	assert(not SkillSystem.is_ability_learned("unknown_class", "unknown_class_skill_1"), "unknown class cannot inherit a default learned skill")
+	assert(SkillSystem.get_equipped_abilities("unknown_class").is_empty(), "unknown class has no equipped skill slots")
+	assert(SkillSystem.get_skill_state("unknown_class").get("abilities", []).is_empty(), "unknown class skill state is empty")
+	assert(SkillAnimationCatalog.get_profile("unknown_class", {"id": "fake_skill", "type": "攻击"}).is_empty(), "unknown class has no fallback animation profile")
 	assert(not ComboPresetManager.save_preset("unknown_class", "invalid_class_combo", "非法职业连招", ["basic_attack_1"]), "reject combo presets for unknown classes")
 	var combo_steps: Array = ["basic_attack_1", "pegasus_skill_1", "dodge"]
 	assert(ComboPresetManager.save_preset("pegasus", "smoke_combo", "测试连招", combo_steps), "save player combo preset")
