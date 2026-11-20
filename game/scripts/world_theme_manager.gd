@@ -7,6 +7,27 @@ var ring_root: Node3D
 var decor_root: Node3D
 var active_theme_id := ""
 var _graphics_signal_connected := false
+var _decor_animation_clock := 0.0
+
+func _process(delta: float) -> void:
+    if not is_instance_valid(decor_root):
+        return
+    _decor_animation_clock += delta
+    for visual in decor_root.get_children():
+        if not visual is Node3D:
+            continue
+        var node := visual as Node3D
+        if node.has_meta("orbit_speed"):
+            node.rotate_y(delta * float(node.get_meta("orbit_speed")))
+        if node.has_meta("float_speed"):
+            var base_height := float(node.get_meta("base_height"))
+            var float_amplitude := float(node.get_meta("float_amplitude"))
+            node.position.y = base_height + sin(_decor_animation_clock * float(node.get_meta("float_speed")) + float(node.get_meta("phase", 0.0))) * float_amplitude
+        if node.has_meta("twinkle_speed"):
+            var material := node.material_override as StandardMaterial3D
+            if is_instance_valid(material):
+                var twinkle := 0.55 + (sin(_decor_animation_clock * float(node.get_meta("twinkle_speed")) + float(node.get_meta("phase", 0.0))) * 0.5 + 0.5) * 0.7
+                material.emission_energy_multiplier = twinkle
 
 func _ready() -> void:
     if not _graphics_signal_connected:
@@ -233,6 +254,7 @@ func _build_chapter_landmarks(theme: Dictionary, chapter_id: String) -> void:
                 orbit_mesh.outer_radius = orbit_mesh.inner_radius + 0.025
                 var orbit_node := _add_landmark(orbit_mesh, Vector3.ZERO, Vector3.ONE, primary, 0.5)
                 orbit_node.rotation = Vector3(deg_to_rad(24.0 + orbit_index * 17.0), deg_to_rad(orbit_index * 31.0), deg_to_rad(orbit_index * 13.0))
+                orbit_node.set_meta("orbit_speed", 0.025 + float(orbit_index) * 0.012)
             var final_monolith := PrismMesh.new()
             final_monolith.size = Vector3(2.2, 7.0, 1.2)
             var final_monolith_node := _add_landmark(final_monolith, Vector3(0.0, 3.6, -15.0), Vector3.ONE, secondary, 0.82)
@@ -289,6 +311,11 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
             halo_material.emission_enabled = true
             halo_material.emission = primary * 0.52
             halo.material_override = halo_material
+            halo.set_meta("orbit_speed", 0.08 + float(ring_index) * 0.035)
+            halo.set_meta("float_speed", 0.55 + float(ring_index) * 0.12)
+            halo.set_meta("base_height", halo.position.y)
+            halo.set_meta("float_amplitude", 0.08 + float(ring_index) * 0.025)
+            halo.set_meta("phase", float(ring_index) * 1.7)
             decor_root.add_child(halo)
     _add_chapter_atmosphere(chapter_id, primary)
     if chapter_id == "original_final":
@@ -307,6 +334,8 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
             star_material.emission = Color(0.52, 0.42, 1.0)
             star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
             star.material_override = star_material
+            star.set_meta("twinkle_speed", 1.2 + float(star_index % 5) * 0.35)
+            star.set_meta("phase", float(star_index) * 0.73)
             decor_root.add_child(star)
 
 func _add_chapter_atmosphere(chapter_id: String, primary: Color) -> void:
