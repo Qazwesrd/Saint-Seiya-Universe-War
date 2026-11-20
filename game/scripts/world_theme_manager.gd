@@ -259,6 +259,7 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
             halo_material.emission = primary * 0.52
             halo.material_override = halo_material
             decor_root.add_child(halo)
+    _add_chapter_atmosphere(chapter_id, primary)
     if chapter_id == "original_final":
         for star_index in range(42):
             var star := MeshInstance3D.new()
@@ -276,6 +277,67 @@ func _rebuild_decorations(theme: Dictionary, chapter_id: String) -> void:
             star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
             star.material_override = star_material
             decor_root.add_child(star)
+
+func _add_chapter_atmosphere(chapter_id: String, primary: Color) -> void:
+    if chapter_id not in ["asgard", "poseidon", "hades", "heaven", "original_final"]:
+        return
+    var weather := CPUParticles3D.new()
+    weather.name = "ChapterAtmosphere"
+    weather.amount = 42 if chapter_id in ["heaven", "original_final"] else 56
+    weather.lifetime = 4.2
+    weather.preprocess = 1.0
+    weather.explosiveness = 0.0
+    weather.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+    weather.emission_box_extents = Vector3(18.0, 7.0, 18.0)
+    weather.position = Vector3(0.0, 3.5, 0.0)
+    weather.visibility_aabb = AABB(Vector3(-22.0, -2.0, -22.0), Vector3(44.0, 16.0, 44.0))
+    var particle_material := ParticleProcessMaterial.new()
+    particle_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+    particle_material.emission_box_extents = Vector3(18.0, 7.0, 18.0)
+    particle_material.spread = 18.0
+    particle_material.initial_velocity_min = 0.18
+    particle_material.initial_velocity_max = 0.72
+    particle_material.scale_min = 0.035
+    particle_material.scale_max = 0.085
+    particle_material.gravity = Vector3(0.0, -0.12, 0.0)
+    var particle_color := primary.lightened(0.32)
+    if chapter_id == "asgard":
+        particle_color = Color(0.78, 0.91, 1.0)
+        particle_material.direction = Vector3(0.08, -1.0, 0.04)
+        particle_material.initial_velocity_min = 0.35
+        particle_material.initial_velocity_max = 0.85
+        particle_material.gravity = Vector3(0.0, -0.48, 0.0)
+    elif chapter_id == "poseidon":
+        particle_color = Color(0.38, 0.86, 1.0)
+        particle_material.direction = Vector3(0.0, 1.0, 0.0)
+        particle_material.gravity = Vector3(0.0, 0.16, 0.0)
+        particle_material.scale_min = 0.025
+        particle_material.scale_max = 0.065
+    elif chapter_id == "hades":
+        particle_color = Color(0.92, 0.34, 0.72)
+        particle_material.direction = Vector3(0.0, 1.0, 0.0)
+        particle_material.gravity = Vector3(0.0, 0.22, 0.0)
+    elif chapter_id == "heaven":
+        particle_color = Color(1.0, 0.9, 0.62)
+        particle_material.direction = Vector3(0.0, 0.3, 0.0)
+        particle_material.gravity = Vector3(0.0, 0.04, 0.0)
+    else:
+        particle_color = Color(0.76, 0.62, 1.0)
+        particle_material.direction = Vector3(0.0, 0.25, 0.0)
+        particle_material.gravity = Vector3(0.0, 0.02, 0.0)
+    particle_material.color = particle_color
+    weather.process_material = particle_material
+    var particle_mesh := SphereMesh.new()
+    particle_mesh.radius = 0.055
+    particle_mesh.height = 0.11
+    var particle_surface := StandardMaterial3D.new()
+    particle_surface.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    particle_surface.albedo_color = particle_color
+    particle_surface.emission_enabled = true
+    particle_surface.emission = particle_color * 0.45
+    particle_mesh.material = particle_surface
+    weather.mesh = particle_mesh
+    decor_root.add_child(weather)
 
 func _add_column(at: Vector3, column_height: float, primary: Color, secondary: Color, chapter_id: String) -> void:
     var column := MeshInstance3D.new()
