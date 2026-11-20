@@ -159,6 +159,23 @@ func _run_tests() -> void:
 	var scorpio_profile: Dictionary = EnemyDatabase.get_archetype("gold_scorpio")
 	assert(float(taurus_profile.get("boss_heavy_multiplier", 0.0)) > float(scorpio_profile.get("boss_heavy_multiplier", 0.0)), "Taurus heavy strike has a distinct impact profile")
 	assert(float(scorpio_profile.get("boss_windup", 1.0)) < float(taurus_profile.get("boss_windup", 0.0)), "Scorpio attacks use a faster warning cadence")
+	var test_boss: Node = load("res://scripts/enemy.gd").new()
+	test_boss.archetype_id = "gold_taurus"
+	add_child(test_boss)
+	assert(bool(test_boss.is_boss), "boss test instance resolves its boss archetype")
+	test_boss.state = 1
+	test_boss.state_timer = 1.0
+	test_boss.take_damage(10.0)
+	assert(int(test_boss.state) == 1, "ordinary damage does not cancel a boss wind-up")
+	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 5.0, 0.8)
+	assert(int(test_boss.state) == 1 and float(test_boss.velocity.y) <= 0.0, "boss wind-up resists stagger and launch")
+	test_boss.state = 0
+	test_boss.apply_status_effect("freeze", 2.0, 0.0)
+	assert(float(test_boss.freeze_timer) < 2.0, "boss freeze duration is resisted")
+	test_boss.apply_status_effect("slow", 2.0, 0.5)
+	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
+	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
+	test_boss.queue_free()
 	var asgard_chapter: Dictionary = CampaignDatabase.get_chapter("asgard")
 	var poseidon_chapter: Dictionary = CampaignDatabase.get_chapter("poseidon")
 	assert(asgard_chapter.get("missions", []).size() == 8, "anime Asgard arc is inserted before Poseidon")
