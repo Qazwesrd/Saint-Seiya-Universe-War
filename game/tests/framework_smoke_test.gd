@@ -349,6 +349,14 @@ func _run_tests() -> void:
 		var visual_class_id := str(visual_class.get("id", ""))
 		var visual_profile: Dictionary = visual_catalog_script.get_profile(visual_class_id)
 		assert(visual_profile.has("accent") and visual_profile.has("crest") and visual_profile.has("ornament"), visual_class_id + " has complete visual identity")
+	var apollo_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "apollo_divine_relic", "category": "神明专属神衣"})
+	assert(str(apollo_armor_visual.get("ornament", "")) == "solar_wings", "Apollo divine relic selects solar armor ornaments")
+	var poseidon_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "poseidon_divine_relic", "category": "鳞衣 Scale"})
+	assert(str(poseidon_armor_visual.get("ornament", "")) == "tidal_fins", "Poseidon scale armor selects tidal ornaments")
+	var chronos_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "chronos_divine_relic", "category": "神明专属神衣"})
+	assert(str(chronos_armor_visual.get("ornament", "")) == "time_rings", "Chronos divine relic selects time-ring ornaments")
+	var unknown_armor_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "unlisted_visual_item", "category": "unlisted"})
+	assert(unknown_armor_visual.is_empty(), "unknown equipment does not invent a visual identity")
 	var profiled_ability_count := 0
 	var field_action_count := 0
 	var trap_action_count := 0
