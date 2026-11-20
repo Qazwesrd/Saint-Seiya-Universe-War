@@ -23,6 +23,7 @@ func _ready() -> void:
     material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     orb.material_override = material
     add_child(orb)
+    add_to_group("skill_projectiles")
 
 func _physics_process(delta: float) -> void:
     age += delta
