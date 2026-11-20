@@ -38,6 +38,7 @@ var enemy_accent_nodes: Array[MeshInstance3D] = []
 var enemy_wing_nodes: Array[MeshInstance3D] = []
 var enemy_wing_base_angles: Array[float] = []
 var hit_flash_timer := 0.0
+var boss_phase_burst_timer := 0.0
 var _boss_phase_two := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
@@ -427,6 +428,7 @@ func _animate_enemy_limbs(delta: float) -> void:
         else:
             telegraph_mesh.rotation.y = lerp_angle(telegraph_mesh.rotation.y, 0.0, minf(1.0, delta * 4.0))
     hit_flash_timer = maxf(0.0, hit_flash_timer - delta)
+    boss_phase_burst_timer = maxf(0.0, boss_phase_burst_timer - delta)
     if is_instance_valid(body_material):
         var flash_weight := clampf(hit_flash_timer / 0.14, 0.0, 1.0)
         body_material.albedo_color = _base_color.lerp(Color(1.0, 0.82, 0.64), flash_weight)
@@ -436,7 +438,11 @@ func _animate_enemy_limbs(delta: float) -> void:
     if is_instance_valid(boss_aura_ring):
         boss_aura_ring.rotation.y += delta * (0.42 if _boss_phase_two else 0.24)
         var ring_pulse := 1.0 + sin(clock * 1.5) * (0.055 if _boss_phase_two else 0.025)
-        boss_aura_ring.scale = Vector3.ONE * ring_pulse
+        var phase_burst := clampf(boss_phase_burst_timer / 1.35, 0.0, 1.0)
+        boss_aura_ring.scale = Vector3.ONE * ring_pulse * (1.0 + (1.0 - phase_burst) * 0.42)
+        var aura_material := boss_aura_ring.material_override as StandardMaterial3D
+        if is_instance_valid(aura_material):
+            aura_material.emission_energy_multiplier = 1.0 + phase_burst * 3.2 + (0.45 if _boss_phase_two else 0.0)
     var accent_pulse := 0.72 + (sin(clock * (4.8 if _boss_phase_two else 2.8)) * 0.5 + 0.5) * (0.22 if is_boss else 0.1)
     for accent_node in enemy_accent_nodes:
         if not is_instance_valid(accent_node):
@@ -595,6 +601,7 @@ func take_damage(amount: float) -> void:
 
     if is_boss and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
+        boss_phase_burst_timer = 1.35
         speed *= 1.25
         attack_damage *= 1.25
         _base_color = Color(0.72, 0.12, 0.18)
