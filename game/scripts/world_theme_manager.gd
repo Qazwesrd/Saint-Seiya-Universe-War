@@ -24,9 +24,9 @@ func _apply_visual_quality() -> void:
     var high_quality := quality == "high"
     if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
         var environment := world_environment.environment
-        environment.glow_enabled = effects_enabled and high_quality
+        environment.glow_enabled = effects_enabled
         environment.fog_enabled = quality != "low"
-        environment.glow_intensity = 0.42 if high_quality else 0.28
+        environment.glow_intensity = 0.42 if high_quality else (0.28 if quality == "medium" else 0.16)
     if is_instance_valid(sun):
         sun.shadow_enabled = shadows_enabled and quality != "low"
         sun.directional_shadow_max_distance = 72.0 if high_quality else 42.0
