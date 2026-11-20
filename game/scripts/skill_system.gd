@@ -1141,6 +1141,11 @@ func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
     var result: Array = data.get("abilities", []).duplicate(true)
     result.append_array(HEAVENLY_ADVANCED_SKILLS.get(class_id, EXTENDED_DIVINE_ADVANCED_SKILLS.get(class_id, DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"])))).duplicate(true))
+    # The first six core skills predate branch metadata. Normalize the public
+    # catalog so every skill has a usable branch without rewriting all source tables.
+    for ability in result:
+        if str(ability.get("branch", "")).strip_edges() == "":
+            ability["branch"] = "基础技能"
     return result
 
 func get_skill_branches(class_id: String) -> Array:
