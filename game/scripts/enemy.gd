@@ -34,6 +34,9 @@ var enemy_leg_nodes: Array[MeshInstance3D] = []
 var telegraph_mesh: MeshInstance3D
 var telegraph_material: StandardMaterial3D
 var boss_aura_ring: MeshInstance3D
+var enemy_accent_nodes: Array[MeshInstance3D] = []
+var enemy_wing_nodes: Array[MeshInstance3D] = []
+var enemy_wing_base_angles: Array[float] = []
 var hit_flash_timer := 0.0
 var _boss_phase_two := false
 var _boss_attack_count := 0
@@ -224,6 +227,7 @@ func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3
     material.emission = color * 0.055
     part.material_override = material
     add_child(part)
+    enemy_accent_nodes.append(part)
     return part
 
 func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: float) -> void:
@@ -287,12 +291,28 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
         crest_node.rotation.z = PI
     elif crest == "rune":
         crest_node.rotation.x = deg_to_rad(90.0)
+
+    # Glowing eye slits and a layered chest insignia give each enemy a
+    # readable face and faction identity, including on small mobile screens.
+    var eye_mesh := BoxMesh.new()
+    eye_mesh.size = Vector3(radius * 0.46, radius * 0.055, radius * 0.035)
+    var eye_node := _add_enemy_visual(eye_mesh, Vector3(0.0, height * 0.85, -radius * 0.49), Vector3.ONE, accent.lightened(0.22), metallic)
+    var eye_material := eye_node.material_override as StandardMaterial3D
+    eye_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    eye_material.emission = accent * 0.42
+    var emblem_mesh := TorusMesh.new()
+    emblem_mesh.inner_radius = radius * 0.12
+    emblem_mesh.outer_radius = radius * 0.19
+    var emblem_node := _add_enemy_visual(emblem_mesh, Vector3(0.0, height * 0.61, -radius * 0.76), Vector3(1.0, 1.0, 0.28), accent, metallic)
+    emblem_node.rotation.x = deg_to_rad(90.0)
     if bool(profile.get("winged", false)):
         var wing := PrismMesh.new()
         wing.size = Vector3(radius * 0.72, height * 0.48, radius * 0.18)
         for side in [-1.0, 1.0]:
             var wing_node := _add_enemy_visual(wing, Vector3(side * radius * 0.88, height * 0.76, radius * 0.24), Vector3(1.0, 1.0, 0.62), accent, metallic)
             wing_node.rotation.z = -side * 0.42
+            enemy_wing_nodes.append(wing_node)
+            enemy_wing_base_angles.append(wing_node.rotation.z)
     if bool(profile.get("halo", false)):
         var halo_mesh := TorusMesh.new()
         halo_mesh.inner_radius = radius * 0.72
@@ -417,6 +437,21 @@ func _animate_enemy_limbs(delta: float) -> void:
         boss_aura_ring.rotation.y += delta * (0.42 if _boss_phase_two else 0.24)
         var ring_pulse := 1.0 + sin(clock * 1.5) * (0.055 if _boss_phase_two else 0.025)
         boss_aura_ring.scale = Vector3.ONE * ring_pulse
+    var accent_pulse := 0.72 + (sin(clock * (4.8 if _boss_phase_two else 2.8)) * 0.5 + 0.5) * (0.22 if is_boss else 0.1)
+    for accent_node in enemy_accent_nodes:
+        if not is_instance_valid(accent_node):
+            continue
+        var accent_material := accent_node.material_override as StandardMaterial3D
+        if is_instance_valid(accent_material):
+            accent_material.emission_energy_multiplier = accent_pulse * (1.55 if _boss_phase_two else 1.0)
+    for wing_index in range(enemy_wing_nodes.size()):
+        var wing_node := enemy_wing_nodes[wing_index]
+        if not is_instance_valid(wing_node):
+            continue
+        var wing_side := -1.0 if wing_index % 2 == 0 else 1.0
+        var base_angle := enemy_wing_base_angles[wing_index] if wing_index < enemy_wing_base_angles.size() else 0.0
+        var flap := sin(clock * (1.8 if _boss_phase_two else 1.1)) * (0.09 if is_boss else 0.035)
+        wing_node.rotation.z = lerp_angle(wing_node.rotation.z, base_angle + wing_side * flap, minf(1.0, delta * 5.0))
     for limb_index in range(2):
         var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.48 * movement
         var arm_target := lerpf(gait, -0.92, windup_pose)
