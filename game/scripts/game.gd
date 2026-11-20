@@ -186,7 +186,45 @@ func _refresh_story_encounter() -> void:
                 _spawn_encounter_wave(EncounterDirector.get_current_wave())
                 show_notice("剧情推进：训练首领登场")
     elif not mission.is_empty():
-        show_notice("当前剧情任务：" + str(mission.get("name", "")) + "。请先完成任务目标。")
+        _start_data_driven_campaign_encounter(mission, mission_state)
+
+func _start_data_driven_campaign_encounter(mission: Dictionary, mission_state: Dictionary) -> void:
+    var encounter: Dictionary = mission.get("encounter", {})
+    var waves: Array = encounter.get("waves", [])
+    if waves.is_empty() or EncounterDirector.active:
+        return
+    if bool(mission_state.get("completed", false)):
+        return
+    var definitions: Array[Dictionary] = []
+    for wave in waves:
+        if wave is Dictionary:
+            definitions.append(wave.duplicate(true))
+    if definitions.is_empty():
+        return
+    var encounter_id := "story_" + str(mission.get("id", "unknown"))
+    if EncounterDirector.start(encounter_id, definitions):
+        _spawn_encounter_wave(EncounterDirector.get_current_wave())
+        show_notice("剧情遭遇开始：" + str(mission.get("name", "章节战斗")))
+
+func _record_campaign_encounter_progress(enemy: Node3D) -> void:
+    var mission: Dictionary = CampaignManager.get_active_mission()
+    if mission.is_empty():
+        return
+    var encounter: Dictionary = mission.get("encounter", {})
+    var expected_ids: Array[String] = []
+    for wave in encounter.get("waves", []):
+        for spawn in wave.get("spawns", []):
+            var archetype_id := str(spawn.get("archetype_id", ""))
+            if not archetype_id.is_empty() and not expected_ids.has(archetype_id):
+                expected_ids.append(archetype_id)
+    var defeated_archetype := str(enemy.get("archetype_id"))
+    if expected_ids.is_empty() or not expected_ids.has(defeated_archetype):
+        return
+    var state := CampaignManager.get_mission_progress(str(mission.get("id", "")))
+    for objective in state.get("objectives", []):
+        if not bool(objective.get("completed", false)):
+            CampaignManager.add_objective_progress(str(objective.get("id", "")), 1)
+            return
 
 func _spawn_encounter_wave(wave: Dictionary) -> void:
     var spawns: Array = wave.get("spawns", [])
@@ -343,6 +381,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
             if bool(campaign_result.get("success", false)):
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
+        _record_campaign_encounter_progress(enemy)
         QuestManager.on_enemy_defeated(defeated_boss)
         EncounterDirector.report_enemy_defeated()
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
