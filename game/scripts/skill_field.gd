@@ -12,6 +12,7 @@ var status_power := 0.22
 var mode := "field"
 var elapsed := 0.0
 var tick_timer := 0.0
+var impact_pulse_timer := 0.0
 var triggered := false
 var field_color := Color(0.35, 0.75, 1.0)
 var field_shape := "ring"
@@ -87,6 +88,7 @@ func _physics_process(delta: float) -> void:
     elapsed += delta
     _animate_field(delta)
     tick_timer = maxf(0.0, tick_timer - delta)
+    impact_pulse_timer = maxf(0.0, impact_pulse_timer - delta)
     if elapsed >= lifetime or not is_instance_valid(owner_player) or not is_instance_valid(game):
         queue_free()
         return
@@ -113,18 +115,21 @@ func _physics_process(delta: float) -> void:
         _apply_to_enemy(enemy, false)
         hits += 1
     tick_timer = tick_interval
-    if hits > 0 and game.has_method("show_notice"):
-        game.call("show_notice", "领域持续命中 %d 名敌人" % hits)
+    if hits > 0:
+        impact_pulse_timer = 0.34
+        if game.has_method("show_notice"):
+            game.call("show_notice", "领域持续命中 %d 名敌人" % hits)
 
 func _animate_field(delta: float) -> void:
     var life_ratio := clampf(1.0 - elapsed / maxf(0.01, lifetime), 0.0, 1.0)
     var pulse := 1.0 + sin(elapsed * 5.5) * 0.045
     var secondary_pulse := 0.94 + sin(elapsed * 3.8) * 0.1
+    var impact_ratio := clampf(impact_pulse_timer / 0.34, 0.0, 1.0)
     if is_instance_valid(primary_visual):
-        primary_visual.scale = Vector3.ONE * pulse
+        primary_visual.scale = Vector3.ONE * pulse * (1.0 + impact_ratio * 0.12)
     if is_instance_valid(secondary_visual):
         secondary_visual.rotation.y += delta * 0.8
-        secondary_visual.scale = Vector3.ONE * secondary_pulse
+        secondary_visual.scale = Vector3.ONE * (secondary_pulse + impact_ratio * 0.16)
     if is_instance_valid(outer_visual):
         outer_visual.rotation.y -= delta * 0.42
         outer_visual.scale = Vector3.ONE * (1.0 + sin(elapsed * 2.6) * 0.035)
@@ -135,7 +140,7 @@ func _animate_field(delta: float) -> void:
         secondary_material.albedo_color.a = 0.18 + life_ratio * 0.3
         secondary_material.emission_energy_multiplier = 0.8 + (sin(elapsed * 5.7 + 1.0) + 1.0) * 0.35
     if is_instance_valid(field_light):
-        field_light.light_energy = life_ratio * (0.35 + (sin(elapsed * 4.0) + 1.0) * 0.28)
+        field_light.light_energy = life_ratio * (0.35 + (sin(elapsed * 4.0) + 1.0) * 0.28 + impact_ratio * 0.85)
 
 func _apply_to_enemy(enemy: Node3D, is_trap: bool) -> void:
     if enemy.has_method("take_damage"):
