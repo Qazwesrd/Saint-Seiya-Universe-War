@@ -131,6 +131,10 @@ func _run_tests() -> void:
 	assert(str(CampaignDatabase.get_mission("s12_010").get("type", "")) == "story", "Sagittarius legacy is a story trial, not a living boss fight")
 	for archetype_id in ["gold_taurus", "gemini_illusion", "gold_cancer", "gold_leo_controlled", "gold_virgo", "gold_scorpio", "gold_capricorn", "gold_aquarius", "gold_pisces", "pope_saga"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "Sanctuary encounter archetype: " + archetype_id)
+	var taurus_profile: Dictionary = EnemyDatabase.get_archetype("gold_taurus")
+	var scorpio_profile: Dictionary = EnemyDatabase.get_archetype("gold_scorpio")
+	assert(float(taurus_profile.get("boss_heavy_multiplier", 0.0)) > float(scorpio_profile.get("boss_heavy_multiplier", 0.0)), "Taurus heavy strike has a distinct impact profile")
+	assert(float(scorpio_profile.get("boss_windup", 1.0)) < float(taurus_profile.get("boss_windup", 0.0)), "Scorpio attacks use a faster warning cadence")
 	var taurus_mission: Dictionary = CampaignDatabase.get_mission("s12_003")
 	assert(not taurus_mission.get("encounter", {}).get("waves", []).is_empty(), "Taurus story mission has a data-driven encounter")
 	assert(str(taurus_mission["encounter"]["waves"][0]["spawns"][0]["archetype_id"]) == "gold_taurus", "Taurus encounter resolves its configured archetype")
