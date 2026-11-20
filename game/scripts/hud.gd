@@ -42,12 +42,14 @@ func _ready() -> void:
     hp_bar.size = Vector2(255, 17)
     hp_bar.max_value = 100
     hp_bar.show_percentage = false
+    _style_resource_bar(hp_bar, Color(0.92, 0.20, 0.24), Color(0.035, 0.045, 0.09, 0.92), Color(1.0, 0.48, 0.42))
     root.add_child(hp_bar)
     cosmos_bar = ProgressBar.new()
     cosmos_bar.position = Vector2(36, 84)
     cosmos_bar.size = Vector2(255, 12)
     cosmos_bar.max_value = 100
     cosmos_bar.show_percentage = false
+    _style_resource_bar(cosmos_bar, Color(0.18, 0.68, 1.0), Color(0.025, 0.055, 0.12, 0.92), Color(0.36, 0.82, 1.0))
     root.add_child(cosmos_bar)
     enemy_label = Label.new()
     enemy_label.position = Vector2(26, 140)
@@ -113,6 +115,7 @@ func _ready() -> void:
     boss_bar.offset_bottom = 195
     boss_bar.max_value = 100
     boss_bar.show_percentage = false
+    _style_resource_bar(boss_bar, Color(0.88, 0.16, 0.24), Color(0.045, 0.018, 0.04, 0.96), Color(1.0, 0.58, 0.36))
     root.add_child(boss_bar)
     stick_base = Panel.new()
     stick_base.position = Vector2(42, 520)
@@ -170,6 +173,24 @@ func _style_panel(panel: Panel, color: Color, border: Color) -> void:
     style.anti_aliasing = true
     style.anti_aliasing_size = 1.2
     panel.add_theme_stylebox_override("panel", style)
+
+func _style_resource_bar(bar: ProgressBar, fill_color: Color, background_color: Color, border_color: Color) -> void:
+    var background := StyleBoxFlat.new()
+    background.bg_color = background_color
+    background.border_color = border_color.darkened(0.35)
+    background.set_border_width_all(1)
+    background.set_corner_radius_all(7)
+    background.content_margin_left = 2.0
+    background.content_margin_right = 2.0
+    background.content_margin_top = 2.0
+    background.content_margin_bottom = 2.0
+    background.anti_aliasing = true
+    var fill := StyleBoxFlat.new()
+    fill.bg_color = fill_color
+    fill.set_corner_radius_all(6)
+    fill.anti_aliasing = true
+    bar.add_theme_stylebox_override("background", background)
+    bar.add_theme_stylebox_override("fill", fill)
 
 func _make_button_style(base_color: Color, border_color: Color, pressed: bool = false, disabled: bool = false) -> StyleBoxFlat:
     var style := StyleBoxFlat.new()
