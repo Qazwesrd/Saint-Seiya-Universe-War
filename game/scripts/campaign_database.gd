@@ -73,7 +73,6 @@ const CHAPTERS := [
         ]
     },
     {
-        {
         "id": "hades",
         "name": "冥王篇",
         "order": 5,
