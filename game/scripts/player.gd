@@ -142,7 +142,8 @@ func _physics_process(delta: float) -> void:
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 24.0 * delta)
     velocity.x = direction.x * speed + knockback_velocity.x
     velocity.z = direction.z * speed + knockback_velocity.z
-    velocity.y -= 22.0 * delta
+    var gravity_scale := 0.82 if class_id == "tenkishi" else 1.0
+    velocity.y -= 22.0 * gravity_scale * delta
     move_and_slide()
     if direction.length() > 0.1:
         rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * 12.0)
@@ -232,13 +233,15 @@ func cosmos_burst() -> void:
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
 func dodge() -> void:
     if dodge_time > 0.0: return
-    dodge_time = 0.32
-    invulnerable = 0.4
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var heavenly_wings := class_id == "tenkishi"
+    dodge_time = 0.32 if not heavenly_wings else 0.38
+    invulnerable = 0.4 if not heavenly_wings else 0.48
     var direction := pivot.global_transform.basis.x * move_input.x + (-pivot.global_transform.basis.z) * -move_input.y
     direction.y = 0
     if direction.length() < 0.1: direction = -global_transform.basis.z
-    velocity = direction.normalized() * 15.0
-    game.call("show_notice", "闪避！短暂无敌")
+    velocity = direction.normalized() * (15.0 if not heavenly_wings else 18.0)
+    game.call("show_notice", "闪避！短暂无敌" if not heavenly_wings else "光翼闪身！天衣短暂无敌")
     _register_custom_combo_input("dodge")
 func toggle_lock() -> void:
     var next_target: Node3D = CombatTargeting.select_target(self, locked_target, true)
