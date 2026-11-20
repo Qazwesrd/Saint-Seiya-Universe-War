@@ -6,6 +6,36 @@ var floor_material: StandardMaterial3D
 var ring_root: Node3D
 var decor_root: Node3D
 var active_theme_id := ""
+var _graphics_signal_connected := false
+
+func _ready() -> void:
+    if not _graphics_signal_connected:
+        SettingsManager.settings_changed.connect(_on_visual_settings_changed)
+        _graphics_signal_connected = true
+
+func _on_visual_settings_changed(section: String, key: String, _value: Variant) -> void:
+    if section == "graphics" and key in ["quality", "effects", "shadows"]:
+        _apply_visual_quality()
+
+func _apply_visual_quality() -> void:
+    var quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
+    var effects_enabled := bool(SettingsManager.get_value("graphics", "effects", true))
+    var shadows_enabled := bool(SettingsManager.get_value("graphics", "shadows", true))
+    var high_quality := quality == "high"
+    if is_instance_valid(world_environment) and is_instance_valid(world_environment.environment):
+        var environment := world_environment.environment
+        environment.glow_enabled = effects_enabled and high_quality
+        environment.fog_enabled = quality != "low"
+        environment.glow_intensity = 0.42 if high_quality else 0.28
+    if is_instance_valid(sun):
+        sun.shadow_enabled = shadows_enabled and quality != "low"
+        sun.directional_shadow_max_distance = 72.0 if high_quality else 42.0
+    if is_instance_valid(decor_root):
+        for child in decor_root.get_children():
+            if child is CPUParticles3D:
+                child.emitting = effects_enabled
+                var density := 16 if quality == "low" else (30 if quality == "medium" else 56)
+                child.amount = density
 
 const THEMES := {
     "galaxy_wars": {"background": Color(0.025, 0.045, 0.12), "ambient": Color(0.28, 0.36, 0.62), "sun": Color(0.72, 0.82, 1.0), "floor": Color(0.055, 0.075, 0.14), "ring": Color(0.12, 0.42, 0.95), "fog": Color(0.06, 0.10, 0.24), "height": 3.2, "metallic": 0.42},
@@ -72,6 +102,7 @@ func apply_theme(chapter_id: String) -> bool:
                 ring.material_override = ring_material
     _rebuild_decorations(theme, chapter_id)
     _build_chapter_landmarks(theme, chapter_id)
+    _apply_visual_quality()
     return true
 
 func _build_chapter_landmarks(theme: Dictionary, chapter_id: String) -> void:
