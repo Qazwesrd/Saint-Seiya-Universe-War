@@ -23,6 +23,8 @@ var pivot: Node3D
 var camera_arm: SpringArm3D
 var camera_node: Camera3D
 var camera_pitch := -9.0
+var visual_root: Node3D
+var visual_pose_tween: Tween
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var armor_root: Node3D
@@ -56,6 +58,9 @@ func _ready() -> void:
     col.shape = shape
     col.position.y = 0.9
     add_child(col)
+    visual_root = Node3D.new()
+    visual_root.name = "PlayerVisualRoot"
+    add_child(visual_root)
     var body := MeshInstance3D.new()
     var mesh := CapsuleMesh.new()
     mesh.radius = 0.4
@@ -69,14 +74,14 @@ func _ready() -> void:
     body_mat.emission_enabled = true
     body_mat.emission = Color(0.03, 0.12, 0.35)
     body.material_override = body_mat
-    add_child(body)
+    visual_root.add_child(body)
     var head := MeshInstance3D.new()
     var head_mesh := SphereMesh.new()
     head_mesh.radius = 0.24
     head.mesh = head_mesh
     head.position.y = 1.95
     head.material_override = body_mat
-    add_child(head)
+    visual_root.add_child(head)
     _build_armor_visuals()
     RPGState.state_changed.connect(_on_rpg_state_changed)
     mount_indicator = MeshInstance3D.new()
@@ -91,7 +96,7 @@ func _ready() -> void:
     mount_material.emission_enabled = true
     mount_material.emission = Color(0.05, 0.45, 1.0)
     mount_indicator.material_override = mount_material
-    add_child(mount_indicator)
+    visual_root.add_child(mount_indicator)
     pivot = Node3D.new()
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     game.add_child(pivot)
@@ -103,6 +108,32 @@ func _ready() -> void:
     camera_node.current = true
     SettingsManager.settings_changed.connect(_on_camera_setting_changed)
     _apply_camera_settings()
+func _animate_visual_motion(delta: float) -> void:
+    if not is_instance_valid(visual_root):
+        return
+    var planar_speed := Vector2(velocity.x, velocity.z).length()
+    var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
+    var clock := float(Time.get_ticks_msec()) * 0.012
+    var bob := sin(clock) * 0.035 * movement_ratio
+    if tenkishi_flight_active:
+        bob += sin(clock * 0.72) * 0.045
+    visual_root.position.y = lerpf(visual_root.position.y, bob, minf(1.0, delta * 9.0))
+    var target_roll := -move_input.x * 0.10
+    var target_pitch := move_input.y * 0.055
+    visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
+    visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
+
+func _play_attack_pose(intensity: float = 1.0) -> void:
+    if not is_instance_valid(visual_root):
+        return
+    if is_instance_valid(visual_pose_tween):
+        visual_pose_tween.kill()
+    visual_root.scale = Vector3.ONE
+    visual_pose_tween = create_tween()
+    var recoil := Vector3(1.0 + 0.055 * intensity, 1.0 - 0.075 * intensity, 1.0 + 0.055 * intensity)
+    visual_pose_tween.tween_property(visual_root, "scale", recoil, 0.065)
+    visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.15)
+
 func _on_rpg_state_changed() -> void:
     var current_class := str(RPGState.profile.get("class_id", "pegasus"))
     if current_class != visual_class_id:
@@ -128,7 +159,7 @@ func _build_armor_visuals() -> void:
         armor_root.queue_free()
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
-    add_child(armor_root)
+    visual_root.add_child(armor_root)
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
@@ -212,6 +243,7 @@ func cancel_auto_move() -> void:
     auto_moving = false
 func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
+    _animate_visual_motion(delta)
     attack_cd = maxf(0.0, attack_cd - delta)
     basic_combo_reset = maxf(0.0, basic_combo_reset - delta)
     if basic_combo_reset <= 0.0:
@@ -319,6 +351,7 @@ func attack() -> void:
     basic_combo_step = (basic_combo_step % 3) + 1
     basic_combo_reset = 0.95
     attack_cd = 0.28 if basic_combo_step < 3 else 0.52
+    _play_attack_pose(0.85 if basic_combo_step < 3 else 1.15)
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
@@ -347,6 +380,7 @@ func skill() -> void:
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % skill_cost)
         return
     cosmos -= skill_cost
+    _play_attack_pose(1.05)
     CombatSessionManager.record_skill_cast()
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
@@ -373,6 +407,7 @@ func combo_skill() -> void:
         game.call("show_notice", "小宇宙不足，无法施展连招")
         return
     cosmos -= cost
+    _play_attack_pose(1.35)
     CombatSessionManager.record_skill_cast(true)
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
@@ -390,6 +425,7 @@ func cosmos_burst() -> void:
         game.call("show_notice", "小宇宙能量不足或正在冷却")
         return
     cosmos -= 35.0
+    _play_attack_pose(1.45)
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
@@ -410,6 +446,7 @@ func dodge() -> void:
     direction.y = 0
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * (15.0 if not heavenly_wings else 18.0)
+    _play_attack_pose(0.7)
     game.call("show_notice", "闪避！短暂无敌" if not heavenly_wings else "光翼闪身！天衣短暂无敌")
     _register_custom_combo_input("dodge")
 func toggle_lock() -> void:
@@ -622,6 +659,7 @@ func cast_ability(ability_id: String) -> bool:
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % cost)
         return false
     cosmos -= cost
+    _play_attack_pose(1.2)
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
