@@ -434,7 +434,7 @@ func cast_ability(ability_id: String) -> bool:
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
     _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
     if not SkillSystem.is_support_ability(ability):
-game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15, float(class_data.get("launch", 1.0)), float(class_data.get("stagger", 0.5)))
+        game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15, float(class_data.get("launch", 1.0)), float(class_data.get("stagger", 0.5)))
     game.call("apply_ability_effect", class_id, ability, reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
