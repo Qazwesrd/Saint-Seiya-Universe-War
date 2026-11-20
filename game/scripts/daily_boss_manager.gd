@@ -67,6 +67,7 @@ func _refresh_cycle(force: bool) -> void:
 			"cycle_id": current_cycle,
 			"boss_id": str(boss.id),
 			"boss_name": str(boss.name),
+			"level_offset": int(boss.get("level_offset", 0)),
 			"defeated": false,
 			"reward_claimed": false
 		}
