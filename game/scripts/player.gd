@@ -178,7 +178,7 @@ func skill() -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var skill_cost := float(skill_data.get("cost", 18))
-    if cosmos < skill_cost:
+    if not SkillSystem.can_afford_class_skill(class_id, cosmos):
         game.call("show_notice", "小宇宙不足，需要 %.0f 点" % skill_cost)
         return
     cosmos -= skill_cost
