@@ -78,7 +78,15 @@ static func build_report() -> Dictionary:
 	for class_id in class_ids:
 		skill_total += SkillSystem.get_ability_catalog(class_id).size()
 
+	var authored_asset_total := class_total * 3 + equipment_total * 3 + enemy_total * 2 + CHAPTER_THEMES.size() + SKILL_ELEMENTS.size()
+	var authored_asset_missing := missing_character_models.size() + missing_character_portraits.size() + missing_character_animations.size() + missing_armor_models.size() + missing_armor_icons.size() + missing_armor_manifests.size() + missing_enemy_models.size() + missing_enemy_portraits.size() + missing_chapter_scenes.size() + missing_skill_effects.size()
+	var authored_asset_found := authored_asset_total - authored_asset_missing
+
 	return {
+		"authored_asset_total": authored_asset_total,
+		"authored_asset_found": authored_asset_found,
+		"authored_asset_missing": authored_asset_missing,
+		"authored_asset_coverage": _coverage(authored_asset_found, authored_asset_total),
 		"class_count": class_total,
 		"model_count": class_total - missing_character_models.size(),
 		"portrait_count": class_total - missing_character_portraits.size(),
@@ -94,19 +102,28 @@ static func build_report() -> Dictionary:
 		"armor_icon_count": equipment_total - missing_armor_icons.size(),
 		"armor_manifest_count": equipment_total - missing_armor_manifests.size(),
 		"armor_model_coverage": _coverage(equipment_total - missing_armor_models.size(), equipment_total),
+		"armor_icon_count": equipment_total - missing_armor_icons.size(),
+		"armor_manifest_count": equipment_total - missing_armor_manifests.size(),
+		"armor_icon_coverage": _coverage(equipment_total - missing_armor_icons.size(), equipment_total),
+		"armor_manifest_coverage": _coverage(equipment_total - missing_armor_manifests.size(), equipment_total),
 		"missing_armor_models": missing_armor_models,
 		"missing_armor_icons": missing_armor_icons,
 		"missing_armor_manifests": missing_armor_manifests,
 		"enemy_count": enemy_total,
 		"enemy_model_count": enemy_total - missing_enemy_models.size(),
 		"enemy_portrait_count": enemy_total - missing_enemy_portraits.size(),
+		"enemy_model_coverage": _coverage(enemy_total - missing_enemy_models.size(), enemy_total),
+		"enemy_portrait_coverage": _coverage(enemy_total - missing_enemy_portraits.size(), enemy_total),
 		"missing_enemy_models": missing_enemy_models,
 		"missing_enemy_portraits": missing_enemy_portraits,
 		"chapter_count": CHAPTER_THEMES.size(),
 		"chapter_scene_count": CHAPTER_THEMES.size() - missing_chapter_scenes.size(),
+		"chapter_scene_coverage": _coverage(CHAPTER_THEMES.size() - missing_chapter_scenes.size(), CHAPTER_THEMES.size()),
 		"missing_chapter_scenes": missing_chapter_scenes,
 		"skill_count": skill_total,
 		"skill_element_count": SKILL_ELEMENTS.size(),
+		"skill_effect_count": SKILL_ELEMENTS.size() - missing_skill_effects.size(),
+		"skill_effect_coverage": _coverage(SKILL_ELEMENTS.size() - missing_skill_effects.size(), SKILL_ELEMENTS.size()),
 		"missing_skill_effects": missing_skill_effects,
 		"procedural_fallback_only": (class_total - missing_character_models.size()) == 0,
 		"authored_art_complete": missing_character_models.is_empty() and missing_character_portraits.is_empty() and missing_character_animations.is_empty() and missing_armor_models.is_empty() and missing_armor_icons.is_empty() and missing_armor_manifests.is_empty() and missing_enemy_models.is_empty() and missing_enemy_portraits.is_empty() and missing_chapter_scenes.is_empty() and missing_skill_effects.is_empty()

@@ -87,7 +87,7 @@ func _run_tests() -> void:
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	var art_coverage_report: Dictionary = ArtAssetAudit.build_report()
 	assert(int(art_coverage_report.get("class_count", 0)) == 32, "art asset audit scans all 32 playable classes")
-	for coverage_key in ["model_coverage", "portrait_coverage", "animation_coverage"]:
+	for coverage_key in ["model_coverage", "portrait_coverage", "animation_coverage", "armor_model_coverage", "armor_icon_coverage", "armor_manifest_coverage", "enemy_model_coverage", "enemy_portrait_coverage", "chapter_scene_coverage", "skill_effect_coverage", "authored_asset_coverage"]:
 		assert(float(art_coverage_report.get(coverage_key, -1.0)) >= 0.0 and float(art_coverage_report.get(coverage_key, 1.1)) <= 1.0, "art asset coverage is a valid ratio: " + coverage_key)
 	assert(art_coverage_report.has("missing_models") and art_coverage_report.has("missing_portraits") and art_coverage_report.has("missing_animations"), "art asset audit reports missing deliverables explicitly")
 	var equipment_art_count := EquipmentDatabase.get_catalog().size()
@@ -98,6 +98,8 @@ func _run_tests() -> void:
 	assert(int(art_coverage_report.get("chapter_count", 0)) == 7 and art_coverage_report.has("missing_chapter_scenes"), "art audit covers all seven campaign environment themes")
 	assert(int(art_coverage_report.get("skill_count", 0)) == 768, "art audit counts all 768 class abilities")
 	assert(art_coverage_report.has("missing_skill_effects"), "skill VFX audit reports missing authored element effects")
+	assert(int(art_coverage_report.get("authored_asset_total", 0)) > 0, "art audit reports the total authored asset scope")
+	assert(int(art_coverage_report.get("authored_asset_found", -1)) + int(art_coverage_report.get("authored_asset_missing", -1)) == int(art_coverage_report.get("authored_asset_total", 0)), "art audit found and missing counts reconcile")
 	assert(typeof(art_coverage_report.get("authored_art_complete", null)) == TYPE_BOOL, "art audit exposes an explicit completion gate")
 	var animation_profile_count := 0
 	for class_entry in SkillSystem.get_class_skill_catalog():
