@@ -94,6 +94,75 @@ func _ready() -> void:
     body.material_override = body_material
     add_child(body)
 
+    var head := MeshInstance3D.new()
+    var head_shape := SphereMesh.new()
+    head_shape.radius = radius * 0.46
+    head_shape.height = radius * 0.92
+    head.mesh = head_shape
+    head.position.y = height * 0.84
+    head.material_override = body_material
+    add_child(head)
+
+    var chest_plate := MeshInstance3D.new()
+    var chest_mesh := BoxMesh.new()
+    chest_mesh.size = Vector3(radius * 1.35, height * 0.22, radius * 0.42)
+    chest_plate.mesh = chest_mesh
+    chest_plate.position = Vector3(0.0, height * 0.61, -radius * 0.72)
+    var armor_material := StandardMaterial3D.new()
+    armor_material.albedo_color = _base_color.lightened(0.28)
+    armor_material.metallic = 0.78
+    armor_material.roughness = 0.22
+    armor_material.emission_enabled = true
+    armor_material.emission = _base_color * 0.10
+    chest_plate.material_override = armor_material
+    add_child(chest_plate)
+
+    var shoulder_mesh := SphereMesh.new()
+    shoulder_mesh.radius = radius * 0.34
+    shoulder_mesh.height = radius * 0.68
+    for side in [-1.0, 1.0]:
+        var shoulder := MeshInstance3D.new()
+        shoulder.mesh = shoulder_mesh
+        shoulder.position = Vector3(side * radius * 0.82, height * 0.68, 0.0)
+        shoulder.material_override = armor_material
+        add_child(shoulder)
+
+    if is_boss:
+        var crown_mesh := CylinderMesh.new()
+        crown_mesh.top_radius = 0.025
+        crown_mesh.bottom_radius = radius * 0.18
+        crown_mesh.height = radius * 0.72
+        for side in [-1.0, 1.0]:
+            var crown := MeshInstance3D.new()
+            crown.mesh = crown_mesh
+            crown.position = Vector3(side * radius * 0.30, height * 1.02, 0.02)
+            crown.rotation.z = -side * 0.38
+            crown.material_override = armor_material
+            add_child(crown)
+        var boss_ring := MeshInstance3D.new()
+        var ring_mesh := TorusMesh.new()
+        ring_mesh.inner_radius = radius * 0.92
+        ring_mesh.outer_radius = radius * 1.06
+        boss_ring.mesh = ring_mesh
+        boss_ring.position.y = 0.10
+        var ring_material := StandardMaterial3D.new()
+        ring_material.albedo_color = _base_color
+        ring_material.emission_enabled = true
+        ring_material.emission = _base_color * 0.65
+        ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        boss_ring.material_override = ring_material
+        add_child(boss_ring)
+        if archetype_id in ["hypnos_guardian", "apollo_trial", "zeus_trial", "universe_arbiter", "hades_emperor"]:
+            var wing_mesh := BoxMesh.new()
+            wing_mesh.size = Vector3(radius * 0.22, height * 0.46, radius * 0.16)
+            for side in [-1.0, 1.0]:
+                var wing := MeshInstance3D.new()
+                wing.mesh = wing_mesh
+                wing.position = Vector3(side * radius * 0.92, height * 0.76, radius * 0.22)
+                wing.rotation.z = -side * 0.42
+                wing.material_override = armor_material
+                add_child(wing)
+
     telegraph_mesh = MeshInstance3D.new()
     var ring := TorusMesh.new()
     ring.inner_radius = attack_range * 0.72
