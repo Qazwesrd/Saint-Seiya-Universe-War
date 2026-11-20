@@ -9,9 +9,12 @@ const SkillSummonScript = preload("res://scripts/skill_summon.gd")
 const SkillFieldScript = preload("res://scripts/skill_field.gd")
 const SkillProjectileScript = preload("res://scripts/skill_projectile.gd")
 const LootPickupScript = preload("res://scripts/loot_pickup.gd")
+const WorldThemeManagerScript = preload("res://scripts/world_theme_manager.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
+var world_theme_manager: Node3D
+var active_world_chapter_id := ""
 var guide_npc: Node3D
 var teleport_point: Node3D
 var sanctuary_active := false
@@ -72,6 +75,9 @@ func _build_world() -> void:
     col.position.y = -0.25
     floor_body.add_child(col)
     add_child(floor_body)
+    var ring_root := Node3D.new()
+    ring_root.name = "WorldRings"
+    add_child(ring_root)
     for radius in [5.0, 10.0, 16.0]:
         var ring := MeshInstance3D.new()
         var torus := TorusMesh.new()
@@ -84,7 +90,29 @@ func _build_world() -> void:
         ring_mat.emission_enabled = true
         ring_mat.emission = Color(0.03, 0.12, 0.5)
         ring.material_override = ring_mat
-        add_child(ring)
+        ring_root.add_child(ring)
+    world_theme_manager = Node3D.new()
+    world_theme_manager.set_script(WorldThemeManagerScript)
+    world_theme_manager.set("world_environment", env_node)
+    world_theme_manager.set("sun", sun)
+    world_theme_manager.set("floor_material", mat)
+    world_theme_manager.set("ring_root", ring_root)
+    add_child(world_theme_manager)
+    _apply_campaign_world_theme()
+
+func _apply_campaign_world_theme() -> void:
+    if not is_instance_valid(world_theme_manager):
+        return
+    var mission := CampaignManager.get_active_mission()
+    var mission_id := str(mission.get("id", ""))
+    var chapter := CampaignDatabase.get_chapter_for_mission(mission_id)
+    var chapter_id := str(chapter.get("id", "galaxy_wars"))
+    if chapter_id == active_world_chapter_id:
+        return
+    if bool(world_theme_manager.call("apply_theme", chapter_id)):
+        active_world_chapter_id = chapter_id
+        show_notice("已进入篇章区域：" + str(chapter.get("name", "银河战争篇")))
+
 func _spawn_guide_npc() -> void:
     guide_npc = Node3D.new()
     guide_npc.set_script(GuideNpcScript)
@@ -159,6 +187,7 @@ func interact_with_guide() -> void:
     show_notice(str(dialogue.get("action", "")))
 
 func _refresh_story_encounter() -> void:
+    _apply_campaign_world_theme()
     for enemy in enemies.duplicate():
         if not is_instance_valid(enemy):
             enemies.erase(enemy)
