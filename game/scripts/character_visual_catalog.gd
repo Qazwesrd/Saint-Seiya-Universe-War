@@ -49,6 +49,23 @@ const PROFILES := {
     "tenkishi": {"accent": Color(0.86, 0.92, 1.0), "crest": "halo", "ornament": "heaven_wings", "shoulder_scale": Vector3(1.45, 1.25, 1.05), "wing_span": 2.0, "glow": 0.4, "metallic": 0.96, "silhouette": "celestial"}
 }
 
+const ARMOR_STAGE_PALETTES := {
+    "bronze": {"metal": Color(0.66, 0.38, 0.22), "trim": Color(0.92, 0.66, 0.38), "metallic": 0.72, "glow": 0.04},
+    "silver": {"metal": Color(0.68, 0.76, 0.86), "trim": Color(0.9, 0.94, 1.0), "metallic": 0.88, "glow": 0.08},
+    "gold": {"metal": Color(0.94, 0.68, 0.22), "trim": Color(1.0, 0.88, 0.48), "metallic": 0.94, "glow": 0.14},
+    "sea_scale": {"metal": Color(0.12, 0.56, 0.74), "trim": Color(0.44, 0.88, 1.0), "metallic": 0.96, "glow": 0.16},
+    "surplice": {"metal": Color(0.30, 0.20, 0.42), "trim": Color(0.76, 0.48, 0.9), "metallic": 0.9, "glow": 0.18},
+    "god_cloth": {"metal": Color(0.88, 0.78, 0.48), "trim": Color(1.0, 0.94, 0.7), "metallic": 0.98, "glow": 0.28},
+    "god_armor": {"metal": Color(0.72, 0.78, 0.98), "trim": Color(1.0, 0.9, 0.72), "metallic": 1.0, "glow": 0.36}
+}
+
+static func get_stage_palette(stage_id: String, awakened: bool = false) -> Dictionary:
+    var palette: Dictionary = ARMOR_STAGE_PALETTES.get(stage_id, ARMOR_STAGE_PALETTES["bronze"]).duplicate(true)
+    if awakened:
+        palette["glow"] = minf(0.6, float(palette.get("glow", 0.0)) + 0.18)
+        palette["metallic"] = minf(1.0, float(palette.get("metallic", 0.8)) + 0.04)
+    return palette
+
 static func get_profile(class_id: String) -> Dictionary:
     var result: Dictionary = DEFAULT_PROFILE.duplicate(true)
     if PROFILES.has(class_id):
