@@ -193,15 +193,19 @@ func _play_skill_pose(profile: Dictionary) -> void:
         return
     if is_instance_valid(visual_pose_tween):
         visual_pose_tween.kill()
+    var base_scale: Vector3 = visual_root.scale
+    var base_yaw := visual_root.rotation.y
     var pose_scale := clampf(float(profile.get("pose_scale", 1.08)), 1.0, 1.24)
-    var rotation_target := visual_root.rotation.y + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
+    var rotation_target := base_yaw + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
     var startup := clampf(float(profile.get("startup", 0.2)), 0.1, 0.8)
-    var recovery := clampf(float(profile.get("active", 0.2)) + float(profile.get("recovery", 0.3)), 0.18, 1.4)
+    var active := clampf(float(profile.get("active", 0.2)), 0.18, 1.0)
+    var recovery := clampf(float(profile.get("recovery", 0.3)), 0.18, 0.9)
     visual_pose_tween = create_tween()
-    visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE * pose_scale, startup)
+    visual_pose_tween.tween_property(visual_root, "scale", base_scale * pose_scale, startup)
     visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", rotation_target, startup)
-    visual_pose_tween.tween_property(visual_root, "scale", Vector3.ONE, recovery)
-    visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", 0.0, minf(0.22, recovery))
+    visual_pose_tween.tween_interval(active)
+    visual_pose_tween.tween_property(visual_root, "scale", base_scale, recovery)
+    visual_pose_tween.parallel().tween_property(visual_root, "rotation:y", base_yaw, minf(0.22, recovery))
 
 func _play_attack_pose(intensity: float = 1.0) -> void:
     if not is_instance_valid(visual_root):
