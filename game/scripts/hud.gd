@@ -164,7 +164,27 @@ func _style_panel(panel: Panel, color: Color, border: Color) -> void:
     style.border_color = border
     style.set_border_width_all(2)
     style.set_corner_radius_all(20)
+    style.shadow_color = Color(0.0, 0.015, 0.06, 0.42)
+    style.shadow_size = 10
+    style.shadow_offset = Vector2(0.0, 4.0)
+    style.anti_aliasing = true
+    style.anti_aliasing_size = 1.2
     panel.add_theme_stylebox_override("panel", style)
+
+func _make_button_style(base_color: Color, border_color: Color, pressed: bool = false, disabled: bool = false) -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = base_color
+    style.border_color = border_color
+    style.set_border_width_all(2 if not disabled else 1)
+    style.set_corner_radius_all(16)
+    style.anti_aliasing = true
+    style.anti_aliasing_size = 1.2
+    if not disabled and not pressed:
+        style.shadow_color = Color(0.0, 0.015, 0.06, 0.34)
+        style.shadow_size = 5
+        style.shadow_offset = Vector2(0.0, 2.0)
+    return style
+
 func _button(root: Control, label: String, tl: Vector2, br: Vector2, action: Callable, color: Color) -> Button:
     var b := Button.new()
     b.text = label
@@ -177,18 +197,23 @@ func _button(root: Control, label: String, tl: Vector2, br: Vector2, action: Cal
     b.offset_right = br.x
     b.offset_bottom = br.y
     b.add_theme_font_size_override("font_size", 18)
+    b.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0))
+    b.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.72))
+    b.add_theme_color_override("font_pressed_color", Color(1.0, 0.88, 0.62))
+    b.add_theme_color_override("font_disabled_color", Color(0.58, 0.62, 0.7, 0.72))
+    b.add_theme_color_override("font_outline_color", Color(0.015, 0.025, 0.07, 0.9))
+    b.add_theme_constant_override("outline_size", 2)
     b.add_to_group("hud_mirror_buttons")
     b.set_meta("default_anchor_left", b.anchor_left)
     b.set_meta("default_anchor_right", b.anchor_right)
     b.set_meta("default_offset_left", b.offset_left)
     b.set_meta("default_offset_right", b.offset_right)
-    var style := StyleBoxFlat.new()
-    style.bg_color = color
-    style.border_color = Color(0.65, 0.82, 1.0, 0.85)
-    style.set_border_width_all(2)
-    style.set_corner_radius_all(18)
-    b.add_theme_stylebox_override("normal", style)
-    b.add_theme_stylebox_override("pressed", style)
+    var border := Color(0.72, 0.86, 1.0, 0.92)
+    b.add_theme_stylebox_override("normal", _make_button_style(color, border))
+    b.add_theme_stylebox_override("hover", _make_button_style(color.lightened(0.14), Color(1.0, 0.88, 0.52, 0.98)))
+    b.add_theme_stylebox_override("pressed", _make_button_style(color.darkened(0.18), Color(1.0, 0.78, 0.38, 0.98), true))
+    b.add_theme_stylebox_override("disabled", _make_button_style(color.darkened(0.38), Color(0.42, 0.48, 0.58, 0.55), false, true))
+    b.add_theme_stylebox_override("focus", _make_button_style(color.lightened(0.08), Color(1.0, 0.84, 0.42, 1.0)))
     b.pressed.connect(action)
     root.add_child(b)
     return b
