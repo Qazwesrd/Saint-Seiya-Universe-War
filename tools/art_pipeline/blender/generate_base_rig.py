@@ -507,10 +507,11 @@ def build_profession_models():
                     (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
                     "Chest", profession_mat, rig, segments=12, rings=8
                 ))
+        make_animation_library(rig)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
         destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
-        validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"), require_skin=True)
+        validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"), require_skin=True, required_clips=REQUIRED_CLIPS)
         animation_dest = output_root / class_id / "animations/animation_library.glb"
         animation_dest.parent.mkdir(parents=True, exist_ok=True)
         import shutil

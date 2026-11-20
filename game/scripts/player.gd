@@ -60,6 +60,8 @@ var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
 var visual_armor_signature := ""
 var authored_character_model: Node3D
+var authored_animation_player: AnimationPlayer
+var authored_animation_state := ""
 var authored_armor_model: Node3D
 var is_mounted := false
 var tenkishi_flight_active := false
@@ -230,6 +232,10 @@ func _animate_visual_motion(delta: float) -> void:
             guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.18 + shield_ratio * 0.24)
             guard_shield_material.emission_energy_multiplier = 0.8 + shield_ratio * 1.8
     var planar_speed := Vector2(velocity.x, velocity.z).length()
+    var animation_name := "run" if planar_speed >= 5.0 else ("walk" if planar_speed >= 0.35 else "idle")
+    if not is_on_floor():
+        animation_name = "jump" if velocity.y > 0.5 else "fall"
+    _play_authored_animation(animation_name)
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.012
     var idle_breath := sin(clock * 0.72) * 0.012
@@ -1034,6 +1040,8 @@ func _load_authored_character_model(class_id: String) -> void:
     if is_instance_valid(authored_character_model):
         authored_character_model.queue_free()
         authored_character_model = null
+    authored_animation_player = null
+    authored_animation_state = ""
     var model_path := "res://assets/characters/%s/model/character.glb" % class_id
     if not ResourceLoader.exists(model_path):
         return
@@ -1047,6 +1055,8 @@ func _load_authored_character_model(class_id: String) -> void:
         return
     authored_character_model = instance
     authored_character_model.name = "AuthoredProfessionModel"
+    authored_animation_player = _find_animation_player(authored_character_model)
+    authored_animation_state = ""
     authored_character_model.position = Vector3.ZERO
     authored_character_model.scale = Vector3.ONE
     visual_root.add_child(authored_character_model)
@@ -1054,6 +1064,25 @@ func _load_authored_character_model(class_id: String) -> void:
     for child in visual_root.get_children():
         if child is MeshInstance3D and child not in [combat_feedback_node, guard_shield_node, mount_indicator]:
             child.visible = false
+
+func _find_animation_player(root: Node) -> AnimationPlayer:
+    if root is AnimationPlayer:
+        return root as AnimationPlayer
+    for child in root.get_children():
+        var found := _find_animation_player(child)
+        if is_instance_valid(found):
+            return found
+    return null
+
+func _play_authored_animation(animation_name: String, blend_time: float = 0.12) -> void:
+    if not is_instance_valid(authored_animation_player):
+        return
+    if not authored_animation_player.has_animation(animation_name):
+        return
+    if authored_animation_state == animation_name and authored_animation_player.is_playing():
+        return
+    authored_animation_state = animation_name
+    authored_animation_player.play(animation_name, blend_time)
 
 func _load_authored_armor_model() -> void:
     if is_instance_valid(authored_armor_model):
@@ -1228,6 +1257,7 @@ func attack() -> void:
     var combo_motion := "strike" if basic_combo_step == 1 else ("aerial_strike" if basic_combo_step == 2 else "heavy")
     var combo_intensity := 0.82 if basic_combo_step == 1 else (1.0 if basic_combo_step == 2 else 1.28)
     _play_attack_pose(combo_intensity, combo_motion)
+    _play_authored_animation("basic_attack_%d" % basic_combo_step, 0.045)
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
@@ -1259,6 +1289,7 @@ func skill() -> void:
         return
     cosmos -= skill_cost
     _play_attack_pose(1.05)
+    _play_authored_animation("skill_cast", 0.06)
     CombatSessionManager.record_skill_cast()
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
