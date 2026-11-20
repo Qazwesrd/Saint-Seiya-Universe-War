@@ -581,10 +581,13 @@ func spawn_damage_number(at: Vector3, damage: float, critical: bool = false) -> 
     number.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     number.modulate = Color(1.0, 0.72, 0.22) if critical else Color(1.0, 0.94, 0.78)
     number.position = at
+    number.scale = Vector3.ONE * (0.72 if critical else 0.62)
     add_child(number)
     var tween := create_tween()
-    tween.tween_property(number, "position:y", at.y + 1.35, 0.62)
-    tween.parallel().tween_property(number, "modulate:a", 0.0, 0.62)
+    tween.tween_property(number, "scale", Vector3.ONE * (1.22 if critical else 1.0), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+    tween.tween_property(number, "scale", Vector3.ONE * (1.05 if critical else 0.9), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+    tween.parallel().tween_property(number, "position:y", at.y + (1.55 if critical else 1.3), 0.68)
+    tween.parallel().tween_property(number, "modulate:a", 0.0, 0.68)
     tween.finished.connect(func() -> void:
         if is_instance_valid(number):
             number.queue_free()
