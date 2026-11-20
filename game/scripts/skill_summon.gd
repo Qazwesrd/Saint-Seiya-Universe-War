@@ -9,34 +9,48 @@ var age := 0.0
 var attack_timer := 0.35
 var follow_angle := 0.0
 var target: Node3D
+var core_node: MeshInstance3D
+var halo_node: MeshInstance3D
+var summon_material: StandardMaterial3D
 
 func _ready() -> void:
     add_to_group("skill_summons")
-    var orb := MeshInstance3D.new()
+    core_node = MeshInstance3D.new()
     var sphere := SphereMesh.new()
     sphere.radius = 0.34
     sphere.height = 0.68
-    orb.mesh = sphere
-    var material := StandardMaterial3D.new()
-    material.albedo_color = summon_color
-    material.emission_enabled = true
-    material.emission = summon_color * 0.75
-    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    orb.material_override = material
-    add_child(orb)
-    var halo := MeshInstance3D.new()
+    core_node.mesh = sphere
+    summon_material = StandardMaterial3D.new()
+    summon_material.albedo_color = summon_color
+    summon_material.emission_enabled = true
+    summon_material.emission = summon_color * 0.75
+    summon_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    core_node.material_override = summon_material
+    add_child(core_node)
+
+    halo_node = MeshInstance3D.new()
     var ring := TorusMesh.new()
     ring.inner_radius = 0.42
     ring.outer_radius = 0.48
-    halo.mesh = ring
-    halo.rotation_degrees.x = 90.0
-    halo.material_override = material
-    add_child(halo)
+    halo_node.mesh = ring
+    halo_node.rotation_degrees.x = 90.0
+    halo_node.material_override = summon_material
+    add_child(halo_node)
+
+    var outer_halo := MeshInstance3D.new()
+    var outer_ring := TorusMesh.new()
+    outer_ring.inner_radius = 0.62
+    outer_ring.outer_radius = 0.66
+    outer_halo.mesh = outer_ring
+    outer_halo.rotation_degrees = Vector3(32.0, 0.0, 18.0)
+    outer_halo.material_override = summon_material
+    add_child(outer_halo)
 
 func _physics_process(delta: float) -> void:
     age += delta
     attack_timer = maxf(0.0, attack_timer - delta)
     follow_angle += delta * 1.8
+    _animate_summon()
     if age >= life_time or not is_instance_valid(owner_player) or not is_instance_valid(game):
         queue_free()
         return
@@ -56,6 +70,16 @@ func _physics_process(delta: float) -> void:
         var orbit_offset := Vector3(cos(follow_angle) * 1.35, 1.8 + sin(follow_angle * 1.4) * 0.25, sin(follow_angle) * 1.35)
         var desired := owner_player.global_position + orbit_offset
         global_position = global_position.lerp(desired, minf(1.0, delta * 5.0))
+
+func _animate_summon() -> void:
+    var pulse := 1.0 + sin(age * 7.0) * 0.12
+    if is_instance_valid(core_node):
+        core_node.scale = Vector3.ONE * pulse
+    if is_instance_valid(halo_node):
+        halo_node.rotate_y(0.035)
+        halo_node.rotate_z(0.018)
+    if is_instance_valid(summon_material):
+        summon_material.emission = summon_color * (0.58 + (sin(age * 5.0) + 1.0) * 0.22)
 
 func _find_target() -> Node3D:
     var best: Node3D
