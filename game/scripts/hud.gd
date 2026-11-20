@@ -197,6 +197,7 @@ func _input(event: InputEvent) -> void:
         var touch := event as InputEventScreenTouch
         var viewport_width := get_viewport().get_visible_rect().size.x
         var viewport_height := get_viewport().get_visible_rect().size.y
+        var left_handed := bool(SettingsManager.get_value("controls", "left_handed", false))
         var stick_rect := stick_base.get_global_rect().grow(24.0) if is_instance_valid(stick_base) else Rect2()
         if touch.pressed and stick_rect.has_point(touch.position) and touch.position.y > viewport_height * 0.55 and finger_id == -1:
             finger_id = touch.index
