@@ -766,14 +766,22 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             duration = 4.5
             power = 0.26
     if is_support:
-        if class_id == "athena":
-            player.call("apply_divine_guard", 0.18, 6.0)
-            player.health = minf(player.max_health, player.health + player.max_health * 0.08)
-            show_notice("雅典娜神圣守护：获得18%生命上限护盾，持续6秒")
-        elif class_id in ["hestia", "hera"]:
-            player.health = minf(player.max_health, player.health + player.max_health * 0.08)
-        if class_id in ["zeus", "ares", "hermes"]:
-            player.velocity += -player.global_transform.basis.z * 2.5
+        var support_profile: Dictionary = SkillSystem.get_divine_support_profile(class_id)
+        if not support_profile.is_empty():
+            var shield_ratio := float(support_profile.get("shield_ratio", 0.0))
+            var heal_ratio := float(support_profile.get("heal_ratio", 0.0))
+            var damage_bonus := float(support_profile.get("damage_bonus", 0.0))
+            var damage_reduction := float(support_profile.get("damage_reduction", 0.0))
+            var duration := float(support_profile.get("duration", 5.0))
+            var mobility := float(support_profile.get("mobility", 0.0))
+            if shield_ratio > 0.0:
+                player.call("apply_divine_guard", shield_ratio, duration)
+            if heal_ratio > 0.0:
+                player.health = minf(player.max_health, player.health + player.max_health * heal_ratio)
+            player.call("apply_temporary_buff", damage_bonus, damage_reduction, duration)
+            if mobility > 0.0:
+                player.velocity += -player.global_transform.basis.z * mobility
+            show_notice("%s：神权支援效果已激活" % str(RPGState.CLASS_DATA.get(class_id, {}).get("name", class_id)))
         return
     var affected := 0
     for enemy in enemies.duplicate():
