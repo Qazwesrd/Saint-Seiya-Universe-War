@@ -212,7 +212,7 @@ func combo_skill() -> void:
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
     _flash(Color(1.0, 0.9, 0.55))
     game.call("damage_nearby_combat", damage, float(skill_data.get("combo_range", 8.5)), 180.0, float(skill_data.get("combo_knockback", 9.0)), float(skill_data.get("combo_launch", 3.8)), float(skill_data.get("stagger", 0.85)) * 1.2)
@@ -386,7 +386,7 @@ func _execute_custom_combo_finisher(preset: Dictionary) -> void:
     var class_data := SkillSystem.get_class_skill(class_id)
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage := attack_power * (1.1 + float(steps.size()) * 0.42) * (1.0 + float(skill_level - 1) * 0.05) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
+    var damage := attack_power * (1.1 + float(steps.size()) * 0.42) * (1.0 + float(skill_level - 1) * 0.05) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
     var reach := float(class_data.get("combo_range", 8.5))
     var color: Color = class_data.get("color", Color(0.35, 0.75, 1.0))
     CombatSessionManager.record_skill_cast(true)
