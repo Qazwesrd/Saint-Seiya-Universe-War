@@ -293,6 +293,27 @@ func _animate_visual_motion(delta: float) -> void:
         elif combat_pose_motion == "hit":
             arm_target = lerpf(arm_target, 0.42 if limb_index == 1 else 0.18, pose_weight)
             forearm_target = lerpf(forearm_target, -0.12, pose_weight)
+        elif combat_pose_motion == "chain":
+            arm_target = lerpf(arm_target, -1.02 if limb_index == 1 else -0.72, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.82 if limb_index == 1 else -0.48, pose_weight)
+        elif combat_pose_motion == "bow":
+            arm_target = lerpf(arm_target, -0.22 if limb_index == 1 else -1.12, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.18 if limb_index == 1 else -0.72, pose_weight)
+        elif combat_pose_motion == "instrument":
+            arm_target = lerpf(arm_target, -0.62 if limb_index == 1 else -0.48, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.52 if limb_index == 1 else -0.36, pose_weight)
+        elif combat_pose_motion in ["divine", "cast", "summon"]:
+            arm_target = lerpf(arm_target, -0.92 if limb_index == 1 else -0.88, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.68, pose_weight)
+        elif combat_pose_motion == "shield_strike":
+            arm_target = lerpf(arm_target, -1.08 if limb_index == 1 else -0.42, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.96 if limb_index == 1 else -0.28, pose_weight)
+        elif combat_pose_motion == "axe":
+            arm_target = lerpf(arm_target, -1.34 if limb_index == 1 else -0.74, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.72 if limb_index == 1 else -0.42, pose_weight)
+        elif combat_pose_motion == "throw":
+            arm_target = lerpf(arm_target, -1.22 if limb_index == 1 else 0.12, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.86 if limb_index == 1 else -0.12, pose_weight)
         elif combat_pose_motion in ["cast", "spin"]:
             arm_target = lerpf(arm_target, -0.38, pose_weight)
             forearm_target = lerpf(forearm_target, -0.24, pose_weight)
