@@ -451,6 +451,8 @@ func _run_tests() -> void:
 	var hades_chapter: Dictionary = CampaignDatabase.get_chapter("hades")
 	var heaven_chapter: Dictionary = CampaignDatabase.get_chapter("heaven")
 	var original_chapter: Dictionary = CampaignDatabase.get_chapter("original_final")
+	assert(str(CampaignDatabase.get_chapter_for_mission("ha_007").get("id", "")) == "hades", "Hades mission resolves to its correct world chapter")
+	assert(str(CampaignDatabase.get_chapter_for_mission("he_007").get("id", "")) == "heaven", "Heaven mission resolves to its correct world chapter")
 	assert(int(poseidon_chapter.get("order", 0)) < int(hades_chapter.get("order", 0)), "Hades follows Poseidon in story chronology")
 	assert(int(hades_chapter.get("order", 0)) < int(heaven_chapter.get("order", 0)) and int(heaven_chapter.get("order", 0)) < int(original_chapter.get("order", 0)), "Heaven and original finale follow Hades in order")
 	assert(hades_chapter.get("missions", []).size() >= 7 and heaven_chapter.get("missions", []).size() >= 7 and original_chapter.get("missions", []).size() >= 5, "Hades, Heaven and original finale have complete mission arcs")
