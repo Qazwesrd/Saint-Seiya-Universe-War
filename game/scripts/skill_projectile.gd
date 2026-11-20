@@ -9,6 +9,9 @@ var lifetime := 4.0
 var turn_rate := 5.0
 var homing_enabled := true
 var projectile_color := Color(0.45, 0.8, 1.0)
+var status := "slow"
+var status_duration := 1.2
+var status_power := 0.12
 var age := 0.0
 
 func _ready() -> void:
@@ -59,8 +62,8 @@ func _physics_process(delta: float) -> void:
 func _hit_target(hit_target: Node3D) -> void:
     if hit_target.has_method("take_damage"):
         hit_target.call("take_damage", damage)
-    if hit_target.has_method("apply_status_effect"):
-        hit_target.call("apply_status_effect", "slow", 1.2, 0.12)
+    if status != "" and hit_target.has_method("apply_status_effect"):
+        hit_target.call("apply_status_effect", status, status_duration, status_power)
     if game.has_method("spawn_effect"):
         game.call("spawn_effect", hit_target.global_position + Vector3.UP, projectile_color, 0.9)
     queue_free()
