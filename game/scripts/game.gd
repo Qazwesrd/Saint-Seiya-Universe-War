@@ -12,6 +12,8 @@ var guide_npc: Node3D
 var teleport_point: Node3D
 var sanctuary_active := false
 var sanctuary_origin := Vector3(0, 0.15, 7)
+var _daily_boss_challenge_active := false
+var _daily_boss_challenge_id := ""
 func _ready() -> void:
     CombatSessionManager.begin_encounter("galaxy_arena_trial")
     _build_world()
@@ -174,6 +176,28 @@ func _refresh_story_encounter() -> void:
     elif not mission.is_empty():
         show_notice("当前剧情任务：" + str(mission.get("name", "")) + "。请先完成任务目标。")
 
+func start_daily_boss_challenge() -> void:
+    var daily_state: Dictionary = DailyBossManager.get_state()
+    if not DailyBossManager.can_challenge():
+        show_notice("今日首领已经击败，请领取奖励或等待明日刷新")
+        return
+    if not enemies.is_empty():
+        show_notice("请先完成当前战斗，再挑战每日首领")
+        return
+    _daily_boss_challenge_active = true
+    _daily_boss_challenge_id = str(daily_state.get("boss_id", ""))
+    CombatSessionManager.begin_encounter(_daily_boss_challenge_id)
+    _spawn_enemy(Vector3(0, 0.1, -9), true)
+    var daily_enemy := enemies.back()
+    var level_bonus := int(DailyBossManager._boss_for_cycle(str(daily_state.get("cycle_id", ""))).get("level_offset", 0))
+    daily_enemy.set("display_name", str(daily_state.get("boss_name", "每日首领")))
+    daily_enemy.set("max_health", float(daily_enemy.get("max_health")) * (1.0 + float(level_bonus) * 0.035))
+    daily_enemy.set("health", daily_enemy.get("max_health"))
+    daily_enemy.set("attack_damage", float(daily_enemy.get("attack_damage")) * (1.0 + float(level_bonus) * 0.025))
+    daily_enemy.set("exp_reward", 0)
+    daily_enemy.set("coin_reward", 0)
+    show_notice("每日挑战开始：" + str(daily_state.get("boss_name", "每日首领")))
+
 func _spawn_enemy(at: Vector3, boss: bool) -> void:
     var enemy := CharacterBody3D.new()
     enemy.set_script(EnemyScript)
@@ -273,17 +297,25 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
 
 func on_enemy_defeated(enemy: Node3D) -> void:
     var defeated_boss := bool(enemy.get("is_boss"))
-    var campaign_mission: Dictionary = CampaignManager.get_active_mission()
-    var campaign_id := str(campaign_mission.get("id", ""))
-    if campaign_id == "gw_002" and not defeated_boss:
-        CampaignManager.add_objective_progress("defeat_training_enemy", 1)
-    elif campaign_id == "gw_003" and defeated_boss:
-        CampaignManager.add_objective_progress("defeat_training_boss", 1)
-    if CampaignManager.can_complete_active_mission():
-        var campaign_result: Dictionary = CampaignManager.complete_active_mission()
-        if bool(campaign_result.get("success", false)):
-            show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
-    QuestManager.on_enemy_defeated(defeated_boss)
+    var is_daily_boss := _daily_boss_challenge_active and defeated_boss
+    if is_daily_boss:
+        if DailyBossManager.mark_boss_defeated(_daily_boss_challenge_id):
+            show_notice("每日首领已击败！请打开每日挑战领取奖励")
+        _daily_boss_challenge_active = false
+        _daily_boss_challenge_id = ""
+    else:
+        var campaign_mission: Dictionary = CampaignManager.get_active_mission()
+        var campaign_id := str(campaign_mission.get("id", ""))
+        if campaign_id == "gw_002" and not defeated_boss:
+            CampaignManager.add_objective_progress("defeat_training_enemy", 1)
+        elif campaign_id == "gw_003" and defeated_boss:
+            CampaignManager.add_objective_progress("defeat_training_boss", 1)
+        if CampaignManager.can_complete_active_mission():
+            var campaign_result: Dictionary = CampaignManager.complete_active_mission()
+            if bool(campaign_result.get("success", false)):
+                show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
+    if not is_daily_boss:
+        QuestManager.on_enemy_defeated(defeated_boss)
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
