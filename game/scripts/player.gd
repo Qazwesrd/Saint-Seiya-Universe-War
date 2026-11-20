@@ -23,6 +23,7 @@ var pivot: Node3D
 var camera_arm: SpringArm3D
 var camera_node: Camera3D
 var camera_pitch := -9.0
+var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var is_mounted := false
 var tenkishi_flight_active := false
@@ -140,6 +141,12 @@ func _physics_process(delta: float) -> void:
     temporary_buff_timer = maxf(0.0, temporary_buff_timer - delta)
     divine_guard_timer = maxf(0.0, divine_guard_timer - delta)
     class_passive_guard_cooldown = maxf(0.0, class_passive_guard_cooldown - delta)
+    auto_target_timer = maxf(0.0, auto_target_timer - delta)
+    if auto_target_timer <= 0.0:
+        auto_target_timer = 0.25
+        if bool(SettingsManager.get_value("gameplay", "auto_target", false)):
+            if not is_instance_valid(locked_target) or float(locked_target.get("health")) <= 0.0:
+                locked_target = CombatTargeting.select_target(self, locked_target, false)
     if divine_guard_timer <= 0.0:
         divine_guard_shield = 0.0
     for ability_id in ability_cooldowns.keys():
@@ -354,6 +361,8 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
     if health_damage > 0.0:
         ArmorSystem.damage_random_part(1)
         _flash(Color(1.0, 0.12, 0.12))
+        if bool(SettingsManager.get_value("controls", "vibration", true)):
+            Input.vibrate_handheld(45, 0.35)
     elif absorbed_damage > 0.0:
         _flash(Color(0.35, 0.8, 1.0))
     if health <= 0.0:
