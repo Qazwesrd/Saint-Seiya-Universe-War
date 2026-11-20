@@ -1043,6 +1043,49 @@ func get_class_skill_catalog() -> Array:
         result.append(entry)
     return result
 
+func validate_all_class_skill_catalogs() -> Dictionary:
+    var errors: Array[String] = []
+    var class_catalog := get_class_skill_catalog()
+    var seen_classes: Dictionary = {}
+    var total_abilities := 0
+    for class_entry in class_catalog:
+        var class_id := str(class_entry.get("id", ""))
+        if class_id == "" or seen_classes.has(class_id):
+            errors.append("职业编号缺失或重复：" + class_id)
+            continue
+        seen_classes[class_id] = true
+        if str(class_entry.get("class_name", "")) == "" or str(class_entry.get("style", "")) == "":
+            errors.append(class_id + "：职业名称或战斗定位缺失")
+        var passive: Dictionary = class_entry.get("passive", {})
+        if passive.is_empty() or str(passive.get("effect", "")) == "":
+            errors.append(class_id + "：职业被动未定义")
+        var abilities := get_ability_catalog(class_id)
+        if abilities.size() != 24:
+            errors.append("%s：技能数量应为24，实际为%d" % [class_id, abilities.size()])
+        var seen_abilities: Dictionary = {}
+        for ability in abilities:
+            var ability_id := str(ability.get("id", ""))
+            if ability_id == "" or seen_abilities.has(ability_id):
+                errors.append(class_id + "：技能编号缺失或重复：" + ability_id)
+                continue
+            seen_abilities[ability_id] = true
+            total_abilities += 1
+            for required_key in ["name", "description", "type", "role", "branch"]:
+                if str(ability.get(required_key, "")) == "":
+                    errors.append("%s/%s：缺少%s" % [class_id, ability_id, required_key])
+            if int(ability.get("unlock_level", 0)) < 1:
+                errors.append(class_id + "/" + ability_id + "：解锁等级无效")
+            if float(ability.get("cost", -1.0)) < 0.0:
+                errors.append(class_id + "/" + ability_id + "：小宇宙消耗无效")
+            if float(ability.get("cooldown", 0.0)) <= 0.0:
+                errors.append(class_id + "/" + ability_id + "：冷却时间无效")
+    return {
+        "valid": errors.is_empty() and class_catalog.size() == 32 and total_abilities == 768,
+        "class_count": class_catalog.size(),
+        "ability_count": total_abilities,
+        "errors": errors
+    }
+
 func get_skill_level(class_id: String) -> int:
     var levels: Dictionary = RPGState.profile.get("skill_levels", {})
     return clampi(int(levels.get(class_id, 1)), 1, 10)
