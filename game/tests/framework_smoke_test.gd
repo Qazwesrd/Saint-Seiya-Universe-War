@@ -1,6 +1,7 @@
 extends Node
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
+const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
 ## Headless scene-based smoke test so project AutoLoads are initialized normally.
 
 func _ready() -> void:
@@ -89,6 +90,13 @@ func _run_tests() -> void:
 			assert(not animation_profile.get("timeline", []).is_empty(), "skill animation exposes ordered event markers")
 			animation_profile_count += 1
 	assert(animation_profile_count == 768, "animation profiles generated for all 768 abilities")
+	var enemy_visual_profile_count := 0
+	for enemy_id in EnemyDatabase.ARCHETYPES:
+		var enemy_data: Dictionary = EnemyDatabase.get_archetype(str(enemy_id))
+		var enemy_visual_profile: Dictionary = EnemyVisualCatalog.get_profile(str(enemy_id), bool(enemy_data.get("is_boss", false)), enemy_data.get("color", Color.WHITE))
+		assert(EnemyVisualCatalog.validate_profile(enemy_visual_profile), "enemy armor visual profile is valid: " + str(enemy_id))
+		enemy_visual_profile_count += 1
+	assert(enemy_visual_profile_count == EnemyDatabase.ARCHETYPES.size(), "every enemy and boss has a visual profile")
 	assert(load("res://scripts/world_theme_manager.gd") != null, "procedural chapter world theme manager is present")
 	var world_theme_test_root := Node3D.new()
 	add_child(world_theme_test_root)
