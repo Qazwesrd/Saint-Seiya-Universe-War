@@ -285,6 +285,12 @@ func _run_tests() -> void:
 	assert(load("res://scripts/skill_field.gd") != null, "field and trap actor script is present")
 	assert(load("res://scripts/skill_projectile.gd") != null, "homing projectile actor script is present")
 	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("tenkishi"), 1.22), "Tenkishi flight profession retains its movement passive")
+	var grounded_aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile("tenkishi", false)
+	assert(is_equal_approx(float(grounded_aerial_profile.get("damage_multiplier", 0.0)), 1.0), "grounded Tenkishi combat receives no aerial bonus")
+	var active_aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile("tenkishi", true)
+	assert(float(active_aerial_profile.get("damage_multiplier", 1.0)) > 1.0 and float(active_aerial_profile.get("range_bonus", 0.0)) > 0.0 and float(active_aerial_profile.get("launch_bonus", 0.0)) > 0.0, "Tenkishi flight enables bounded aerial combat bonuses")
+	var other_class_aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile("pegasus", true)
+	assert(is_equal_approx(float(other_class_aerial_profile.get("damage_multiplier", 0.0)), 1.0), "non-Tenkishi classes cannot receive aerial combat bonuses")
 	var divine_support_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		if str(class_profile.get("tier", "")) != "神明":
