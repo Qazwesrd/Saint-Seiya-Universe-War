@@ -254,6 +254,8 @@ func take_damage(amount: float) -> void:
     CombatSessionManager.record_damage_dealt(applied_damage)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
+        if game.has_method("spawn_damage_number"):
+            game.call("spawn_damage_number", global_position + Vector3.UP * 2.0, applied_damage, is_boss)
 
     if is_boss and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
