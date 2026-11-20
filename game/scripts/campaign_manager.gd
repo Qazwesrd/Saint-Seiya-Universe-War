@@ -166,18 +166,34 @@ func complete_active_mission() -> Dictionary:
     var mission_id := str(mission["id"])
     if mission_id in progress["completed_missions"]:
         return {"success": false, "reason": "任务已经完成"}
+
+    # Commit campaign progress and rewards in one character-slot write.
+    # This prevents a failed campaign save from allowing the same reward to be claimed twice.
+    var previous_profile: Dictionary = RPGState.profile.duplicate(true)
+    var previous_progress: Dictionary = progress.duplicate(true)
     progress["completed_missions"].append(mission_id)
     var reward: Dictionary = mission.get("rewards", {})
     if not mission_id in progress["claimed_rewards"]:
-        RPGState.add_exp(int(reward.get("exp", 0)))
-        RPGState.add_currency(int(reward.get("coins", 0)))
         progress["claimed_rewards"].append(mission_id)
+        RPGState.profile["exp"] = int(RPGState.profile.get("exp", 0)) + int(reward.get("exp", 0))
+        RPGState.profile["currency"] = maxi(0, int(RPGState.profile.get("currency", 0)) + int(reward.get("coins", 0)))
+        while int(RPGState.profile.get("level", 1)) < RPGState.MAX_LEVEL and int(RPGState.profile["exp"]) >= RPGState.exp_to_next_level():
+            RPGState.profile["exp"] = int(RPGState.profile["exp"]) - RPGState.exp_to_next_level()
+            RPGState.profile["level"] = int(RPGState.profile["level"]) + 1
+            RPGState.profile["skill_points"] = int(RPGState.profile.get("skill_points", 0)) + 1
+
     _unlock_next_chapter_if_ready(mission_id)
     var next_id := _next_mission_id(mission_id)
     progress["active_mission"] = next_id
-    _save()
+    RPGState.profile["campaign_progress"] = progress.duplicate(true)
+    if not RPGState.save_slot(RPGState.active_slot):
+        RPGState.profile = previous_profile
+        progress = previous_progress
+        SystemHealthManager.report_error("save", "剧情任务奖励与进度提交失败", "mission=%s slot=%d" % [mission_id, RPGState.active_slot])
+        return {"success": false, "reason": "存档写入失败，任务奖励未发放，请重试"}
+    RPGState._emit_change()
+    campaign_changed.emit()
     return {"success": true, "mission": mission, "rewards": reward, "next_mission": CampaignDatabase.get_mission(next_id)}
-
 func _unlock_next_chapter_if_ready(completed_id: String) -> void:
     var chapter_index := -1
     var mission_index := -1
