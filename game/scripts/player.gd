@@ -22,6 +22,7 @@ var locked_target: Node3D
 var pivot: Node3D
 var body_mat: StandardMaterial3D
 var is_mounted := false
+var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
 var temporary_damage_bonus := 0.0
 var temporary_damage_reduction := 0.0
@@ -149,8 +150,15 @@ func _physics_process(delta: float) -> void:
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 24.0 * delta)
     velocity.x = direction.x * speed + knockback_velocity.x
     velocity.z = direction.z * speed + knockback_velocity.z
-    var gravity_scale := 0.82 if class_id == "tenkishi" else 1.0
-    velocity.y -= 22.0 * gravity_scale * delta
+    if class_id == "tenkishi" and tenkishi_flight_active:
+        velocity.y = move_toward(velocity.y, 0.0, 5.5 * delta)
+        if global_position.y >= 12.0 and velocity.y > 0.0:
+            velocity.y = 0.0
+        if global_position.y <= 0.25 and velocity.y < 0.0:
+            velocity.y = 0.0
+    else:
+        var gravity_scale := 0.82 if class_id == "tenkishi" else 1.0
+        velocity.y -= 22.0 * gravity_scale * delta
     move_and_slide()
     if direction.length() > 0.1:
         rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * 12.0)
@@ -160,6 +168,29 @@ func _physics_process(delta: float) -> void:
     if Input.is_action_just_pressed("ui_accept"): attack()
     if Input.is_action_just_pressed("ui_cancel"): dodge()
     game.call("update_hud")
+func toggle_tenkishi_flight() -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    if class_id != "tenkishi":
+        tenkishi_flight_active = false
+        if is_instance_valid(game):
+            game.call("show_notice", "只有天斗士职业可以展开天翼飞行")
+        return
+    tenkishi_flight_active = not tenkishi_flight_active
+    if tenkishi_flight_active:
+        velocity.y = maxf(velocity.y, 3.5)
+        if is_instance_valid(game):
+            game.call("show_notice", "天翼展开：飞行模式已开启")
+    else:
+        if is_instance_valid(game):
+            game.call("show_notice", "天翼收拢：恢复地面战斗")
+            
+func tenkishi_flight_step(direction: float) -> void:
+    if str(RPGState.profile.get("class_id", "pegasus")) != "tenkishi" or not tenkishi_flight_active:
+        return
+    velocity.y = clampf(velocity.y + signf(direction) * 4.5, -5.0, 5.0)
+    if is_instance_valid(game):
+        game.call("show_notice", "天翼上升" if direction > 0.0 else "天翼俯冲")
+
 func attack() -> void:
     if attack_cd > 0.0:
         return
