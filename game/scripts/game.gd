@@ -48,6 +48,8 @@ func _build_world() -> void:
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-52, -28, 0)
     sun.light_energy = 1.3
+    sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true))
+    SettingsManager.settings_changed.connect(_on_graphics_setting_changed)
     add_child(sun)
     var floor_body := StaticBody3D.new()
     var floor_mesh := MeshInstance3D.new()
@@ -444,7 +446,15 @@ func update_hud() -> void:
                 boss_max = enemy.get("max_health")
                 break
         hud.call("set_boss_status", boss_hp, boss_max)
+func _on_graphics_setting_changed(section: String, key: String, value: Variant) -> void:
+    if section == "graphics" and key == "shadows":
+        var sun := get_node_or_null("DirectionalLight3D") as DirectionalLight3D
+        if is_instance_valid(sun):
+            sun.shadow_enabled = bool(value)
+
 func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
+    if not bool(SettingsManager.get_value("graphics", "effects", true)):
+        return
     var effect := MeshInstance3D.new()
     var sphere := SphereMesh.new()
     sphere.radius = 0.5
@@ -466,6 +476,25 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
         if is_instance_valid(effect):
             effect.queue_free()
     )
+func spawn_damage_number(at: Vector3, damage: float, critical: bool = false) -> void:
+    if not bool(SettingsManager.get_value("gameplay", "damage_numbers", true)):
+        return
+    var number := Label3D.new()
+    number.text = str(maxi(1, roundi(damage)))
+    number.font_size = 34 if critical else 28
+    number.outline_size = 6
+    number.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    number.modulate = Color(1.0, 0.72, 0.22) if critical else Color(1.0, 0.94, 0.78)
+    number.position = at
+    add_child(number)
+    var tween := create_tween()
+    tween.tween_property(number, "position:y", at.y + 1.35, 0.62)
+    tween.parallel().tween_property(number, "modulate:a", 0.0, 0.62)
+    tween.finished.connect(func() -> void:
+        if is_instance_valid(number):
+            number.queue_free()
+    )
+
 func show_notice(message: String) -> void:
     if is_instance_valid(hud):
         hud.call("set_notice", message)
