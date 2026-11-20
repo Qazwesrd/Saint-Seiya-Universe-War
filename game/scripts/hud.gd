@@ -803,9 +803,10 @@ func _open_character(root: Control) -> void:
         var slot_id: int = slot
         var row := HBoxContainer.new()
         var save_button := Button.new()
-        save_button.text = "槽%d 保存" % slot_id
+        save_button.text = "槽%d 保存当前角色" % slot_id if slot_id == RPGState.active_slot else "槽%d（需先读取）" % slot_id
+        save_button.disabled = slot_id != RPGState.active_slot
         save_button.pressed.connect(func():
-            set_notice("存档已保存" if RPGState.save_slot(slot_id) else "存档保存失败")
+            set_notice("当前角色存档已安全保存" if RPGState.save_slot(slot_id) else "保存失败：只能保存当前已读取的存档槽")
             popup.queue_free()
         )
         row.add_child(save_button)
