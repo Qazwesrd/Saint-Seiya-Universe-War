@@ -304,7 +304,9 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
         var target_multiplier := SkillSystem.get_target_condition_multiplier(str(RPGState.profile.get("class_id", "pegasus")), enemy)
         enemy.call("take_damage", damage * target_multiplier)
         if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
-            enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger)
+            var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+            var passive_stagger := SkillSystem.get_passive_stagger_multiplier(class_id)
+            enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger * passive_stagger)
 
 
 func apply_class_skill_effect(class_id: String, reach: float) -> void:
