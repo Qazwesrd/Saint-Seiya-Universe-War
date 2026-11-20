@@ -1089,11 +1089,11 @@ func cast_ability(ability_id: String) -> bool:
     cosmos -= cost
     var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
     var animation_profile: Dictionary = SkillAnimationCatalog.get_profile(class_id, ability)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     _play_skill_pose(animation_profile)
     _play_combat_feedback(Color(class_data.get("color", Color(0.3, 0.72, 1.0))), 0.46)
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
-    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var ability_type := str(ability.get("type", "攻击"))
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
