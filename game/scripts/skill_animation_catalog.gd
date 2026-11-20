@@ -31,7 +31,7 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
         startup = maxf(startup, 0.22)
     var active := clampf(0.18 + float(effect.get("extra_hits", 0)) * 0.075, 0.18, 0.72)
     if action in ["field", "trap", "summon"]:
-        active = minf(1.0, float(effect.get("field_lifetime", effect.get("summon_lifetime", 1.0))))
+        active = clampf(float(effect.get("field_lifetime", effect.get("summon_lifetime", 1.0))), 0.18, 1.0)
     var recovery := clampf(0.24 + startup * 0.55, 0.24, 0.72)
     if finisher:
         recovery += 0.18
@@ -102,4 +102,11 @@ static func _resolve_motion(class_id: String, ability_type: String, action: Stri
     return "strike"
 
 static func validate_catalog() -> bool:
-    return CLASS_STYLE.size() >= 32 and CLASS_STYLE.has("pegasus") and CLASS_STYLE.has("apollo") and CLASS_STYLE.has("tenkishi")
+    var class_catalog: Array = SkillSystem.get_class_skill_catalog()
+    if CLASS_STYLE.size() != class_catalog.size():
+        return false
+    for class_entry in class_catalog:
+        var class_id := str(class_entry.get("id", ""))
+        if not CLASS_STYLE.has(class_id):
+            return false
+    return CLASS_STYLE.has("pegasus") and CLASS_STYLE.has("apollo") and CLASS_STYLE.has("tenkishi")
