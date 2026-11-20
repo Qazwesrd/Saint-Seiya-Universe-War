@@ -1199,6 +1199,15 @@ func get_passive_stagger_multiplier(class_id: String) -> float:
         return 1.0 + clampf(float(passive.get("value", 0.0)), 0.0, 0.50)
     return 1.0
 
+func get_passive_guard_ratio(class_id: String) -> float:
+    return 0.12 if class_id == "andromeda" else 0.0
+
+func get_passive_burn_multiplier(class_id: String) -> float:
+    return 1.12 if class_id == "phoenix" else 1.0
+
+func get_passive_burn_sustain_ratio(class_id: String) -> float:
+    return 0.04 if class_id == "phoenix" else 0.0
+
 func get_passive_speed_multiplier(class_id: String) -> float:
     var passive := get_passive(class_id)
     if str(passive.get("effect", "")) == "speed":
