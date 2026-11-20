@@ -48,6 +48,19 @@ func _run_tests() -> void:
 	assert(RPGState.select_class("dragon"), "switch to dragon class")
 	assert(str(RPGState.profile.get("class_id", "")) == "dragon", "class switch persisted")
 	assert(RPGState.select_class("pegasus"), "switch back to pegasus class")
+	for class_id in RPGState.CLASS_DATA:
+		var class_data: Dictionary = RPGState.CLASS_DATA[class_id]
+		if str(class_data.get("tier", "")) in ["神明", "天斗士"]:
+			assert(EquipmentDatabase.EQUIPMENT.has(str(class_data.get("starter", ""))), "divine/heavenly starter relic exists for " + str(class_id))
+	var previous_level := int(RPGState.profile.get("level", 1))
+	RPGState.profile["level"] = 70
+	assert(RPGState.save_slot(RPGState.active_slot), "prepare divine class unlock test")
+	assert(RPGState.select_class("zeus"), "unlock Zeus class at level 70")
+	assert(str(RPGState.profile.get("equipped_relic", "")) == "zeus_divine_relic", "divine class auto-equips its own relic")
+	assert(EquipmentDatabase.get_bonus_stats().get("attack", 0.0) > 0.0, "divine starter relic stats apply")
+	RPGState.profile["level"] = previous_level
+	assert(RPGState.select_class("pegasus"), "return to mortal class")
+	assert(str(RPGState.profile.get("equipped_relic", "")) == "", "mortal class does not retain divine relic bonuses")
 	assert(bool(SkillSystem.can_learn_ability("pegasus", "pegasus_skill_2").get("allowed", false)) == (int(RPGState.profile.get("level", 1)) >= 5 and int(RPGState.profile.get("skill_points", 0)) > 0), "skill learn requirements are explicit")
 	assert(EquipmentAffixManager.roll_affixes("arms", 2), "roll and persist equipment affixes")
 	assert(not EquipmentAffixManager.get_equipped_affixes().get("arms", []).is_empty(), "equipment affixes persisted")
