@@ -1161,11 +1161,15 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
         # Passive skill bonuses are separate from cosmos progression; callers
         # apply the cosmos multiplier exactly once to avoid double scaling.
         return 1.0 + value
-    if effect == "combo_damage":
-        return 1.0 + value
     if effect == "control_damage" and is_instance_valid(target):
         if target.has_method("is_controlled") and bool(target.call("is_controlled")):
             return 1.0 + value
+    return 1.0
+
+func get_combo_damage_multiplier(class_id: String) -> float:
+    var passive := get_passive(class_id)
+    if str(passive.get("effect", "")) == "combo_damage":
+        return 1.0 + clampf(float(passive.get("value", 0.0)), 0.0, 0.50)
     return 1.0
 
 func get_damage_reduction(class_id: String) -> float:
