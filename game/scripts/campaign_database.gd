@@ -134,5 +134,59 @@ static func get_mission(mission_id: String) -> Dictionary:
                 return mission.duplicate(true)
     return {}
 
+
+static func validate_catalog() -> Dictionary:
+    var errors: Array[String] = []
+    var chapter_ids: Dictionary = {}
+    var chapter_orders: Dictionary = {}
+    var mission_ids: Dictionary = {}
+    var mission_count := 0
+    var spawn_count := 0
+    for chapter in CHAPTERS:
+        var chapter_id := str(chapter.get("id", ""))
+        var chapter_order := int(chapter.get("order", 0))
+        if chapter_id.is_empty() or chapter_ids.has(chapter_id):
+            errors.append("empty or duplicate chapter id: " + chapter_id)
+        chapter_ids[chapter_id] = true
+        if chapter_order <= 0 or chapter_orders.has(chapter_order):
+            errors.append("invalid or duplicate chapter order: " + str(chapter_order))
+        chapter_orders[chapter_order] = true
+        for mission in chapter.get("missions", []):
+            mission_count += 1
+            var mission_id := str(mission.get("id", ""))
+            if mission_id.is_empty() or mission_ids.has(mission_id):
+                errors.append("empty or duplicate mission id: " + mission_id)
+            mission_ids[mission_id] = true
+            var objective_ids: Dictionary = {}
+            for objective in mission.get("objectives", []):
+                var objective_id := str(objective.get("id", ""))
+                if objective_id.is_empty() or objective_ids.has(objective_id):
+                    errors.append("empty or duplicate objective id in " + mission_id + ": " + objective_id)
+                objective_ids[objective_id] = true
+                if int(objective.get("target", 0)) <= 0:
+                    errors.append("invalid objective target in " + mission_id + ": " + objective_id)
+            var rewards: Dictionary = mission.get("rewards", {})
+            if int(rewards.get("exp", 0)) < 0 or int(rewards.get("coins", 0)) < 0:
+                errors.append("negative mission reward in " + mission_id)
+            var encounter: Dictionary = mission.get("encounter", {})
+            var mission_type := str(mission.get("type", ""))
+            if str(chapter.get("id", "")) in ["hades", "heaven", "original_final"] and mission_type in ["boss", "final_boss", "story_battle"] and encounter.get("waves", []).is_empty():
+                errors.append("late-story battle missing encounter waves: " + mission_id)
+            for wave in encounter.get("waves", []):
+                for spawn in wave.get("spawns", []):
+                    spawn_count += 1
+                    var archetype_id := str(spawn.get("archetype_id", ""))
+                    if not EnemyDatabase.has_archetype(archetype_id):
+                        errors.append("unknown enemy archetype in " + mission_id + ": " + archetype_id)
+                    if int(spawn.get("count", 0)) <= 0:
+                        errors.append("invalid enemy spawn count in " + mission_id + ": " + archetype_id)
+    return {
+        "valid": errors.is_empty(),
+        "chapter_count": chapter_ids.size(),
+        "mission_count": mission_count,
+        "spawn_entry_count": spawn_count,
+        "errors": errors
+    }
+
 static func get_first_mission_id() -> String:
     return str(CHAPTERS[0]["missions"][0]["id"])
