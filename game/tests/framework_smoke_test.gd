@@ -37,6 +37,10 @@ func _run_tests() -> void:
 	var skill_state: Dictionary = SkillSystem.get_skill_state("pegasus")
 	assert(str(skill_state.get("class_id", "")) == "pegasus", "skill tree state class binding")
 	assert(not skill_state.get("abilities", []).is_empty(), "skill tree catalog state")
+	var phoenix_skill_cost := float(SkillSystem.get_class_skill("phoenix").get("cost", 18))
+	assert(phoenix_skill_cost > 18.0, "Phoenix class skill has a higher resource cost")
+	assert(not SkillSystem.can_afford_class_skill("phoenix", 18.0), "class skill affordability rejects insufficient cosmos")
+	assert(SkillSystem.can_afford_class_skill("phoenix", phoenix_skill_cost), "class skill affordability accepts exact cost")
 	for class_entry in SkillSystem.get_class_skill_catalog():
 		var catalog_class_id := str(class_entry.get("id", ""))
 		assert(SkillSystem.get_ability_catalog(catalog_class_id).size() == 24, "24 skills configured for " + catalog_class_id)
