@@ -505,26 +505,45 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
         if is_instance_valid(sun):
             sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
 
-func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
+func spawn_effect(at: Vector3, effect_color: Color, radius: float, effect_shape: String = "star", glow: float = 0.4) -> void:
     if not bool(SettingsManager.get_value("graphics", "effects", true)):
         return
     var effect_root := Node3D.new()
-    effect_root.name = "CosmosImpactEffect"
+    effect_root.name = "CosmosImpact_" + effect_shape
     effect_root.position = at
     effect_root.scale = Vector3.ONE * 0.16
     add_child(effect_root)
 
     var core := MeshInstance3D.new()
-    var core_mesh := SphereMesh.new()
-    core_mesh.radius = 0.48
-    core_mesh.height = 0.96
-    core.mesh = core_mesh
+    match effect_shape:
+        "shard", "bolt":
+            var core_prism := PrismMesh.new()
+            core_prism.size = Vector3(0.34, 0.9, 0.24) if effect_shape == "bolt" else Vector3(0.46, 0.72, 0.3)
+            core.mesh = core_prism
+            core.rotation.z = -0.18 if effect_shape == "bolt" else 0.0
+        "ring", "halo", "pulse":
+            var core_ring := TorusMesh.new()
+            core_ring.inner_radius = 0.22
+            core_ring.outer_radius = 0.48
+            core.mesh = core_ring
+        "wave", "crescent":
+            var core_wave := CylinderMesh.new()
+            core_wave.top_radius = 0.12
+            core_wave.bottom_radius = 0.58
+            core_wave.height = 0.12
+            core.mesh = core_wave
+            core.rotation.x = deg_to_rad(90.0)
+        _:
+            var core_sphere := SphereMesh.new()
+            core_sphere.radius = 0.48
+            core_sphere.height = 0.96
+            core.mesh = core_sphere
     var core_material := StandardMaterial3D.new()
     core_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     core_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     core_material.albedo_color = Color(effect_color.r, effect_color.g, effect_color.b, 0.58)
     core_material.emission_enabled = true
-    core_material.emission = effect_color * 1.2
+    core_material.emission = effect_color * (0.8 + clampf(glow, 0.0, 0.6) * 1.6)
     core.material_override = core_material
     effect_root.add_child(core)
 
@@ -538,12 +557,14 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
     ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     ring_material.albedo_color = effect_color.lightened(0.22)
     ring_material.emission_enabled = true
-    ring_material.emission = effect_color * 1.6
+    ring_material.emission = effect_color * (1.0 + clampf(glow, 0.0, 0.6))
     shock_ring.material_override = ring_material
     effect_root.add_child(shock_ring)
 
     var quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
-    var shard_count := 3 if quality == "low" else (6 if quality == "medium" else 9)
+    var shard_count := 2 if quality == "low" else (5 if quality == "medium" else 8)
+    if effect_shape in ["ring", "halo", "pulse"]:
+        shard_count = maxi(1, shard_count - 2)
     for shard_index in range(shard_count):
         var shard := MeshInstance3D.new()
         var shard_mesh := PrismMesh.new()
@@ -556,7 +577,7 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
         var shard_material := StandardMaterial3D.new()
         shard_material.albedo_color = effect_color.lightened(0.3)
         shard_material.emission_enabled = true
-        shard_material.emission = effect_color
+        shard_material.emission = effect_color * 0.8
         shard.material_override = shard_material
         effect_root.add_child(shard)
 
@@ -564,7 +585,7 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
     var tween := create_tween()
     tween.set_parallel(true)
     tween.tween_property(effect_root, "scale", Vector3.ONE * safe_radius, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-    tween.tween_property(effect_root, "rotation:y", TAU * 0.12, 0.34)
+    tween.tween_property(effect_root, "rotation:y", TAU * (0.12 if effect_shape in ["ring", "halo", "time"] else 0.2), 0.34)
     tween.tween_property(effect_root, "position:y", at.y + 0.22, 0.34)
     tween.finished.connect(func() -> void:
         if is_instance_valid(effect_root):
