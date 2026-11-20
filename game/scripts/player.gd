@@ -269,6 +269,9 @@ func _animate_visual_motion(delta: float) -> void:
         elif combat_pose_motion == "guard":
             arm_target = lerpf(arm_target, -0.58, pose_weight)
             forearm_target = lerpf(forearm_target, -0.72, pose_weight)
+        elif combat_pose_motion == "hit":
+            arm_target = lerpf(arm_target, 0.42 if limb_index == 1 else 0.18, pose_weight)
+            forearm_target = lerpf(forearm_target, -0.12, pose_weight)
         elif combat_pose_motion in ["cast", "spin"]:
             arm_target = lerpf(arm_target, -0.38, pose_weight)
             forearm_target = lerpf(forearm_target, -0.24, pose_weight)
@@ -910,6 +913,11 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
     if health_damage > 0.0:
         ArmorSystem.damage_random_part(1)
         _flash(Color(1.0, 0.12, 0.12))
+        combat_pose_motion = "hit"
+        combat_pose_duration = 0.26
+        combat_pose_timer = combat_pose_duration
+        combat_pose_strength = 0.9
+        _play_combat_feedback(Color(1.0, 0.18, 0.12), 0.28)
         if bool(SettingsManager.get_value("controls", "vibration", true)):
             Input.vibrate_handheld(45, 0.35)
     elif absorbed_damage > 0.0:
