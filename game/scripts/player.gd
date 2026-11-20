@@ -144,8 +144,8 @@ func _physics_process(delta: float) -> void:
             direction = target_offset.normalized()
     var base_speed := float(RPGState.get_combat_stats().get("speed",12.0)) * 0.52
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var passive_speed := SkillSystem.get_passive_speed_multiplier(class_id)
-    var speed := base_speed * passive_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
+    var passive_speed: float = SkillSystem.get_passive_speed_multiplier(class_id)
+    var speed: float = base_speed * passive_speed * (2.2 if dodge_time > 0.0 else (1.45 if is_mounted else 1.0))
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 24.0 * delta)
     velocity.x = direction.x * speed + knockback_velocity.x
     velocity.z = direction.z * speed + knockback_velocity.z
@@ -172,8 +172,8 @@ func attack() -> void:
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
     var multipliers := [0.85, 1.0, 1.45]
-    var passive_multiplier := SkillSystem.get_skill_damage_multiplier(class_id)
-    var damages := (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier * (1.0 + temporary_damage_bonus)
+    var passive_multiplier: float = SkillSystem.get_skill_damage_multiplier(class_id)
+    var damages: float = (8.0 + attack_stat * float(multipliers[basic_combo_step - 1])) * passive_multiplier * (1.0 + temporary_damage_bonus)
     var push_forces := [1.8, 2.8, float(skill_data.get("knockback", 3.5)) * 1.7]
     var lift_forces := [0.0, 0.0, float(skill_data.get("launch", 1.2)) * 1.5]
     var basic_names: Array = skill_data.get("basic_attacks", ["第一段", "第二段", "第三段"])
@@ -196,8 +196,8 @@ func skill() -> void:
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
-    var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage_multiplier := float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var skill_level: int = SkillSystem.get_skill_level(class_id)
+    var damage_multiplier: float = float(skill_data.get("damage", 1.5)) * (1.0 + float(skill_level - 1) * 0.08) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.18, 0.72, 1.0))
     _flash(skill_color)
     game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, float(skill_data.get("range", 7.0)), float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)), float(skill_data.get("launch", 1.2)), float(skill_data.get("stagger", 0.55)))
@@ -219,8 +219,8 @@ func combo_skill() -> void:
     CombatSessionManager.record_skill_cast(true)
     combo_window = 0.0
     skill_cd = maxf(skill_cd, 1.0)
-    var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage := float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var skill_level: int = SkillSystem.get_skill_level(class_id)
+    var damage: float = float(RPGState.get_combat_stats().get("attack", 14.0)) * float(skill_data.get("combo_damage", 2.5)) * (1.0 + float(skill_level - 1) * 0.1) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var skill_color: Color = skill_data.get("color", Color(0.2, 0.7, 1.0))
     _flash(Color(1.0, 0.9, 0.55))
     game.call("damage_nearby_combat", damage, float(skill_data.get("combo_range", 8.5)), 180.0, float(skill_data.get("combo_knockback", 9.0)), float(skill_data.get("combo_launch", 3.8)), float(skill_data.get("stagger", 0.85)) * 1.2)
@@ -234,7 +234,7 @@ func cosmos_burst() -> void:
     burst_cd = 8.0
     _flash(Color(1.0, 0.4, 0.12))
     var skill_data: Dictionary = SkillSystem.get_class_skill(str(RPGState.profile.get("class_id", "pegasus")))
-    var burst_damage := (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(str(RPGState.profile.get("class_id", "pegasus"))) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
+    var burst_damage: float = (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(str(RPGState.profile.get("class_id", "pegasus"))) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
     game.call("damage_nearby_combat", burst_damage, float(skill_data.get("burst_range", 5.0)), 360.0, float(skill_data.get("burst_knockback", 12.0)), float(skill_data.get("burst_launch", 4.5)), float(skill_data.get("stagger", 1.0)))
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
@@ -274,9 +274,9 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         toward_attacker.y = 0.0
         if toward_attacker.length_squared() > 0.001:
             facing_dot = (-global_transform.basis.z).dot(toward_attacker.normalized())
-    var passive_reduction := SkillSystem.get_damage_reduction(class_id, facing_dot)
+    var passive_reduction: float = SkillSystem.get_damage_reduction(class_id, facing_dot)
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
-    var class_guard_ratio := SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
+    var class_guard_ratio: float = SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
     if class_guard_ratio > 0.0 and class_passive_guard_cooldown <= 0.0 and divine_guard_shield <= 0.0 and health - final_damage <= max_health * 0.35:
         apply_divine_guard(class_guard_ratio, 4.0)
         class_passive_guard_cooldown = 18.0
@@ -409,7 +409,7 @@ func _execute_custom_combo_step(action_id: String) -> bool:
         guard()
         return true
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var ability := SkillSystem.get_ability_data(class_id, action_id)
+    var ability: Dictionary = SkillSystem.get_ability_data(class_id, action_id)
     if ability.is_empty() or not SkillSystem.is_ability_learned(class_id, action_id):
         return false
     if float(ability_cooldowns.get(action_id, 0.0)) > 0.0 or cosmos < float(ability.get("cost", 12)):
@@ -421,10 +421,10 @@ func _execute_custom_combo_finisher(preset: Dictionary) -> void:
     if steps.is_empty():
         return
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var class_data := SkillSystem.get_class_skill(class_id)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
-    var skill_level := SkillSystem.get_skill_level(class_id)
-    var damage := attack_power * (1.1 + float(steps.size()) * 0.42) * (1.0 + float(skill_level - 1) * 0.05) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
+    var skill_level: int = SkillSystem.get_skill_level(class_id)
+    var damage: float = attack_power * (1.1 + float(steps.size()) * 0.42) * (1.0 + float(skill_level - 1) * 0.05) * SkillSystem.get_skill_damage_multiplier(class_id) * SkillSystem.get_combo_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0)))
     var reach := float(class_data.get("combo_range", 8.5))
     var color: Color = class_data.get("color", Color(0.35, 0.75, 1.0))
     CombatSessionManager.record_skill_cast(true)
@@ -435,7 +435,7 @@ func _execute_custom_combo_finisher(preset: Dictionary) -> void:
 
 func cast_skill_slot(slot_index: int) -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var slots := SkillSystem.get_equipped_abilities(class_id)
+    var slots: Array = SkillSystem.get_equipped_abilities(class_id)
     if slot_index < 0 or slot_index >= slots.size():
         return
     var ability_id := str(slots[slot_index])
@@ -445,7 +445,7 @@ func cast_skill_slot(slot_index: int) -> void:
     cast_ability(ability_id)
 func cast_ability(ability_id: String) -> bool:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
-    var ability := SkillSystem.get_ability_data(class_id, ability_id)
+    var ability: Dictionary = SkillSystem.get_ability_data(class_id, ability_id)
     if ability.is_empty() or not SkillSystem.is_ability_learned(class_id, ability_id):
         game.call("show_notice", "技能尚未学习")
         return false
@@ -460,12 +460,12 @@ func cast_ability(ability_id: String) -> bool:
     cosmos -= cost
     CombatSessionManager.record_skill_cast()
     ability_cooldowns[ability_id] = float(ability.get("cooldown", 6))
-    var class_data := SkillSystem.get_class_skill(class_id)
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var ability_type := str(ability.get("type", "攻击"))
     var attack_power := float(RPGState.get_combat_stats().get("attack", 14.0))
     var level_scale := 1.0 + float(SkillSystem.get_skill_level(class_id) - 1) * 0.06
     var type_scale := 1.25 if ("奥义" in ability_type or "终结" in ability_type) else (0.72 if ("防御" in ability_type or "治疗" in ability_type or "守护" in ability_type) else 1.0)
-    var damage := (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
+    var damage: float = (10.0 + attack_power * float(class_data.get("damage", 1.5)) * type_scale * level_scale) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus)
     var reach := float(class_data.get("range", 7.0))
     if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
         reach += 2.0
