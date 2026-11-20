@@ -55,6 +55,61 @@ static func get_profile(class_id: String) -> Dictionary:
         result.merge(PROFILES[class_id], true)
     return result
 
+const EQUIPMENT_PROFILES := {
+    "god_cloth_archive": {"accent": Color(1.0, 0.86, 0.52), "ornament": "radiant"},
+    "athena_divine_garment": {"accent": Color(1.0, 0.88, 0.58), "ornament": "aegis"},
+    "poseidon_scale": {"accent": Color(0.22, 0.82, 1.0), "ornament": "tidal_fins"},
+    "hades_divine_garment": {"accent": Color(0.68, 0.36, 0.82), "ornament": "soul_wings"},
+    "odin_god_robe": {"accent": Color(0.48, 0.82, 1.0), "ornament": "rune_wings"},
+    "saturn_chronotector": {"accent": Color(0.72, 0.52, 1.0), "ornament": "time_rings"},
+    "apollo_divine_relic": {"accent": Color(1.0, 0.78, 0.22), "ornament": "solar_wings"},
+    "athena_divine_relic": {"accent": Color(1.0, 0.88, 0.56), "ornament": "aegis"},
+    "hades_divine_relic": {"accent": Color(0.66, 0.34, 0.84), "ornament": "soul_wings"},
+    "poseidon_divine_relic": {"accent": Color(0.18, 0.78, 1.0), "ornament": "tidal_fins"},
+    "zeus_divine_relic": {"accent": Color(1.0, 0.9, 0.52), "ornament": "storm_wings"},
+    "artemis_divine_relic": {"accent": Color(0.72, 0.86, 1.0), "ornament": "moon_wings"},
+    "hypnos_divine_relic": {"accent": Color(0.72, 0.68, 1.0), "ornament": "dream_wings"},
+    "thanatos_divine_relic": {"accent": Color(0.7, 0.28, 0.54), "ornament": "soul_wings"},
+    "odin_divine_relic": {"accent": Color(0.42, 0.8, 1.0), "ornament": "rune_wings"},
+    "ares_divine_relic": {"accent": Color(0.94, 0.22, 0.16), "ornament": "war_spikes"},
+    "eris_divine_relic": {"accent": Color(0.76, 0.32, 0.88), "ornament": "thorn_wings"},
+    "abel_divine_relic": {"accent": Color(1.0, 0.46, 0.18), "ornament": "solar_wings"},
+    "lucifer_divine_relic": {"accent": Color(0.86, 0.24, 0.22), "ornament": "fallen_wings"},
+    "saturn_divine_relic": {"accent": Color(0.72, 0.48, 1.0), "ornament": "time_rings"},
+    "pallas_divine_relic": {"accent": Color(1.0, 0.54, 0.7), "ornament": "time_rings"},
+    "chronos_divine_relic": {"accent": Color(0.86, 0.76, 1.0), "ornament": "time_rings"},
+    "hera_divine_relic": {"accent": Color(1.0, 0.7, 0.82), "ornament": "royal_wings"},
+    "demeter_divine_relic": {"accent": Color(0.66, 0.86, 0.44), "ornament": "leaf_wings"},
+    "hestia_divine_relic": {"accent": Color(1.0, 0.56, 0.24), "ornament": "flame_wings"},
+    "hermes_divine_relic": {"accent": Color(0.48, 0.9, 0.88), "ornament": "swift_wings"},
+    "hephaestus_divine_relic": {"accent": Color(1.0, 0.44, 0.18), "ornament": "forge_plates"},
+    "aphrodite_divine_relic": {"accent": Color(1.0, 0.58, 0.8), "ornament": "petal_wings"}
+}
+
+static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
+    if equipment.is_empty():
+        return {}
+    var item_id := str(equipment.get("id", ""))
+    if EQUIPMENT_PROFILES.has(item_id):
+        return EQUIPMENT_PROFILES[item_id].duplicate(true)
+    var category := str(equipment.get("category", ""))
+    match category:
+        "神圣衣 God Cloth":
+            return {"accent": Color(1.0, 0.86, 0.52), "ornament": "radiant"}
+        "鳞衣 Scale":
+            return {"accent": Color(0.18, 0.78, 1.0), "ornament": "tidal_fins"}
+        "冥衣 Surplice":
+            return {"accent": Color(0.62, 0.32, 0.78), "ornament": "soul_wings"}
+        "天衣 Glory":
+            return {"accent": Color(0.86, 0.94, 1.0), "ornament": "heaven_wings"}
+        "神斗衣 God Robe":
+            return {"accent": Color(0.44, 0.8, 1.0), "ornament": "rune_wings"}
+        "刻衣 Chronotector":
+            return {"accent": Color(0.72, 0.5, 1.0), "ornament": "time_rings"}
+        "神明专属神衣":
+            return {"accent": Color(1.0, 0.78, 0.38), "ornament": "radiant"}
+    return {}
+
 static func validate_catalog() -> Dictionary:
     var errors: Array[String] = []
     for class_id in PROFILES:
