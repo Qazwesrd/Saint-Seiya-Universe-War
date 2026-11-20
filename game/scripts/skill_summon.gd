@@ -62,12 +62,13 @@ func _find_target() -> Node3D:
     var best_distance := 18.0
     var enemy_list: Array = game.get("enemies")
     for candidate in enemy_list:
-        if not is_instance_valid(candidate) or not candidate is Node3D:
+        if not is_instance_valid(candidate):
             continue
-        if float(candidate.get("health")) <= 0.0:
+        var candidate_node := candidate as Node3D
+        if candidate_node == null or float(candidate_node.get("health")) <= 0.0:
             continue
-        var distance := global_position.distance_to(candidate.global_position)
+        var distance := global_position.distance_to(candidate_node.global_position)
         if distance < best_distance:
             best_distance = distance
-            best = candidate
+            best = candidate_node
     return best
