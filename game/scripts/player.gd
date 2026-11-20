@@ -292,6 +292,70 @@ func _build_armor_visuals() -> void:
     _add_armor_piece(bracer_mesh, Vector3(-0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
     _add_armor_piece(bracer_mesh, Vector3(0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
 
+    # Starter relics and signature bracers get distinct readable silhouettes.
+    var equipped_arms_id := str(RPGState.profile.get("equipment", {}).get("arms", ""))
+    match equipped_arms_id:
+        "dragon_shield":
+            var shield_mesh := CylinderMesh.new()
+            shield_mesh.top_radius = 0.29
+            shield_mesh.bottom_radius = 0.29
+            shield_mesh.height = 0.12
+            var shield := _add_armor_piece(shield_mesh, Vector3(-0.68, 1.0, -0.19), Vector3.ONE, accent, 0.94)
+            shield.rotation.x = PI * 0.5
+            var shield_boss := SphereMesh.new()
+            shield_boss.radius = 0.12
+            shield_boss.height = 0.16
+            _add_armor_piece(shield_boss, Vector3(-0.68, 1.0, -0.275), Vector3.ONE, bright, 0.98)
+        "andromeda_chain":
+            for chain_index in range(3):
+                var chain_mesh := TorusMesh.new()
+                chain_mesh.inner_radius = 0.12 + float(chain_index) * 0.025
+                chain_mesh.outer_radius = chain_mesh.inner_radius + 0.035
+                var chain := _add_armor_piece(chain_mesh, Vector3(0.58, 0.82 - float(chain_index) * 0.10, -0.22), Vector3.ONE, accent, 0.92)
+                chain.rotation.x = deg_to_rad(70.0)
+                chain.rotation.z = deg_to_rad(float(chain_index) * 24.0)
+        "lyra_harp":
+            var harp_frame := PrismMesh.new()
+            harp_frame.size = Vector3(0.32, 0.58, 0.12)
+            var harp := _add_armor_piece(harp_frame, Vector3(-0.66, 1.03, -0.18), Vector3.ONE, accent, 0.88)
+            harp.rotation.z = -0.18
+            for string_index in range(4):
+                var string_mesh := CylinderMesh.new()
+                string_mesh.top_radius = 0.008
+                string_mesh.bottom_radius = 0.008
+                string_mesh.height = 0.42
+                var harp_string := _add_armor_piece(string_mesh, Vector3(-0.66 + float(string_index) * 0.065, 1.03, -0.26), Vector3.ONE, bright, 0.72)
+                harp_string.rotation.z = PI * 0.5
+        "phoenix_fist":
+            var flame_glove := SphereMesh.new()
+            flame_glove.radius = 0.19
+            flame_glove.height = 0.28
+            for side in [-1.0, 1.0]:
+                var glove := _add_armor_piece(flame_glove, Vector3(side * 0.58, 0.72, -0.16), Vector3.ONE, accent, 0.68)
+                var glove_material := glove.material_override as StandardMaterial3D
+                glove_material.emission_enabled = true
+                glove_material.emission = accent * 0.42
+        "cygnus_claw":
+            var ice_claw := PrismMesh.new()
+            ice_claw.size = Vector3(0.10, 0.34, 0.12)
+            for side in [-1.0, 1.0]:
+                for claw_index in range(3):
+                    var claw := _add_armor_piece(ice_claw, Vector3(side * 0.58 + float(claw_index - 1) * 0.10, 0.78, -0.28), Vector3.ONE, accent, 0.94)
+                    claw.rotation.x = -0.35
+        "sea_dragon_scale", "swallow_scale":
+            var scale_mesh := SphereMesh.new()
+            scale_mesh.radius = 0.17
+            scale_mesh.height = 0.12
+            for side in [-1.0, 1.0]:
+                for scale_index in range(3):
+                    _add_armor_piece(scale_mesh, Vector3(side * (0.48 + float(scale_index) * 0.08), 1.55 - float(scale_index) * 0.12, -0.18), Vector3(1.25, 0.72, 0.72), accent, 0.96)
+        "tenmou_armor":
+            var horn_mesh := PrismMesh.new()
+            horn_mesh.size = Vector3(0.16, 0.48, 0.16)
+            for side in [-1.0, 1.0]:
+                var horn := _add_armor_piece(horn_mesh, Vector3(side * 0.55, 1.82, 0.0), Vector3.ONE, accent, 0.9)
+                horn.rotation.z = -side * 0.42
+
     # Waist guard, layered thigh/shin plates and knee caps.
     var belt_mesh := TorusMesh.new()
     belt_mesh.inner_radius = 0.29
