@@ -36,6 +36,15 @@ func _run_tests() -> void:
 	lunar_test_enemy.divine_mark_timer = 0.0
 	assert(is_equal_approx(lunar_test_enemy.get_divine_mark_damage_multiplier(), 1.0), "expired lunar mark grants no precision damage")
 	lunar_test_enemy.free()
+	var dream_test_enemy = preload("res://scripts/enemy.gd").new()
+	dream_test_enemy.divine_mark = "dream"
+	dream_test_enemy.divine_mark_timer = 5.0
+	assert(is_equal_approx(dream_test_enemy.get_divine_mark_attack_rate_multiplier(), 0.75), "Hypnos dream mark slows normal enemy attack cadence by 25%")
+	dream_test_enemy.is_boss = true
+	assert(is_equal_approx(dream_test_enemy.get_divine_mark_attack_rate_multiplier(), 0.9), "Hypnos dream mark has reduced attack cadence effect against bosses")
+	dream_test_enemy.divine_mark_timer = 0.0
+	assert(is_equal_approx(dream_test_enemy.get_divine_mark_attack_rate_multiplier(), 1.0), "expired dream mark no longer slows attack cadence")
+	dream_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(str(LocalizationManager.text_for("ui.attack")) != "", "localization service")
 	assert(AudioManager != null, "audio service")
