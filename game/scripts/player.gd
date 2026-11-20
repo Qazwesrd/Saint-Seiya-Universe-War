@@ -520,6 +520,42 @@ func _build_armor_visuals() -> void:
     var dark: Color = stage_metal_color.darkened(0.38)
     var stage_metallic := clampf(float(stage_palette.get("metallic", 0.8)) + float(visual_profile.get("metallic", 0.82)) * 0.06, 0.0, 1.0)
     var stage_glow := minf(0.6, float(visual_profile.get("glow", 0.1)) + float(stage_palette.get("glow", 0.0)))
+    var silhouette_id := str(visual_profile.get("silhouette", "balanced"))
+    var silhouette_width := 1.0
+    var silhouette_height := 1.0
+    var silhouette_waist := 1.0
+    match silhouette_id:
+        "swift", "flow", "elegant", "grace":
+            silhouette_width = 0.92
+            silhouette_height = 0.96
+            silhouette_waist = 0.94
+        "guard", "guardian", "war", "forge", "titan":
+            silhouette_width = 1.16
+            silhouette_height = 1.08
+            silhouette_waist = 1.12
+        "frost", "tidal", "ocean", "lunar":
+            silhouette_width = 1.04
+            silhouette_height = 1.02
+        "flare", "solar", "storm", "celestial", "radiant":
+            silhouette_width = 1.12
+            silhouette_height = 1.12
+        "reaper", "fallen", "chaos":
+            silhouette_width = 1.10
+            silhouette_height = 1.08
+            silhouette_waist = 1.08
+        "chrono", "dream", "rune", "resonance", "nature", "hearth", "royal":
+            silhouette_width = 1.02
+            silhouette_height = 1.06
+    var stage_structure := 1.0
+    match stage_id:
+        "silver":
+            stage_structure = 1.04
+        "gold", "sea_scale", "surplice":
+            stage_structure = 1.10
+        "god_cloth":
+            stage_structure = 1.18
+        "god_armor":
+            stage_structure = 1.24
     visual_armor_signature = _get_visual_armor_signature()
 
     if is_instance_valid(body_mat):
@@ -529,22 +565,41 @@ func _build_armor_visuals() -> void:
 
     # Layered torso plates: chest, abdomen, collar and a raised central crest.
     var chest := BoxMesh.new()
-    chest.size = Vector3(0.72, 0.54, 0.20)
+    chest.size = Vector3(0.72 * silhouette_width * stage_structure, 0.54 * silhouette_height, 0.20)
     _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, stage_metallic, "chest")
     var abdomen := BoxMesh.new()
-    abdomen.size = Vector3(0.56, 0.28, 0.18)
+    abdomen.size = Vector3(0.56 * silhouette_width, 0.28 * silhouette_height, 0.18)
     _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, stage_metallic * 0.94, "chest")
     var collar := BoxMesh.new()
-    collar.size = Vector3(0.82, 0.12, 0.24)
+    collar.size = Vector3(0.82 * silhouette_width * stage_structure, 0.12 * silhouette_height, 0.24)
     _add_armor_piece(collar, Vector3(0.0, 1.58, -0.24), Vector3.ONE, accent.darkened(0.12), stage_metallic, "chest")
+    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+        var chest_side_plate := PrismMesh.new()
+        chest_side_plate.size = Vector3(0.18 * stage_structure, 0.42 * silhouette_height, 0.16)
+        for side in [-1.0, 1.0]:
+            var side_plate := _add_armor_piece(chest_side_plate, Vector3(side * 0.34 * silhouette_width, 1.28, -0.25), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
+            side_plate.rotation.z = -side * 0.12
+    if stage_id in ["god_cloth", "god_armor"]:
+        var divine_collar := PrismMesh.new()
+        divine_collar.size = Vector3(0.16, 0.34 * stage_structure, 0.18)
+        for side in [-1.0, 1.0]:
+            var collar_fin := _add_armor_piece(divine_collar, Vector3(side * 0.39, 1.62, 0.0), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
+            collar_fin.rotation.z = -side * 0.48
+    if stage_id == "god_armor":
+        var divine_core := TorusMesh.new()
+        divine_core.inner_radius = 0.13
+        divine_core.outer_radius = 0.18
+        var core_ring := _add_armor_piece(divine_core, Vector3(0.0, 1.28, -0.49), Vector3.ONE, stage_trim_color, 1.0, "chest")
+        core_ring.rotation.x = deg_to_rad(90.0)
 
     # Class-specific shoulder silhouette and forearm guards.
     var shoulder_mesh := SphereMesh.new()
     shoulder_mesh.radius = 0.28
     shoulder_mesh.height = 0.42
     var shoulder_scale: Vector3 = relic_visual_profile.get("shoulder_scale", visual_profile.get("shoulder_scale", Vector3.ONE))
-    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
-    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
+    shoulder_scale = Vector3(shoulder_scale.x * silhouette_width * stage_structure, shoulder_scale.y * silhouette_height, shoulder_scale.z)
+    _add_armor_piece(shoulder_mesh, Vector3(-0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
+    _add_armor_piece(shoulder_mesh, Vector3(0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
     var shoulder_spike := PrismMesh.new()
     shoulder_spike.size = Vector3(0.24, 0.42, 0.22)
     var left_spike := _add_armor_piece(shoulder_spike, Vector3(-0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic, "arms")
@@ -632,13 +687,13 @@ func _build_armor_visuals() -> void:
     belt_mesh.outer_radius = 0.36
     _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), accent, stage_metallic, "waist")
     var waist_plate := BoxMesh.new()
-    waist_plate.size = Vector3(0.72, 0.22, 0.16)
+    waist_plate.size = Vector3(0.72 * silhouette_waist * stage_structure, 0.22, 0.16)
     _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic, "waist")
     var skirt_plate := PrismMesh.new()
-    skirt_plate.size = Vector3(0.28, 0.42, 0.16)
+    skirt_plate.size = Vector3(0.28 * silhouette_waist * stage_structure, 0.42 * silhouette_height, 0.16)
     for skirt_side in [-1.0, 1.0]:
         for skirt_offset in [-1.0, 1.0]:
-            var skirt_piece := _add_armor_piece(skirt_plate, Vector3(skirt_side * 0.22, 0.48, skirt_offset * 0.16), Vector3(1.0, 1.0, 0.72), dark if skirt_offset > 0.0 else bright, stage_metallic, "waist")
+            var skirt_piece := _add_armor_piece(skirt_plate, Vector3(skirt_side * 0.22 * silhouette_waist, 0.48, skirt_offset * 0.16), Vector3(1.0, 1.0, 0.72), dark if skirt_offset > 0.0 else bright, stage_metallic, "waist")
             skirt_piece.rotation.z = -skirt_side * 0.12
             armor_skirt_nodes.append(skirt_piece)
             armor_skirt_base_angles.append(skirt_piece.rotation.z)
@@ -765,6 +820,15 @@ func _build_armor_visuals() -> void:
         var aura := _add_armor_piece(aura_ring, Vector3(0.0, 1.55, 0.34), Vector3.ONE, accent, 0.92)
         armor_aura_node = aura
         aura.rotation.x = deg_to_rad(72.0)
+    if stage_id in ["god_cloth", "god_armor"] or bool(stage_state.get("awakened", false)):
+        var awakening_ring_mesh := TorusMesh.new()
+        awakening_ring_mesh.inner_radius = 0.76 if stage_id != "god_armor" else 0.88
+        awakening_ring_mesh.outer_radius = awakening_ring_mesh.inner_radius + 0.045
+        var awakening_ring := _add_armor_piece(awakening_ring_mesh, Vector3(0.0, 1.68, 0.30), Vector3.ONE, stage_trim_color, 1.0)
+        awakening_ring.rotation.x = deg_to_rad(72.0)
+        var ring_material := awakening_ring.material_override as StandardMaterial3D
+        ring_material.emission_enabled = true
+        ring_material.emission = stage_trim_color * (0.18 if bool(stage_state.get("awakened", false)) else 0.10)
     if stage_glow > 0.0:
         var glow_mesh := SphereMesh.new()
         glow_mesh.radius = 0.13
