@@ -19,6 +19,8 @@ var visual_root: Node3D
 var halo_node: MeshInstance3D
 var halo_material: StandardMaterial3D
 var orbit_nodes: Array[MeshInstance3D] = []
+var trail_nodes: Array[MeshInstance3D] = []
+var trail_materials: Array[StandardMaterial3D] = []
 
 func _ready() -> void:
     add_to_group("skill_projectiles")
@@ -75,6 +77,25 @@ func _ready() -> void:
         orbit_nodes.append(mote)
         visual_root.add_child(mote)
 
+    # Three lightweight afterimages give fast projectiles a readable direction cue.
+    for trail_index in range(3):
+        var trail := MeshInstance3D.new()
+        var trail_mesh := SphereMesh.new()
+        trail_mesh.radius = 0.13 - float(trail_index) * 0.022
+        trail_mesh.height = trail_mesh.radius * 2.0
+        trail.mesh = trail_mesh
+        var trail_material := StandardMaterial3D.new()
+        trail_material.albedo_color = Color(projectile_color.r, projectile_color.g, projectile_color.b, 0.34 - float(trail_index) * 0.08)
+        trail_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+        trail_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        trail_material.emission_enabled = true
+        trail_material.emission = projectile_color * 0.45
+        trail.material_override = trail_material
+        trail.position.z = 0.24 + float(trail_index) * 0.2
+        trail_nodes.append(trail)
+        trail_materials.append(trail_material)
+        visual_root.add_child(trail)
+
 func _physics_process(delta: float) -> void:
     age += delta
     _animate_projectile(delta)
@@ -118,6 +139,16 @@ func _animate_projectile(delta: float) -> void:
     for index in range(orbit_nodes.size()):
         var angle := age * (5.0 if index == 0 else -4.0) + float(index) * PI
         orbit_nodes[index].position = Vector3(cos(angle) * 0.38, sin(angle * 1.3) * 0.12, sin(angle) * 0.38)
+    for index in range(trail_nodes.size()):
+        var trail := trail_nodes[index]
+        if not is_instance_valid(trail):
+            continue
+        var fade := 1.0 - float(index) * 0.22
+        var shimmer := 0.82 + sin(age * 16.0 - float(index) * 0.8) * 0.12
+        trail.scale = Vector3.ONE * shimmer * fade
+        trail.position.z = 0.24 + float(index) * 0.2 + sin(age * 8.0 - float(index)) * 0.025
+        if index < trail_materials.size() and is_instance_valid(trail_materials[index]):
+            trail_materials[index].albedo_color.a = (0.34 - float(index) * 0.08) * (0.85 + sin(age * 12.0 - float(index)) * 0.15)
 
 func _hit_target(hit_target: Node3D) -> void:
     if hit_target.has_method("take_damage"):
