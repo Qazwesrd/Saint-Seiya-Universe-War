@@ -464,14 +464,17 @@ func _show_cinematic_dialogue(root: Control, data: Dictionary) -> void:
     bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
     box.add_child(bottom_spacer)
 
-func set_boss_status(hp: float, hp_max: float) -> void:
+func set_boss_status(hp: float, hp_max: float, boss_name: String = "训练 Boss", phase_two: bool = false) -> void:
     var visible_boss := hp_max > 1.0
     boss_label.visible = visible_boss
     boss_bar.visible = visible_boss
     if visible_boss:
-        boss_label.text = "训练 Boss"
+        var health_ratio := clampf(hp / maxf(1.0, hp_max), 0.0, 1.0)
+        var phase_text := " · 第二阶段" if phase_two else " · 第一阶段"
+        boss_label.text = "%s%s  ·  %.0f%%" % [boss_name, phase_text, health_ratio * 100.0]
+        boss_label.add_theme_color_override("font_color", Color(1.0, 0.48, 0.32) if phase_two else Color(1.0, 0.82, 0.48))
         boss_bar.max_value = hp_max
-        boss_bar.value = hp
+        boss_bar.value = clampf(hp, 0.0, hp_max)
 func set_notice(message: String) -> void:
     if is_instance_valid(notice_label): notice_label.text = message
 func _on_resize() -> void:
