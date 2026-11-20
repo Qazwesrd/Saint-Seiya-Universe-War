@@ -33,6 +33,8 @@ var enemy_arm_nodes: Array[MeshInstance3D] = []
 var enemy_leg_nodes: Array[MeshInstance3D] = []
 var telegraph_mesh: MeshInstance3D
 var telegraph_material: StandardMaterial3D
+var boss_aura_ring: MeshInstance3D
+var hit_flash_timer := 0.0
 var _boss_phase_two := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
@@ -169,19 +171,19 @@ func _ready() -> void:
             crown.rotation.z = -side * 0.38
             crown.material_override = armor_material
             add_child(crown)
-        var boss_ring := MeshInstance3D.new()
+        boss_aura_ring = MeshInstance3D.new()
         var ring_mesh := TorusMesh.new()
         ring_mesh.inner_radius = radius * 0.92
         ring_mesh.outer_radius = radius * 1.06
-        boss_ring.mesh = ring_mesh
-        boss_ring.position.y = 0.10
+        boss_aura_ring.mesh = ring_mesh
+        boss_aura_ring.position.y = 0.10
         var ring_material := StandardMaterial3D.new()
         ring_material.albedo_color = _base_color
         ring_material.emission_enabled = true
         ring_material.emission = _base_color * 0.65
         ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-        boss_ring.material_override = ring_material
-        add_child(boss_ring)
+        boss_aura_ring.material_override = ring_material
+        add_child(boss_aura_ring)
         if archetype_id in ["hypnos_guardian", "apollo_trial", "zeus_trial", "universe_arbiter", "hades_emperor"]:
             var wing_mesh := BoxMesh.new()
             wing_mesh.size = Vector3(radius * 0.22, height * 0.46, radius * 0.16)
@@ -404,10 +406,17 @@ func _animate_enemy_limbs(delta: float) -> void:
             telegraph_mesh.scale = Vector3.ONE * warning_pulse * (boss_range_multiplier if _boss_heavy_attack else 1.0)
         else:
             telegraph_mesh.rotation.y = lerp_angle(telegraph_mesh.rotation.y, 0.0, minf(1.0, delta * 4.0))
+    hit_flash_timer = maxf(0.0, hit_flash_timer - delta)
     if is_instance_valid(body_material):
+        var flash_weight := clampf(hit_flash_timer / 0.14, 0.0, 1.0)
+        body_material.albedo_color = _base_color.lerp(Color(1.0, 0.82, 0.64), flash_weight)
         var state_glow := 0.22 + windup_pose * (0.28 + (sin(clock * 3.2) * 0.5 + 0.5) * 0.18) + stagger_pose * 0.12
         body_material.emission = _base_color * state_glow
     rotation.z = lerpf(rotation.z, -0.12 * stagger_pose + 0.035 * windup_pose, minf(1.0, delta * 5.0))
+    if is_instance_valid(boss_aura_ring):
+        boss_aura_ring.rotation.y += delta * (0.42 if _boss_phase_two else 0.24)
+        var ring_pulse := 1.0 + sin(clock * 1.5) * (0.055 if _boss_phase_two else 0.025)
+        boss_aura_ring.scale = Vector3.ONE * ring_pulse
     for limb_index in range(2):
         var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.48 * movement
         var arm_target := lerpf(gait, -0.92, windup_pose)
@@ -557,6 +566,8 @@ func take_damage(amount: float) -> void:
         body_material.albedo_color = _base_color
         body_material.emission = Color(0.42, 0.025, 0.02)
         if is_instance_valid(game):
+            game.call("spawn_effect", global_position + Vector3.UP * 1.5, Color(1.0, 0.16, 0.08), 2.1)
+        if is_instance_valid(game):
             game.call("show_notice", "Boss 进入第二阶段！攻击速度与伤害提升")
 
     if health <= 0.0:
@@ -577,6 +588,7 @@ func take_damage(amount: float) -> void:
     if not is_boss or (state != BrainState.WINDUP and state != BrainState.RECOVERY):
         state = BrainState.STAGGER
         state_timer = 0.12 if is_boss else 0.3
+    hit_flash_timer = 0.14
     body_material.albedo_color = Color(1.0, 0.78, 0.55)
 
 
