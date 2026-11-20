@@ -18,6 +18,9 @@ var field_shape := "ring"
 var primary_visual: MeshInstance3D
 var secondary_visual: MeshInstance3D
 var primary_material: StandardMaterial3D
+var secondary_material: StandardMaterial3D
+var field_light: OmniLight3D
+var outer_visual: MeshInstance3D
 
 func _ready() -> void:
     add_to_group("skill_fields")
@@ -49,7 +52,7 @@ func _ready() -> void:
     secondary_ring.outer_radius = radius * 0.72
     secondary_visual.mesh = secondary_ring
     secondary_visual.rotation.x = deg_to_rad(90.0)
-    var secondary_material := StandardMaterial3D.new()
+    secondary_material = StandardMaterial3D.new()
     secondary_material.albedo_color = Color(field_color.r, field_color.g, field_color.b, 0.48)
     secondary_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
     secondary_material.emission_enabled = true
@@ -58,9 +61,31 @@ func _ready() -> void:
     secondary_visual.position.y = 0.11
     add_child(secondary_visual)
 
+    outer_visual = MeshInstance3D.new()
+    var outer_ring := TorusMesh.new()
+    outer_ring.inner_radius = radius * 1.12
+    outer_ring.outer_radius = radius * 1.15
+    outer_visual.mesh = outer_ring
+    outer_visual.rotation.x = deg_to_rad(90.0)
+    outer_visual.position.y = 0.07
+    var outer_material := StandardMaterial3D.new()
+    outer_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    outer_material.albedo_color = Color(field_color.r, field_color.g, field_color.b, 0.2)
+    outer_material.emission_enabled = true
+    outer_material.emission = field_color * 0.9
+    outer_visual.material_override = outer_material
+    add_child(outer_visual)
+
+    field_light = OmniLight3D.new()
+    field_light.light_color = field_color
+    field_light.light_energy = 0.55
+    field_light.omni_range = minf(radius * 2.0, 9.0)
+    field_light.position.y = 0.65
+    add_child(field_light)
+
 func _physics_process(delta: float) -> void:
     elapsed += delta
-    _animate_field()
+    _animate_field(delta)
     tick_timer = maxf(0.0, tick_timer - delta)
     if elapsed >= lifetime or not is_instance_valid(owner_player) or not is_instance_valid(game):
         queue_free()
@@ -91,16 +116,26 @@ func _physics_process(delta: float) -> void:
     if hits > 0 and game.has_method("show_notice"):
         game.call("show_notice", "领域持续命中 %d 名敌人" % hits)
 
-func _animate_field() -> void:
+func _animate_field(delta: float) -> void:
     var life_ratio := clampf(1.0 - elapsed / maxf(0.01, lifetime), 0.0, 1.0)
-    var pulse := 1.0 + sin(elapsed * 5.5) * 0.035
+    var pulse := 1.0 + sin(elapsed * 5.5) * 0.045
+    var secondary_pulse := 0.94 + sin(elapsed * 3.8) * 0.1
     if is_instance_valid(primary_visual):
         primary_visual.scale = Vector3.ONE * pulse
     if is_instance_valid(secondary_visual):
-        secondary_visual.rotation.y += 0.025
-        secondary_visual.scale = Vector3.ONE * (0.94 + sin(elapsed * 3.8) * 0.1)
+        secondary_visual.rotation.y += delta * 0.8
+        secondary_visual.scale = Vector3.ONE * secondary_pulse
+    if is_instance_valid(outer_visual):
+        outer_visual.rotation.y -= delta * 0.42
+        outer_visual.scale = Vector3.ONE * (1.0 + sin(elapsed * 2.6) * 0.035)
     if is_instance_valid(primary_material):
-        primary_material.albedo_color.a = 0.08 + life_ratio * 0.2
+        primary_material.albedo_color.a = 0.06 + life_ratio * 0.22
+        primary_material.emission_energy_multiplier = 0.65 + (sin(elapsed * 4.8) + 1.0) * 0.35
+    if is_instance_valid(secondary_material):
+        secondary_material.albedo_color.a = 0.18 + life_ratio * 0.3
+        secondary_material.emission_energy_multiplier = 0.8 + (sin(elapsed * 5.7 + 1.0) + 1.0) * 0.35
+    if is_instance_valid(field_light):
+        field_light.light_energy = life_ratio * (0.35 + (sin(elapsed * 4.0) + 1.0) * 0.28)
 
 func _apply_to_enemy(enemy: Node3D, is_trap: bool) -> void:
     if enemy.has_method("take_damage"):
