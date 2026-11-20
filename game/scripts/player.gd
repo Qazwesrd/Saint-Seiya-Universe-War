@@ -1,5 +1,6 @@
 extends CharacterBody3D
 const CombatTargeting = preload("res://scripts/combat_targeting.gd")
+const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
 var game: Variant
 var move_input := Vector2.ZERO
 var auto_move_target := Vector3.ZERO
@@ -155,64 +156,140 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
     return piece
 
 func _build_armor_visuals() -> void:
+    if not is_instance_valid(visual_root):
+        return
     if is_instance_valid(armor_root):
         armor_root.queue_free()
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
     visual_root.add_child(armor_root)
+
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    var visual_profile := CharacterVisualCatalog.get_profile(class_id)
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
     visual_class_id = class_id
-    if is_instance_valid(body_mat):
-        body_mat.albedo_color = armor_base_color
-        body_mat.metallic = 0.62
-        body_mat.emission = armor_base_color * 0.08
+    var accent: Color = visual_profile.get("accent", Color(1.0, 0.78, 0.28))
     var bright := armor_base_color.lightened(0.32)
     var dark := armor_base_color.darkened(0.42)
+    var stage_state: Dictionary = ArmorSystem.get_state()
+    var stage_id := str(stage_state.get("current_stage", "bronze"))
+    var stage_data: Dictionary = ArmorSystem.STAGES.get(stage_id, ArmorSystem.STAGES["bronze"])
+    var stage_metallic := clampf(float(visual_profile.get("metallic", 0.82)) + (0.08 if stage_id in ["gold", "god_cloth", "god_armor"] else 0.0), 0.0, 1.0)
+    var stage_glow := float(visual_profile.get("glow", 0.1)) + (0.12 if stage_id in ["god_cloth", "god_armor"] else 0.0)
+
+    if is_instance_valid(body_mat):
+        body_mat.albedo_color = armor_base_color
+        body_mat.metallic = stage_metallic
+        body_mat.emission = armor_base_color * 0.08
+
+    # Layered torso plates: chest, abdomen, collar and a raised central crest.
     var chest := BoxMesh.new()
     chest.size = Vector3(0.72, 0.54, 0.20)
-    _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, 0.82)
+    _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, stage_metallic)
     var abdomen := BoxMesh.new()
     abdomen.size = Vector3(0.56, 0.28, 0.18)
-    _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, 0.78)
+    _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, stage_metallic * 0.94)
+    var collar := BoxMesh.new()
+    collar.size = Vector3(0.82, 0.12, 0.24)
+    _add_armor_piece(collar, Vector3(0.0, 1.58, -0.24), Vector3.ONE, accent.darkened(0.12), stage_metallic)
+
+    # Class-specific shoulder silhouette and forearm guards.
     var shoulder_mesh := SphereMesh.new()
     shoulder_mesh.radius = 0.28
     shoulder_mesh.height = 0.42
-    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), Vector3(1.0, 0.82, 1.08), bright, 0.86)
-    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), Vector3(1.0, 0.82, 1.08), bright, 0.86)
+    var shoulder_scale: Vector3 = visual_profile.get("shoulder_scale", Vector3.ONE)
+    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
+    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
+    var shoulder_spike := PrismMesh.new()
+    shoulder_spike.size = Vector3(0.24, 0.42, 0.22)
+    var left_spike := _add_armor_piece(shoulder_spike, Vector3(-0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic)
+    left_spike.rotation.z = 0.48
+    var right_spike := _add_armor_piece(shoulder_spike, Vector3(0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic)
+    right_spike.rotation.z = -0.48
     var arm_mesh := CylinderMesh.new()
     arm_mesh.top_radius = 0.13
     arm_mesh.bottom_radius = 0.17
     arm_mesh.height = 0.48
-    _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, 0.74)
-    _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, 0.74)
-    var shin_mesh := BoxMesh.new()
-    shin_mesh.size = Vector3(0.24, 0.48, 0.18)
-    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, 0.78)
-    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, 0.78)
+    _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic)
+    _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic)
+    var bracer_mesh := BoxMesh.new()
+    bracer_mesh.size = Vector3(0.22, 0.38, 0.25)
+    _add_armor_piece(bracer_mesh, Vector3(-0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(bracer_mesh, Vector3(0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
+
+    # Waist guard, layered thigh/shin plates and knee caps.
     var belt_mesh := TorusMesh.new()
     belt_mesh.inner_radius = 0.29
     belt_mesh.outer_radius = 0.36
-    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), bright, 0.9)
-    var crest_mesh := CylinderMesh.new()
-    crest_mesh.bottom_radius = 0.13
-    crest_mesh.top_radius = 0.015
-    crest_mesh.height = 0.34
-    _add_armor_piece(crest_mesh, Vector3(0.0, 2.16, 0.02), Vector3.ONE, bright, 0.84)
+    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), accent, stage_metallic)
+    var waist_plate := BoxMesh.new()
+    waist_plate.size = Vector3(0.72, 0.22, 0.16)
+    _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic)
+    var shin_mesh := BoxMesh.new()
+    shin_mesh.size = Vector3(0.24, 0.48, 0.18)
+    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
+    var knee_mesh := SphereMesh.new()
+    knee_mesh.radius = 0.15
+    knee_mesh.height = 0.12
+    _add_armor_piece(knee_mesh, Vector3(-0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic)
+    _add_armor_piece(knee_mesh, Vector3(0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic)
+
+    # Every class receives its own heraldic crest and chest sigil.
+    var crest_mesh: Mesh
+    match str(visual_profile.get("crest", "star")):
+        "horn", "spear", "trident", "ice", "flame", "anvil":
+            var crest_prism := PrismMesh.new()
+            crest_prism.size = Vector3(0.20, 0.42, 0.16)
+            crest_mesh = crest_prism
+        "halo", "crescent", "clock", "dream", "aegis", "rune", "rose", "lyre":
+            var crest_ring := TorusMesh.new()
+            crest_ring.inner_radius = 0.09
+            crest_ring.outer_radius = 0.15
+            crest_mesh = crest_ring
+        _:
+            var crest_cone := CylinderMesh.new()
+            crest_cone.bottom_radius = 0.13
+            crest_cone.top_radius = 0.015
+            crest_cone.height = 0.34
+            crest_mesh = crest_cone
+    var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic)
+    if str(visual_profile.get("crest", "")) in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
+        crest.rotation.x = -0.18
     var emblem_mesh := SphereMesh.new()
-    emblem_mesh.radius = 0.10
+    emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
-    _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), Color(1.0, 0.82, 0.32), 0.95)
-    var tier := str(class_data.get("tier", ""))
-    if class_id == "tenkishi" or tier == "神明":
-        var wing_mesh := BoxMesh.new()
-        wing_mesh.size = Vector3(0.18, 1.0, 0.12)
-        var wing_scale := Vector3(1.0, 1.35, 1.0) if class_id == "tenkishi" else Vector3(1.0, 1.0, 1.0)
-        var left_wing := _add_armor_piece(wing_mesh, Vector3(-0.55, 1.78, 0.25), wing_scale, bright, 0.7)
-        left_wing.rotation.z = -0.42
-        var right_wing := _add_armor_piece(wing_mesh, Vector3(0.55, 1.78, 0.25), wing_scale, bright, 0.7)
-        right_wing.rotation.z = 0.42
+    _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), accent, 0.96)
+
+    # Back ornaments are built as low-poly feather/fin plates, scaled per class.
+    var wing_span := float(visual_profile.get("wing_span", 0.0))
+    if wing_span > 0.0:
+        var feather_mesh := PrismMesh.new()
+        feather_mesh.size = Vector3(0.16, 0.72, 0.10)
+        for side in [-1.0, 1.0]:
+            for feather_index in range(3):
+                var feather_scale := Vector3(1.0, wing_span * (1.0 - float(feather_index) * 0.14), 1.0)
+                var feather_position := Vector3(side * (0.46 + float(feather_index) * 0.18), 1.72 - float(feather_index) * 0.08, 0.26 + float(feather_index) * 0.045)
+                var feather := _add_armor_piece(feather_mesh, feather_position, feather_scale, bright if feather_index == 0 else accent, stage_metallic)
+                feather.rotation.z = -side * (0.38 + float(feather_index) * 0.18)
+                feather.rotation.x = -0.22
+    if str(visual_profile.get("ornament", "")) in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings"]:
+        var aura_ring := TorusMesh.new()
+        aura_ring.inner_radius = 0.68
+        aura_ring.outer_radius = 0.73
+        var aura := _add_armor_piece(aura_ring, Vector3(0.0, 1.55, 0.34), Vector3.ONE, accent, 0.92)
+        aura.rotation.x = deg_to_rad(72.0)
+    if stage_glow > 0.0:
+        var glow_mesh := SphereMesh.new()
+        glow_mesh.radius = 0.13
+        glow_mesh.height = 0.26
+        var glow_piece := _add_armor_piece(glow_mesh, Vector3(0.0, 1.31, -0.50), Vector3.ONE, accent, 0.55)
+        var glow_material := glow_piece.material_override as StandardMaterial3D
+        glow_material.emission_enabled = true
+        glow_material.emission = accent * stage_glow
+        glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
 
 func _on_camera_setting_changed(section: String, _key: String, _value: Variant) -> void:
     if section == "camera":
