@@ -372,12 +372,13 @@ func delete_slot(slot: int) -> bool:
  # Never remove the primary file unless a readable backup has been written.
  if not backup_slot(slot) or not has_backup_slot(slot):
   return false
- var absolute_path := ProjectSettings.globalize_path(_save_path(slot))
- if FileAccess.file_exists(_save_path(slot)):
-  var remove_error := DirAccess.remove_absolute(absolute_path)
-  # Verify the filesystem postcondition instead of trusting only the status.
-  if remove_error != OK and FileAccess.file_exists(_save_path(slot)):
-   return false
+ var directory := DirAccess.open("user://")
+ if directory == null:
+  return false
+ var filename := "save_slot_%d.json" % slot
+ var remove_error := directory.remove(filename)
+ if remove_error != OK and FileAccess.file_exists(_save_path(slot)):
+  return false
  var removed := not FileAccess.file_exists(_save_path(slot))
  if removed and active_slot == slot:
   profile = {}
