@@ -1,13 +1,31 @@
 #!/usr/bin/env python3
-"""Validate generated art manifests and any asset explicitly marked complete."""
+"""Validate art manifests and the structure of assets explicitly marked complete."""
 import json
+import re
 import struct
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_manifests import expected
+from build_manifests import ELEMENTS, expected
+
+ARMOR_PART_NODES = {
+    "helmet": "Armor_Helmet",
+    "chest": "Armor_Chest",
+    "left_shoulder": "Armor_Left_Shoulder",
+    "right_shoulder": "Armor_Right_Shoulder",
+    "left_forearm": "Armor_Left_Forearm",
+    "right_forearm": "Armor_Right_Forearm",
+    "waist": "Armor_Waist",
+    "left_leg": "Armor_Left_Leg",
+    "right_leg": "Armor_Right_Leg",
+}
+QUALITY_TIERS = ("low", "medium", "high")
+SUPPORTED_EFFECT_SHAPES = {
+    "flare", "shard", "bolt", "halo", "void", "wave",
+    "crescent", "ring", "wisp", "pulse", "star",
+}
 
 def safe_path(base: Path, relative: str) -> Path:
     item = Path(relative)
@@ -28,7 +46,8 @@ def read_glb(path: Path) -> dict:
         raise ValueError("invalid GLB v2 structure")
     return json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \t\r\n\0"))
 
-def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None) -> None:
+def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None,
+              required_nodes: tuple[str, ...] = ()) -> dict:
     doc = read_glb(path)
     if not doc.get("meshes"):
         raise ValueError("GLB has no meshes")
@@ -39,9 +58,75 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
         missing = sorted(set(clips) - names)
         if missing:
             raise ValueError("missing animation clips: " + ", ".join(missing))
+    if required_nodes:
+        names = {str(item.get("name", "")) for item in doc.get("nodes", [])}
+        names.update(str(item.get("name", "")) for item in doc.get("meshes", []))
+        missing = sorted(set(required_nodes) - names)
+        if missing:
+            raise ValueError("missing required mesh/node objects: " + ", ".join(missing))
+    return doc
+
+def validate_skill_visual_catalog() -> list[str]:
+    path = ROOT / "game/scripts/skill_visual_catalog.gd"
+    source = path.read_text(encoding="utf-8")
+    errors = []
+    for element in ELEMENTS:
+        pattern = (
+            rf'"{re.escape(element)}"\s*:\s*\{{\s*"color"\s*:\s*Color\([^)]*\),'
+            rf'\s*"shape"\s*:\s*"([^"]+)",\s*"glow"\s*:\s*([0-9.]+),'
+            rf'\s*"impact_scale"\s*:\s*([0-9.]+)'
+        )
+        match = re.search(pattern, source)
+        if not match:
+            errors.append(f"{element}: missing color/shape/glow/impact_scale profile")
+            continue
+        shape, glow_text, scale_text = match.groups()
+        if shape not in SUPPORTED_EFFECT_SHAPES:
+            errors.append(f"{element}: unsupported effect shape '{shape}'")
+        glow, impact_scale = float(glow_text), float(scale_text)
+        if not 0.0 <= glow <= 0.6:
+            errors.append(f"{element}: glow must be between 0.0 and 0.6")
+        if not 0.5 <= impact_scale <= 1.5:
+            errors.append(f"{element}: impact_scale must be between 0.5 and 1.5")
+    return errors
+
+def validate_armor_manifest(data: dict, model: Path) -> None:
+    parts = data.get("parts")
+    if not isinstance(parts, dict) or set(parts) != set(ARMOR_PART_NODES):
+        raise ValueError("armor parts must declare exactly the nine required detachable pieces")
+    if any(parts[name] != "complete" for name in ARMOR_PART_NODES):
+        raise ValueError("not all nine armor parts are marked complete")
+    check_glb(model, required_nodes=tuple(ARMOR_PART_NODES.values()))
+
+def validate_vfx_manifest(data: dict, scene: Path) -> None:
+    tiers = data.get("quality_tiers")
+    if not isinstance(tiers, dict) or set(tiers) != set(QUALITY_TIERS):
+        raise ValueError("VFX must declare low, medium and high quality tiers")
+    if any(tiers[tier] != "complete" for tier in QUALITY_TIERS):
+        raise ValueError("all three VFX quality tiers must be complete")
+    budget = data.get("performance_budget")
+    if not isinstance(budget, dict):
+        raise ValueError("VFX performance_budget is missing")
+    particles = int(budget.get("max_particles", 0))
+    layers = int(budget.get("max_transparent_layers", 0))
+    lifetime = float(budget.get("max_lifetime_seconds", 0))
+    if not 1 <= particles <= 96:
+        raise ValueError("VFX max_particles must be between 1 and 96")
+    if not 1 <= layers <= 3:
+        raise ValueError("VFX max_transparent_layers must be between 1 and 3")
+    if not 0.0 < lifetime <= 2.5:
+        raise ValueError("VFX max_lifetime_seconds must be greater than 0 and at most 2.5")
+    if scene.suffix == ".glb":
+        check_glb(scene)
+    elif scene.suffix == ".tscn":
+        source = scene.read_text(encoding="utf-8")
+        if not any(token in source for token in ("GPUParticles3D", "CPUParticles3D", "MeshInstance3D")):
+            raise ValueError("VFX scene has no particle or mesh node")
+    else:
+        raise ValueError("VFX scene must be .glb or .tscn")
 
 def main() -> int:
-    errors = []
+    errors = validate_skill_visual_catalog()
     specs = expected()
     for manifest_path, spec in specs.items():
         if not manifest_path.is_file():
@@ -75,19 +160,12 @@ def main() -> int:
                 icon = safe_path(base, data["icon"]["path"])
                 if not model.is_file() or not icon.is_file():
                     raise ValueError("armor model or icon is missing")
-                check_glb(model)
-                if any(value != "complete" for value in data["parts"].values()):
-                    raise ValueError("not all armor parts are complete")
+                validate_armor_manifest(data, model)
             else:
                 scene = safe_path(base, data["effect_scene"]["path"])
                 if not scene.is_file():
                     raise ValueError("VFX scene is missing")
-                if scene.suffix == ".glb":
-                    check_glb(scene)
-                elif scene.suffix == ".tscn":
-                    source = scene.read_text(encoding="utf-8")
-                    if "Particles3D" not in source and "MeshInstance3D" not in source:
-                        raise ValueError("VFX scene has no particle or mesh node")
+                validate_vfx_manifest(data, scene)
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
             errors.append(f"{manifest_path.relative_to(ROOT)}: {exc}")
     print(f"美术资产验收：检查 {len(specs)} 个角色/装备/特效条目")
@@ -96,7 +174,7 @@ def main() -> int:
         for error in errors:
             print("  [FAIL] " + error)
         return 1
-    print("清单结构通过；只有真实文件通过验收后才能标记为正式完成。")
+    print("清单结构与技能元素配置通过；正式完成项还必须通过模型节点、动画、场景和性能预算验收。")
     return 0
 
 if __name__ == "__main__":

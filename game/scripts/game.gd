@@ -533,6 +533,28 @@ func spawn_effect(at: Vector3, effect_color: Color, radius: float, effect_shape:
             core_wave.height = 0.12
             core.mesh = core_wave
             core.rotation.x = deg_to_rad(90.0)
+        "flare":
+            var core_flare := CapsuleMesh.new()
+            core_flare.radius = 0.24
+            core_flare.height = 0.92
+            core.mesh = core_flare
+            core.rotation.z = deg_to_rad(42.0)
+        "void":
+            var core_void := SphereMesh.new()
+            core_void.radius = 0.46
+            core_void.height = 0.92
+            core.mesh = core_void
+            core.scale = Vector3(0.72, 1.18, 0.72)
+        "wisp":
+            var core_wisp := CapsuleMesh.new()
+            core_wisp.radius = 0.14
+            core_wisp.height = 0.88
+            core.mesh = core_wisp
+            core.rotation.z = deg_to_rad(-28.0)
+        "star":
+            var core_star := PrismMesh.new()
+            core_star.size = Vector3(0.62, 0.62, 0.22)
+            core.mesh = core_star
         _:
             var core_sphere := SphereMesh.new()
             core_sphere.radius = 0.48
