@@ -12,7 +12,7 @@ const ENEMY_PORTRAIT_CANDIDATES := ["portraits/portrait.png", "portraits/portrai
 const CHAPTER_THEMES := ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]
 const SKILL_ELEMENTS := ["fire", "ice", "lightning", "light", "dark", "water", "wind", "time", "soul", "sound", "cosmos"]
 
-static func _has_any_file(base_path: String, candidates: Array[String]) -> bool:
+static func _has_any_file(base_path: String, candidates: Array) -> bool:
 	for relative_path in candidates:
 		if FileAccess.file_exists(base_path.path_join(relative_path)):
 			return true
