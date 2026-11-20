@@ -22,7 +22,6 @@ var flight_up_button: Button
 var flight_down_button: Button
 var camera_finger_id := -1
 var camera_last_position := Vector2.ZERO
-var touch_layout_left_handed := false
 var stick_default_position := Vector2(42, 520)
 func _ready() -> void:
     var root := Control.new()
@@ -250,6 +249,7 @@ func _apply_touch_layout() -> void:
         button.anchor_right = float(button.get_meta("default_anchor_right", 0.0))
         button.offset_left = float(button.get_meta("default_offset_left", 0.0))
         button.offset_right = float(button.get_meta("default_offset_right", 0.0))
+        button.scale = Vector2.ONE
         if left_handed:
             var original_rect := button.get_global_rect()
             button.anchor_left = 0.0
@@ -257,7 +257,6 @@ func _apply_touch_layout() -> void:
             button.offset_left = viewport_width - original_rect.position.x - original_rect.size.x
             button.offset_right = viewport_width - original_rect.position.x
         button.scale = Vector2.ONE * button_scale
-    touch_layout_left_handed = left_handed
     if is_instance_valid(stick_base) and is_instance_valid(stick_knob):
         stick_base.position = Vector2(viewport_width - stick_default_position.x - stick_base.size.x, stick_default_position.y) if left_handed else stick_default_position
         stick_base.scale = Vector2.ONE * button_scale
