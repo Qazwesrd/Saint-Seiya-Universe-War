@@ -411,7 +411,7 @@ func create_new_slot(slot: int) -> bool:
 func delete_slot(slot: int) -> bool:
  if not has_slot(slot):
   return false
- # Keep a verified backup before touching the active save.
+ # Keep a verified backup before removing the active save file.
  if not backup_slot(slot) or not has_backup_slot(slot):
   return false
  var backup_file := FileAccess.open("user://backup_slot_%d.json" % slot, FileAccess.READ)
@@ -421,15 +421,25 @@ func delete_slot(slot: int) -> bool:
  backup_file.close()
  if typeof(backup_data) != TYPE_DICTIONARY or int(backup_data.get("version", 0)) != 1:
   return false
- var user_directory := DirAccess.open("user://")
- if user_directory == null:
+
+ # Rename first so the visible slot disappears atomically; only then remove the tombstone.
+ var source_path := _save_path(slot)
+ var deleting_path := source_path + ".deleting"
+ if FileAccess.file_exists(deleting_path):
+  if DirAccess.remove_absolute(ProjectSettings.globalize_path(deleting_path)) != OK:
+   return false
+ var rename_error := DirAccess.rename_absolute(ProjectSettings.globalize_path(source_path), ProjectSettings.globalize_path(deleting_path))
+ if rename_error != OK:
+  push_error("删除存档槽 %d 失败，无法安全移动文件：%d" % [slot, rename_error])
   return false
- var remove_error := user_directory.remove("save_slot_%d.json" % slot)
- if remove_error != OK:
-  # Fallback for platforms where relative user:// removal is unsupported.
-  remove_error = DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path(slot)))
- if remove_error != OK or FileAccess.file_exists(_save_path(slot)):
-  push_error("删除存档槽 %d 失败，错误码：%d" % [slot, remove_error])
+ if FileAccess.file_exists(source_path):
+  DirAccess.rename_absolute(ProjectSettings.globalize_path(deleting_path), ProjectSettings.globalize_path(source_path))
+  return false
+ var remove_error := DirAccess.remove_absolute(ProjectSettings.globalize_path(deleting_path))
+ if remove_error != OK or FileAccess.file_exists(deleting_path):
+  if not FileAccess.file_exists(source_path):
+   DirAccess.rename_absolute(ProjectSettings.globalize_path(deleting_path), ProjectSettings.globalize_path(source_path))
+  push_error("删除存档槽 %d 失败，临时文件清理错误：%d" % [slot, remove_error])
   return false
  if active_slot == slot:
   profile = {}
@@ -437,6 +447,5 @@ func delete_slot(slot: int) -> bool:
   slot_loaded.emit(active_slot)
   _emit_change()
  return true
-
 func has_backup_slot(slot: int) -> bool:
  return slot >= 1 and slot <= 3 and FileAccess.file_exists("user://backup_slot_%d.json" % slot)
