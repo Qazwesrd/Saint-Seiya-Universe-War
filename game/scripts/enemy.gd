@@ -23,6 +23,8 @@ var display_name := "训练对手"
 var body_material: StandardMaterial3D
 var telegraph_mesh: MeshInstance3D
 var _boss_phase_two := false
+var _boss_attack_count := 0
+var _boss_heavy_attack := false
 var _base_color := Color(0.72, 0.16, 0.22)
 var freeze_timer := 0.0
 var slow_timer := 0.0
@@ -183,26 +185,37 @@ func _apply_gravity(delta: float) -> void:
 
 func _begin_attack() -> void:
     state = BrainState.WINDUP
-    state_timer = 0.68 if is_boss else 0.48
+    _boss_heavy_attack = false
+    if is_boss:
+        _boss_attack_count += 1
+        var heavy_interval := 2 if _boss_phase_two else 3
+        _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
+    state_timer = (1.05 if _boss_heavy_attack else 0.68) if is_boss else 0.48
+    telegraph_mesh.scale = Vector3.ONE * (1.5 if _boss_heavy_attack else 1.0)
     telegraph_mesh.visible = true
     if is_instance_valid(game):
-        game.call("show_notice", display_name + " 正在蓄力攻击！")
+        var warning := "重击范围预警！及时闪避" if _boss_heavy_attack else "正在蓄力攻击！"
+        game.call("show_notice", display_name + "：" + warning)
 
 func _resolve_attack(target: Node3D) -> void:
     telegraph_mesh.visible = false
+    telegraph_mesh.scale = Vector3.ONE
     var current_distance := global_position.distance_to(target.global_position)
-    if current_distance <= attack_range + 0.35:
+    var attack_reach := attack_range * (1.5 if _boss_heavy_attack else 1.0) + 0.35
+    if current_distance <= attack_reach:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
-        var outgoing_attack := attack_damage * (weaken_factor if weaken_timer > 0.0 else 1.0)
+        var damage_multiplier := 1.55 if _boss_heavy_attack else 1.0
+        var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
         target.call("receive_damage", outgoing_attack)
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
             var push := target.global_position - global_position
             push.y = 0.0
             if push.length_squared() > 0.001:
-                target.call("apply_enemy_knockback", push.normalized(), 7.0 if is_boss else 4.5)
+                target.call("apply_enemy_knockback", push.normalized(), 9.0 if _boss_heavy_attack else (7.0 if is_boss else 4.5))
     attack_cooldown = attack_interval * (0.78 if _boss_phase_two else 1.0)
     state = BrainState.RECOVERY
-    state_timer = 0.5 if is_boss else 0.34
+    state_timer = 0.72 if _boss_heavy_attack else (0.5 if is_boss else 0.34)
+    _boss_heavy_attack = false
 
 func take_damage(amount: float) -> void:
     if state == BrainState.DEAD or health <= 0.0:
