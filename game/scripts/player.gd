@@ -260,14 +260,21 @@ func toggle_lock() -> void:
     var target_name := str(locked_target.get("display_name")) if locked_target.get("display_name") != null else "敌人"
     game.call("show_notice", "已锁定：" + target_name)
 
-func receive_damage(amount: float) -> void:
+func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) -> void:
     if invulnerable > 0.0: return
     custom_combo_run_id += 1
     custom_combo_auto_running = false
     custom_combo_index = 0
     custom_combo_timer = 0.0
     var defense: float = float(RPGState.get_combat_stats().get("defense", 0.0))
-    var passive_reduction := SkillSystem.get_damage_reduction(str(RPGState.profile.get("class_id", "pegasus")))
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var facing_dot := 1.0
+    if attacker_position != Vector3.ZERO:
+        var toward_attacker := attacker_position - global_position
+        toward_attacker.y = 0.0
+        if toward_attacker.length_squared() > 0.001:
+            facing_dot = (-global_transform.basis.z).dot(toward_attacker.normalized())
+    var passive_reduction := SkillSystem.get_damage_reduction(class_id, facing_dot)
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     var class_guard_ratio := SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
     if class_guard_ratio > 0.0 and class_passive_guard_cooldown <= 0.0 and divine_guard_shield <= 0.0 and health - final_damage <= max_health * 0.35:
