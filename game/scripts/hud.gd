@@ -17,6 +17,9 @@ var stick_knob: Panel
 var finger_id := -1
 var stick_value := Vector2.ZERO
 var skill_slot_buttons: Array[Button] = []
+var flight_button: Button
+var flight_up_button: Button
+var flight_down_button: Button
 func _ready() -> void:
     var root := Control.new()
     root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -123,6 +126,12 @@ func _ready() -> void:
     _button(root, "每日首领", Vector2(118, 154), Vector2(230, 214), func(): _open_daily_boss(root), Color(0.42, 0.16, 0.12))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
     _button(root, "伙伴图鉴", Vector2(118, 224), Vector2(230, 284), func(): _open_collection(root), Color(0.28, 0.18, 0.45))
+    flight_button = _button(root, "天翼飞行", Vector2(-520, -190), Vector2(-410, -126), func(): _call_player("toggle_tenkishi_flight"), Color(0.08, 0.38, 0.52))
+    flight_up_button = _button(root, "上升", Vector2(-520, -260), Vector2(-410, -196), func(): _call_player("tenkishi_flight_step", 1.0), Color(0.12, 0.42, 0.58))
+    flight_down_button = _button(root, "俯冲", Vector2(-520, -330), Vector2(-410, -266), func(): _call_player("tenkishi_flight_step", -1.0), Color(0.12, 0.32, 0.48))
+    flight_button.visible = false
+    flight_up_button.visible = false
+    flight_down_button.visible = false
     _button(root, "闪避", Vector2(-370, -176), Vector2(-278, -104), func(): _call_player("dodge"), Color(0.12, 0.32, 0.55))
     _button(root, "防御", Vector2(-370, -94), Vector2(-278, -22), func(): _call_player("guard"), Color(0.16, 0.34, 0.38))
     _button(root, "锁定", Vector2(-270, -176), Vector2(-178, -104), func(): _call_player("toggle_lock"), Color(0.16, 0.22, 0.42))
@@ -194,8 +203,13 @@ func _move_stick(pos: Vector2) -> void:
     _send_move(stick_value)
 func _send_move(value: Vector2) -> void:
     if is_instance_valid(game.player): game.player.set_move_input(value)
-func _call_player(method: String) -> void:
-    if is_instance_valid(game.player): game.player.call(method)
+func _call_player(method: String, argument: Variant = null) -> void:
+    if not is_instance_valid(game.player):
+        return
+    if argument == null:
+        game.player.call(method)
+    else:
+        game.player.call(method, argument)
 func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skill_cd: float, burst_cd: float) -> void:
     if not is_instance_valid(status_label): return
     var profile: Dictionary = RPGState.profile
@@ -203,6 +217,14 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
     var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
     status_label.text = class_label + " Lv." + str(profile.get("level", 1)) + "  小宇宙 " + str(cosmos_info.get("level", 1)) + "/" + str(cosmos_info.get("max_level", 20)) + "  星币 " + str(profile.get("currency", 0))
+    var is_tenkishi := class_id == "tenkishi"
+    if is_instance_valid(flight_button):
+        flight_button.visible = is_tenkishi
+        flight_button.text = "收拢天翼" if is_tenkishi and is_instance_valid(game.player) and bool(game.player.get("tenkishi_flight_active")) else "天翼飞行"
+    if is_instance_valid(flight_up_button):
+        flight_up_button.visible = is_tenkishi
+    if is_instance_valid(flight_down_button):
+        flight_down_button.visible = is_tenkishi
     hp_bar.max_value = hp_max
     hp_bar.value = hp
     cosmos_bar.max_value = cosmos_max
