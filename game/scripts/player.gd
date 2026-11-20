@@ -37,6 +37,7 @@ var combat_pose_motion := "strike"
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
 var armor_root: Node3D
+var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
 var visual_armor_signature := ""
@@ -279,11 +280,12 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
     piece.position = piece_position
     piece.scale = piece_scale
     var material := StandardMaterial3D.new()
-    material.albedo_color = piece_color
-    material.metallic = metallic
-    material.roughness = 0.24
+    var wear_tint: Color = armor_visual_wear_profile.get("tint", Color.WHITE)
+    material.albedo_color = piece_color * wear_tint
+    material.metallic = clampf(metallic * float(armor_visual_wear_profile.get("metallic_multiplier", 1.0)), 0.0, 1.0)
+    material.roughness = clampf(float(armor_visual_wear_profile.get("roughness", 0.24)), 0.18, 0.72)
     material.emission_enabled = true
-    material.emission = piece_color * 0.06
+    material.emission = piece_color * 0.06 * float(armor_visual_wear_profile.get("condition", 1.0))
     piece.material_override = material
     armor_root.add_child(piece)
     return piece
@@ -306,6 +308,7 @@ func _build_armor_visuals() -> void:
     visual_class_id = class_id
     var accent: Color = relic_visual_profile.get("accent", visual_profile.get("accent", Color(1.0, 0.78, 0.28)))
     var stage_state: Dictionary = ArmorSystem.get_state()
+    armor_visual_wear_profile = ArmorSystem.get_visual_wear_profile(ArmorSystem.get_condition_ratio())
     var stage_id := str(stage_state.get("current_stage", "bronze"))
     var stage_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(stage_id, bool(stage_state.get("awakened", false)))
     var stage_metal_color: Color = stage_palette.get("metal", armor_base_color)
