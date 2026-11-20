@@ -510,8 +510,10 @@ func cast_ability(ability_id: String) -> bool:
     if "远程" in ability_type or "次元" in ability_type or "音波" in ability_type:
         reach += 2.0
     var cone := 360.0 if ("范围" in str(ability.get("role", "")) or "领域" in ability_type or "震地" in ability_type) else float(class_data.get("cone", 145.0))
+    var ability_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
+    var projectile_action := str(ability_profile.get("action", "")) in ["projectile", "homing_projectile"]
     _flash(class_data.get("color", Color(0.25, 0.72, 1.0)))
-    if not SkillSystem.is_support_ability(ability):
+    if not SkillSystem.is_support_ability(ability) and not projectile_action:
         game.call("damage_nearby_combat", damage, reach, cone, float(class_data.get("knockback", 3.5)) * 1.15 + float(aerial_profile.get("knockback_bonus", 0.0)), float(class_data.get("launch", 1.0)) + float(aerial_profile.get("launch_bonus", 0.0)), float(class_data.get("stagger", 0.5)))
     game.call("apply_ability_effect", class_id, ability, reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 2.5) + Vector3.UP, class_data.get("color", Color(0.25, 0.72, 1.0)), 2.2)
