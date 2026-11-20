@@ -56,6 +56,18 @@ static func get_profile(class_id: String) -> Dictionary:
     return result
 
 const EQUIPMENT_PROFILES := {
+    "aries_gold_cloth": {"accent": Color(1.0, 0.82, 0.42), "ornament": "royal_wings", "crest": "horn", "shoulder_scale": Vector3(1.35, 1.1, 1.0)},
+    "taurus_gold_cloth": {"accent": Color(1.0, 0.72, 0.3), "ornament": "war_spikes", "crest": "horn", "shoulder_scale": Vector3(1.75, 1.35, 1.2)},
+    "gemini_gold_cloth": {"accent": Color(0.9, 0.84, 0.62), "ornament": "time_rings", "crest": "halo", "shoulder_scale": Vector3(1.4, 1.15, 1.0)},
+    "cancer_gold_cloth": {"accent": Color(0.78, 0.78, 0.92), "ornament": "soul_wings", "crest": "crown", "shoulder_scale": Vector3(1.35, 1.2, 1.05)},
+    "leo_gold_cloth": {"accent": Color(1.0, 0.72, 0.24), "ornament": "solar_wings", "crest": "sun", "shoulder_scale": Vector3(1.5, 1.2, 1.0)},
+    "virgo_gold_cloth": {"accent": Color(1.0, 0.88, 0.58), "ornament": "radiant", "crest": "halo", "shoulder_scale": Vector3(1.25, 1.1, 1.0)},
+    "libra_gold_cloth": {"accent": Color(0.82, 0.88, 1.0), "ornament": "aegis", "crest": "aegis", "shoulder_scale": Vector3(1.55, 1.2, 1.1)},
+    "scorpio_gold_cloth": {"accent": Color(0.96, 0.38, 0.26), "ornament": "thorn_wings", "crest": "thorn", "shoulder_scale": Vector3(1.3, 1.1, 1.0)},
+    "sagittarius_gold_cloth": {"accent": Color(1.0, 0.86, 0.46), "ornament": "heaven_wings", "crest": "wing", "shoulder_scale": Vector3(1.35, 1.15, 1.0), "wing_span": 1.45},
+    "capricorn_gold_cloth": {"accent": Color(0.92, 0.78, 0.42), "ornament": "war_spikes", "crest": "spear", "shoulder_scale": Vector3(1.5, 1.2, 1.1)},
+    "aquarius_gold_cloth": {"accent": Color(0.48, 0.86, 1.0), "ornament": "moon_wings", "crest": "ice", "shoulder_scale": Vector3(1.2, 1.05, 1.0)},
+    "pisces_gold_cloth": {"accent": Color(0.92, 0.62, 0.82), "ornament": "petal_wings", "crest": "rose", "shoulder_scale": Vector3(1.15, 1.0, 1.0)},
     "god_cloth_archive": {"accent": Color(1.0, 0.86, 0.52), "ornament": "radiant"},
     "athena_divine_garment": {"accent": Color(1.0, 0.88, 0.58), "ornament": "aegis"},
     "poseidon_scale": {"accent": Color(0.22, 0.82, 1.0), "ornament": "tidal_fins"},
