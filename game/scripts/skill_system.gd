@@ -1235,6 +1235,16 @@ func get_ability_effect_profile(ability: Dictionary) -> Dictionary:
         profile["action"] = "homing_projectile"
         profile["projectile_speed"] = 13.5
         profile["projectile_damage_ratio"] = 1.15
+    elif "远程" in ability_type or "远程" in str(ability.get("role", "")) or "直线" in ability_type:
+        profile["action"] = "projectile"
+        profile["projectile_speed"] = 16.0
+        profile["projectile_damage_ratio"] = 0.92
+    elif "持续" in ability_type or "延迟爆发" in ability_type or "次元" in ability_type:
+        profile["action"] = "field"
+        profile["field_lifetime"] = 4.0
+        profile["field_radius"] = 3.4
+        profile["field_tick_interval"] = 0.75
+        profile["field_damage_ratio"] = 0.26
     elif "多段" in ability_type:
         profile["action"] = "multi_hit"
         profile["extra_hits"] = 2
