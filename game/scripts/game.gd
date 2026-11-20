@@ -772,13 +772,13 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             var heal_ratio := float(support_profile.get("heal_ratio", 0.0))
             var damage_bonus := float(support_profile.get("damage_bonus", 0.0))
             var damage_reduction := float(support_profile.get("damage_reduction", 0.0))
-            var duration := float(support_profile.get("duration", 5.0))
+            var support_duration := float(support_profile.get("duration", 5.0))
             var mobility := float(support_profile.get("mobility", 0.0))
             if shield_ratio > 0.0:
-                player.call("apply_divine_guard", shield_ratio, duration)
+                player.call("apply_divine_guard", shield_ratio, support_duration)
             if heal_ratio > 0.0:
                 player.health = minf(player.max_health, player.health + player.max_health * heal_ratio)
-            player.call("apply_temporary_buff", damage_bonus, damage_reduction, duration)
+            player.call("apply_temporary_buff", damage_bonus, damage_reduction, support_duration)
             if mobility > 0.0:
                 player.velocity += -player.global_transform.basis.z * mobility
             show_notice("%s：神权支援效果已激活" % str(RPGState.CLASS_DATA.get(class_id, {}).get("name", class_id)))
