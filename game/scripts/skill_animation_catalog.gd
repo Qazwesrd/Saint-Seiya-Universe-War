@@ -59,7 +59,31 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     elif motion == "cast":
         yaw = 5.0
     var pose_scale := 1.08 if not finisher else 1.18
-    var hit_count := 1 + int(effect.get("extra_hits", 0))
+    var hit_count := maxi(1, 1 + int(effect.get("extra_hits", 0)))
+    var hit_window_duration := minf(0.12, maxf(0.045, active * 0.2))
+    var hit_windows: Array[Dictionary] = []
+    var timeline: Array[Dictionary] = [
+        {"time": 0.0, "event": "telegraph", "weight": 1.0 if finisher else 0.55},
+        {"time": startup * 0.45, "event": "anticipation", "weight": 0.8},
+        {"time": startup, "event": "action_start", "weight": 1.0}
+    ]
+    for hit_index in range(hit_count):
+        var hit_offset := 0.0
+        if hit_count > 1:
+            hit_offset = (active - hit_window_duration) * float(hit_index) / float(hit_count - 1)
+        var hit_start := startup + hit_offset
+        var hit_end := minf(startup + active, hit_start + hit_window_duration)
+        hit_windows.append({"start": hit_start, "end": hit_end, "index": hit_index})
+        timeline.append({"time": hit_start, "event": "hit_start", "index": hit_index})
+        timeline.append({"time": hit_end, "event": "hit_end", "index": hit_index})
+    var recovery_start := startup + active
+    var combo_cancel_at := startup + active * 0.72
+    timeline.append({"time": combo_cancel_at, "event": "combo_cancel_open"})
+    timeline.append({"time": recovery_start, "event": "recovery_start"})
+    timeline.append({"time": startup + active + recovery, "event": "action_end"})
+    timeline.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        return float(a.get("time", 0.0)) < float(b.get("time", 0.0))
+    )
     return {
         "class_id": class_id,
         "ability_id": str(ability.get("id", "")),
@@ -71,7 +95,13 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
         "active": active,
         "recovery": recovery,
         "total_duration": startup + active + recovery,
-        "combo_cancel_at": startup + active * 0.72,
+        "combo_cancel_at": combo_cancel_at,
+        "hit_windows": hit_windows,
+        "timeline": timeline,
+        "interruptible_during_startup": action != "guard",
+        "interruptible_during_recovery": true,
+        "invulnerability_window": {"start": 0.0, "end": minf(startup * 0.35, 0.12)} if motion in ["dash", "leap"] else {"start": 0.0, "end": 0.0},
+        "root_motion_window": {"start": startup * 0.35, "end": startup + active * 0.5} if root_motion > 0.0 else {"start": 0.0, "end": 0.0},
         "telegraph_duration": startup * (1.25 if finisher else 0.85),
         "root_motion_distance": root_motion,
         "rotation_degrees": yaw,
@@ -100,6 +130,36 @@ static func _resolve_motion(class_id: String, ability_type: String, action: Stri
     if class_id == "tenkishi":
         return "aerial_strike"
     return "strike"
+
+static func validate_profile(profile: Dictionary) -> bool:
+    var startup := float(profile.get("startup", -1.0))
+    var active := float(profile.get("active", -1.0))
+    var recovery := float(profile.get("recovery", -1.0))
+    var total := float(profile.get("total_duration", -1.0))
+    if startup <= 0.0 or active <= 0.0 or recovery <= 0.0:
+        return false
+    if not is_equal_approx(total, startup + active + recovery):
+        return false
+    if float(profile.get("combo_cancel_at", -1.0)) < startup:
+        return false
+    var windows: Array = profile.get("hit_windows", [])
+    if windows.is_empty():
+        return false
+    for window in windows:
+        var hit_start := float(window.get("start", -1.0))
+        var hit_end := float(window.get("end", -1.0))
+        if hit_start < startup or hit_end <= hit_start or hit_end > startup + active + 0.001:
+            return false
+    var timeline: Array = profile.get("timeline", [])
+    if timeline.size() < 5:
+        return false
+    var previous_time := -1.0
+    for marker in timeline:
+        var marker_time := float(marker.get("time", -1.0))
+        if marker_time < previous_time or marker_time < 0.0 or marker_time > total + 0.001:
+            return false
+        previous_time = marker_time
+    return true
 
 static func validate_catalog() -> bool:
     var class_catalog: Array = SkillSystem.get_class_skill_catalog()
