@@ -26,8 +26,20 @@ jobs:
       - name: Import and validate project
         run: godot --headless --editor --path game --quit
 
-      - name: Export Android ARM64 debug APK
+      - name: Install Android API 34 build tools
         run: |
+          yes | sdkmanager --licenses
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Export Android ARM64 debug APK
+        env:
+          HOME: /root
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_HOME: /usr/lib/android-sdk
+        run: |
+          test -s /root/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk
+          test -s /root/debug.keystore
+          test -x "$JAVA_HOME/bin/java"
           mkdir -p build/android
           godot --headless --path game --export-debug "Android" build/android/Saint-Seiya-Universe-War-debug.apk
           test -s build/android/Saint-Seiya-Universe-War-debug.apk
