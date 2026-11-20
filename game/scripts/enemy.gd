@@ -42,6 +42,9 @@ var weaken_factor := 0.7
 var divine_mark := ""
 var divine_mark_timer := 0.0
 var divine_mark_power := 0.0
+var boss_control_pressure := 0.0
+var boss_control_resist_timer := 0.0
+var boss_control_resistance := 0.72
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -120,6 +123,8 @@ func _physics_process(delta: float) -> void:
     slow_timer = maxf(0.0, slow_timer - delta)
     weaken_timer = maxf(0.0, weaken_timer - delta)
     divine_mark_timer = maxf(0.0, divine_mark_timer - delta)
+    boss_control_resist_timer = maxf(0.0, boss_control_resist_timer - delta)
+    boss_control_pressure = maxf(0.0, boss_control_pressure - delta * 0.12)
     if divine_mark_timer <= 0.0:
         divine_mark = ""
         divine_mark_power = 0.0
@@ -260,41 +265,66 @@ func take_damage(amount: float) -> void:
         var push := global_position - attacker.global_position
         push.y = 0.0
         if push.length_squared() > 0.001:
-            knockback_velocity = push.normalized() * (5.0 if is_boss else 7.0)
-    state = BrainState.STAGGER
-    state_timer = 0.22 if is_boss else 0.3
+            knockback_velocity = push.normalized() * (3.5 if is_boss else 7.0)
+    # Damage alone must not cancel a boss's clearly telegraphed attack or recovery.
+    if not is_boss or (state != BrainState.WINDUP and state != BrainState.RECOVERY):
+        state = BrainState.STAGGER
+        state_timer = 0.12 if is_boss else 0.3
     body_material.albedo_color = Color(1.0, 0.78, 0.55)
+
+
+func _register_boss_control(duration: float) -> float:
+    if not is_boss:
+        return 1.0
+    if boss_control_resist_timer > 0.0:
+        return 0.12
+    boss_control_pressure = minf(1.0, boss_control_pressure + 0.22)
+    if boss_control_pressure >= 0.66:
+        boss_control_resist_timer = 3.0
+        boss_control_pressure = 0.0
+        if is_instance_valid(game):
+            game.call("show_notice", display_name + "：强韧意志，暂时抵抗控制！")
+    return boss_control_resistance
 
 
 func apply_hit_reaction(direction: Vector3, force: float, lift: float, stagger_duration: float) -> void:
     if state == BrainState.DEAD:
         return
-    # Bosses retain their wind-up armor so their telegraphed attacks cannot be
-    # cancelled by every light hit. Heavy finishers still deal normal damage.
     if is_boss and state == BrainState.WINDUP:
+        _register_boss_control(stagger_duration)
         return
+    var control_scale := _register_boss_control(stagger_duration)
     var flat := direction
     flat.y = 0.0
     if flat.length_squared() > 0.001:
-        var resistance := 0.28 if is_boss else 1.0
+        var resistance := 0.22 * control_scale if is_boss else 1.0
         knockback_velocity = flat.normalized() * force * resistance
     if not is_boss and lift > 0.0:
         velocity.y = maxf(velocity.y, lift)
-    state = BrainState.STAGGER
-    state_timer = maxf(state_timer, stagger_duration * (1.5 if is_boss else 1.0))
+    if is_boss:
+        if state != BrainState.RECOVERY and control_scale > 0.2:
+            state = BrainState.STAGGER
+            state_timer = maxf(state_timer, minf(0.16, stagger_duration * 0.22))
+    else:
+        state = BrainState.STAGGER
+        state_timer = maxf(state_timer, stagger_duration)
+
 
 func apply_status_effect(effect: String, duration: float, power: float = 0.0) -> void:
     if state == BrainState.DEAD:
         return
     match effect:
         "freeze":
-            var resistance := 0.35 if is_boss else 1.0
-            freeze_timer = maxf(freeze_timer, duration * resistance)
-            state = BrainState.STAGGER
-            state_timer = maxf(state_timer, freeze_timer)
+            var control_scale := _register_boss_control(duration)
+            var effective_duration := duration * (0.35 * control_scale if is_boss else 1.0)
+            freeze_timer = maxf(freeze_timer, effective_duration)
+            if not is_boss:
+                state = BrainState.STAGGER
+                state_timer = maxf(state_timer, freeze_timer)
         "slow":
-            slow_timer = maxf(slow_timer, duration)
-            slow_factor = clampf(1.0 - power, 0.25, 0.9)
+            var control_scale := _register_boss_control(duration)
+            slow_timer = maxf(slow_timer, duration * (0.55 * control_scale if is_boss else 1.0))
+            slow_factor = clampf(1.0 - power * (0.45 if is_boss else 1.0), 0.25, 0.9)
         "burn":
             burn_timer = maxf(burn_timer, duration)
             burn_damage = maxf(burn_damage, power)
