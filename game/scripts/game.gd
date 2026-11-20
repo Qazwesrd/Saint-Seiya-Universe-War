@@ -404,6 +404,11 @@ func on_enemy_defeated(enemy: Node3D) -> void:
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
         _record_campaign_encounter_progress(enemy)
+        if CampaignManager.can_complete_active_mission():
+            var encounter_mission: Dictionary = CampaignManager.get_active_mission()
+            var encounter_result: Dictionary = CampaignManager.complete_active_mission()
+            if bool(encounter_result.get("success", false)):
+                show_notice("剧情任务完成：" + str(encounter_mission.get("name", "")))
         QuestManager.on_enemy_defeated(defeated_boss)
         EncounterDirector.report_enemy_defeated()
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
