@@ -807,13 +807,13 @@ func _build_armor_visuals() -> void:
         var feather_mesh := PrismMesh.new()
         var feather_width := 0.16
         var feather_height := 0.72
-        if ornament_id in ["tidal_fins", "fin", "rune_wings"]:
+        if ornament_id in ["tidal_fins", "fin", "rune_wings", "moon_wings"]:
             feather_width = 0.12
             feather_height = 0.82
-        elif ornament_id in ["leaf_wings", "petal_wings", "royal_wings"]:
+        elif ornament_id in ["leaf_wings", "petal_wings", "royal_wings", "heaven_wings", "solar_wings"]:
             feather_width = 0.22
             feather_height = 0.68
-        elif ornament_id in ["fallen_wings", "soul_wings", "thorn_wings", "war_spikes"]:
+        elif ornament_id in ["fallen_wings", "soul_wings", "thorn_wings", "war_spikes", "storm_wings", "flame_wings"]:
             feather_width = 0.14
             feather_height = 0.88
         feather_mesh.size = Vector3(feather_width, feather_height, 0.10)
@@ -833,7 +833,56 @@ func _build_armor_visuals() -> void:
         for side in [-1.0, 1.0]:
             var side_plate := _add_armor_piece(side_plate_mesh, Vector3(side * 0.68, 1.42, -0.02), Vector3(1.0, 1.0, 0.9), accent, stage_metallic, "arms")
             side_plate.rotation.z = -side * 0.52
-    if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings", "swift_wings", "petal_wings", "thorn_wings"]:
+
+    # Signature ornaments that are not wings receive their own readable geometry.
+    match ornament_id:
+        "comet":
+            var comet_tail_mesh := PrismMesh.new()
+            comet_tail_mesh.size = Vector3(0.12, 0.42, 0.10)
+            for comet_index in range(3):
+                var comet_tail := _add_armor_piece(comet_tail_mesh, Vector3(float(comet_index - 1) * 0.14, 1.56 - float(comet_index) * 0.12, 0.34), Vector3(1.0, 1.0 - float(comet_index) * 0.12, 1.0), accent if comet_index == 0 else stage_trim_color, stage_metallic, "chest")
+                comet_tail.rotation.z = -0.32 + float(comet_index) * 0.32
+        "shield":
+            var class_shield_mesh := CylinderMesh.new()
+            class_shield_mesh.top_radius = 0.22
+            class_shield_mesh.bottom_radius = 0.22
+            class_shield_mesh.height = 0.09
+            var class_shield := _add_armor_piece(class_shield_mesh, Vector3(-0.66, 1.02, -0.22), Vector3.ONE, accent, 0.96, "arms")
+            class_shield.rotation.x = PI * 0.5
+            var class_shield_boss_mesh := SphereMesh.new()
+            class_shield_boss_mesh.radius = 0.085
+            class_shield_boss_mesh.height = 0.12
+            _add_armor_piece(class_shield_boss_mesh, Vector3(-0.66, 1.02, -0.285), Vector3.ONE, stage_trim_color, 0.98, "arms")
+        "chain":
+            var signature_chain_mesh := TorusMesh.new()
+            signature_chain_mesh.inner_radius = 0.105
+            signature_chain_mesh.outer_radius = 0.145
+            for chain_link_index in range(3):
+                var signature_link := _add_armor_piece(signature_chain_mesh, Vector3(0.57, 1.08 - float(chain_link_index) * 0.16, -0.20), Vector3(1.0, 1.0, 0.72), accent, 0.94, "arms")
+                signature_link.rotation.x = deg_to_rad(72.0)
+                signature_link.rotation.z = deg_to_rad(float(chain_link_index) * 28.0)
+        "scale":
+            var signature_scale_mesh := SphereMesh.new()
+            signature_scale_mesh.radius = 0.14
+            signature_scale_mesh.height = 0.10
+            for scale_side in [-1.0, 1.0]:
+                for scale_layer in range(3):
+                    var signature_scale := _add_armor_piece(signature_scale_mesh, Vector3(scale_side * (0.32 + float(scale_layer) * 0.10), 1.48 - float(scale_layer) * 0.12, -0.23), Vector3(1.25, 0.82, 0.72), accent if scale_layer == 0 else bright, stage_metallic, "chest")
+                    signature_scale.rotation.z = -scale_side * 0.18
+        "sound":
+            var sound_ring_mesh := TorusMesh.new()
+            sound_ring_mesh.inner_radius = 0.12
+            sound_ring_mesh.outer_radius = 0.16
+            for sound_ring_index in range(3):
+                var sound_ring := _add_armor_piece(sound_ring_mesh, Vector3(0.0, 1.48 + float(sound_ring_index) * 0.16, 0.34 + float(sound_ring_index) * 0.025), Vector3(1.0 + float(sound_ring_index) * 0.18, 0.72 + float(sound_ring_index) * 0.12, 0.72), accent, 0.92, "chest")
+                sound_ring.rotation.x = deg_to_rad(72.0)
+        "fin":
+            var signature_fin_mesh := PrismMesh.new()
+            signature_fin_mesh.size = Vector3(0.16, 0.52, 0.12)
+            for fin_side in [-1.0, 1.0]:
+                var signature_fin := _add_armor_piece(signature_fin_mesh, Vector3(fin_side * 0.58, 1.56, 0.08), Vector3(1.0, 0.9, 0.85), accent, stage_metallic, "arms")
+                signature_fin.rotation.z = -fin_side * 0.62
+    if ornament_id in ["time_rings", "aegis", "radiant", "solar_wings", "storm_wings", "heaven_wings", "tidal_fins", "rune_wings", "soul_wings", "moon_wings", "dream_wings", "royal_wings", "leaf_wings", "flame_wings", "fallen_wings", "swift_wings", "petal_wings", "thorn_wings", "chain", "sound"]:
         var aura_ring := TorusMesh.new()
         aura_ring.inner_radius = 0.68
         aura_ring.outer_radius = 0.73
