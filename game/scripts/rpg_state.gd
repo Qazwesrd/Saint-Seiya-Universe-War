@@ -71,33 +71,36 @@ func select_class(class_id: String) -> bool:
  if not CLASS_DATA.has(class_id):
   return false
  var class_data: Dictionary = CLASS_DATA[class_id]
- if str(class_data.get("tier", "")) in ["神明", "天斗士"] and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70 if str(class_data.get("tier", "")) == "神明" else 45)):
+ var tier := str(class_data.get("tier", ""))
+ if tier in ["神明", "天斗士"] and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70 if tier == "神明" else 45)):
   return false
- if str(profile.get("class_id","pegasus")) == class_id:
+ if str(profile.get("class_id", "pegasus")) == class_id:
   return true
- var equipment: Dictionary = profile.get("equipment",{})
- var inventory: Dictionary = profile.get("inventory",{})
- var old_arm: String = str(equipment.get("arms",""))
- if old_arm != "":
-  inventory[old_arm] = int(inventory.get(old_arm,0)) + 1
- var starter: String = str(CLASS_DATA[class_id]["starter"])
- equipment["arms"] = starter
+ var previous: Dictionary = profile.duplicate(true)
+ var equipment: Dictionary = profile.get("equipment", {}).duplicate(true)
+ var inventory: Dictionary = profile.get("inventory", {}).duplicate(true)
+ var old_arm := str(equipment.get("arms", ""))
+ if old_arm != "" and ITEM_DATA.has(old_arm):
+  inventory[old_arm] = int(inventory.get(old_arm, 0)) + 1
+ var starter := str(class_data.get("starter", ""))
+ equipment["arms"] = starter if ITEM_DATA.has(starter) else ""
  profile["class_id"] = class_id
- var cosmos_levels: Dictionary = profile.get("cosmos_levels", {})
- if not cosmos_levels.has(class_id): cosmos_levels[class_id] = 21 if str(CLASS_DATA[class_id].get("tier", "")) in ["神明", "天斗士"] else 1
+ var cosmos_levels: Dictionary = profile.get("cosmos_levels", {}).duplicate(true)
+ if not cosmos_levels.has(class_id):
+  cosmos_levels[class_id] = 21 if tier in ["神明", "天斗士"] else 1
  profile["cosmos_levels"] = cosmos_levels
- profile["cosmos_level"] = int(cosmos_levels[class_id])
- var learned: Dictionary = profile.get("learned_skills", {})
- if not learned.has(class_id): learned[class_id] = [class_id + "_skill_1"]
+ profile["cosmos_level"] = maxi(21, int(cosmos_levels[class_id])) if tier in ["神明", "天斗士"] else int(cosmos_levels[class_id])
+ var learned: Dictionary = profile.get("learned_skills", {}).duplicate(true)
+ if not learned.has(class_id):
+  learned[class_id] = [class_id + "_skill_1"]
  profile["learned_skills"] = learned
- var slots: Dictionary = profile.get("skill_slots", {})
- if not slots.has(class_id): slots[class_id] = [class_id + "_skill_1", "", "", ""]
+ var slots: Dictionary = profile.get("skill_slots", {}).duplicate(true)
+ if not slots.has(class_id):
+  slots[class_id] = [class_id + "_skill_1", "", "", ""]
  profile["skill_slots"] = slots
  profile["inventory"] = inventory
  profile["equipment"] = equipment
- _emit_change()
- save_slot(active_slot)
- return true
+ return _commit_profile(previous)
 func get_cosmos_profile() -> Dictionary:
  var class_id := str(profile.get("class_id", "pegasus"))
  var base: Dictionary = CLASS_DATA.get(class_id, CLASS_DATA["pegasus"])
