@@ -1094,6 +1094,13 @@ func get_skill_branches(class_id: String) -> Array:
 func get_passive(class_id: String) -> Dictionary:
     return get_class_skill(class_id).get("passive", {}).duplicate(true)
 
+func get_target_condition_multiplier(class_id: String, target: Node) -> float:
+    var passive := get_passive(class_id)
+    if str(passive.get("effect", "")) == "control_damage" and is_instance_valid(target):
+        if target.has_method("is_controlled") and bool(target.call("is_controlled")):
+            return 1.0 + float(passive.get("value", 0.0))
+    return 1.0
+
 func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float:
     var passive := get_passive(class_id)
     var effect := str(passive.get("effect", ""))
