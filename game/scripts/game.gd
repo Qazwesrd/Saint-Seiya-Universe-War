@@ -151,6 +151,11 @@ func _refresh_story_encounter() -> void:
             enemies.erase(enemy)
     if not enemies.is_empty():
         return
+    if EncounterDirector.active:
+        var next_wave := EncounterDirector.advance_wave()
+        if not next_wave.is_empty():
+            _spawn_encounter_wave(next_wave)
+            return
     var mission := CampaignManager.get_active_mission()
     var mission_id := str(mission.get("id", ""))
     var mission_state := CampaignManager.get_mission_progress(mission_id)
@@ -160,21 +165,44 @@ func _refresh_story_encounter() -> void:
         for objective in objectives:
             if str(objective.get("id", "")) == "defeat_training_enemy":
                 remaining = maxi(0, int(objective.get("target", 0)) - int(objective.get("current", 0)))
-        var positions := [Vector3(-4, 0.1, -3), Vector3(4, 0.1, -4)]
-        for index in range(remaining):
-            _spawn_enemy(positions[index % positions.size()], false)
         if remaining > 0:
-            show_notice("剧情推进：击败训练对手（%d 名）" % remaining)
+            var waves: Array[Dictionary] = [
+                {"spawns": [{"archetype_id": "arena_guard", "count": 1, "position": Vector3(-4, 0.1, -3)}]},
+                {"spawns": [{"archetype_id": "arena_elite", "count": 1, "position": Vector3(4, 0.1, -4)}]}
+            ]
+            if EncounterDirector.start("story_gw_002", waves):
+                _spawn_encounter_wave(EncounterDirector.get_current_wave())
+                show_notice("剧情战斗：第一波训练对手出现")
     elif mission_id == "gw_003":
         var remaining_boss := 0
         for objective in objectives:
             if str(objective.get("id", "")) == "defeat_training_boss":
                 remaining_boss = maxi(0, int(objective.get("target", 0)) - int(objective.get("current", 0)))
         if remaining_boss > 0:
-            _spawn_enemy(Vector3(0, 0.1, -9), true)
-            show_notice("剧情推进：训练首领登场")
+            var boss_waves: Array[Dictionary] = [
+                {"spawns": [{"archetype_id": "arena_boss", "count": 1, "boss": true, "position": Vector3(0, 0.1, -9)}]}
+            ]
+            if EncounterDirector.start("story_gw_003", boss_waves):
+                _spawn_encounter_wave(EncounterDirector.get_current_wave())
+                show_notice("剧情推进：训练首领登场")
     elif not mission.is_empty():
         show_notice("当前剧情任务：" + str(mission.get("name", "")) + "。请先完成任务目标。")
+
+func _spawn_encounter_wave(wave: Dictionary) -> void:
+    var spawns: Array = wave.get("spawns", [])
+    var total_spawned := 0
+    for spawn in spawns:
+        var count := maxi(0, int(spawn.get("count", 1)))
+        var archetype_id := str(spawn.get("archetype_id", "arena_guard"))
+        var is_boss := bool(spawn.get("boss", archetype_id == "arena_boss"))
+        var position: Vector3 = spawn.get("position", Vector3(0, 0.1, -5))
+        for index in range(count):
+            var offset := Vector3(float(index % 3) * 1.5, 0.0, float(index / 3) * 1.5)
+            _spawn_enemy(position + offset, is_boss, archetype_id)
+            total_spawned += 1
+    EncounterDirector.register_enemy(total_spawned)
+    if total_spawned > 0:
+        show_notice("第 %d/%d 波：敌人 %d 名" % [int(wave.get("wave_number", 1)), int(wave.get("wave_total", 1)), total_spawned])
 
 func start_daily_boss_challenge() -> void:
     var daily_state: Dictionary = DailyBossManager.get_state()
@@ -198,12 +226,12 @@ func start_daily_boss_challenge() -> void:
     daily_enemy.set("coin_reward", 0)
     show_notice("每日挑战开始：" + str(daily_state.get("boss_name", "每日首领")))
 
-func _spawn_enemy(at: Vector3, boss: bool) -> void:
+func _spawn_enemy(at: Vector3, boss: bool, requested_archetype_id: String = "") -> void:
     var enemy := CharacterBody3D.new()
     enemy.set_script(EnemyScript)
     enemy.set("game", self)
     enemy.set("is_boss", boss)
-    enemy.set("archetype_id", "arena_boss" if boss else "arena_guard")
+    enemy.set("archetype_id", requested_archetype_id if not requested_archetype_id.is_empty() else ("arena_boss" if boss else "arena_guard"))
     enemy.position = at
     add_child(enemy)
     enemies.append(enemy)
@@ -316,6 +344,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
         QuestManager.on_enemy_defeated(defeated_boss)
+        EncounterDirector.report_enemy_defeated()
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
