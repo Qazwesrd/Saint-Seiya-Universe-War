@@ -750,7 +750,6 @@ func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) ->
     field.set("game", self)
     field.set("owner_player", player)
     field.set("radius", float(profile.get("field_radius", 4.0)))
-    field.set("life_time", float(profile.get("field_lifetime", 5.0)))
     field.set("lifetime", float(profile.get("field_lifetime", 5.0)))
     field.set("tick_interval", float(profile.get("field_tick_interval", 0.8)))
     field.set("damage", maxf(3.0, attack_power * float(class_data.get("damage", 1.5)) * float(profile.get("field_damage_ratio", 0.3)) * SkillSystem.get_skill_damage_multiplier(class_id)))
