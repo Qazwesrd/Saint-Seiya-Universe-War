@@ -580,6 +580,32 @@ func _build_armor_visuals() -> void:
         for side in [-1.0, 1.0]:
             var side_plate := _add_armor_piece(chest_side_plate, Vector3(side * 0.34 * silhouette_width, 1.28, -0.25), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
             side_plate.rotation.z = -side * 0.12
+    # Raised breastplate contours vary with the class motif and evolve by armor tier.
+    var chest_contour := PrismMesh.new()
+    chest_contour.size = Vector3(0.22, 0.34, 0.075)
+    match ornament_id:
+        "war_spikes", "thorn_wings", "forge_plates", "fallen_wings", "soul_wings":
+            chest_contour.size = Vector3(0.26, 0.40, 0.09)
+        "tidal_fins", "fin", "scale", "moon_wings":
+            chest_contour.size = Vector3(0.18, 0.42, 0.075)
+        "royal_wings", "heaven_wings", "solar_wings", "radiant", "aegis":
+            chest_contour.size = Vector3(0.30, 0.36, 0.10)
+        "chain", "sound", "time_rings", "dream_wings":
+            chest_contour.size = Vector3(0.16, 0.30, 0.07)
+    chest_contour.size.y *= stage_structure
+    for chest_side in [-1.0, 1.0]:
+        var pectoral_plate := _add_armor_piece(chest_contour, Vector3(chest_side * 0.22 * silhouette_width, 1.34, -0.425), Vector3(1.0, 1.0, 0.72), stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "chest")
+        pectoral_plate.rotation.z = -chest_side * (0.12 if ornament_id in ["tidal_fins", "fin", "scale", "moon_wings"] else 0.06)
+    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+        var sternum_ridge := BoxMesh.new()
+        sternum_ridge.size = Vector3(0.075, 0.40 * stage_structure, 0.065)
+        _add_armor_piece(sternum_ridge, Vector3(0.0, 1.28, -0.445), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
+    if stage_id in ["god_cloth", "god_armor"]:
+        var chest_halo_mesh := TorusMesh.new()
+        chest_halo_mesh.inner_radius = 0.20
+        chest_halo_mesh.outer_radius = 0.235
+        var chest_halo := _add_armor_piece(chest_halo_mesh, Vector3(0.0, 1.30, -0.43), Vector3(1.0, 1.0, 0.42), stage_trim_color, 1.0, "chest")
+        chest_halo.rotation.x = deg_to_rad(90.0)
     if stage_id in ["god_cloth", "god_armor"]:
         var divine_collar := PrismMesh.new()
         divine_collar.size = Vector3(0.16, 0.34 * stage_structure, 0.18)
@@ -787,6 +813,12 @@ func _build_armor_visuals() -> void:
         var thigh_plate := _add_armor_piece(thigh_mesh, Vector3(leg_side * 0.22, 0.54, -0.17), Vector3.ONE, dark, stage_metallic, "legs")
         thigh_plate.rotation.z = -leg_side * 0.08
         _add_armor_piece(shin_mesh, Vector3(leg_side * 0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
+    # Tiered greave ridges and class-shaped knee guards reinforce the leg silhouette.
+    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+        var greave_ridge := BoxMesh.new()
+        greave_ridge.size = Vector3(0.055, 0.34 * stage_structure, 0.045)
+        for ridge_side in [-1.0, 1.0]:
+            _add_armor_piece(greave_ridge, Vector3(ridge_side * 0.22, 0.34, -0.322), Vector3.ONE, stage_trim_color, stage_metallic, "legs")
     var knee_mesh := SphereMesh.new()
     knee_mesh.radius = 0.15
     knee_mesh.height = 0.12
