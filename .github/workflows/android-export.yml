@@ -39,7 +39,7 @@ jobs:
           script: |
             const runs = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner, repo: context.repo.repo,
-              workflow_id: "blender-art-pipeline.yml", status: "success", per_page: 20
+              workflow_id: "blender-art-pipeline.yml", per_page: 20
             });
             const run = runs.data.workflow_runs.find(item => item.conclusion === "success");
             if (!run) throw new Error("No successful Blender art export run is available.");
