@@ -133,7 +133,14 @@ func _physics_process(delta: float) -> void:
         burn_tick_timer -= delta
         if burn_tick_timer <= 0.0:
             burn_tick_timer = 1.0
-            take_damage(burn_damage * get_divine_mark_burn_multiplier())
+            var burn_class_id := str(RPGState.profile.get("class_id", "pegasus"))
+            var burn_tick_damage := burn_damage * get_divine_mark_burn_multiplier() * SkillSystem.get_passive_burn_multiplier(burn_class_id)
+            take_damage(burn_tick_damage)
+            var burn_sustain := SkillSystem.get_passive_burn_sustain_ratio(burn_class_id)
+            if burn_sustain > 0.0 and is_instance_valid(game):
+                var burn_owner: Node = game.get("player")
+                if is_instance_valid(burn_owner):
+                    burn_owner.health = minf(float(burn_owner.max_health), float(burn_owner.health) + burn_tick_damage * burn_sustain)
             if state == BrainState.DEAD:
                 return
     knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, 18.0 * delta)
