@@ -14,7 +14,7 @@ def catalog_ids(path: Path, marker: str) -> list[str]:
     start = source.find(marker)
     if start < 0:
         raise ValueError(f"catalog marker not found: {marker}")
-    match = re.search(r"\n(.*?)^\}, source[start:], re.S | re.M)
+    match = re.search(r"\n(.*?)^\}", source[start:], re.S | re.M)
     if not match:
         raise ValueError(f"catalog block is not closed: {marker}")
     return re.findall(r'^\s*"([^"]+)"\s*:\s*\{', match.group(1), re.M)
