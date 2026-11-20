@@ -30,6 +30,8 @@ jobs:
         run: python3 tools/art_pipeline/build_manifests.py
       - name: Validate authored art assets
         run: python3 tools/art_pipeline/validate_authored_assets.py
+      - name: Check Blender pipeline Python syntax
+        run: python3 -m py_compile tools/art_pipeline/blender/generate_base_rig.py
       - name: Validate project structure and resource references
         run: python3 tools/validate_project.py
 
