@@ -24,12 +24,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import and validate project
+        env:
+          HOME: /root
         run: godot --headless --editor --path game --quit
 
       - name: Install Android API 34 build tools
+        env:
+          HOME: /root
+          ANDROID_HOME: /usr/lib/android-sdk
         run: |
           yes | sdkmanager --licenses
           sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Diagnose Android export environment
+        env:
+          HOME: /root
+        run: |
+          echo "HOME=$HOME"
+          ls -la /root/.config/godot/
+          cat /root/.config/godot/editor_settings-4.4.tres
+          ls -la /root/.local/share/godot/export_templates/4.4.1.stable/
+          ls -la /root/debug.keystore /usr/lib/android-sdk /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
       - name: Export Android ARM64 debug APK
         env:
