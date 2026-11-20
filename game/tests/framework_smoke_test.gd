@@ -182,6 +182,12 @@ func _run_tests() -> void:
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
+	assert(SkillSystem.is_support_ability({"type": "护盾", "role": "防御"}), "shield abilities are classified as support")
+	assert(SkillSystem.is_support_ability({"type": "治疗", "role": "恢复"}), "healing abilities are classified as support")
+	assert(SkillSystem.is_support_ability({"type": "回能", "role": "资源"}), "resource abilities are classified as support")
+	assert(SkillSystem.is_support_ability({"type": "闪避", "role": "生存"}), "evasion abilities are classified as support")
+	assert(not SkillSystem.is_support_ability({"type": "爆发", "role": "单体"}), "damage abilities remain offensive")
+
 	assert(is_equal_approx(SkillSystem.get_target_condition_multiplier("pegasus", test_boss), 1.0), "unconditional passives are not applied twice per target")
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("lyra"), 1.15), "Lyra stagger passive affects hit reactions")
 	assert(is_equal_approx(SkillSystem.get_passive_speed_multiplier("sea_swallow"), 1.12), "Sea Swallow speed passive affects movement")
