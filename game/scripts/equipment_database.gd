@@ -27,13 +27,17 @@ func unlock_equipment(item_id: String) -> bool:
     var data: Dictionary = EQUIPMENT[item_id]
     if int(RPGState.profile.get("level", 1)) < int(data.get("unlock_level", 1)):
         return false
-    var owned: Array = RPGState.profile.get("owned_relics", [])
+    var previous: Dictionary = RPGState.profile.duplicate(true)
+    var owned: Array = RPGState.profile.get("owned_relics", []).duplicate()
     if owned.has(item_id):
         return false
     owned.append(item_id)
     RPGState.profile["owned_relics"] = owned
-    RPGState.save_slot(RPGState.active_slot)
+    if not RPGState.save_slot(RPGState.active_slot):
+        RPGState.profile = previous
+        return false
     RPGState.state_changed.emit()
+    EventBus.player_profile_changed.emit(RPGState.profile.duplicate(true))
     return true
 
 func equip_relic(item_id: String) -> bool:
@@ -42,9 +46,13 @@ func equip_relic(item_id: String) -> bool:
     var owned: Array = RPGState.profile.get("owned_relics", [])
     if not owned.has(item_id) or int(RPGState.profile.get("level", 1)) < int(EQUIPMENT[item_id].get("unlock_level", 1)):
         return false
+    var previous: Dictionary = RPGState.profile.duplicate(true)
     RPGState.profile["equipped_relic"] = item_id
-    RPGState.save_slot(RPGState.active_slot)
+    if not RPGState.save_slot(RPGState.active_slot):
+        RPGState.profile = previous
+        return false
     RPGState.state_changed.emit()
+    EventBus.player_profile_changed.emit(RPGState.profile.duplicate(true))
     return true
 
 func get_bonus_stats() -> Dictionary:
