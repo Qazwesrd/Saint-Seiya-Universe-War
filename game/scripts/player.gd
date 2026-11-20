@@ -25,6 +25,9 @@ var camera_node: Camera3D
 var camera_pitch := -9.0
 var auto_target_timer := 0.0
 var body_mat: StandardMaterial3D
+var armor_root: Node3D
+var armor_base_color := Color(0.18, 0.52, 0.95)
+var visual_class_id := ""
 var is_mounted := false
 var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
@@ -74,6 +77,8 @@ func _ready() -> void:
     head.position.y = 1.95
     head.material_override = body_mat
     add_child(head)
+    _build_armor_visuals()
+    RPGState.state_changed.connect(_on_rpg_state_changed)
     mount_indicator = MeshInstance3D.new()
     var mount_ring := TorusMesh.new()
     mount_ring.inner_radius = 0.48
@@ -98,6 +103,86 @@ func _ready() -> void:
     camera_node.current = true
     SettingsManager.settings_changed.connect(_on_camera_setting_changed)
     _apply_camera_settings()
+func _on_rpg_state_changed() -> void:
+    var current_class := str(RPGState.profile.get("class_id", "pegasus"))
+    if current_class != visual_class_id:
+        _build_armor_visuals()
+
+func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72) -> MeshInstance3D:
+    var piece := MeshInstance3D.new()
+    piece.mesh = mesh
+    piece.position = piece_position
+    piece.scale = piece_scale
+    var material := StandardMaterial3D.new()
+    material.albedo_color = piece_color
+    material.metallic = metallic
+    material.roughness = 0.24
+    material.emission_enabled = true
+    material.emission = piece_color * 0.06
+    piece.material_override = material
+    armor_root.add_child(piece)
+    return piece
+
+func _build_armor_visuals() -> void:
+    if is_instance_valid(armor_root):
+        armor_root.queue_free()
+    armor_root = Node3D.new()
+    armor_root.name = "ProceduralSaintArmor"
+    add_child(armor_root)
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
+    armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
+    visual_class_id = class_id
+    if is_instance_valid(body_mat):
+        body_mat.albedo_color = armor_base_color
+        body_mat.metallic = 0.62
+        body_mat.emission = armor_base_color * 0.08
+    var bright := armor_base_color.lightened(0.32)
+    var dark := armor_base_color.darkened(0.42)
+    var chest := BoxMesh.new()
+    chest.size = Vector3(0.72, 0.54, 0.20)
+    _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, 0.82)
+    var abdomen := BoxMesh.new()
+    abdomen.size = Vector3(0.56, 0.28, 0.18)
+    _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, 0.78)
+    var shoulder_mesh := SphereMesh.new()
+    shoulder_mesh.radius = 0.28
+    shoulder_mesh.height = 0.42
+    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), Vector3(1.0, 0.82, 1.08), bright, 0.86)
+    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), Vector3(1.0, 0.82, 1.08), bright, 0.86)
+    var arm_mesh := CylinderMesh.new()
+    arm_mesh.top_radius = 0.13
+    arm_mesh.bottom_radius = 0.17
+    arm_mesh.height = 0.48
+    _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, 0.74)
+    _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, 0.74)
+    var shin_mesh := BoxMesh.new()
+    shin_mesh.size = Vector3(0.24, 0.48, 0.18)
+    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, 0.78)
+    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, 0.78)
+    var belt_mesh := TorusMesh.new()
+    belt_mesh.inner_radius = 0.29
+    belt_mesh.outer_radius = 0.36
+    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), bright, 0.9)
+    var crest_mesh := ConeMesh.new()
+    crest_mesh.bottom_radius = 0.13
+    crest_mesh.top_radius = 0.015
+    crest_mesh.height = 0.34
+    _add_armor_piece(crest_mesh, Vector3(0.0, 2.16, 0.02), Vector3.ONE, bright, 0.84)
+    var emblem_mesh := SphereMesh.new()
+    emblem_mesh.radius = 0.10
+    emblem_mesh.height = 0.18
+    _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), Color(1.0, 0.82, 0.32), 0.95)
+    var tier := str(class_data.get("tier", ""))
+    if class_id == "tenkishi" or tier == "神明":
+        var wing_mesh := BoxMesh.new()
+        wing_mesh.size = Vector3(0.18, 1.0, 0.12)
+        var wing_scale := Vector3(1.0, 1.35, 1.0) if class_id == "tenkishi" else Vector3(1.0, 1.0, 1.0)
+        var left_wing := _add_armor_piece(wing_mesh, Vector3(-0.55, 1.78, 0.25), wing_scale, bright, 0.7)
+        left_wing.rotation.z = -0.42
+        var right_wing := _add_armor_piece(wing_mesh, Vector3(0.55, 1.78, 0.25), wing_scale, bright, 0.7)
+        right_wing.rotation.z = 0.42
+
 func _on_camera_setting_changed(section: String, _key: String, _value: Variant) -> void:
     if section == "camera":
         _apply_camera_settings()
@@ -393,7 +478,7 @@ func _flash(color: Color) -> void:
     body_mat.albedo_color = color
     get_tree().create_timer(0.16).timeout.connect(func():
         if is_instance_valid(body_mat):
-            body_mat.albedo_color = Color(0.18, 0.52, 0.95)
+            body_mat.albedo_color = armor_base_color
     )
 
 func toggle_mount() -> void:
