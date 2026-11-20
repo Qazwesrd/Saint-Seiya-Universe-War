@@ -333,7 +333,8 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "汲取生命，恢复了部分体力")
         "death_burst":
-            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.18, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.18, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动死亡追加斩击")
         "tidal_pull":
@@ -345,11 +346,13 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "掀起潮汐，将目标拉向自身")
         "solar_flare":
-            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.16, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.16, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "释放太阳神追加光爆")
         "lightning_followup":
-            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.22, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.22, global_position)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "召来雷霆追击")
         "void_drain":
@@ -363,12 +366,14 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
                 game.call("show_notice", display_name + "撕裂小宇宙护盾")
         "gravity_crush":
             _drain_target_cosmos(target, 6.0)
-            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.10, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.10, global_position)
         "judge_combo":
             if target.has_method("receive_damage"):
                 target.call("receive_damage", base_damage * 0.16, global_position)
         "judgment_combo":
-            if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.20, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.20, global_position)
         "wing_slam":
             if target.has_method("apply_enemy_knockback"):
                 var slam_direction := target.global_position - global_position
