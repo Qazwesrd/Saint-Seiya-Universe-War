@@ -283,9 +283,13 @@ func _add_chapter_atmosphere(chapter_id: String, primary: Color) -> void:
         return
     # CPUParticles3D keeps the weather effect compatible with the project's
     # GLES3/Compatibility renderer and avoids requiring GPU particle support.
+    if not bool(SettingsManager.get_value("graphics", "effects", true)):
+        return
     var weather := CPUParticles3D.new()
     weather.name = "ChapterAtmosphere"
-    weather.amount = 42 if chapter_id in ["heaven", "original_final"] else 56
+    var quality := str(SettingsManager.get_value("graphics", "quality", "medium"))
+    var high_density := 42 if chapter_id in ["heaven", "original_final"] else 56
+    weather.amount = 16 if quality == "low" else (30 if quality == "medium" else high_density)
     weather.lifetime = 4.2
     weather.preprocess = 1.0
     weather.explosiveness = 0.0
