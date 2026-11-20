@@ -591,6 +591,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         status_power = 0.18
 
     var is_support_ability: bool = SkillSystem.is_support_ability(ability)
+    var effect_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
 
     # Core classes retain their signature control identities.
     if not is_support_ability and class_id == "tenmou":
@@ -646,6 +647,29 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         elif class_id == "tenmou" and not is_support_ability and enemy.has_method("apply_hit_reaction"):
             enemy.call("apply_hit_reaction", offset.normalized(), 2.8, 0.0, 0.65)
             impacted = true
+
+        if not is_support_ability:
+            var extra_hits: int = int(effect_profile.get("extra_hits", 0))
+            var extra_hit_ratio: float = float(effect_profile.get("extra_hit_ratio", 0.0))
+            var follow_up_multiplier: float = 1.0
+            if enemy.has_method("is_controlled") and bool(enemy.call("is_controlled")):
+                follow_up_multiplier += float(effect_profile.get("controlled_bonus", 0.0))
+            var max_enemy_health: float = maxf(1.0, float(enemy.get("max_health")))
+            var enemy_health: float = float(enemy.get("health"))
+            var execute_threshold: float = float(effect_profile.get("execute_threshold", 0.0))
+            if execute_threshold > 0.0 and enemy_health / max_enemy_health <= execute_threshold:
+                follow_up_multiplier += float(effect_profile.get("execute_bonus", 0.0))
+            var follow_up_damage: float = attack_power * extra_hit_ratio * follow_up_multiplier * SkillSystem.get_skill_damage_multiplier(class_id)
+            for hit_index in range(extra_hits):
+                if float(enemy.get("health")) <= 0.0:
+                    break
+                if follow_up_damage > 0.0 and enemy.has_method("take_damage"):
+                    enemy.call("take_damage", follow_up_damage)
+                    impacted = true
+            var stagger_bonus: float = float(effect_profile.get("stagger_bonus", 0.0))
+            if stagger_bonus > 0.0 and enemy.has_method("apply_hit_reaction"):
+                enemy.call("apply_hit_reaction", offset.normalized(), 3.5 + stagger_bonus * 4.0, 0.8 if str(effect_profile.get("action", "")) == "throw" else 0.0, 0.35 + stagger_bonus)
+                impacted = true
 
         if impacted:
             affected += 1
