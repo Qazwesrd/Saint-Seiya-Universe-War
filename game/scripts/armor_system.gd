@@ -24,67 +24,82 @@ func get_state() -> Dictionary:
 func get_current_stage_name() -> String:
  var data := _ensure_data()
  return str(STAGES.get(str(data.get("current_stage","bronze")),STAGES["bronze"])["name"])
-func unlock_all_stages() -> void:
+func unlock_all_stages() -> bool:
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
  data["unlocked_stages"] = STAGES.keys()
  RPGState.profile["armor_state"] = data
- _save()
+ return _commit(previous)
 func equip_stage(stage_id: String) -> bool:
+ if not STAGES.has(stage_id):
+  return false
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
- if not STAGES.has(stage_id) or not (stage_id in data.get("unlocked_stages",[])): return false
+ if not (stage_id in data.get("unlocked_stages", [])):
+  return false
  data["current_stage"] = stage_id
  RPGState.profile["armor_state"] = data
- _save()
- return true
+ return _commit(previous)
 func repair_all() -> bool:
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
- var durability: Dictionary = data.get("durability",{})
+ var durability: Dictionary = data.get("durability", {}).duplicate(true)
  var missing := 0
- for part in PARTS: missing += 100 - int(durability.get(part,100))
- if missing <= 0: return false
+ for part in PARTS:
+  missing += 100 - int(durability.get(part, 100))
+ if missing <= 0:
+  return false
  var cost := missing * 2
- if int(RPGState.profile.get("currency",0)) < cost: return false
- RPGState.profile["currency"] = int(RPGState.profile.get("currency",0)) - cost
- for part in PARTS: durability[part] = 100
+ if int(RPGState.profile.get("currency", 0)) < cost:
+  return false
+ RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
+ for part in PARTS:
+  durability[part] = 100
  data["durability"] = durability
  RPGState.profile["armor_state"] = data
- _save()
- return true
+ return _commit(previous)
 func damage_random_part(amount: int = 8) -> void:
  damage_ticks += 1
- if damage_ticks % 5 != 0: return
+ if damage_ticks % 5 != 0:
+  return
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
- var durability: Dictionary = data.get("durability",{})
- var part: String = PARTS[randi_range(0,PARTS.size()-1)]
- durability[part] = maxi(0,int(durability.get(part,100))-maxi(1,amount))
+ var durability: Dictionary = data.get("durability", {}).duplicate(true)
+ var part: String = PARTS[randi_range(0, PARTS.size() - 1)]
+ durability[part] = maxi(0, int(durability.get(part, 100)) - maxi(1, amount))
  data["durability"] = durability
  RPGState.profile["armor_state"] = data
- _save()
+ _commit(previous)
 func enhance_part(part: String) -> bool:
- if not (part in PARTS): return false
+ if not (part in PARTS):
+  return false
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
- var levels: Dictionary = data.get("levels",{})
- var level := int(levels.get(part,0))
- if level >= 10: return false
- var cost := (level+1)*180
- if int(RPGState.profile.get("currency",0)) < cost: return false
- RPGState.profile["currency"] = int(RPGState.profile.get("currency",0))-cost
- levels[part] = level+1
+ var levels: Dictionary = data.get("levels", {}).duplicate(true)
+ var level := int(levels.get(part, 0))
+ if level >= 10:
+  return false
+ var cost := (level + 1) * 180
+ if int(RPGState.profile.get("currency", 0)) < cost:
+  return false
+ RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
+ levels[part] = level + 1
  data["levels"] = levels
  RPGState.profile["armor_state"] = data
- _save()
- return true
+ return _commit(previous)
 func awaken_current() -> bool:
+ var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
- var stage := str(data.get("current_stage","bronze"))
- if not ["gold","god_cloth","god_armor"].has(stage) or bool(data.get("awakened",false)): return false
+ var stage := str(data.get("current_stage", "bronze"))
+ if not ["gold", "god_cloth", "god_armor"].has(stage) or bool(data.get("awakened", false)):
+  return false
  var cost := 5000 if stage == "gold" else 12000
- if int(RPGState.profile.get("currency",0)) < cost: return false
- RPGState.profile["currency"] = int(RPGState.profile.get("currency",0))-cost
+ if int(RPGState.profile.get("currency", 0)) < cost:
+  return false
+ RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
  data["awakened"] = true
  RPGState.profile["armor_state"] = data
- _save()
- return true
+ return _commit(previous)
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_data()
  var stage_id := str(data.get("current_stage","bronze"))
@@ -97,6 +112,9 @@ func get_bonus_stats() -> Dictionary:
  for part in PARTS: level_sum += int(levels.get(part,0))
  var awaken := 1.25 if bool(data.get("awakened",false)) else 1.0
  return {"attack":(float(base["attack"])+float(level_sum))*condition*awaken,"defense":(float(base["defense"])+float(level_sum)*0.8)*condition*awaken,"max_health":float(base["hp"])*condition*awaken}
-func _save() -> void:
- RPGState.state_changed.emit()
- RPGState.save_slot(RPGState.active_slot)
+func _commit(previous: Dictionary) -> bool:
+ if RPGState.save_slot(RPGState.active_slot):
+  RPGState.state_changed.emit()
+  return true
+ RPGState.profile = previous
+ return false
