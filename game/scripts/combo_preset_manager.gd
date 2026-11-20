@@ -24,7 +24,7 @@ func get_active_preset(class_id: String) -> Dictionary:
     return presets[0].duplicate(true) if not presets.is_empty() else {}
 
 func save_preset(class_id: String, preset_id: String, preset_name: String, steps: Array, trigger_mode: String = "按顺序点击", input_window: float = 0.65) -> bool:
-    if class_id.is_empty() or preset_id.strip_edges().is_empty() or preset_name.strip_edges().is_empty():
+    if not SkillSystem.has_class(class_id) or preset_id.strip_edges().is_empty() or preset_name.strip_edges().is_empty():
         return false
     if steps.is_empty() or steps.size() > MAX_STEPS or not VALID_MODES.has(trigger_mode):
         return false
@@ -69,6 +69,8 @@ func save_preset(class_id: String, preset_id: String, preset_name: String, steps
     return true
 
 func set_active_preset(class_id: String, preset_id: String) -> bool:
+    if not SkillSystem.has_class(class_id):
+        return false
     var exists := false
     for preset in get_presets(class_id):
         if str(preset.get("id", "")) == preset_id:
@@ -86,6 +88,8 @@ func set_active_preset(class_id: String, preset_id: String) -> bool:
     return true
 
 func delete_preset(class_id: String, preset_id: String) -> bool:
+    if not SkillSystem.has_class(class_id):
+        return false
     var previous: Dictionary = RPGState.profile.duplicate(true)
     var all_presets: Dictionary = RPGState.profile.get("combo_presets", {}).duplicate(true)
     var class_presets: Array = all_presets.get(class_id, []).duplicate(true)
@@ -108,6 +112,8 @@ func delete_preset(class_id: String, preset_id: String) -> bool:
     return true
 
 func _is_step_available(class_id: String, step: String) -> bool:
+    if not SkillSystem.has_class(class_id):
+        return false
     if BUILTIN_STEPS.has(step):
         return true
     return SkillSystem.is_ability_learned(class_id, step)

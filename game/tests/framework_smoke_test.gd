@@ -719,6 +719,11 @@ func _run_tests() -> void:
 	assert(RPGState.restore_backup(3) and RPGState.has_slot(3), "restore character slot backup")
 	assert(RPGState.active_slot == 3, "restoring a backup reloads its character slot")
 
+	assert(not SkillSystem.has_class("unknown_class"), "unknown class ids are rejected")
+	assert(SkillSystem.get_class_skill("unknown_class").is_empty(), "unknown class does not silently receive Pegasus skill data")
+	assert(SkillSystem.get_ability_catalog("unknown_class").is_empty(), "unknown class has no inherited ability catalog")
+	assert(not SkillSystem.can_afford_class_skill("unknown_class", 999.0), "unknown class cannot pass skill affordability checks")
+	assert(not ComboPresetManager.save_preset("unknown_class", "invalid_class_combo", "非法职业连招", ["basic_attack_1"]), "reject combo presets for unknown classes")
 	var combo_steps: Array = ["basic_attack_1", "pegasus_skill_1", "dodge"]
 	assert(ComboPresetManager.save_preset("pegasus", "smoke_combo", "测试连招", combo_steps), "save player combo preset")
 	assert(ComboPresetManager.get_active_preset("pegasus").get("steps", []) == combo_steps, "read active combo preset")

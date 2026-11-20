@@ -1016,12 +1016,23 @@ const HEAVENLY_ADVANCED_SKILLS := {
 const ARMOR_STAGES := ["青铜圣衣", "白银圣衣", "黄金圣衣", "海界鳞衣", "冥衣", "神圣衣", "主神圣衣"]
 const ARMOR_PARTS := ["头盔", "胸甲", "护腕", "腰甲", "腿甲"]
 
+func has_class(class_id: String) -> bool:
+    return HEAVENLY_CLASS_SKILLS.has(class_id) or EXTENDED_DIVINE_CLASS_SKILLS.has(class_id) or DIVINE_CLASS_SKILLS.has(class_id) or CLASS_SKILLS.has(class_id)
+
 func get_class_skill(class_id: String) -> Dictionary:
-    return HEAVENLY_CLASS_SKILLS.get(class_id, EXTENDED_DIVINE_CLASS_SKILLS.get(class_id, DIVINE_CLASS_SKILLS.get(class_id, CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"])))).duplicate(true)
+    if HEAVENLY_CLASS_SKILLS.has(class_id):
+        return HEAVENLY_CLASS_SKILLS[class_id].duplicate(true)
+    if EXTENDED_DIVINE_CLASS_SKILLS.has(class_id):
+        return EXTENDED_DIVINE_CLASS_SKILLS[class_id].duplicate(true)
+    if DIVINE_CLASS_SKILLS.has(class_id):
+        return DIVINE_CLASS_SKILLS[class_id].duplicate(true)
+    if CLASS_SKILLS.has(class_id):
+        return CLASS_SKILLS[class_id].duplicate(true)
+    return {}
 
 func can_afford_class_skill(class_id: String, current_cosmos: float) -> bool:
     var skill_data := get_class_skill(class_id)
-    return current_cosmos >= float(skill_data.get("cost", 18))
+    return not skill_data.is_empty() and current_cosmos >= float(skill_data.get("cost", 18))
 
 func get_class_skill_catalog() -> Array:
     var result: Array = []
@@ -1352,8 +1363,10 @@ func is_support_ability(ability: Dictionary) -> bool:
 
 func get_ability_catalog(class_id: String) -> Array:
     var data := get_class_skill(class_id)
+    if data.is_empty():
+        return []
     var result: Array = data.get("abilities", []).duplicate(true)
-    result.append_array(HEAVENLY_ADVANCED_SKILLS.get(class_id, EXTENDED_DIVINE_ADVANCED_SKILLS.get(class_id, DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS["pegasus"])))).duplicate(true))
+    result.append_array(HEAVENLY_ADVANCED_SKILLS.get(class_id, EXTENDED_DIVINE_ADVANCED_SKILLS.get(class_id, DIVINE_ADVANCED_SKILLS.get(class_id, ADVANCED_CLASS_SKILLS.get(class_id, [])))).duplicate(true))
     # The first six core skills predate branch metadata. Normalize the public
     # catalog so every skill has a usable branch without rewriting all source tables.
     for ability in result:
