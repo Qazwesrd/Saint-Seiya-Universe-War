@@ -466,10 +466,10 @@ func _spawn_loot_pickup(at: Vector3, drop: Dictionary) -> void:
     add_child(pickup)
 
 func _on_graphics_setting_changed(section: String, key: String, value: Variant) -> void:
-    if section == "graphics" and key == "shadows":
+    if section == "graphics" and key in ["shadows", "quality"]:
         var sun := get_node_or_null("DirectionalLight3D") as DirectionalLight3D
         if is_instance_valid(sun):
-            sun.shadow_enabled = bool(value)
+            sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
 
 func spawn_effect(at: Vector3, effect_color: Color, radius: float) -> void:
     if not bool(SettingsManager.get_value("graphics", "effects", true)):
