@@ -1,5 +1,6 @@
 extends Node
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
+const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
 ## Headless scene-based smoke test so project AutoLoads are initialized normally.
 
 func _ready() -> void:
