@@ -124,6 +124,13 @@ func _run_tests() -> void:
 	QuestManager.defeated_normal = 1
 	QuestManager._save_progress()
 	var first_mission_id := CampaignDatabase.get_first_mission_id()
+	var sanctuary_chapter: Dictionary = CampaignDatabase.get_chapter("sanctuary_twelve_houses")
+	assert(sanctuary_chapter.get("missions", []).size() == 14, "Sanctuary arc has ordered story missions")
+	assert(str(CampaignDatabase.get_mission("s12_002").get("type", "")) == "story", "Mu chapter is a story interaction, not a forced boss fight")
+	assert(str(CampaignDatabase.get_mission("s12_008").get("type", "")) == "story", "Libra chapter is support story, not a forced boss fight")
+	assert(str(CampaignDatabase.get_mission("s12_010").get("type", "")) == "story", "Sagittarius legacy is a story trial, not a living boss fight")
+	for archetype_id in ["gold_taurus", "gemini_illusion", "gold_cancer", "gold_leo_controlled", "gold_virgo", "gold_scorpio", "gold_capricorn", "gold_aquarius", "gold_pisces", "pope_saga"]:
+		assert(EnemyDatabase.has_archetype(archetype_id), "Sanctuary encounter archetype: " + archetype_id)
 	assert(not CampaignManager.accept_mission("gw_002"), "cannot skip the first story mission")
 	assert(CampaignManager.accept_mission(first_mission_id), "save campaign progress to character slot")
 	assert(RPGState.create_new_slot(2), "create second isolated character slot")
