@@ -5,7 +5,7 @@ signal settings_loaded
 const CONFIG_PATH := "user://settings.cfg"
 const DEFAULTS := {
 	"graphics": {"quality": "medium", "fps_limit": 60, "render_scale": 1.0, "shadows": true, "effects": true},
-	"audio": {"master": 1.0, "music": 0.75, "sfx": 1.0, "ui": 0.8},
+	"audio": {"master": 1.0, "music": 0.75, "ambience": 0.65, "sfx": 1.0, "ui": 0.8},
 	"camera": {"distance": 7.5, "sensitivity": 1.0, "invert_y": false},
 	"controls": {"vibration": true, "auto_pickup": true, "left_handed": false, "button_scale": 1.0},
 	"gameplay": {"auto_target": false, "damage_numbers": true, "show_tutorials": true},
