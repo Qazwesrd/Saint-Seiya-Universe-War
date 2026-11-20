@@ -101,6 +101,7 @@ def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=
     group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
     modifier = obj.modifiers.new("Armature", "ARMATURE")
     modifier.object = rig
+    obj.parent = rig
     return obj
 
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
@@ -120,6 +121,7 @@ def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12
     group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
     modifier = obj.modifiers.new("Armature", "ARMATURE")
     modifier.object = rig
+    obj.parent = rig
     return obj
 
 def join_meshes(objects, name, rig):
@@ -340,6 +342,7 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
                 raise RuntimeError(f"Animation clip has invalid sampler: {clip_name}")
             if target.get("path") not in ("translation", "rotation", "scale", "weights"):
                 raise RuntimeError(f"Animation clip has invalid target path: {clip_name}")
+    clip_names = sorted(by_clip_name)
     print("Validated GLB:", path.name, "nodes=", len(node_names), "meshes=", len(document.get("meshes", [])), "clips=", len(clip_names))
 
 def main():
