@@ -789,6 +789,7 @@ func _spawn_skill_projectile(class_id: String, ability: Dictionary, homing: bool
     projectile.set("speed", float(profile.get("projectile_speed", 12.0)))
     projectile.set("homing_enabled", homing)
     var ability_type := str(ability.get("type", ""))
+    projectile.set("status", "slow" if homing else "")
     if "火" in ability_type or "灼烧" in ability_type or "烈焰" in str(ability.get("name", "")):
         projectile.set("status", "burn")
         projectile.set("status_duration", 3.0)
@@ -797,6 +798,10 @@ func _spawn_skill_projectile(class_id: String, ability: Dictionary, homing: bool
         projectile.set("status", "freeze")
         projectile.set("status_duration", 1.2)
         projectile.set("status_power", 0.0)
+    elif "削弱" in ability_type or "破甲" in ability_type or "易伤" in ability_type:
+        projectile.set("status", "weaken")
+        projectile.set("status_duration", 2.5)
+        projectile.set("status_power", 0.14)
     projectile.set("damage", _get_ability_actor_damage(class_id, float(profile.get("projectile_damage_ratio", 1.15))))
     projectile.set("projectile_color", class_data.get("color", Color(0.45, 0.8, 1.0)))
     projectile.global_position = player.global_position + (-player.global_transform.basis.z * 1.2) + Vector3.UP * 1.2
