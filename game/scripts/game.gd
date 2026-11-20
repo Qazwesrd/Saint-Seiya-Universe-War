@@ -34,7 +34,10 @@ func _ready() -> void:
     hud = HUDScript.new()
     hud.set("game", self)
     add_child(hud)
-    hud.call("set_notice", "按主线剧情顺序完成任务；当前目标：" + str(CampaignManager.get_active_mission().get("name", "与引导员交谈")))
+    if bool(SettingsManager.get_value("gameplay", "show_tutorials", true)):
+        hud.call("set_notice", "左侧摇杆移动，右侧拖动镜头；使用普攻、技能和闪避战斗。当前目标：" + str(CampaignManager.get_active_mission().get("name", "与引导员交谈")))
+    else:
+        hud.call("set_notice", "当前主线目标：" + str(CampaignManager.get_active_mission().get("name", "与引导员交谈")))
     _refresh_story_encounter()
 func _build_world() -> void:
     var env_node := WorldEnvironment.new()
@@ -49,7 +52,7 @@ func _build_world() -> void:
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-52, -28, 0)
     sun.light_energy = 1.3
-    sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true))
+    sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
     SettingsManager.settings_changed.connect(_on_graphics_setting_changed)
     add_child(sun)
     var floor_body := StaticBody3D.new()
