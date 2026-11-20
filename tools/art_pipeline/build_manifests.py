@@ -42,6 +42,12 @@ def manifest(kind: str, asset_id: str) -> dict:
             "icon": {"path": "icons/icon.png", "status": "not_created"},
             "rig_compatibility": "character_skeleton"
         })
+    elif kind == "enemy":
+        data.update({
+            "model": {"path": "model/enemy.glb", "status": "not_created", "format": "glTF 2.0 binary"},
+            "portrait": {"path": "portraits/portrait.png", "status": "not_created"},
+            "skeleton_compatibility": "humanoid_base"
+        })
     else:
         data.update({
             "effect_scene": {"path": "effect.tscn", "status": "not_created"},
@@ -59,6 +65,9 @@ def expected() -> dict[Path, dict]:
         result[GAME / "assets/characters" / asset_id / "manifest.json"] = manifest("character", asset_id)
     for asset_id in equipment:
         result[GAME / "assets/armors" / asset_id / "manifest.json"] = manifest("armor", asset_id)
+    enemies = catalog_ids(GAME / "scripts/enemy_database.gd", "const ARCHETYPES := {")
+    for asset_id in enemies:
+        result[GAME / "assets/enemies" / asset_id / "manifest.json"] = manifest("enemy", asset_id)
     for asset_id in ELEMENTS:
         result[GAME / "assets/vfx" / asset_id / "manifest.json"] = manifest("vfx", asset_id)
     return result

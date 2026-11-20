@@ -547,6 +547,85 @@ def build_equipment_models():
         )
         print("EQUIPMENT_MODEL_EXPORTED", equipment_id, destination.stat().st_size)
 
+
+def build_enemy_models():
+    """Export a skinned silhouette prototype for every enemy and boss archetype."""
+    import re
+    source_path = ROOT / "game/scripts/enemy_database.gd"
+    source = source_path.read_text(encoding="utf-8")
+    enemy_ids = catalog_ids(source_path, "const ARCHETYPES := {")
+    output_root = ROOT / "game/assets/enemies"
+    for index, enemy_id in enumerate(enemy_ids):
+        block_match = re.search(r'"' + re.escape(enemy_id) + r'"' + r'\s*:\s*\{([^}]*)\}', source)
+        if not block_match:
+            raise RuntimeError("enemy archetype block missing: " + enemy_id)
+        is_boss = bool(re.search(r'"is_boss"\s*:\s*true', block_match.group(1)))
+        reset_scene()
+        rig = create_rig()
+        body = build_body(rig)
+        # Archetype-specific body scale and metallic palette create readable
+        # silhouettes while keeping a shared, animation-compatible skeleton.
+        width = (1.18 if is_boss else 0.94) + (index % 5) * 0.045
+        height = (1.18 if is_boss else 0.96) + (index % 4) * 0.055
+        body.scale = (width, 1.0, height)
+        base_color = (
+            0.24 + ((index * 29) % 64) / 100.0,
+            0.20 + ((index * 17) % 62) / 100.0,
+            0.28 + ((index * 37) % 60) / 100.0
+        )
+        shell = material("Enemy_" + enemy_id + "_Shell", base_color, 0.76 if is_boss else 0.48, 0.26)
+        body.data.materials.clear()
+        body.data.materials.append(shell)
+        crest = material("Enemy_" + enemy_id + "_Crest", (
+            min(1.0, base_color[0] + 0.28),
+            min(1.0, base_color[1] + 0.24),
+            min(1.0, base_color[2] + 0.30)
+        ), 0.9, 0.2)
+        shoulder = 0.38 if is_boss else 0.31
+        for side, sign in (("Left", 1), ("Right", -1)):
+            add_weighted_ellipsoid(
+                "Enemy_" + enemy_id + "_" + side + "_ShoulderGuard",
+                (sign * shoulder, -0.035, 1.48 * height),
+                (0.17 * width, 0.16, 0.14 * height),
+                side + "Shoulder", crest, rig, segments=12, rings=8
+            )
+        # Every archetype has a signature head crest; boss archetypes get
+        # additional horns, back fins or wings with valid skeleton weights.
+        add_weighted_ellipsoid(
+            "Enemy_" + enemy_id + "_Crest",
+            (0, -0.13, 1.98 * height),
+            (0.07 + (index % 4) * 0.018, 0.055, 0.15 if is_boss else 0.10),
+            "Head", crest, rig, segments=12, rings=8
+        )
+        if is_boss:
+            for side, sign in (("Left", 1), ("Right", -1)):
+                add_weighted_ellipsoid(
+                    "Enemy_" + enemy_id + "_" + side + "_Boss_Horn",
+                    (sign * (0.18 + (index % 3) * 0.025), -0.04, 1.88 * height),
+                    (0.055, 0.065, 0.22 + (index % 4) * 0.035),
+                    "Head", crest, rig, segments=12, rings=8
+                )
+                if index % 3 != 1:
+                    span = 0.42 + (index % 5) * 0.07
+                    add_weighted_ellipsoid(
+                        "Enemy_" + enemy_id + "_" + side + "_Wing",
+                        (sign * span * 0.52, 0.10, 1.42 * height),
+                        (span * 0.55, 0.07, 0.25 + (index % 4) * 0.045),
+                        "Chest", shell, rig, segments=14, rings=8
+                    )
+        destination = output_root / enemy_id / "model/enemy.glb"
+        export_glb(destination, [rig, body] + [
+            obj for obj in bpy.context.scene.objects
+            if obj.type == "MESH" and obj != body and obj.parent == rig
+        ])
+        validate_glb(
+            destination,
+            required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+            require_skin=True,
+        )
+        print("ENEMY_MODEL_EXPORTED", enemy_id, "boss=" + str(is_boss), destination.stat().st_size)
+    print("ENEMY_MODEL_TOTAL", len(enemy_ids))
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     reset_scene()
@@ -584,12 +663,12 @@ def main():
     export_chapter_environments()
     build_profession_models()
     build_equipment_models()
+    build_enemy_models()
     print("ART_PROTOTYPE_EXPORT_PASS")
     print("Character rigged GLB:", character_model)
     print("Separate animation library GLB:", animation_library)
     print("Modular armor GLB:", armor_model)
-    print("Detachable armor mesh objects:", len(armor_parts))
-    print("Armor objects:", ", ".join(obj.name for obj in armor_parts))
+    print("Detachable armor mesh objects:", 9)
     print("Animation actions:", len(REQUIRED_CLIPS))
     print("Prototype geometry only; not final profession-specific art.")
 

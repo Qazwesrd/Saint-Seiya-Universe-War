@@ -40,6 +40,8 @@ jobs:
           test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
           test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
           test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
+          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
+          test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 50
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4
         with:
@@ -52,6 +54,8 @@ jobs:
             game/assets/characters/*/model/character.glb
             game/assets/characters/*/animations/animation_library.glb
             game/assets/armors/*/model/armor.glb
+            game/assets/enemies/*/model/enemy.glb
+            game/assets/enemies/*/manifest.json
             game/assets/characters/*/manifest.json
             game/assets/armors/*/manifest.json
           if-no-files-found: error
