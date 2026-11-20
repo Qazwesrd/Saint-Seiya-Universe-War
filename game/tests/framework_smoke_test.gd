@@ -64,6 +64,14 @@ func _run_tests() -> void:
 	forge_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(load("res://scripts/loot_pickup.gd") != null, "manual offline loot pickup actor is present")
+	var armor_palette_ids := ["bronze", "silver", "gold", "sea_scale", "surplice", "god_cloth", "god_armor"]
+	for armor_palette_id in armor_palette_ids:
+		var armor_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(armor_palette_id)
+		assert(armor_palette.has("metal") and armor_palette.has("trim"), "armor stage has metal and trim colors: " + armor_palette_id)
+		assert(float(armor_palette.get("metallic", -1.0)) >= 0.0 and float(armor_palette.get("metallic", 1.1)) <= 1.0, "armor stage metallic value is bounded: " + armor_palette_id)
+		var awakened_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(armor_palette_id, true)
+		assert(float(awakened_palette.get("glow", 0.0)) >= float(armor_palette.get("glow", 0.0)), "awakening increases or preserves armor glow: " + armor_palette_id)
+	assert(armor_palette_ids.size() == ArmorSystem.get_stage_ids().size(), "visual palettes cover every armor progression stage")
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	var animation_profile_count := 0
 	for class_entry in SkillSystem.get_class_skill_catalog():
@@ -98,7 +106,7 @@ func _run_tests() -> void:
 	world_theme_test_root.add_child(world_theme_test)
 	for theme_id in ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]:
 		assert(world_theme_test.apply_theme(theme_id), "campaign world theme applies: " + theme_id)
-		assert(world_theme_test.decor_root.get_child_count() >= 16, "chapter environment builds visible structures: " + theme_id)
+		assert(world_theme_test.decor_root.get_child_count() >= 20, "chapter environment builds visible structures: " + theme_id)
 	assert(test_world_environment.environment.background_mode == Environment.BG_COLOR, "chapter theme configures its own sky background")
 	world_theme_test_root.queue_free()
 	var hud_layout_test = preload("res://scripts/hud.gd").new()
