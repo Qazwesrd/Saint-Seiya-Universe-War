@@ -1280,6 +1280,8 @@ func get_divine_support_profile(class_id: String) -> Dictionary:
     return profile
 
 func get_ability_effect_profile(ability: Dictionary) -> Dictionary:
+    if ability.is_empty():
+        return {}
     var ability_type := str(ability.get("type", "攻击"))
     var ability_name := str(ability.get("name", ""))
     var profile := {
@@ -1491,6 +1493,14 @@ func reset_skill_tree(class_id: String) -> bool:
     RPGState.profile["skill_slots"] = slots
     RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - 500
     return _commit_profile(previous)
+func is_valid_class_ability(class_id: String, ability_id: String) -> bool:
+    if not has_class(class_id) or ability_id.strip_edges().is_empty():
+        return false
+    return not get_ability_data(class_id, ability_id).is_empty()
+
+func is_ability_available_for_cast(class_id: String, ability_id: String) -> bool:
+    return is_valid_class_ability(class_id, ability_id) and is_ability_learned(class_id, ability_id)
+
 func get_ability_data(class_id: String, ability_id: String) -> Dictionary:
     for ability in get_ability_catalog(class_id):
         if str(ability.get("id", "")) == ability_id:

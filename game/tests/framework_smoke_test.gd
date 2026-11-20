@@ -471,6 +471,8 @@ func _run_tests() -> void:
 		var profile_class_id := str(class_profile.get("id", ""))
 		for catalog_ability in SkillSystem.get_ability_catalog(profile_class_id):
 			var combat_profile: Dictionary = SkillSystem.get_ability_effect_profile(catalog_ability)
+			var combat_action := str(combat_profile.get("action", ""))
+			assert(combat_action in ["strike", "summon", "field", "trap", "homing_projectile", "projectile", "multi_hit", "combo_strike", "pursuit", "throw", "heavy_strike"], profile_class_id + " ability resolves to a supported combat action")
 			assert(str(combat_profile.get("action", "")).strip_edges() != "", profile_class_id + " ability has a normalized combat action")
 			assert(int(combat_profile.get("extra_hits", -1)) >= 0 and int(combat_profile.get("extra_hits", 99)) <= 3, profile_class_id + " ability follow-up hit count is bounded")
 			assert(float(combat_profile.get("extra_hit_ratio", -1.0)) >= 0.0 and float(combat_profile.get("extra_hit_ratio", 1.0)) <= 0.60, profile_class_id + " ability follow-up damage is bounded")
@@ -486,6 +488,13 @@ func _run_tests() -> void:
 			profiled_ability_count += 1
 	assert(profiled_ability_count == 768, "all 768 abilities resolve to a combat profile")
 	assert(field_action_count > 0 and trap_action_count > 0 and homing_action_count > 0 and ranged_action_count > 0, "catalog includes real field, trap, ranged and homing actions")
+	assert(SkillSystem.is_valid_class_ability("pegasus", "pegasus_skill_1"), "a registered class ability resolves for its owning class")
+	assert(not SkillSystem.is_valid_class_ability("dragon", "pegasus_skill_1"), "a class cannot resolve another class's ability")
+	assert(not SkillSystem.is_valid_class_ability("unknown_class", "pegasus_skill_1"), "unknown classes cannot resolve registered abilities")
+	assert(not SkillSystem.is_valid_class_ability("pegasus", ""), "empty ability ids are rejected")
+	assert(SkillSystem.is_ability_available_for_cast("pegasus", "pegasus_skill_1"), "the starter ability remains available for casting")
+	assert(not SkillSystem.is_ability_available_for_cast("pegasus", "pegasus_skill_2"), "unlearned abilities cannot enter the cast pipeline")
+	assert(SkillSystem.get_ability_effect_profile({}).is_empty(), "empty ability data cannot fall through to a default strike")
 	var multi_hit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "多段"})
 	assert(str(multi_hit_profile.get("action", "")) == "multi_hit" and int(multi_hit_profile.get("extra_hits", 0)) == 2, "multi-hit skills resolve two follow-up strikes")
 	var pursuit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "追击"})

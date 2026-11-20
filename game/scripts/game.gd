@@ -694,6 +694,9 @@ func leave_sanctuary() -> void:
 func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -> void:
     if not is_instance_valid(player):
         return
+    var ability_id := str(ability.get("id", ""))
+    if not SkillSystem.is_ability_available_for_cast(class_id, ability_id):
+        return
     var ability_type := str(ability.get("type", ""))
     var ability_role := str(ability.get("role", ""))
     var ability_name := str(ability.get("name", ""))
