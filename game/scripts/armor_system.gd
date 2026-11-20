@@ -24,6 +24,37 @@ func get_state() -> Dictionary:
 func get_current_stage_name() -> String:
  var data := _ensure_data()
  return str(STAGES.get(str(data.get("current_stage","bronze")),STAGES["bronze"])["name"])
+
+func unlock_stage(stage_id: String) -> bool:
+ if not STAGES.has(stage_id):
+  return false
+ var previous: Dictionary = RPGState.profile.duplicate(true)
+ var data := _ensure_data()
+ if stage_id in data.get("unlocked_stages", []):
+  return false
+ var requirements := {
+  "silver": {"level": 20, "chapter": "sanctuary_twelve_houses"},
+  "gold": {"level": 25, "chapter": "sanctuary_twelve_houses"},
+  "sea_scale": {"level": 30, "chapter": "poseidon"},
+  "surplice": {"level": 40, "chapter": "hades"},
+  "god_cloth": {"level": 45, "chapter": "hades"},
+  "god_armor": {"level": 70, "chapter": "heaven"}
+ }
+ var requirement: Dictionary = requirements.get(stage_id, {})
+ if requirement.is_empty() or int(RPGState.profile.get("level", 1)) < int(requirement.get("level", 1)):
+  return false
+ var chapter_unlocked := false
+ for chapter in CampaignManager.get_chapter_overview():
+  if str(chapter.get("id", "")) == str(requirement.get("chapter", "")) and bool(chapter.get("unlocked", false)):
+   chapter_unlocked = true
+   break
+ if not chapter_unlocked:
+  return false
+ var unlocked: Array = data.get("unlocked_stages", []).duplicate()
+ unlocked.append(stage_id)
+ data["unlocked_stages"] = unlocked
+ RPGState.profile["armor_state"] = data
+ return _commit(previous)
 func unlock_all_stages() -> bool:
  var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
