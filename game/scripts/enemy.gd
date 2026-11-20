@@ -365,7 +365,8 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             _drain_target_cosmos(target, 6.0)
             if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.10, global_position)
         "judge_combo":
-            target.call("receive_damage", base_damage * 0.16, global_position)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.16, global_position)
         "judgment_combo":
             if target.has_method("receive_damage"):\n                target.call("receive_damage", base_damage * 0.20, global_position)
         "wing_slam":
