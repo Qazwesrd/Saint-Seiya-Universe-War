@@ -85,6 +85,15 @@ func select_class(class_id: String) -> bool:
  var starter := str(class_data.get("starter", ""))
  equipment["arms"] = starter if ITEM_DATA.has(starter) else ""
  profile["class_id"] = class_id
+ var starter_relic := str(class_data.get("starter", ""))
+ if tier in ["神明", "天斗士"] and EquipmentDatabase.EQUIPMENT.has(starter_relic):
+  var owned_relics: Array = profile.get("owned_relics", []).duplicate()
+  if not owned_relics.has(starter_relic):
+   owned_relics.append(starter_relic)
+  profile["owned_relics"] = owned_relics
+  profile["equipped_relic"] = starter_relic
+ elif tier not in ["神明", "天斗士"]:
+  profile["equipped_relic"] = ""
  var cosmos_levels: Dictionary = profile.get("cosmos_levels", {}).duplicate(true)
  if not cosmos_levels.has(class_id):
   cosmos_levels[class_id] = 21 if tier in ["神明", "天斗士"] else 1
