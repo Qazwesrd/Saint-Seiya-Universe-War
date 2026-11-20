@@ -239,6 +239,9 @@ func _run_tests() -> void:
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
 	assert(int(skill_audit.get("ability_count", 0)) == 768, "all class ability catalogs contain 768 entries")
 	var profiled_ability_count := 0
+	var field_action_count := 0
+	var trap_action_count := 0
+	var homing_action_count := 0
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		var profile_class_id := str(class_profile.get("id", ""))
 		for catalog_ability in SkillSystem.get_ability_catalog(profile_class_id):
@@ -246,8 +249,16 @@ func _run_tests() -> void:
 			assert(str(combat_profile.get("action", "")).strip_edges() != "", profile_class_id + " ability has a normalized combat action")
 			assert(int(combat_profile.get("extra_hits", -1)) >= 0 and int(combat_profile.get("extra_hits", 99)) <= 3, profile_class_id + " ability follow-up hit count is bounded")
 			assert(float(combat_profile.get("extra_hit_ratio", -1.0)) >= 0.0 and float(combat_profile.get("extra_hit_ratio", 1.0)) <= 0.60, profile_class_id + " ability follow-up damage is bounded")
+			match str(combat_profile.get("action", "")):
+				"field":
+					field_action_count += 1
+				"trap":
+					trap_action_count += 1
+				"homing_projectile":
+					homing_action_count += 1
 			profiled_ability_count += 1
 	assert(profiled_ability_count == 768, "all 768 abilities resolve to a combat profile")
+	assert(field_action_count > 0 and trap_action_count > 0 and homing_action_count > 0, "catalog includes real field, trap and homing actions")
 	var multi_hit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "多段"})
 	assert(str(multi_hit_profile.get("action", "")) == "multi_hit" and int(multi_hit_profile.get("extra_hits", 0)) == 2, "multi-hit skills resolve two follow-up strikes")
 	var pursuit_profile: Dictionary = SkillSystem.get_ability_effect_profile({"type": "追击"})
