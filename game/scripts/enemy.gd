@@ -117,7 +117,7 @@ func _physics_process(delta: float) -> void:
     if state == BrainState.DEAD:
         return
 
-    attack_cooldown = maxf(0.0, attack_cooldown - delta)
+    attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
     freeze_timer = maxf(0.0, freeze_timer - delta)
     slow_timer = maxf(0.0, slow_timer - delta)
@@ -356,6 +356,13 @@ func get_divine_mark_damage_multiplier() -> float:
     match divine_mark:
         "lunar":
             return 1.05 if is_boss else 1.12
+    return 1.0
+
+func get_divine_mark_attack_rate_multiplier() -> float:
+    if divine_mark_timer <= 0.0:
+        return 1.0
+    if divine_mark == "dream":
+        return 0.9 if is_boss else 0.75
     return 1.0
 
 func get_divine_mark_knockback_multiplier() -> float:
