@@ -79,6 +79,12 @@ jobs:
           test -s /root/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk
           test -s /root/debug.keystore
           test -x "$JAVA_HOME/bin/java"
+          # Inject the ephemeral CI debug key into this runner's local preset.
+          # The repository keeps machine-specific paths and passwords out of source control.
+          sed -i 's|keystore/debug=""|keystore/debug="/root/debug.keystore"|' game/export_presets.cfg
+          sed -i 's|keystore/debug_user=""|keystore/debug_user="androiddebugkey"|' game/export_presets.cfg
+          sed -i 's|keystore/debug_password=""|keystore/debug_password="android"|' game/export_presets.cfg
+          grep -q 'keystore/debug="/root/debug.keystore"' game/export_presets.cfg
           mkdir -p build/android
           godot --headless --verbose --path game --export-debug "Android" ../build/android/Saint-Seiya-Universe-War-debug.apk
           test -s build/android/Saint-Seiya-Universe-War-debug.apk
