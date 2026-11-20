@@ -436,13 +436,13 @@ func _get_armor_visual_part(piece_position: Vector3) -> String:
         return "waist"
     return "legs"
 
-func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72) -> MeshInstance3D:
+func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72, part_id: String = "") -> MeshInstance3D:
     var piece := MeshInstance3D.new()
     piece.mesh = mesh
     piece.position = piece_position
     piece.scale = piece_scale
-    var part_id := _get_armor_visual_part(piece_position)
-    var part_wear: Dictionary = ArmorSystem.get_part_visual_wear_profile(part_id)
+    var resolved_part := part_id if part_id in ArmorSystem.PARTS else _get_armor_visual_part(piece_position)
+    var part_wear: Dictionary = ArmorSystem.get_part_visual_wear_profile(resolved_part)
     var material := StandardMaterial3D.new()
     var wear_tint: Color = part_wear.get("tint", Color.WHITE)
     material.albedo_color = piece_color * wear_tint
@@ -530,37 +530,37 @@ func _build_armor_visuals() -> void:
     # Layered torso plates: chest, abdomen, collar and a raised central crest.
     var chest := BoxMesh.new()
     chest.size = Vector3(0.72, 0.54, 0.20)
-    _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, stage_metallic, "chest")
     var abdomen := BoxMesh.new()
     abdomen.size = Vector3(0.56, 0.28, 0.18)
-    _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, stage_metallic * 0.94)
+    _add_armor_piece(abdomen, Vector3(0.0, 0.88, -0.30), Vector3.ONE, dark, stage_metallic * 0.94, "chest")
     var collar := BoxMesh.new()
     collar.size = Vector3(0.82, 0.12, 0.24)
-    _add_armor_piece(collar, Vector3(0.0, 1.58, -0.24), Vector3.ONE, accent.darkened(0.12), stage_metallic)
+    _add_armor_piece(collar, Vector3(0.0, 1.58, -0.24), Vector3.ONE, accent.darkened(0.12), stage_metallic, "chest")
 
     # Class-specific shoulder silhouette and forearm guards.
     var shoulder_mesh := SphereMesh.new()
     shoulder_mesh.radius = 0.28
     shoulder_mesh.height = 0.42
     var shoulder_scale: Vector3 = relic_visual_profile.get("shoulder_scale", visual_profile.get("shoulder_scale", Vector3.ONE))
-    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
-    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic)
+    _add_armor_piece(shoulder_mesh, Vector3(-0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
+    _add_armor_piece(shoulder_mesh, Vector3(0.48, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
     var shoulder_spike := PrismMesh.new()
     shoulder_spike.size = Vector3(0.24, 0.42, 0.22)
-    var left_spike := _add_armor_piece(shoulder_spike, Vector3(-0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic)
+    var left_spike := _add_armor_piece(shoulder_spike, Vector3(-0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic, "arms")
     left_spike.rotation.z = 0.48
-    var right_spike := _add_armor_piece(shoulder_spike, Vector3(0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic)
+    var right_spike := _add_armor_piece(shoulder_spike, Vector3(0.58, 1.76, 0.0), Vector3.ONE, accent, stage_metallic, "arms")
     right_spike.rotation.z = -0.48
     var arm_mesh := CylinderMesh.new()
     arm_mesh.top_radius = 0.13
     arm_mesh.bottom_radius = 0.17
     arm_mesh.height = 0.48
-    _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic)
-    _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic)
+    _add_armor_piece(arm_mesh, Vector3(-0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic, "arms")
+    _add_armor_piece(arm_mesh, Vector3(0.47, 0.98, 0.0), Vector3.ONE, dark, stage_metallic, "arms")
     var bracer_mesh := BoxMesh.new()
     bracer_mesh.size = Vector3(0.22, 0.38, 0.25)
-    _add_armor_piece(bracer_mesh, Vector3(-0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
-    _add_armor_piece(bracer_mesh, Vector3(0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(bracer_mesh, Vector3(-0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic, "arms")
+    _add_armor_piece(bracer_mesh, Vector3(0.48, 0.98, -0.13), Vector3.ONE, bright, stage_metallic, "arms")
 
     # Starter relics and signature bracers get distinct readable silhouettes.
     var equipped_arms_id := str(RPGState.profile.get("equipment", {}).get("arms", ""))
@@ -630,10 +630,10 @@ func _build_armor_visuals() -> void:
     var belt_mesh := TorusMesh.new()
     belt_mesh.inner_radius = 0.29
     belt_mesh.outer_radius = 0.36
-    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), accent, stage_metallic)
+    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), accent, stage_metallic, "waist")
     var waist_plate := BoxMesh.new()
     waist_plate.size = Vector3(0.72, 0.22, 0.16)
-    _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic, "waist")
     var skirt_plate := PrismMesh.new()
     skirt_plate.size = Vector3(0.28, 0.42, 0.16)
     for skirt_side in [-1.0, 1.0]:
@@ -644,13 +644,13 @@ func _build_armor_visuals() -> void:
             armor_skirt_base_angles.append(skirt_piece.rotation.z)
     var shin_mesh := BoxMesh.new()
     shin_mesh.size = Vector3(0.24, 0.48, 0.18)
-    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
-    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic)
+    _add_armor_piece(shin_mesh, Vector3(-0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
+    _add_armor_piece(shin_mesh, Vector3(0.22, 0.34, -0.22), Vector3.ONE, bright, stage_metallic, "legs")
     var knee_mesh := SphereMesh.new()
     knee_mesh.radius = 0.15
     knee_mesh.height = 0.12
-    _add_armor_piece(knee_mesh, Vector3(-0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic)
-    _add_armor_piece(knee_mesh, Vector3(0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic)
+    _add_armor_piece(knee_mesh, Vector3(-0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic, "legs")
+    _add_armor_piece(knee_mesh, Vector3(0.22, 0.57, -0.27), Vector3(1.0, 0.7, 0.65), accent, stage_metallic, "legs")
 
     # Every class receives its own heraldic crest and chest sigil.
     var crest_mesh: Mesh
@@ -671,37 +671,37 @@ func _build_armor_visuals() -> void:
             crest_cone.top_radius = 0.015
             crest_cone.height = 0.34
             crest_mesh = crest_cone
-    var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic)
+    var crest := _add_armor_piece(crest_mesh, Vector3(0.0, 2.12, -0.02), Vector3.ONE, accent, stage_metallic, "head")
     if crest_id in ["horn", "spear", "trident", "ice", "flame", "anvil"]:
         crest.rotation.x = -0.18
     var helmet_brow := BoxMesh.new()
     helmet_brow.size = Vector3(0.54, 0.11, 0.12)
-    _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic)
+    _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic, "head")
     var helmet_guard := PrismMesh.new()
     helmet_guard.size = Vector3(0.16, 0.34, 0.20)
     for helmet_side in [-1.0, 1.0]:
-        var helmet_guard_piece := _add_armor_piece(helmet_guard, Vector3(helmet_side * 0.24, 1.84, -0.04), Vector3.ONE, bright, stage_metallic)
+        var helmet_guard_piece := _add_armor_piece(helmet_guard, Vector3(helmet_side * 0.24, 1.84, -0.04), Vector3.ONE, bright, stage_metallic, "head")
         helmet_guard_piece.rotation.z = -helmet_side * 0.12
     var emblem_mesh := SphereMesh.new()
     emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
-    _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), accent, 0.96)
+    _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), accent, 0.96, "chest")
 
     # Faceted cosmos gems and engraved trim make armor tiers visually distinct.
     var chest_gem_mesh := PrismMesh.new()
     chest_gem_mesh.size = Vector3(0.17, 0.22, 0.075)
-    var chest_gem := _add_armor_piece(chest_gem_mesh, Vector3(0.0, 1.31, -0.505), Vector3.ONE, stage_trim_color.lightened(0.18), 0.98)
+    var chest_gem := _add_armor_piece(chest_gem_mesh, Vector3(0.0, 1.31, -0.505), Vector3.ONE, stage_trim_color.lightened(0.18), 0.98, "chest")
     chest_gem.rotation.z = PI
     armor_gem_nodes.append(chest_gem)
     var belt_gem_mesh := PrismMesh.new()
     belt_gem_mesh.size = Vector3(0.13, 0.16, 0.06)
-    var belt_gem := _add_armor_piece(belt_gem_mesh, Vector3(0.0, 0.72, -0.39), Vector3.ONE, accent.lightened(0.2), 0.96)
+    var belt_gem := _add_armor_piece(belt_gem_mesh, Vector3(0.0, 0.72, -0.39), Vector3.ONE, accent.lightened(0.2), 0.96, "waist")
     armor_gem_nodes.append(belt_gem)
     var chest_trim_mesh := BoxMesh.new()
     chest_trim_mesh.size = Vector3(0.055, 0.38, 0.035)
-    var left_trim := _add_armor_piece(chest_trim_mesh, Vector3(-0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic)
+    var left_trim := _add_armor_piece(chest_trim_mesh, Vector3(-0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
     left_trim.rotation.z = -0.12
-    var right_trim := _add_armor_piece(chest_trim_mesh, Vector3(0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic)
+    var right_trim := _add_armor_piece(chest_trim_mesh, Vector3(0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic, "chest")
     right_trim.rotation.z = 0.12
     var shin_gem_mesh := SphereMesh.new()
     shin_gem_mesh.radius = 0.055
