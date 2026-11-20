@@ -228,7 +228,7 @@ func _resolve_attack(target: Node3D) -> void:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
         var damage_multiplier := boss_heavy_multiplier if _boss_heavy_attack else 1.0
         var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
-        target.call("receive_damage", outgoing_attack)
+        target.call("receive_damage", outgoing_attack, global_position)
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
             var push := target.global_position - global_position
             push.y = 0.0
