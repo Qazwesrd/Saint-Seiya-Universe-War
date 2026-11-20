@@ -40,7 +40,7 @@ const ARCHETYPES := {
         "coin_reward": 120,
         "drop_tier": "boss",
         "color": Color(0.36, 0.08, 0.55)
-    }
+    },
     "gold_taurus": {"name":"金牛座阿鲁迪巴","is_boss":true,"health":520.0,"speed":1.9,"attack_damage":24.0,"attack_range":3.0,"attack_interval":2.0,"exp_reward":180,"coin_reward":150,"drop_tier":"boss","color":Color(0.72,0.48,0.12)},
     "gemini_illusion": {"name":"双子宫异次元幻象","is_boss":false,"health":110.0,"speed":2.7,"attack_damage":13.0,"attack_range":2.2,"attack_interval":1.35,"exp_reward":45,"coin_reward":35,"drop_tier":"normal","color":Color(0.28,0.32,0.72)},
     "gold_cancer": {"name":"巨蟹座迪斯马斯克","is_boss":true,"health":560.0,"speed":2.15,"attack_damage":26.0,"attack_range":2.7,"attack_interval":1.85,"exp_reward":210,"coin_reward":170,"drop_tier":"boss","color":Color(0.22,0.58,0.42)},
