@@ -67,6 +67,9 @@ jobs:
           HOME: /root
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
           ANDROID_HOME: /usr/lib/android-sdk
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           test -s /root/.local/share/godot/export_templates/4.4.1.stable/android_debug.apk
           test -s /root/debug.keystore
