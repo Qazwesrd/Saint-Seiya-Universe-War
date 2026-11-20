@@ -158,14 +158,14 @@ def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR):
 
 def build_armor(rig):
     parts = []
-    parts.append(armor_piece("Armor_Helmet", (0, -0.005, 1.83), (0.16, 0.145, 0.19), "Head", GOLD, rig))
-    parts.append(armor_piece("Armor_Chest", (0, -0.13, 1.36), (0.29, 0.075, 0.27), "Chest", GOLD, rig))
+    parts.append(armor_piece("Armor_Helmet", (0, -0.005, 1.83), (0.16, 0.145, 0.19), "Head", rig, GOLD))
+    parts.append(armor_piece("Armor_Chest", (0, -0.13, 1.36), (0.29, 0.075, 0.27), "Chest", rig, GOLD))
     for side, sign in (("Left", 1), ("Right", -1)):
         x = lambda v: v * sign
-        parts.append(armor_piece("Armor_" + side + "_Shoulder", (x(0.33), -0.02, 1.48), (0.17, 0.16, 0.12), side + "Shoulder", GOLD, rig))
-        parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", ARMOR, rig))
-        parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", ARMOR, rig))
-    parts.append(armor_piece("Armor_Waist", (0, -0.11, 0.94), (0.25, 0.09, 0.12), "Hips", GOLD, rig))
+        parts.append(armor_piece("Armor_" + side + "_Shoulder", (x(0.33), -0.02, 1.48), (0.17, 0.16, 0.12), side + "Shoulder", rig, GOLD))
+        parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", rig, ARMOR))
+        parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", rig, ARMOR))
+    parts.append(armor_piece("Armor_Waist", (0, -0.11, 0.94), (0.25, 0.09, 0.12), "Hips", rig, GOLD))
     bpy.ops.object.select_all(action="DESELECT")
     for obj in parts:
         obj.select_set(True)
@@ -199,7 +199,7 @@ def make_animation_library(rig):
         action = bpy.data.actions.new(name=clip)
         rig.animation_data.action = action
         scene.frame_set(1)
-        key_pose(rig, 1, {})
+        key_pose(rig, 1, {"Hips": (0, 0, 0)})
         if clip in ("walk", "run"):
             amount = 0.42 if clip == "walk" else 0.78
             for frame, sign in ((1, 1), (7, -1), (13, 1), (19, -1), (25, 1)):
@@ -243,8 +243,7 @@ def make_animation_library(rig):
             key_pose(rig, 18, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
             key_pose(rig, 24, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
         else:
-            key_pose(rig, 1, {})
-            key_pose(rig, 24, {})
+            key_pose(rig, 24, {"Hips": (0, 0, 0)})
         track = rig.animation_data.nla_tracks.new()
         track.name = clip
         strip = track.strips.new(clip, 1, action)
