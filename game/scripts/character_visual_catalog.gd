@@ -94,6 +94,12 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         return EQUIPMENT_PROFILES[item_id].duplicate(true)
     var category := str(equipment.get("category", ""))
     match category:
+        "黄金圣衣 Gold Cloth":
+            return {"accent": Color(1.0, 0.78, 0.32), "ornament": "royal_wings"}
+        "白银圣衣 Silver Cloth":
+            return {"accent": Color(0.78, 0.86, 0.96), "ornament": "feather"}
+        "青铜圣衣 Bronze Cloth":
+            return {"accent": Color(0.72, 0.48, 0.28), "ornament": "crest"}
         "神圣衣 God Cloth":
             return {"accent": Color(1.0, 0.86, 0.52), "ornament": "radiant"}
         "鳞衣 Scale":
