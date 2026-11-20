@@ -742,6 +742,9 @@ func _spawn_skill_summon(class_id: String, ability: Dictionary) -> void:
 func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) -> void:
     if not is_instance_valid(player):
         return
+    var active_fields := get_tree().get_nodes_in_group("skill_fields")
+    if active_fields.size() >= 3:
+        active_fields[0].queue_free()
     var field := Node3D.new()
     field.set_script(SkillFieldScript)
     var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
@@ -766,6 +769,9 @@ func _spawn_skill_field(class_id: String, ability: Dictionary, is_trap: bool) ->
 func _spawn_skill_projectile(class_id: String, ability: Dictionary) -> void:
     if not is_instance_valid(player):
         return
+    var active_projectiles := get_tree().get_nodes_in_group("skill_projectiles")
+    if active_projectiles.size() >= 6:
+        active_projectiles[0].queue_free()
     var projectile := Node3D.new()
     projectile.set_script(SkillProjectileScript)
     var profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
