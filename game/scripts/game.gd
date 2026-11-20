@@ -755,7 +755,11 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
             duration = 4.5
             power = 0.26
     if is_support:
-        if class_id in ["hestia", "athena", "hera"]:
+        if class_id == "athena":
+            player.call("apply_divine_guard", 0.18, 6.0)
+            player.health = minf(player.max_health, player.health + player.max_health * 0.08)
+            show_notice("雅典娜神圣守护：获得18%生命上限护盾，持续6秒")
+        elif class_id in ["hestia", "hera"]:
             player.health = minf(player.max_health, player.health + player.max_health * 0.08)
         if class_id in ["zeus", "ares", "hermes"]:
             player.velocity += -player.global_transform.basis.z * 2.5
