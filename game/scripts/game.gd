@@ -730,6 +730,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
 
     var is_support_ability: bool = SkillSystem.is_support_ability(ability)
     var effect_profile: Dictionary = SkillSystem.get_ability_effect_profile(ability)
+    var delayed_actor_delivery := SkillSystem.uses_delayed_actor_delivery(ability)
 
     # Core classes retain their signature control identities.
     if not is_support_ability and class_id == "tenmou":
@@ -748,6 +749,8 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
     )
     var max_distance := reach + (1.5 if is_area else 0.5)
     for enemy in enemies.duplicate():
+        if delayed_actor_delivery:
+            continue
         if not is_instance_valid(enemy) or float(enemy.get("health")) <= 0.0:
             continue
         var offset: Vector3 = enemy.global_position - player.global_position
@@ -845,7 +848,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
         show_notice(ability_name + "：自身效果已生效")
-    if str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
+    if not delayed_actor_delivery and str(RPGState.CLASS_DATA.get(class_id, {}).get("tier", "")) == "神明":
         _apply_divine_signature(class_id, ability, max_distance)
 
 func _get_ability_actor_damage(class_id: String, damage_ratio: float) -> float:

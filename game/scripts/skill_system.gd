@@ -1498,6 +1498,11 @@ func is_valid_class_ability(class_id: String, ability_id: String) -> bool:
         return false
     return not get_ability_data(class_id, ability_id).is_empty()
 
+func uses_delayed_actor_delivery(ability: Dictionary) -> bool:
+    var action := str(get_ability_effect_profile(ability).get("action", "strike"))
+    return action in ["summon", "field", "trap", "homing_projectile", "projectile"]
+
+
 func is_ability_available_for_cast(class_id: String, ability_id: String) -> bool:
     return is_valid_class_ability(class_id, ability_id) and is_ability_learned(class_id, ability_id)
 
