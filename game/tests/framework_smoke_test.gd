@@ -277,6 +277,20 @@ func _run_tests() -> void:
 	assert(bool(campaign_catalog_audit.get("valid", false)) and int(campaign_catalog_audit.get("chapter_count", 0)) == 7 and int(campaign_catalog_audit.get("mission_count", 0)) == 55, "all seven campaign arcs and 55 missions pass catalog validation: " + str(campaign_catalog_audit.get("errors", [])))
 	var enemy_catalog_audit: Dictionary = EnemyDatabase.validate_archetypes()
 	assert(bool(enemy_catalog_audit.get("valid", false)) and int(enemy_catalog_audit.get("archetype_count", 0)) >= 50, "all enemy archetypes pass combat-stat validation: " + str(enemy_catalog_audit.get("errors", [])))
+	var expected_boss_specials := {
+		"hypnos_guardian": "dream_drain",
+		"thanatos_reaper": "death_burst",
+		"hades_emperor": "soul_leech",
+		"poseidon_emperor": "tidal_pull",
+		"apollo_trial": "solar_flare",
+		"zeus_trial": "lightning_followup",
+		"universe_arbiter": "void_drain",
+		"judge_griffin": "gravity_crush",
+		"judge_garuda": "judge_combo",
+		"judge_wyvern": "wing_slam"
+	}
+	for boss_id in expected_boss_specials:
+		assert(str(EnemyDatabase.get_archetype(boss_id).get("boss_special", "")) == str(expected_boss_specials[boss_id]), "major boss has a unique heavy-attack signature: " + boss_id)
 	var skill_audit: Dictionary = SkillSystem.validate_all_class_skill_catalogs()
 	assert(bool(skill_audit.get("valid", false)), "all 32 classes must expose 24 complete unique skills: " + str(skill_audit.get("errors", [])))
 	assert(int(skill_audit.get("class_count", 0)) == 32, "all base, divine and heavenly classes are registered")
