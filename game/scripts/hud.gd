@@ -359,6 +359,33 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
         skill_button.text = skill_name + "\n" + (str(snappedf(skill_cd, 0.1)) + "s" if skill_cd > 0.0 else "技能")
     if is_instance_valid(burst_button):
         burst_button.text = "小宇宙\n" + (str(snappedf(burst_cd, 0.1)) + "s" if burst_cd > 0.0 else "爆发")
+        burst_button.modulate = Color(0.62, 0.68, 0.78) if burst_cd > 0.0 else Color.WHITE
+    if is_instance_valid(skill_button):
+        skill_button.modulate = Color(0.62, 0.72, 0.84) if skill_cd > 0.0 else Color.WHITE
+    _refresh_skill_cooldown_display()
+
+func _refresh_skill_cooldown_display() -> void:
+    if not is_instance_valid(game.player) or skill_slot_buttons.is_empty():
+        return
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var slots: Array = SkillSystem.get_equipped_abilities(class_id)
+    var cooldowns: Dictionary = game.player.get("ability_cooldowns")
+    for i in range(mini(4, skill_slot_buttons.size())):
+        var button := skill_slot_buttons[i]
+        var ability_id := str(slots[i]) if i < slots.size() else ""
+        var ability: Dictionary = SkillSystem.get_ability_data(class_id, ability_id) if ability_id != "" else {}
+        var remaining := maxf(0.0, float(cooldowns.get(ability_id, 0.0)))
+        if ability_id == "":
+            button.modulate = Color(0.58, 0.62, 0.7)
+            continue
+        var ability_name := str(ability.get("name", "技能"))
+        if remaining > 0.0:
+            button.text = "技能 %d\n%s\n%.1fs" % [i + 1, ability_name, snappedf(remaining, 0.1)]
+            button.modulate = Color(0.58, 0.66, 0.78)
+        else:
+            button.text = "技能 %d\n%s\n就绪" % [i + 1, ability_name]
+            button.modulate = Color.WHITE
+
 func refresh_skill_slots() -> void:
     if skill_slot_buttons.is_empty():
         return
