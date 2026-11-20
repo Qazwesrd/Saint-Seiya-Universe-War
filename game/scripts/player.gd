@@ -164,7 +164,7 @@ func _build_armor_visuals() -> void:
     belt_mesh.inner_radius = 0.29
     belt_mesh.outer_radius = 0.36
     _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), bright, 0.9)
-    var crest_mesh := ConeMesh.new()
+    var crest_mesh := CylinderMesh.new()
     crest_mesh.bottom_radius = 0.13
     crest_mesh.top_radius = 0.015
     crest_mesh.height = 0.34
