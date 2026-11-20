@@ -416,6 +416,15 @@ func _run_tests() -> void:
 		assert(not CampaignDatabase.get_mission(mission_id).get("encounter", {}).get("waves", []).is_empty(), "late story boss encounter is configured: " + mission_id)
 	for archetype_id in ["hades_specter", "hades_wraith", "judge_griffin", "judge_garuda", "judge_wyvern", "cocytus_guard", "wailing_wall_guard", "hypnos_guardian", "thanatos_reaper", "hades_emperor", "heaven_gatekeeper", "heavenly_angel", "heavenly_warden", "celestial_trial", "apollo_trial", "zeus_trial", "cosmos_warden", "divine_echo", "primordial_void", "universe_arbiter"]:
 		assert(EnemyDatabase.has_archetype(archetype_id), "late campaign enemy archetype exists: " + archetype_id)
+	var enemy_visual_test_root := Node3D.new()
+	add_child(enemy_visual_test_root)
+	var boss_visual_test = preload("res://scripts/enemy.gd").new()
+	boss_visual_test.game = enemy_visual_test_root
+	boss_visual_test.archetype_id = "hades_emperor"
+	enemy_visual_test_root.add_child(boss_visual_test)
+	assert(bool(boss_visual_test.is_boss) and str(boss_visual_test.display_name) == "冥王哈迪斯", "Hades boss archetype initializes its combat identity")
+	assert(boss_visual_test.get_child_count() >= 10, "boss enemy builds armor, crown, aura and combat telegraph visuals")
+	enemy_visual_test_root.queue_free()
 	var campaign_order_ids: Dictionary = {}
 	for chapter_entry in CampaignDatabase.get_chapters():
 		var chapter_order := int(chapter_entry.get("order", 0))
