@@ -369,23 +369,26 @@ func create_new_slot(slot: int) -> bool:
 func delete_slot(slot: int) -> bool:
  if not has_slot(slot):
   return false
- # Never remove the primary file unless a readable backup has been written.
+ # Keep a verified backup before touching the active save.
  if not backup_slot(slot) or not has_backup_slot(slot):
   return false
- var directory := DirAccess.open("user://")
- if directory == null:
+ var backup_file := FileAccess.open("user://backup_slot_%d.json" % slot, FileAccess.READ)
+ if backup_file == null:
   return false
- var filename := "save_slot_%d.json" % slot
- var remove_error := directory.remove(filename)
- if remove_error != OK and FileAccess.file_exists(_save_path(slot)):
+ var backup_data: Variant = JSON.parse_string(backup_file.get_as_text())
+ backup_file.close()
+ if typeof(backup_data) != TYPE_DICTIONARY or int(backup_data.get("version", 0)) != 1:
   return false
- var removed := not FileAccess.file_exists(_save_path(slot))
- if removed and active_slot == slot:
+ var absolute_save_path := ProjectSettings.globalize_path(_save_path(slot))
+ var remove_error := DirAccess.remove_absolute(absolute_save_path)
+ if remove_error != OK or FileAccess.file_exists(_save_path(slot)):
+  return false
+ if active_slot == slot:
   profile = {}
   _ensure_profile()
   slot_loaded.emit(active_slot)
   _emit_change()
- return removed
+ return true
 
 func has_backup_slot(slot: int) -> bool:
  return slot >= 1 and slot <= 3 and FileAccess.file_exists("user://backup_slot_%d.json" % slot)
