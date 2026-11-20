@@ -63,6 +63,30 @@ func _run_tests() -> void:
 	forge_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(load("res://scripts/loot_pickup.gd") != null, "manual offline loot pickup actor is present")
+	assert(load("res://scripts/world_theme_manager.gd") != null, "procedural chapter world theme manager is present")
+	var world_theme_test_root := Node3D.new()
+	add_child(world_theme_test_root)
+	var test_world_environment := WorldEnvironment.new()
+	test_world_environment.environment = Environment.new()
+	world_theme_test_root.add_child(test_world_environment)
+	var test_world_sun := DirectionalLight3D.new()
+	world_theme_test_root.add_child(test_world_sun)
+	var test_floor_material := StandardMaterial3D.new()
+	var test_ring_root := Node3D.new()
+	world_theme_test_root.add_child(test_ring_root)
+	var test_ring := MeshInstance3D.new()
+	test_ring_root.add_child(test_ring)
+	var world_theme_test = preload("res://scripts/world_theme_manager.gd").new()
+	world_theme_test.world_environment = test_world_environment
+	world_theme_test.sun = test_world_sun
+	world_theme_test.floor_material = test_floor_material
+	world_theme_test.ring_root = test_ring_root
+	world_theme_test_root.add_child(world_theme_test)
+	for theme_id in ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]:
+		assert(world_theme_test.apply_theme(theme_id), "campaign world theme applies: " + theme_id)
+		assert(world_theme_test.decor_root.get_child_count() >= 16, "chapter environment builds visible structures: " + theme_id)
+	assert(test_world_environment.environment.background_mode == Environment.BG_COLOR, "chapter theme configures its own sky background")
+	world_theme_test_root.queue_free()
 	var hud_layout_test = preload("res://scripts/hud.gd").new()
 	var hud_layout_root := Control.new()
 	var left_layout_button: Button = hud_layout_test._button(hud_layout_root, "left", Vector2(20, 20), Vector2(120, 80), func() -> void: pass, Color.WHITE)
