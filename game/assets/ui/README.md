@@ -1,2 +1,3 @@
-# UI 资源
-存放图标、字体、面板、按钮、HUD 纹理与九宫格资源。支持横屏、安全区、不同分辨率和触控尺寸。
+# UI 与图标
+
+图标使用稳定ID：class_<class_id>、skill_<ability_id>、armor_<equipment_id>、item_<item_id>。建议提供 128x128 源图并导出 64/96/128 像素版本；透明背景使用PNG或WebP。图标必须能在低分辨率和色弱/高对比设置下辨识。
