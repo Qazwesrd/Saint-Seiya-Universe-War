@@ -35,6 +35,7 @@ var armor_wing_base_angles: Array[float] = []
 var armor_skirt_nodes: Array[MeshInstance3D] = []
 var armor_skirt_base_angles: Array[float] = []
 var armor_aura_node: MeshInstance3D
+var armor_gem_nodes: Array[MeshInstance3D] = []
 var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
@@ -223,6 +224,14 @@ func _animate_visual_motion(delta: float) -> void:
         armor_aura_node.rotation.y += delta * (0.28 + movement_ratio * 0.42)
         var aura_pulse := 1.0 + sin(clock * 1.7) * 0.035
         armor_aura_node.scale = Vector3.ONE * aura_pulse
+    var gem_pulse := 0.72 + (sin(clock * 2.6) * 0.5 + 0.5) * 0.38
+    for gem in armor_gem_nodes:
+        if not is_instance_valid(gem):
+            continue
+        var gem_material := gem.material_override as StandardMaterial3D
+        if is_instance_valid(gem_material):
+            gem_material.emission_energy_multiplier = gem_pulse
+        gem.scale = Vector3.ONE * (0.96 + gem_pulse * 0.08)
     var target_roll := -move_input.x * 0.10
     var target_pitch := move_input.y * 0.055
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
@@ -329,6 +338,7 @@ func _build_armor_visuals() -> void:
     armor_skirt_nodes.clear()
     armor_skirt_base_angles.clear()
     armor_aura_node = null
+    armor_gem_nodes.clear()
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
     visual_root.add_child(armor_root)
@@ -517,6 +527,29 @@ func _build_armor_visuals() -> void:
     emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
     _add_armor_piece(emblem_mesh, Vector3(0.0, 1.30, -0.445), Vector3(1.0, 1.0, 0.42), accent, 0.96)
+
+    # Faceted cosmos gems and engraved trim make armor tiers visually distinct.
+    var chest_gem_mesh := PrismMesh.new()
+    chest_gem_mesh.size = Vector3(0.17, 0.22, 0.075)
+    var chest_gem := _add_armor_piece(chest_gem_mesh, Vector3(0.0, 1.31, -0.505), Vector3.ONE, stage_trim_color.lightened(0.18), 0.98)
+    chest_gem.rotation.z = PI
+    armor_gem_nodes.append(chest_gem)
+    var belt_gem_mesh := PrismMesh.new()
+    belt_gem_mesh.size = Vector3(0.13, 0.16, 0.06)
+    var belt_gem := _add_armor_piece(belt_gem_mesh, Vector3(0.0, 0.72, -0.39), Vector3.ONE, accent.lightened(0.2), 0.96)
+    armor_gem_nodes.append(belt_gem)
+    var chest_trim_mesh := BoxMesh.new()
+    chest_trim_mesh.size = Vector3(0.055, 0.38, 0.035)
+    var left_trim := _add_armor_piece(chest_trim_mesh, Vector3(-0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic)
+    left_trim.rotation.z = -0.12
+    var right_trim := _add_armor_piece(chest_trim_mesh, Vector3(0.29, 1.29, -0.432), Vector3.ONE, stage_trim_color, stage_metallic)
+    right_trim.rotation.z = 0.12
+    var shin_gem_mesh := SphereMesh.new()
+    shin_gem_mesh.radius = 0.055
+    shin_gem_mesh.height = 0.11
+    for side in [-1.0, 1.0]:
+        var shin_gem := _add_armor_piece(shin_gem_mesh, Vector3(side * 0.22, 0.36, -0.325), Vector3.ONE, accent, 0.94)
+        armor_gem_nodes.append(shin_gem)
 
     # Back ornaments are built as low-poly feather/fin plates, scaled per class.
     var wing_span := float(relic_visual_profile.get("wing_span", visual_profile.get("wing_span", 0.0)))
