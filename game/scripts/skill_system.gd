@@ -1019,6 +1019,10 @@ const ARMOR_PARTS := ["头盔", "胸甲", "护腕", "腰甲", "腿甲"]
 func get_class_skill(class_id: String) -> Dictionary:
     return HEAVENLY_CLASS_SKILLS.get(class_id, EXTENDED_DIVINE_CLASS_SKILLS.get(class_id, DIVINE_CLASS_SKILLS.get(class_id, CLASS_SKILLS.get(class_id, CLASS_SKILLS["pegasus"])))).duplicate(true)
 
+func can_afford_class_skill(class_id: String, current_cosmos: float) -> bool:
+    var skill_data := get_class_skill(class_id)
+    return current_cosmos >= float(skill_data.get("cost", 18))
+
 func get_class_skill_catalog() -> Array:
     var result: Array = []
     for class_id in CLASS_SKILLS:
