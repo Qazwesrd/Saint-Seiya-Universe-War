@@ -138,7 +138,7 @@ func _play_attack_pose(intensity: float = 1.0) -> void:
 
 func _get_visual_armor_signature() -> String:
     var armor_state: Dictionary = RPGState.profile.get("armor_state", {})
-    return "%s|%s|%s|%s" % [
+    return "%s|%s|%s|%s|%s" % [
         str(RPGState.profile.get("class_id", "pegasus")),
         str(RPGState.profile.get("equipped_relic", "")),
         str(armor_state.get("current_stage", "bronze")),
