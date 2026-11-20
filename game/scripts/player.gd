@@ -84,6 +84,68 @@ func _ready() -> void:
     head.position.y = 1.95
     head.material_override = body_mat
     visual_root.add_child(head)
+
+    # A lightweight humanoid fallback mesh keeps the character readable before
+    # authored skeletal rigs are imported.
+    var skin_material := StandardMaterial3D.new()
+    skin_material.albedo_color = Color(0.78, 0.58, 0.46)
+    skin_material.roughness = 0.72
+    var hair_material := StandardMaterial3D.new()
+    hair_material.albedo_color = Color(0.055, 0.065, 0.11)
+    hair_material.roughness = 0.42
+    var limb_mesh := CapsuleMesh.new()
+    limb_mesh.radius = 0.14
+    limb_mesh.height = 0.68
+    for side in [-1.0, 1.0]:
+        var upper_arm := MeshInstance3D.new()
+        upper_arm.mesh = limb_mesh
+        upper_arm.position = Vector3(side * 0.49, 1.17, 0.0)
+        upper_arm.rotation.z = -side * 0.18
+        upper_arm.material_override = skin_material
+        visual_root.add_child(upper_arm)
+        var forearm := MeshInstance3D.new()
+        forearm.mesh = limb_mesh
+        forearm.scale = Vector3(0.88, 0.82, 0.88)
+        forearm.position = Vector3(side * 0.54, 0.76, -0.015)
+        forearm.rotation.z = -side * 0.10
+        forearm.material_override = skin_material
+        visual_root.add_child(forearm)
+        var leg_mesh := CapsuleMesh.new()
+        leg_mesh.radius = 0.16
+        leg_mesh.height = 0.76
+        var leg := MeshInstance3D.new()
+        leg.mesh = leg_mesh
+        leg.position = Vector3(side * 0.21, 0.40, 0.015)
+        leg.material_override = skin_material
+        visual_root.add_child(leg)
+        var boot := MeshInstance3D.new()
+        var boot_mesh := BoxMesh.new()
+        boot_mesh.size = Vector3(0.28, 0.16, 0.42)
+        boot.mesh = boot_mesh
+        boot.position = Vector3(side * 0.21, 0.09, -0.075)
+        boot.material_override = hair_material
+        visual_root.add_child(boot)
+
+    var hair := MeshInstance3D.new()
+    var hair_mesh := SphereMesh.new()
+    hair_mesh.radius = 0.25
+    hair_mesh.height = 0.24
+    hair.mesh = hair_mesh
+    hair.scale = Vector3(1.12, 0.72, 1.12)
+    hair.position = Vector3(0.0, 2.12, 0.035)
+    hair.material_override = hair_material
+    visual_root.add_child(hair)
+    var eye_band := MeshInstance3D.new()
+    var eye_mesh := BoxMesh.new()
+    eye_mesh.size = Vector3(0.24, 0.035, 0.035)
+    eye_band.mesh = eye_mesh
+    eye_band.position = Vector3(0.0, 1.98, -0.218)
+    var eye_material := StandardMaterial3D.new()
+    eye_material.albedo_color = Color(0.10, 0.12, 0.18)
+    eye_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    eye_band.material_override = eye_material
+    visual_root.add_child(eye_band)
+
     _build_armor_visuals()
     RPGState.state_changed.connect(_on_rpg_state_changed)
     mount_indicator = MeshInstance3D.new()
