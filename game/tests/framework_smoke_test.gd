@@ -18,6 +18,15 @@ func _run_tests() -> void:
 	assert(is_equal_approx(guard_test_player.absorb_divine_guard_damage(20.0), 12.0), "damage exceeding divine guard spills over to health")
 	assert(is_equal_approx(guard_test_player.divine_guard_shield, 0.0), "divine guard is depleted after absorbing its capacity")
 	guard_test_player.free()
+	var solar_test_enemy = preload("res://scripts/enemy.gd").new()
+	solar_test_enemy.divine_mark = "solar"
+	solar_test_enemy.divine_mark_timer = 5.0
+	assert(is_equal_approx(solar_test_enemy.get_divine_mark_burn_multiplier(), 1.2), "Apollo solar mark amplifies burn ticks against normal enemies")
+	solar_test_enemy.is_boss = true
+	assert(is_equal_approx(solar_test_enemy.get_divine_mark_burn_multiplier(), 0.75), "Apollo solar burn is reduced against bosses")
+	solar_test_enemy.divine_mark_timer = 0.0
+	assert(is_equal_approx(solar_test_enemy.get_divine_mark_burn_multiplier(), 1.0), "expired solar mark no longer amplifies burn")
+	solar_test_enemy.free()
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(str(LocalizationManager.text_for("ui.attack")) != "", "localization service")
 	assert(AudioManager != null, "audio service")
