@@ -286,7 +286,7 @@ func set_status(hp: float, hp_max: float, cosmos: float, cosmos_max: float, skil
     var class_id := str(profile.get("class_id", "pegasus"))
     var class_label := str(RPGState.CLASS_DATA.get(class_id, {}).get("name", "天马座"))
     var cosmos_info: Dictionary = RPGState.get_cosmos_profile()
-    status_label.text = class_label + " Lv." + str(profile.get("level", 1)) + "  小宇宙 " + str(cosmos_info.get("level", 1)) + "/" + str(cosmos_info.get("max_level", 20)) + "  星币 " + str(profile.get("currency", 0))
+    status_label.text = str(profile.get("character_name", "星之战士")) + " · " + class_label + " Lv." + str(profile.get("level", 1)) + "  小宇宙 " + str(cosmos_info.get("level", 1)) + "/" + str(cosmos_info.get("max_level", 20)) + "  星币 " + str(profile.get("currency", 0))
     var is_tenkishi := class_id == "tenkishi"
     if is_instance_valid(flight_button):
         flight_button.visible = is_tenkishi
