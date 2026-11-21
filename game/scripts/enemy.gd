@@ -73,6 +73,10 @@ var boss_break_active := false
 var boss_break_getup_timer := 0.0
 var boss_weakpoint_notice_cooldown := 0.0
 var enemy_visual_root: Node3D
+var boss_armor_integrity: Dictionary = {}
+var boss_armor_nodes: Dictionary = {}
+var boss_armor_hit_cursor := 0
+const BOSS_ARMOR_ZONES: Array[String] = ["helmet", "chest", "shoulders", "arms", "legs"]
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -165,6 +169,7 @@ func _ready() -> void:
     armor_material.emission = _base_color * 0.10
     chest_plate.material_override = armor_material
     add_child(chest_plate)
+    _register_boss_armor_node(chest_plate, "chest")
 
     var shoulder_mesh := SphereMesh.new()
     shoulder_mesh.radius = radius * 0.34
@@ -175,6 +180,7 @@ func _ready() -> void:
         shoulder.position = Vector3(side * radius * 0.82, height * 0.68, 0.0)
         shoulder.material_override = armor_material
         add_child(shoulder)
+        _register_boss_armor_node(shoulder, "shoulders")
 
     var visual_profile: Dictionary = EnemyVisualCatalog.get_profile(archetype_id, is_boss, _base_color)
     _build_enemy_armor_visuals(visual_profile, radius, height)
@@ -349,7 +355,7 @@ func _get_boss_combo_followups() -> int:
         followups += 1
     return mini(followups, 3)
 
-func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
+func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float, armor_zone: String = "") -> MeshInstance3D:
     var part := MeshInstance3D.new()
     part.mesh = mesh
     part.position = local_position
@@ -363,7 +369,58 @@ func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3
     part.material_override = material
     add_child(part)
     enemy_accent_nodes.append(part)
+    if not armor_zone.is_empty():
+        _register_boss_armor_node(part, armor_zone)
     return part
+
+func _register_boss_armor_node(part: MeshInstance3D, zone: String) -> void:
+    if not is_boss or not is_instance_valid(part):
+        return
+    if not boss_armor_nodes.has(zone):
+        boss_armor_nodes[zone] = []
+        boss_armor_integrity[zone] = 1.0
+    var zone_nodes: Array = boss_armor_nodes[zone]
+    zone_nodes.append(part)
+    boss_armor_nodes[zone] = zone_nodes
+
+func damage_boss_armor(amount: float) -> Dictionary:
+    if not is_boss or max_health <= 0.0:
+        return {"zone": "", "integrity": 1.0, "broken": false}
+    for _attempt in range(BOSS_ARMOR_ZONES.size()):
+        var zone := BOSS_ARMOR_ZONES[boss_armor_hit_cursor % BOSS_ARMOR_ZONES.size()]
+        boss_armor_hit_cursor = (boss_armor_hit_cursor + 1) % BOSS_ARMOR_ZONES.size()
+        if float(boss_armor_integrity.get(zone, 1.0)) <= 0.0:
+            continue
+        var integrity := maxf(0.0, float(boss_armor_integrity.get(zone, 1.0)) - clampf(maxf(0.0, amount) / max_health * 2.4, 0.08, 0.35))
+        boss_armor_integrity[zone] = integrity
+        var zone_nodes: Array = boss_armor_nodes.get(zone, [])
+        for node_variant in zone_nodes:
+            var armor_node := node_variant as MeshInstance3D
+            if not is_instance_valid(armor_node):
+                continue
+            if integrity <= 0.0:
+                armor_node.visible = false
+            else:
+                var wear := 1.0 - integrity
+                armor_node.scale = armor_node.scale * (1.0 - wear * 0.08)
+                var armor_material := armor_node.material_override as StandardMaterial3D
+                if is_instance_valid(armor_material):
+                    armor_material.albedo_color = armor_material.albedo_color.lerp(Color(0.22, 0.12, 0.1), wear * 0.72)
+                    armor_material.emission = armor_material.albedo_color * (0.055 + wear * 0.12)
+        if integrity <= 0.0 and is_instance_valid(game):
+            game.call("spawn_effect", global_position + Vector3.UP * 1.25, Color(1.0, 0.58, 0.18), 1.35)
+            game.call("show_notice", display_name + "的" + _get_boss_armor_zone_name(zone) + "护甲被击碎！")
+        return {"zone": zone, "integrity": integrity, "broken": integrity <= 0.0}
+    return {"zone": "", "integrity": 0.0, "broken": false}
+
+func _get_boss_armor_zone_name(zone: String) -> String:
+    match zone:
+        "helmet": return "头盔"
+        "chest": return "胸甲"
+        "shoulders": return "肩甲"
+        "arms": return "臂甲"
+        "legs": return "腿甲"
+    return "护甲"
 
 func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: float) -> void:
     var accent: Color = profile.get("accent", _base_color.lightened(0.3))
@@ -373,25 +430,25 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
     var helmet := SphereMesh.new()
     helmet.radius = radius * 0.52
     helmet.height = radius * 0.72
-    _add_enemy_visual(helmet, Vector3(0.0, height * 0.84, -radius * 0.08), Vector3(1.0, 0.82, 0.92), accent, metallic)
+    _add_enemy_visual(helmet, Vector3(0.0, height * 0.84, -radius * 0.08), Vector3(1.0, 0.82, 0.92), accent, metallic, "helmet")
     var waist := BoxMesh.new()
     waist.size = Vector3(radius * 1.32, height * 0.12, radius * 0.68)
-    _add_enemy_visual(waist, Vector3(0.0, height * 0.39, -radius * 0.18), Vector3.ONE, secondary, metallic * 0.9)
+    _add_enemy_visual(waist, Vector3(0.0, height * 0.39, -radius * 0.18), Vector3.ONE, secondary, metallic * 0.9, "chest")
     var forearm := CylinderMesh.new()
     forearm.top_radius = radius * 0.19
     forearm.bottom_radius = radius * 0.25
     forearm.height = height * 0.2
     for side in [-1.0, 1.0]:
-        var guard := _add_enemy_visual(forearm, Vector3(side * radius * 0.72, height * 0.43, -radius * 0.42), Vector3.ONE, accent, metallic)
+        var guard := _add_enemy_visual(forearm, Vector3(side * radius * 0.72, height * 0.43, -radius * 0.42), Vector3.ONE, accent, metallic, "arms")
         guard.rotation.z = side * 0.12
         var greave := BoxMesh.new()
         greave.size = Vector3(radius * 0.34, height * 0.22, radius * 0.48)
-        _add_enemy_visual(greave, Vector3(side * radius * 0.28, height * 0.15, -radius * 0.12), Vector3.ONE, secondary, metallic * 0.82)
+        _add_enemy_visual(greave, Vector3(side * radius * 0.28, height * 0.15, -radius * 0.12), Vector3.ONE, secondary, metallic * 0.82, "legs")
         var shoulder_scale := Vector3(width, 1.0, 1.0)
         var shoulder_cap := SphereMesh.new()
         shoulder_cap.radius = radius * 0.38
         shoulder_cap.height = radius * 0.62
-        _add_enemy_visual(shoulder_cap, Vector3(side * radius * 0.82, height * 0.69, 0.0), shoulder_scale, accent, metallic)
+        _add_enemy_visual(shoulder_cap, Vector3(side * radius * 0.82, height * 0.69, 0.0), shoulder_scale, accent, metallic, "shoulders")
     var crest := str(profile.get("crest", "crest"))
     var crest_mesh: Mesh
     match crest:
@@ -422,6 +479,7 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
             crest_plate.size = Vector3(radius * 0.48, radius * 0.56, radius * 0.18)
             crest_mesh = crest_plate
     var crest_node := _add_enemy_visual(crest_mesh, Vector3(0.0, height * 1.04, -radius * 0.05), Vector3.ONE, accent, metallic)
+    _register_boss_armor_node(crest_node, "helmet")
     if crest in ["horn", "fin", "void"]:
         crest_node.rotation.z = PI
     elif crest == "rune":
@@ -435,11 +493,13 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
     var eye_material := eye_node.material_override as StandardMaterial3D
     eye_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
     eye_material.emission = accent * 0.42
+    _register_boss_armor_node(eye_node, "helmet")
     var emblem_mesh := TorusMesh.new()
     emblem_mesh.inner_radius = radius * 0.12
     emblem_mesh.outer_radius = radius * 0.19
     var emblem_node := _add_enemy_visual(emblem_mesh, Vector3(0.0, height * 0.61, -radius * 0.76), Vector3(1.0, 1.0, 0.28), accent, metallic)
     emblem_node.rotation.x = deg_to_rad(90.0)
+    _register_boss_armor_node(emblem_node, "chest")
     if bool(profile.get("winged", false)):
         var wing := PrismMesh.new()
         wing.size = Vector3(radius * 0.72, height * 0.48, radius * 0.18)
@@ -931,6 +991,8 @@ func take_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) -> vo
         if is_instance_valid(marked_attacker):
             marked_attacker.health = minf(float(marked_attacker.max_health), float(marked_attacker.health) + applied_damage * lifesteal_ratio)
     CombatSessionManager.record_damage_dealt(applied_damage)
+    if is_boss and applied_damage > 0.0:
+        damage_boss_armor(applied_damage)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
         if weakpoint_multiplier > 1.0:
