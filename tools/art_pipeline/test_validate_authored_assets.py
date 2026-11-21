@@ -9,6 +9,7 @@ from validate_authored_assets import (
     check_glb,
     safe_path,
     validate_armor_manifest,
+    validate_release_metadata,
     validate_vfx_manifest,
     validate_character_visual_catalog,
 )
@@ -27,6 +28,30 @@ def write_glb(path: Path, nodes: list[str]) -> None:
                      struct.pack("<II", len(payload), 0x4E4F534A) + payload)
 
 class ArtValidatorTests(unittest.TestCase):
+    def test_release_metadata_requires_license_and_human_visual_approval(self):
+        valid = {
+            "source_license": "original",
+            "quality_gate": {
+                "approved_for_final_release": True,
+                "visual_review_required": False,
+                "reviewed_by": "art-reviewer",
+                "reviewed_at": "2026-11-22",
+            },
+        }
+        validate_release_metadata(valid)
+        invalid_license = json.loads(json.dumps(valid))
+        invalid_license["source_license"] = "pending_review"
+        with self.assertRaisesRegex(ValueError, "not approved"):
+            validate_release_metadata(invalid_license)
+        unreviewed = json.loads(json.dumps(valid))
+        unreviewed["quality_gate"]["approved_for_final_release"] = False
+        with self.assertRaisesRegex(ValueError, "not been approved"):
+            validate_release_metadata(unreviewed)
+        missing_reviewer = json.loads(json.dumps(valid))
+        del missing_reviewer["quality_gate"]["reviewed_by"]
+        with self.assertRaisesRegex(ValueError, "reviewed_by"):
+            validate_release_metadata(missing_reviewer)
+
     def test_glb_requires_all_declared_nodes(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "armor.glb"
