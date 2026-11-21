@@ -118,3 +118,6 @@ blender --background --python tools/art_pipeline/blender/import_angelica_rigged_
 ```
 
 导入器会创建 Armature、骨骼父子关系、网格对象、顶点组和 Armature 修改器，并把原始 BON 矩阵保存为骨骼自定义属性，便于后续校准。它目前使用 BON 的相对矩阵推导预览骨骼位置；Direct3D/Angelica 坐标轴、骨骼 bind pose、骨骼朝向和动作重定向尚未通过真实《圣斗士星矢 OL》客户端样本验收。因此该结果是用于检查层级与蒙皮绑定的实验预览，不是已确认正确的最终模型。
+
+
+补充：SKI v9 及以上可能包含自己的骨骼名称映射表，网格顶点中的骨骼索引应按该表解释；旧版 SKI 没有此表时才使用 BON 的全骨架索引。实验性 rigged importer 已按这两种情况分别处理，仍需真实角色样本验证索引映射及坐标轴。
