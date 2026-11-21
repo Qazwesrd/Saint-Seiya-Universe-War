@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_ecm_payload(args.entry, autoangel.read_ecm(raw))
         stats = validate_ecm_payload(payload)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     except Exception as exc:
         print(f"ANGELICA_ECM_EXPORT_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
