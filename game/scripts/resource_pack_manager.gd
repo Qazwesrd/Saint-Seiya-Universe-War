@@ -230,8 +230,8 @@ func mount_pack(pack_id: String) -> bool:
 	return _mount_pack_recursive(pack_id, {})
 
 func _mount_pack_recursive(pack_id: String, visiting: Dictionary) -> bool:
-	var info := get_pack_info(pack_id)
-	if not info.is_empty() and bool(info.get("required", false)):
+	var initial_pack_info := get_pack_info(pack_id)
+	if not initial_pack_info.is_empty() and bool(initial_pack_info.get("required", false)):
 		return true
 	if mounted_packs.has(pack_id):
 		return true
