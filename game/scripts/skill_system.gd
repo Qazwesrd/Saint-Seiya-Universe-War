@@ -1413,7 +1413,7 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
             class_multiplier = 1.0 + value
     # Every profession's awakened or unawakened Dark Cloth empowers skills.
     var armor_profile: Dictionary = ArmorSystem.get_bonus_stats()
-    return class_multiplier * float(armor_profile.get("dark_resonance", 1.0))
+    return class_multiplier * float(armor_profile.get("dark_resonance", 1.0)) * float(armor_profile.get("platinum_star_resonance", 1.0))
 
 func get_position_damage_multiplier(class_id: String, target_facing_dot: float, target_is_boss: bool = false) -> float:
     if class_id != "sea_dragon" or target_facing_dot > 0.25:
