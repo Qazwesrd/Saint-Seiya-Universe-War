@@ -765,6 +765,28 @@ func _begin_boss_guard() -> void:
     if is_instance_valid(game):
         game.call("show_notice", display_name + "进入防御姿态！连续攻击可积累破防，但注意反击")
 
+func is_ultimate_telegraph_active() -> bool:
+    return is_boss and state == BrainState.WINDUP and _boss_heavy_attack and not boss_break_active
+
+func resolve_ultimate_clash(attacker_power: float) -> bool:
+    if not is_ultimate_telegraph_active():
+        return false
+    var phase_multiplier := 1.0 + (0.18 if _boss_phase_two else 0.0) + (0.22 if _boss_enraged else 0.0)
+    var required_power := max_health * 0.055 * phase_multiplier
+    if attacker_power >= required_power:
+        state = BrainState.RECOVERY
+        state_timer = 1.65
+        _boss_heavy_attack = false
+        _boss_combo_remaining = 0
+        _boss_combo_followup_active = false
+        if is_instance_valid(telegraph_mesh):
+            telegraph_mesh.visible = false
+            telegraph_mesh.scale = Vector3.ONE
+        if is_instance_valid(game):
+            game.call("play_boss_presentation", self, "break")
+        return true
+    return false
+
 func get_boss_guard_damage_multiplier() -> float:
     return 0.42 if is_boss and state == BrainState.GUARD else 1.0
 
