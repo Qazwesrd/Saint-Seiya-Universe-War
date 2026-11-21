@@ -54,6 +54,16 @@ jobs:
           if width != 960 or height != 960:
               raise SystemExit(f"Unexpected preview dimensions: {width}x{height}")
           print(f"CHARACTER_PREVIEW_VALIDATED {preview} {width}x{height} bytes={len(data)}")
+          armor_previews = list(Path("game/art_previews/armors").glob("*_front.png"))
+          if len(armor_previews) != 1:
+              raise SystemExit(f"Expected exactly one representative armor preview, found {len(armor_previews)}")
+          armor_data = armor_previews[0].read_bytes()
+          if len(armor_data) < 128 or armor_data[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
+              raise SystemExit(f"Armor preview is not a valid PNG: {armor_previews[0]}")
+          armor_width, armor_height = struct.unpack(">II", armor_data[16:24])
+          if (armor_width, armor_height) != (960, 960):
+              raise SystemExit(f"Unexpected armor preview dimensions: {armor_width}x{armor_height}")
+          print(f"ARMOR_PREVIEW_VALIDATED {armor_previews[0]} {armor_width}x{armor_height} bytes={len(armor_data)}")
           PY
           python3 - <<'PY'
           import json
@@ -177,6 +187,7 @@ jobs:
             game/assets/enemies/*/model/enemy.glb
             game/assets/enemies/*/manifest.json
             game/art_previews/characters/*.png
+            game/art_previews/armors/*.png
             game/assets/characters/*/manifest.json
             game/assets/armors/*/manifest.json
           if-no-files-found: error
