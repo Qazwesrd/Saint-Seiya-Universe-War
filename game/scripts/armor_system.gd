@@ -227,6 +227,7 @@ func get_bonus_stats() -> Dictionary:
  var health_bonus := float(base["hp"])*condition*awaken
  var dark_cosmos_bonus := 0.0
  var dark_speed_bonus := 0.0
+ var intact_parts := 0
  if stage_id == "dark_cloth":
   # Dark Cosmos resonance reinforces aggressive combat while retaining class identity.
   var class_data: Dictionary = RPGState.CLASS_DATA.get(str(RPGState.profile.get("class_id", "pegasus")), RPGState.CLASS_DATA.get("pegasus", {}))
@@ -244,7 +245,6 @@ func get_bonus_stats() -> Dictionary:
   dark_cosmos_bonus += float(class_passive.get("cosmos_rate", 0.0)) * condition * awaken
   # The five armor pieces form a real set: three intact pieces grant Cosmos,
   # while all five intact pieces grant a small defensive/offensive set bonus.
-  var intact_parts := 0
   for part in PARTS:
    if int(durability.get(part, 100)) > 0:
     intact_parts += 1
