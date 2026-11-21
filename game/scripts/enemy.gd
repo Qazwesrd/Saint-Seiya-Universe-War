@@ -48,6 +48,8 @@ var boss_phase_transition_timer := 0.0
 var _boss_phase_two := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
+var _boss_combo_remaining := 0
+var _boss_combo_followup_active := false
 var _base_color := Color(0.72, 0.16, 0.22)
 var freeze_timer := 0.0
 var slow_timer := 0.0
@@ -308,6 +310,23 @@ func _get_boss_attack_animation() -> String:
         return "skill_cast"
     return "basic_attack_1"
 
+func _get_boss_combo_followups() -> int:
+    if not is_boss:
+        return 0
+    var followups := 0
+    match boss_special:
+        "death_burst", "lightning_followup":
+            followups = 2
+        "judge_combo", "wing_slam":
+            followups = 1
+        "judgment_combo":
+            followups = 2
+        _:
+            followups = 0
+    if _boss_phase_two and followups > 0:
+        followups += 1
+    return mini(followups, 3)
+
 func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
     var part := MeshInstance3D.new()
     part.mesh = mesh
@@ -506,7 +525,20 @@ func _physics_process(delta: float) -> void:
             velocity.x = move_toward(velocity.x, 0.0, speed * 8.0 * delta)
             velocity.z = move_toward(velocity.z, 0.0, speed * 8.0 * delta)
             if state_timer <= 0.0:
-                state = BrainState.CHASE
+                if is_boss and _boss_combo_remaining > 0:
+                    _boss_combo_remaining -= 1
+                    _boss_combo_followup_active = true
+                    _boss_heavy_attack = true
+                    state = BrainState.WINDUP
+                    state_timer = maxf(0.22, boss_windup * (0.24 if _boss_phase_two else 0.3))
+                    telegraph_mesh.visible = true
+                    telegraph_mesh.scale = Vector3.ONE * boss_range_multiplier
+                    _play_authored_enemy_action(_get_boss_attack_animation(), 0.035)
+                    if is_instance_valid(game):
+                        game.call("show_notice", display_name + "：连续追击！向侧方闪避")
+                else:
+                    _boss_combo_followup_active = false
+                    state = BrainState.CHASE
         BrainState.STAGGER:
             telegraph_mesh.visible = false
             velocity.x = knockback_velocity.x
@@ -585,6 +617,8 @@ func _begin_attack() -> void:
         _boss_attack_count += 1
         var heavy_interval := maxi(1, boss_heavy_interval - (1 if _boss_phase_two else 0))
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
+        _boss_combo_remaining = _get_boss_combo_followups() if _boss_heavy_attack else 0
+        _boss_combo_followup_active = false
     state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
     _play_authored_enemy_action(_get_boss_attack_animation(), 0.045)
     var warning_color := _get_boss_telegraph_color()
@@ -662,6 +696,8 @@ func _resolve_attack(target: Node3D) -> void:
     if current_distance <= attack_reach:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
         var damage_multiplier := boss_heavy_multiplier if _boss_heavy_attack else 1.0
+        if _boss_combo_followup_active:
+            damage_multiplier *= 0.72
         var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
         target.call("receive_damage", outgoing_attack, global_position)
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
@@ -673,7 +709,7 @@ func _resolve_attack(target: Node3D) -> void:
             _apply_boss_attack_signature(target, outgoing_attack)
     attack_cooldown = attack_interval * (0.78 if _boss_phase_two else 1.0)
     state = BrainState.RECOVERY
-    state_timer = boss_recovery if _boss_heavy_attack else (0.5 if is_boss else 0.34)
+    state_timer = (maxf(0.2, boss_recovery * 0.48) if _boss_combo_remaining > 0 else boss_recovery) if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
 
 func _drain_target_cosmos(target: Node, amount: float) -> void:
@@ -697,10 +733,8 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "汲取生命，恢复了部分体力")
         "death_burst":
-            if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.18, global_position)
             if is_instance_valid(game):
-                game.call("show_notice", display_name + "发动死亡追加斩击")
+                game.call("show_notice", display_name + "发动死亡连斩")
         "tidal_pull":
             if target.has_method("apply_enemy_knockback"):
                 var pull_direction := global_position - target.global_position
@@ -715,10 +749,8 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "释放太阳神追加光爆")
         "lightning_followup":
-            if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.22, global_position)
             if is_instance_valid(game):
-                game.call("show_notice", display_name + "召来雷霆追击")
+                game.call("show_notice", display_name + "召来雷霆连续追击")
         "void_drain":
             _drain_target_cosmos(target, 12.0)
             health = minf(max_health, health + base_damage * 0.06)
@@ -733,11 +765,11 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             if target.has_method("receive_damage"):
                 target.call("receive_damage", base_damage * 0.10, global_position)
         "judge_combo":
-            if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.16, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动审判连击")
         "judgment_combo":
-            if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.20, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动连续裁决")
         "wing_slam":
             if target.has_method("apply_enemy_knockback"):
                 var slam_direction := target.global_position - global_position
