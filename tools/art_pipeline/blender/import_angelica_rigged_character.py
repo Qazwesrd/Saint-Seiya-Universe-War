@@ -74,6 +74,7 @@ def create_armature(bon: dict, collection: bpy.types.Collection) -> bpy.types.Ob
     bpy.ops.object.mode_set(mode="EDIT")
 
     edit_bones = []
+    edit_bone_names = []
     for index, source_bone in enumerate(bones):
         name = str(source_bone.get("name") or f"Bone_{index}")
         edit_bone = armature_data.edit_bones.new(name)
@@ -95,6 +96,7 @@ def create_armature(bon: dict, collection: bpy.types.Collection) -> bpy.types.Ob
         edit_bone.head = head
         edit_bone.tail = tail
         edit_bones.append(edit_bone)
+        edit_bone_names.append(edit_bone.name)
 
     for index, source_bone in enumerate(bones):
         parent_index = int(source_bone.get("parent", -1))
@@ -106,7 +108,7 @@ def create_armature(bon: dict, collection: bpy.types.Collection) -> bpy.types.Ob
 
     bpy.ops.object.mode_set(mode="OBJECT")
     for index, source_bone in enumerate(bones):
-        data_bone = armature_data.bones[edit_bones[index].name]
+        data_bone = armature_data.bones[edit_bone_names[index]]
         data_bone["angelica_index"] = index
         data_bone["angelica_parent_index"] = int(source_bone.get("parent", -1))
         data_bone["angelica_mat_relative"] = [float(v) for v in source_bone["mat_relative"]]
