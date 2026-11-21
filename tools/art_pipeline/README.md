@@ -136,7 +136,7 @@ blender --background "D:\\SeiyaInventory\\pegasus_rigged_preview.blend" --python
 纯 Python 时间/数据转换函数位于 `angelica_animation.py`，可在没有 Blender 或游戏客户端的情况下运行单元测试：
 
 ```powershell
-py -m unittest tools.art_pipeline.test_angelica_animation -v
+py -m unittest discover -s tools/art_pipeline -p "test_angelica_animation.py" -v
 ```
 
 **重要限制：** 该阶段只把离散关键帧样本写入 Blender 动作，不实现 Angelica 插值模式、根运动/骨骼坐标基校准、事件轨道、动作融合或 SMD 动作片段切分。动画起始帧与轨道帧编号的时间解释仍需用真实客户端样本校准；没有原版客户端时，自动化测试只能证明数据转换逻辑，不证明原版动作播放正确。运行时需先打开与 BON 对应的 rigged preview 文件。
