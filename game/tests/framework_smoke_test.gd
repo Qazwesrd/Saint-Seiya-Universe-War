@@ -26,6 +26,25 @@ func _run_tests() -> void:
 			has_dark_fragment_drop = true
 	assert(has_dark_fragment_drop and RPGState.ITEM_DATA.has("dark_cosmos_fragment"), "Dark Saint bosses have a dedicated Dark Cosmos Fragment material drop")
 	assert(RPGState.ITEM_DATA.has("platinum_star_shard"), "Platinum awakening has its own Star Shard material")
+	for dark_rank_id in ["dark_saint_scout", "dark_saint_raider", "dark_saint_elite", "dark_saint_captain"]:
+		assert(EnemyDatabase.has_archetype(dark_rank_id), "Dark Saint faction rank is registered: " + dark_rank_id)
+		assert(str(EnemyDatabase.get_archetype(dark_rank_id).get("faction", "")) == "dark_saints", "Dark Saint rank belongs to its faction: " + dark_rank_id)
+	var dark_trial_waves: Array[Dictionary] = EncounterDirector.get_dark_faction_trial_waves()
+	assert(dark_trial_waves.size() == 3, "Dark Saint faction trial contains three ordered waves")
+	assert(str(dark_trial_waves[0]["spawns"][0].get("archetype_id", "")) == "dark_saint_scout", "Dark Saint trial opens with scout patrols")
+	assert(str(dark_trial_waves[1]["spawns"][1].get("archetype_id", "")) == "dark_saint_elite", "Dark Saint trial escalates to elite officers")
+	assert(str(dark_trial_waves[2]["spawns"][1].get("archetype_id", "")) == "dark_black_knight_champion", "Dark Saint trial ends with the Black Knight commander")
+	var dark_elite_drops: Array[Dictionary] = LootManager.get_drop_table(false, "dark_saint_elite")
+	var has_platinum_shard_drop := false
+	for dark_elite_drop in dark_elite_drops:
+		if str(dark_elite_drop.get("item_id", "")) == "platinum_star_shard":
+			has_platinum_shard_drop = true
+	assert(has_platinum_shard_drop, "Dark Saint elite enemies can drop Platinum Star Shards")
+	var dark_patrol_quest_found := false
+	for dark_quest_entry in SideQuestManager.QUESTS:
+		if str(dark_quest_entry.get("id", "")) == "side_dark_patrol" and int(dark_quest_entry.get("target", 0)) == 3:
+			dark_patrol_quest_found = true
+	assert(dark_patrol_quest_found, "Dark Saint patrol quest tracks three enemy defeats")
 	var dark_awakening_cost: Dictionary = ArmorSystem.get_awakening_requirements("dark_cloth")
 	var platinum_awakening_cost: Dictionary = ArmorSystem.get_awakening_requirements("platinum")
 	assert(str(dark_awakening_cost.get("material_id", "")) == "dark_cosmos_fragment" and int(dark_awakening_cost.get("material_count", 0)) == 5, "Dark Cloth awakening consumes five Dark Cosmos Fragments")
@@ -39,7 +58,7 @@ func _run_tests() -> void:
 	var bond_after: Dictionary = CollectionSystem.get_active_companion_bond()
 	assert(int(bond_after.get("exp", 0)) >= int(bond_before.get("exp", 0)) or int(bond_after.get("level", 1)) > int(bond_before.get("level", 1)), "companion bond progress persists")
 	assert(WorldExplorationManager.get_regions().size() == 7, "world map exposes all seven campaign regions")
-	assert(SideQuestManager.QUESTS.size() == 22, "seven chapters plus the Dark Saint commander challenge define optional quest content")
+	assert(SideQuestManager.QUESTS.size() == 23, "seven chapters plus Dark Saint patrol and commander challenges define optional quest content")
 	var available_side_quests: Array[Dictionary] = SideQuestManager.get_quest_overview()
 	var has_starting_side_quest := false
 	var hidden_quest_visible := false
