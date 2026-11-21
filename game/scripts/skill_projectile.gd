@@ -152,7 +152,7 @@ func _animate_projectile(delta: float) -> void:
 
 func _hit_target(hit_target: Node3D) -> void:
     if hit_target.has_method("take_damage"):
-        hit_target.call("take_damage", damage)
+        hit_target.call("take_damage", damage, owner_player.global_position if is_instance_valid(owner_player) else global_position)
     if status != "" and hit_target.has_method("apply_status_effect"):
         hit_target.call("apply_status_effect", status, status_duration, status_power)
     if game.has_method("spawn_effect"):

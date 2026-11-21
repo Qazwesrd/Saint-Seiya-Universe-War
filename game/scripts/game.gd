@@ -351,7 +351,7 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             toward_attacker.y = 0.0
             var target_facing_dot := target_forward.dot(toward_attacker.normalized()) if toward_attacker.length_squared() > 0.001 else 1.0
             var position_multiplier: float = SkillSystem.get_position_damage_multiplier(class_id, target_facing_dot, bool(enemy.get("is_boss")))
-            enemy.call("take_damage", damage * target_multiplier * position_multiplier)
+            enemy.call("take_damage", damage * target_multiplier * position_multiplier, player.global_position)
 func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knockback: float, launch: float, stagger: float) -> void:
     if not is_instance_valid(player):
         return
@@ -999,7 +999,7 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
                 if float(enemy.get("health")) <= 0.0:
                     break
                 if follow_up_damage > 0.0 and enemy.has_method("take_damage"):
-                    enemy.call("take_damage", follow_up_damage)
+                    enemy.call("take_damage", follow_up_damage, player.global_position)
                     impacted = true
             var stagger_bonus: float = float(effect_profile.get("stagger_bonus", 0.0))
             if stagger_bonus > 0.0 and enemy.has_method("apply_hit_reaction"):
@@ -1200,7 +1200,7 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
         if execute_threshold > 0.0 and float(enemy.get("health")) / maxf(1.0, float(enemy.get("max_health"))) <= execute_threshold:
             bonus_ratio += execute_ratio
         if bonus_ratio > 0.0 and enemy.has_method("take_damage"):
-            enemy.call("take_damage", attack_power * bonus_ratio)
+            enemy.call("take_damage", attack_power * bonus_ratio, player.global_position)
         var pull_force := float(signature_profile.get("pull_force", 0.0))
         var knockback_force := float(signature_profile.get("knockback_force", 0.0))
         var stagger_force := float(signature_profile.get("stagger_force", 0.0))
@@ -1228,7 +1228,7 @@ func _apply_divine_signature(class_id: String, ability: Dictionary, max_distance
                     nearest_chain_target = candidate
                     nearest_chain_distance = chain_distance
             if is_instance_valid(nearest_chain_target) and nearest_chain_target.has_method("take_damage"):
-                nearest_chain_target.call("take_damage", attack_power * float(signature_profile.get("chain_ratio", 0.0)))
+                nearest_chain_target.call("take_damage", attack_power * float(signature_profile.get("chain_ratio", 0.0)), player.global_position)
                 chain_applied = true
         affected += 1
     if affected > 0:

@@ -610,6 +610,14 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", -1.0, true), 1.05), "Sea Dragon positional bonus is reduced against bosses")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", 0.8, false), 1.0), "Sea Dragon receives no positional bonus when striking the front")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("pegasus", 0.0, false), 1.0), "Other classes do not receive Sea Dragon positional bonus")
+	var weakpoint_test_boss = preload("res://scripts/enemy.gd").new()
+	weakpoint_test_boss.is_boss = true
+	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, 3.0)), 1.22), "boss rear weakpoint grants 22% precision damage")
+	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(3.0, 0.0, 0.0)), 1.08), "boss flank weakpoint grants 8% precision damage")
+	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, -3.0)), 1.0), "boss front armor does not grant weakpoint bonus")
+	weakpoint_test_boss.boss_break_active = true
+	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, 3.0)), 1.0), "break vulnerability does not stack with positional weakpoint damage")
+	weakpoint_test_boss.free()
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("sea_dragon"), 1.0), "Sea Dragon positional passive is not double-counted as permanent damage")
 	for class_profile in SkillSystem.get_class_skill_catalog():
 		var audited_class_id := str(class_profile.get("id", ""))
@@ -629,6 +637,8 @@ func _run_tests() -> void:
 
 	test_boss.apply_hit_reaction(Vector3.RIGHT, 10.0, 4.0, 0.8)
 	assert(float(test_boss.boss_control_resist_timer) > 0.0, "repeated control builds boss poise resistance")
+	test_boss.boss_break_active = false
+	test_boss.boss_break_getup_timer = 0.0
 	var boss_health_before_mark := float(test_boss.health)
 	test_boss.divine_mark = "soul"
 	assert(is_equal_approx(float(test_boss.get_divine_mark_lifesteal_ratio()), 0.025), "Hades soul marks grant a small life-steal effect")

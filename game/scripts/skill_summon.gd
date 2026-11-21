@@ -73,7 +73,7 @@ func _physics_process(delta: float) -> void:
         elif attack_timer <= 0.0:
             impact_pulse_timer = 0.32
             if target.has_method("take_damage"):
-                target.call("take_damage", summon_damage)
+                target.call("take_damage", summon_damage, owner_player.global_position if is_instance_valid(owner_player) else global_position)
             if game.has_method("spawn_effect"):
                 game.call("spawn_effect", target.global_position + Vector3.UP, summon_color, 0.75)
             attack_timer = 1.15

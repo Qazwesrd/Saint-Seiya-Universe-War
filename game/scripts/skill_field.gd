@@ -144,7 +144,7 @@ func _animate_field(delta: float) -> void:
 
 func _apply_to_enemy(enemy: Node3D, is_trap: bool) -> void:
     if enemy.has_method("take_damage"):
-        enemy.call("take_damage", damage * (1.5 if is_trap else 1.0))
+        enemy.call("take_damage", damage * (1.5 if is_trap else 1.0), owner_player.global_position if is_instance_valid(owner_player) else global_position)
     if status != "" and enemy.has_method("apply_status_effect"):
         enemy.call("apply_status_effect", status, status_duration * (1.25 if is_trap else 1.0), status_power)
     if is_trap and game.has_method("spawn_effect"):

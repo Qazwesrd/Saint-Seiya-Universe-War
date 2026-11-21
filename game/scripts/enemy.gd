@@ -70,6 +70,9 @@ var boss_presentation_hit_cooldown := 0.0
 var boss_dialogue_cooldown := 0.0
 var boss_break_meter := 0.0
 var boss_break_active := false
+var boss_break_getup_timer := 0.0
+var boss_weakpoint_notice_cooldown := 0.0
+var enemy_visual_root: Node3D
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -228,8 +231,20 @@ func _ready() -> void:
     telegraph_mesh.visible = false
     add_child(telegraph_mesh)
     _load_authored_enemy_model()
+    _setup_enemy_visual_root(radius)
     if is_boss and is_instance_valid(game) and game.has_method("play_boss_presentation"):
         game.call("play_boss_presentation", self, "entrance")
+
+func _setup_enemy_visual_root(radius: float) -> void:
+    enemy_visual_root = Node3D.new()
+    enemy_visual_root.name = "EnemyVisualRoot"
+    enemy_visual_root.position.y = radius * 1.15
+    add_child(enemy_visual_root)
+    for visual_child in get_children():
+        if visual_child == enemy_visual_root or visual_child == telegraph_mesh or visual_child is CollisionShape3D:
+            continue
+        visual_child.reparent(enemy_visual_root, true)
+
 
 func _load_authored_enemy_model() -> void:
     # Optional GLB bundle; a clean source checkout remains playable via procedural visuals.
@@ -443,6 +458,20 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
         halo_material.emission = accent * float(profile.get("glow", 0.2))
         halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
+func get_boss_weakpoint_multiplier(attacker_position: Vector3) -> float:
+    if not is_boss or boss_break_active or attacker_position == Vector3.ZERO:
+        return 1.0
+    var toward_attacker := attacker_position - global_position
+    toward_attacker.y = 0.0
+    if toward_attacker.length_squared() <= 0.001:
+        return 1.0
+    var facing_dot := (-global_transform.basis.z).dot(toward_attacker.normalized())
+    if facing_dot <= -0.55:
+        return 1.22
+    if facing_dot <= -0.1:
+        return 1.08
+    return 1.0
+
 func is_targetable() -> bool:
     return state != BrainState.DEAD and health > 0.0 and is_inside_tree()
 
@@ -464,6 +493,8 @@ func _physics_process(delta: float) -> void:
 
     boss_presentation_hit_cooldown = maxf(0.0, boss_presentation_hit_cooldown - delta)
     boss_dialogue_cooldown = maxf(0.0, boss_dialogue_cooldown - delta)
+    boss_break_getup_timer = maxf(0.0, boss_break_getup_timer - delta)
+    boss_weakpoint_notice_cooldown = maxf(0.0, boss_weakpoint_notice_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
     freeze_timer = maxf(0.0, freeze_timer - delta)
@@ -511,7 +542,7 @@ func _physics_process(delta: float) -> void:
         move_and_slide()
         return
 
-    if distance > 0.1:
+    if distance > 0.1 and state == BrainState.CHASE:
         rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * 8.0)
 
     match state:
@@ -548,12 +579,14 @@ func _physics_process(delta: float) -> void:
                 elif boss_break_active:
                     boss_break_active = false
                     boss_break_meter = 0.0
+                    boss_break_getup_timer = 0.42
+                    state_timer = boss_break_getup_timer
                     _boss_combo_followup_active = false
-                    state = BrainState.CHASE
                     if is_instance_valid(body_material):
                         body_material.albedo_color = _base_color
+                        body_material.emission = _base_color * 0.22
                     if is_instance_valid(game):
-                        game.call("show_notice", display_name + "挣脱破防状态，重新投入战斗！")
+                        game.call("show_notice", display_name + "开始起身，短暂恢复后重新投入战斗！")
                 else:
                     _boss_combo_followup_active = false
                     state = BrainState.CHASE
@@ -573,7 +606,7 @@ func _animate_enemy_limbs(delta: float) -> void:
     var movement := clampf(planar_speed / maxf(1.0, speed), 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.009 * maxf(0.6, speed)
     var windup_pose := 1.0 if state == BrainState.WINDUP else 0.0
-    var stagger_pose := 1.0 if state == BrainState.STAGGER else 0.0
+    var stagger_pose := 1.0 if state == BrainState.STAGGER or boss_break_active else 0.0
     if is_instance_valid(telegraph_mesh):
         if telegraph_mesh.visible:
             telegraph_mesh.rotation.y += delta * 0.9
@@ -589,6 +622,9 @@ func _animate_enemy_limbs(delta: float) -> void:
         var state_glow := 0.22 + windup_pose * (0.28 + (sin(clock * 3.2) * 0.5 + 0.5) * 0.18) + stagger_pose * 0.12
         body_material.emission = _base_color * state_glow
     rotation.z = lerpf(rotation.z, -0.12 * stagger_pose + 0.035 * windup_pose, minf(1.0, delta * 5.0))
+    if is_instance_valid(enemy_visual_root):
+        var break_pose_weight := 1.0 if boss_break_active else clampf(boss_break_getup_timer / 0.42, 0.0, 1.0)
+        enemy_visual_root.rotation.z = lerp_angle(enemy_visual_root.rotation.z, -1.12 * break_pose_weight, minf(1.0, delta * 5.5))
     if is_instance_valid(boss_aura_ring):
         boss_aura_ring.rotation.y += delta * (0.42 if _boss_phase_two else 0.24)
         var ring_pulse := 1.0 + sin(clock * 1.5) * (0.055 if _boss_phase_two else 0.025)
@@ -876,13 +912,14 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
         _:
             return
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) -> void:
     if state == BrainState.DEAD or health <= 0.0:
         return
     var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
     mark_multiplier *= get_divine_mark_damage_multiplier()
     var break_vulnerability := 1.35 if is_boss and boss_break_active else 1.0
-    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier * break_vulnerability)
+    var weakpoint_multiplier := get_boss_weakpoint_multiplier(attacker_position)
+    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier * break_vulnerability * weakpoint_multiplier)
     health = maxf(0.0, health - applied_damage)
     var lifesteal_ratio := get_divine_mark_lifesteal_ratio()
     if lifesteal_ratio > 0.0 and is_instance_valid(game):
@@ -892,6 +929,12 @@ func take_damage(amount: float) -> void:
     CombatSessionManager.record_damage_dealt(applied_damage)
     if is_instance_valid(game):
         game.call("spawn_effect", global_position + Vector3(0, 1.0, 0), Color(0.25, 0.78, 1.0), 1.1 if is_boss else 0.65)
+        if weakpoint_multiplier > 1.0:
+            game.call("spawn_effect", global_position + Vector3.UP * 1.7, Color(1.0, 0.72, 0.18), 1.35)
+            if boss_weakpoint_notice_cooldown <= 0.0:
+                boss_weakpoint_notice_cooldown = 1.4
+                var weakpoint_label := "背部弱点" if weakpoint_multiplier >= 1.2 else "侧翼弱点"
+                game.call("show_notice", display_name + weakpoint_label + "命中！额外伤害已生效")
         if game.has_method("spawn_damage_number"):
             game.call("spawn_damage_number", global_position + Vector3.UP * 2.0, applied_damage, is_boss)
 
