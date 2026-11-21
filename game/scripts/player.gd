@@ -618,23 +618,6 @@ func _build_armor_wear_cracks() -> void:
                 crack_material.emission = Color(0.16, 0.025, 0.035) * severity
                 crack.material_override = crack_material
                 armor_root.add_child(crack)
-            if condition <= 0.0:
-                # Broken plates leave a few fixed low-poly fragments around the fracture edge.
-                for debris_index in range(2):
-                    var debris_mesh := PrismMesh.new()
-                    debris_mesh.size = Vector3(0.045, 0.10, 0.035)
-                    var debris := MeshInstance3D.new()
-                    debris.mesh = debris_mesh
-                    debris.position = anchor + Vector3((float(debris_index) - 0.5) * 0.11, -0.08, 0.018)
-                    debris.rotation.z = -0.48 if debris_index == 0 else 0.52
-                    var debris_material := StandardMaterial3D.new()
-                    debris_material.albedo_color = Color(0.16, 0.075, 0.055)
-                    debris_material.metallic = 0.42
-                    debris_material.roughness = 0.78
-                    debris_material.emission_enabled = true
-                    debris_material.emission = Color(0.18, 0.025, 0.018)
-                    debris.material_override = debris_material
-                    armor_root.add_child(debris)
 
 func _build_armor_visuals() -> void:
     if not is_instance_valid(visual_root):
