@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import concurrent.futures
 import os
+import queue
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -23,6 +25,8 @@ BLENDER = os.environ.get("BLENDER_BIN", "blender")
 WORKERS = max(1, int(os.environ.get("ART_FACTORY_WORKERS", "3")))
 SHARDS = max(1, int(os.environ.get("ART_FACTORY_SHARDS", "1")))
 RETRIES = max(0, int(os.environ.get("ART_FACTORY_RETRIES", "2")))
+TASK_TIMEOUT_SECONDS = max(60, int(os.environ.get("ART_FACTORY_TASK_TIMEOUT_SECONDS", "1800")))
+HEARTBEAT_SECONDS = max(10, int(os.environ.get("ART_FACTORY_HEARTBEAT_SECONDS", "60")))
 STAGES = ("characters", "armors", "enemies")
 
 
@@ -49,10 +53,54 @@ def run_task(stage: str, shard: int, shard_count: int) -> tuple[str, int, float,
                 text=True, encoding="utf-8", errors="replace", bufsize=1, env=env,
             )
             assert process.stdout is not None
-            for line in process.stdout:
-                log.write(line)
-                log.flush()
-                print(f"[{stage}:{shard + 1}/{shard_count}] {line}", end="", flush=True)
+            output_queue: queue.Queue[str | None] = queue.Queue()
+
+            def forward_output() -> None:
+                try:
+                    for output_line in process.stdout:
+                        output_queue.put(output_line)
+                finally:
+                    output_queue.put(None)
+
+            reader = threading.Thread(target=forward_output, name=f"{suffix}-output", daemon=True)
+            reader.start()
+            task_started = time.monotonic()
+            last_heartbeat = task_started
+            stream_closed = False
+            while not stream_closed or process.poll() is None:
+                now = time.monotonic()
+                elapsed = now - task_started
+                if elapsed >= TASK_TIMEOUT_SECONDS and process.poll() is None:
+                    print(
+                        f"TIMEOUT {stage} shard={shard + 1}/{shard_count} "
+                        f"elapsed={elapsed:.0f}s limit={TASK_TIMEOUT_SECONDS}s; terminating Blender",
+                        flush=True,
+                    )
+                    process.terminate()
+                    try:
+                        process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+                try:
+                    item = output_queue.get(timeout=1)
+                    if item is None:
+                        stream_closed = True
+                    else:
+                        log.write(item)
+                        log.flush()
+                        print(f"[{stage}:{shard + 1}/{shard_count}] {item}", end="", flush=True)
+                except queue.Empty:
+                    pass
+                now = time.monotonic()
+                if now - last_heartbeat >= HEARTBEAT_SECONDS and process.poll() is None:
+                    print(
+                        f"ART_FACTORY_HEARTBEAT stage={stage} shard={shard + 1}/{shard_count} "
+                        f"elapsed_seconds={int(now - task_started)}",
+                        flush=True,
+                    )
+                    last_heartbeat = now
+            reader.join(timeout=5)
             result_code = process.wait()
         if result_code == 0:
             break
@@ -68,12 +116,16 @@ def main() -> int:
         return 2
     print("SAINT_SEIYA_ART_FACTORY")
     print(f"Blender: {BLENDER}")
-    print(f"Parallel workers: {WORKERS}; shards per category: {SHARDS}; retries per batch: {RETRIES}")
+    print(f"Parallel workers: {WORKERS}; shards per category: {SHARDS}; retries per batch: {RETRIES}; task timeout: {TASK_TIMEOUT_SECONDS}s; heartbeat: {HEARTBEAT_SECONDS}s")
     print("Phase 1/2: build shared rig, animation library, armor template and environments")
-    foundation = subprocess.run(
-        [BLENDER, "--background", "--python", str(GENERATOR), "--", "--stage", "foundation"],
-        cwd=ROOT, check=False,
-    )
+    try:
+        foundation = subprocess.run(
+            [BLENDER, "--background", "--python", str(GENERATOR), "--", "--stage", "foundation"],
+            cwd=ROOT, check=False, timeout=900,
+        )
+    except subprocess.TimeoutExpired:
+        print("FOUNDATION_TIMEOUT after 900 seconds; category workers were not started", file=sys.stderr)
+        return 124
     if foundation.returncode:
         print("FOUNDATION_FAILED; category workers were not started", file=sys.stderr)
         return foundation.returncode
