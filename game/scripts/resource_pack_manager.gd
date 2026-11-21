@@ -376,7 +376,8 @@ func download_all_missing_packs() -> bool:
 		var status := get_pack_status(pack_id)
 		if bool(status.get("valid", false)):
 			continue
-		if not await download_pack_from_catalog(pack_id):
+		var downloaded: bool = await download_pack_from_catalog(pack_id)
+		if not downloaded:
 			return false
 	return true
 
