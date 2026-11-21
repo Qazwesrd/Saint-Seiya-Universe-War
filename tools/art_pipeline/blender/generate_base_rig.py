@@ -314,34 +314,34 @@ def build_body(rig):
     return join_meshes(parts, "Humanoid_Base_Mesh", rig)
 
 def add_weighted_pauldron(name, center, width, height, depth, bone_name, mat, rig, side=1):
-    """Build a domed, wraparound shoulder shell with a curved crown and rolled rim."""
+    """Build a directional wing-shaped shoulder shell; never use an ellipsoid joint."""
     cx, cy, cz = center
-    sides = 16
-    # Depth profile runs from the back rim, over the crown, to the raised front.
-    profile = ((depth * 0.50, 0.68), (depth * 0.28, 0.90),
-               (0.0, 1.00), (-depth * 0.28, 0.94),
-               (-depth * 0.43, 0.72), (-depth * 0.48, 0.34))
+    # A swept, asymmetric silhouette gives the pauldron a narrow neck, raised
+    # outer wing and pointed lower edge. The raised front crown adds real volume.
+    outline = [
+        (-0.76 * width, -0.30 * height),
+        (-0.62 * width,  0.18 * height),
+        (-0.20 * width,  0.56 * height),
+        ( 0.48 * width,  0.48 * height),
+        ( 1.00 * width,  0.06 * height),
+        ( 0.78 * width, -0.34 * height),
+        ( 0.18 * width, -0.58 * height),
+    ]
+    count = len(outline)
     vertices = []
-    for y_offset, factor in profile:
-        for index in range(sides):
-            angle = 2.0 * math.pi * index / sides
-            # The outer edge flares slightly toward the arm; the inner edge
-            # remains narrow so the shell follows the deltoid instead of a block.
-            x = math.cos(angle) * width * factor
-            z = math.sin(angle) * height * factor
-            vertices.append((cx + x * side, cy + y_offset, cz + z))
-    faces = []
-    for ring in range(len(profile) - 1):
-        for index in range(sides):
-            nxt = (index + 1) % sides
-            a = ring * sides + index
-            b = ring * sides + nxt
-            d = (ring + 1) * sides + index
-            e = (ring + 1) * sides + nxt
-            faces.append((a, b, e, d))
-    faces.append(tuple(reversed(range(sides))))
-    last = (len(profile) - 1) * sides
-    faces.append(tuple(last + index for index in range(sides)))
+    # Rear perimeter, front perimeter, then a forward crown point. Mirroring
+    # the X coordinate keeps left/right armor genuinely symmetric.
+    for x, z in outline:
+        vertices.append((cx + x * side, cy + depth * 0.50, cz + z))
+    for x, z in outline:
+        vertices.append((cx + x * side, cy - depth * 0.12, cz + z))
+    crown = len(vertices)
+    vertices.append((cx - 0.02 * width * side, cy - depth * 0.66, cz + 0.04 * height))
+    faces = [tuple(reversed(range(count)))]
+    for index in range(count):
+        nxt = (index + 1) % count
+        faces.append((index, nxt, nxt + count, index + count))
+        faces.append((count + index, count + nxt, crown))
     mesh = bpy.data.meshes.new(name + "_Mesh")
     mesh.from_pydata(vertices, [], faces)
     mesh.materials.append(mat)
@@ -350,6 +350,10 @@ def add_weighted_pauldron(name, center, width, height, depth, bone_name, mat, ri
     bpy.context.collection.objects.link(obj)
     for polygon in mesh.polygons:
         polygon.use_smooth = True
+    bevel = obj.modifiers.new("Forged_Wing_Rim", "BEVEL")
+    bevel.width = min(0.012, depth * 0.12)
+    bevel.segments = 2
+    obj.modifiers.new("Weighted_Highlight_Normals", "WEIGHTED_NORMAL")
     group = obj.vertex_groups.new(name=bone_name)
     group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
     modifier = obj.modifiers.new("Pauldron_Skeleton", "ARMATURE")
