@@ -14,7 +14,7 @@ func _run_tests() -> void:
 	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
 	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
 	assert(WorldExplorationManager.get_regions().size() == 7, "world map exposes all seven campaign regions")
-	assert(SideQuestManager.QUESTS.size() == 14, "seven chapters each define a side quest and a hidden landmark quest")
+	assert(SideQuestManager.QUESTS.size() == 21, "seven chapters each define a side quest, an NPC commission and a hidden landmark quest")
 	var available_side_quests: Array[Dictionary] = SideQuestManager.get_quest_overview()
 	var has_starting_side_quest := false
 	var hidden_quest_visible := false
