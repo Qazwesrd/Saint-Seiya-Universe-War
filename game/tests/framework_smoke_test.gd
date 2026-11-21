@@ -708,6 +708,10 @@ func _run_tests() -> void:
 	assert(is_equal_approx(float(dark_armor_bonus.get("dark_resonance", 1.0)), 1.10), "Dark Cloth grants a ten-percent skill resonance to every profession")
 	assert(float(dark_armor_bonus.get("max_cosmos", 0.0)) > 0.0 and float(dark_armor_bonus.get("speed", 0.0)) > 0.0, "Dark Cloth adds Cosmos capacity and movement speed")
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.21), "Dark Cloth resonance stacks multiplicatively with the Phoenix skill passive")
+	var awakened_dark_state: Dictionary = RPGState.profile["armor_state"].duplicate(true)
+	awakened_dark_state["awakened"] = true
+	RPGState.profile["armor_state"] = awakened_dark_state
+	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.265), "awakened Dark Cloth raises skill resonance to fifteen percent")
 	RPGState.profile["armor_state"] = saved_armor_state
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.1), "removing Dark Cloth restores the class skill multiplier")
 	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("pegasus"), 1.08), "Pegasus combo passive applies to combo finishers")
