@@ -1425,6 +1425,9 @@ func cosmos_burst() -> void:
     var aerial_profile: Dictionary = SkillSystem.get_aerial_combat_profile(class_id, tenkishi_flight_active)
     var burst_damage: float = (24.0 + float(RPGState.get_combat_stats().get("attack", 14.0)) * 2.0) * SkillSystem.get_skill_damage_multiplier(class_id) * (1.0 + float(RPGState.get_cosmos_profile().get("skill_power_multiplier", 0.0))) * (1.0 + temporary_damage_bonus) * float(aerial_profile.get("damage_multiplier", 1.0))
     var burst_range: float = float(skill_data.get("burst_range", 5.0)) + float(aerial_profile.get("range_bonus", 0.0))
+    if game.has_method("try_resolve_boss_ultimate_clash") and bool(game.call("try_resolve_boss_ultimate_clash", burst_damage)):
+        game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.72, 0.2), 4.8, "wave", 0.9)
+        return
     game.call("damage_nearby_combat", burst_damage, burst_range, 360.0, float(skill_data.get("burst_knockback", 12.0)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("burst_launch", 4.5)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 1.0)))
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
