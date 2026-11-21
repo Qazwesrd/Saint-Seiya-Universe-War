@@ -217,6 +217,7 @@ func interact_with_guide() -> void:
     if player.global_position.distance_to(guide_npc.global_position) > 4.8:
         show_notice("靠近圣域训练引导员后再交谈")
         return
+    SideQuestManager.record_event("talk_to_guide", {"chapter_id": active_world_chapter_id})
     var dialogue: Dictionary = QuestManager.interact_with_guide()
     var campaign_mission: Dictionary = CampaignManager.get_active_mission()
     if not campaign_mission.is_empty() and campaign_mission.get("encounter", {}).is_empty():
