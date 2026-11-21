@@ -983,7 +983,7 @@ func _open_side_quests(root: Control) -> void:
         var current := int(quest.get("current", 0))
         var target := int(quest.get("target", 1))
         var status := str(quest.get("status", "available"))
-        var status_text := {"available":"可接取","in_progress":"进行中","completed":"已完成，可领奖","claimed":"奖励已领取"}.get(status, status)
+        var status_text: String = str({"available":"可接取","in_progress":"进行中","completed":"已完成，可领奖","claimed":"奖励已领取"}.get(status, status))
         progress.text = "%s  %d/%d  ·  奖励：经验 %d、星币 %d" % [status_text, current, target, int(quest.get("exp", 0)), int(quest.get("coins", 0))]
         info.add_child(progress)
         var description := Label.new()
