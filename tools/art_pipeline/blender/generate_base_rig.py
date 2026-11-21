@@ -161,6 +161,50 @@ def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12
     obj.parent = rig
     return obj
 
+def add_weighted_foot(name, ankle_x, bone_name, mat, rig):
+    """Create a grounded boot-shaped foot with a broad toe, not a floating sphere."""
+    # Cross-sections run from the heel (+Y) toward the toe (-Y).
+    profiles = ((0.055, 0.045, 0.045, 0.085),
+                (0.015, 0.060, 0.055, 0.078),
+                (-0.075, 0.082, 0.048, 0.070),
+                (-0.165, 0.078, 0.035, 0.060),
+                (-0.215, 0.048, 0.026, 0.052))
+    sides = 12
+    vertices = []
+    faces = []
+    for y, rx, rz, center_z in profiles:
+        for index in range(sides):
+            angle = 2.0 * math.pi * index / sides
+            vertices.append((ankle_x + math.cos(angle) * rx,
+                             y,
+                             center_z + math.sin(angle) * rz))
+    faces.append(tuple(reversed(range(sides))))
+    for ring in range(len(profiles) - 1):
+        for index in range(sides):
+            nxt = (index + 1) % sides
+            a = ring * sides + index
+            b = ring * sides + nxt
+            c = (ring + 1) * sides + nxt
+            d = (ring + 1) * sides + index
+            faces.append((a, b, c, d))
+    last = (len(profiles) - 1) * sides
+    faces.append(tuple(last + index for index in range(sides)))
+    mesh = bpy.data.meshes.new(name + "_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(mat)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    group = obj.vertex_groups.new(name=bone_name)
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    modifier = obj.modifiers.new("Armature", "ARMATURE")
+    modifier.object = rig
+    obj.parent = rig
+    return obj
+
+
 def join_meshes(objects, name, rig):
     bpy.ops.object.select_all(action="DESELECT")
     for obj in objects:
@@ -245,10 +289,10 @@ def build_body(rig):
         # spherical shoulder joint and blends into the upper-arm silhouette.
         parts.append(add_weighted_armor_plate(
             side + "ShoulderMesh", (x(0.315), -0.012, 1.465),
-            [(-0.105, 0.035), (-0.075, 0.105), (0.015, 0.132),
-             (0.105, 0.082), (0.145, 0.005), (0.105, -0.075),
-             (0.025, -0.105), (-0.075, -0.075)],
-            0.155, side + "Shoulder", CLOTH, rig, 0.018))
+            [(-0.072, 0.025), (-0.055, 0.075), (0.010, 0.095),
+             (0.078, 0.060), (0.105, 0.005), (0.075, -0.055),
+             (0.018, -0.075), (-0.055, -0.052)],
+            0.115, side + "Shoulder", CLOTH, rig, 0.014))
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
@@ -269,7 +313,7 @@ def build_body(rig):
             (0.018, 0.018, 0.047), side + "Hand", SKIN, rig, 12, 8))
         parts.append(add_weighted_limb(side + "ThighMesh", (x(0.13), 0, 0.88), (x(0.15), 0, 0.49), 0.105, side + "Thigh", CLOTH, rig))
         parts.append(add_weighted_limb(side + "ShinMesh", (x(0.15), 0, 0.49), (x(0.15), 0, 0.12), 0.075, side + "Shin", CLOTH, rig))
-        parts.append(add_weighted_ellipsoid(side + "FootMesh", (x(0.15), -0.10, 0.08), (0.075, 0.15, 0.065), side + "Foot", CLOTH, rig))
+        parts.append(add_weighted_foot(side + "FootMesh", x(0.15), side + "Foot", CLOTH, rig))
     return join_meshes(parts, "Humanoid_Base_Mesh", rig)
 
 def add_weighted_armor_plate(name, center, outline, depth, bone_name, mat, rig, bevel=0.025):
@@ -1004,16 +1048,16 @@ def build_profession_models(shard_index=0, shard_count=1):
             0.30 + ((index * 29) % 60) / 100.0
         ), 0.38 + (index % 5) * 0.1, 0.34)
         ornaments = []
-        shoulder_factor = 1.0 + (index % 6) * 0.12
+        shoulder_factor = 0.78 + (index % 6) * 0.045
         for side, sign in (("Left", 1), ("Right", -1)):
             ornaments.append(add_weighted_armor_plate(
                 class_id + "_" + side + "_Signature_Pauldron",
                 (sign * (0.34 * shoulder_factor), -0.105, 1.48),
-                [(-0.13 * shoulder_factor, 0.035), (-0.09 * shoulder_factor, 0.13),
-                 (0.015 * shoulder_factor, 0.17), (0.14 * shoulder_factor, 0.105),
-                 (0.16 * shoulder_factor, -0.025), (0.07 * shoulder_factor, -0.13),
-                 (-0.09 * shoulder_factor, -0.105)],
-                0.13, side + "Shoulder", profession_mat, rig, 0.022
+                [(-0.095 * shoulder_factor, 0.025), (-0.065 * shoulder_factor, 0.085),
+                 (0.010 * shoulder_factor, 0.105), (0.105 * shoulder_factor, 0.060),
+                 (0.115 * shoulder_factor, -0.020), (0.050 * shoulder_factor, -0.085),
+                 (-0.070 * shoulder_factor, -0.070)],
+                0.095, side + "Shoulder", profession_mat, rig, 0.016
             ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
