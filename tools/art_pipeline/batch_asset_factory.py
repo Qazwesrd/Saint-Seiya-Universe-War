@@ -41,11 +41,19 @@ def run_task(stage: str, shard: int, shard_count: int) -> tuple[str, int, float,
     for attempt in range(1, RETRIES + 2):
         attempts_used = attempt
         log_path = log_dir / f"{suffix}-attempt-{attempt}.log"
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
         with log_path.open("w", encoding="utf-8") as log:
-            result = subprocess.run(
-                command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=False
+            process = subprocess.Popen(
+                command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding="utf-8", errors="replace", bufsize=1, env=env,
             )
-        result_code = result.returncode
+            assert process.stdout is not None
+            for line in process.stdout:
+                log.write(line)
+                log.flush()
+                print(f"[{stage}:{shard + 1}/{shard_count}] {line}", end="", flush=True)
+            result_code = process.wait()
         if result_code == 0:
             break
         if attempt <= RETRIES:
