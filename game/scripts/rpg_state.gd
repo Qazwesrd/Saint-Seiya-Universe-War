@@ -63,18 +63,18 @@ func _ready() -> void:
   save_slot(active_slot)
 func _ensure_profile() -> void:
  if not profile.is_empty(): return
- profile = {"version":1,"character_name":"星之战士","class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system(),"quest_progress":{},"campaign_progress":{}}
+ profile = {"version":1,"character_name":"星之战士","class_id":"pegasus","level":1,"exp":0,"currency":500,"cosmos_level":1,"cosmos_levels":{"pegasus":1},"inventory":{"cosmos_potion":3},"equipment":{"head":"","chest":"","arms":"pegasus_bracer","legs":""},"equipment_levels":{},"skill_points":3,"learned_skills":{"pegasus":["pegasus_skill_1"]},"skill_branches":{},"skill_slots":{"pegasus":["pegasus_skill_1","","",""]},"created_at":Time.get_datetime_string_from_system(),"quest_progress":{},"campaign_progress":{},"faction_id":"sanctuary","spawn_region":"sanctuary","character_preset_id":"","character_title":"圣域战士","is_supreme_deity":false,"faction_tutorial_enabled":false,"faction_tutorial":{},"story_balanced":false,"power_mode":"normal"}
 func get_class_list() -> Array:
  var result: Array = []
  for class_id in CLASS_DATA:
   result.append({"id":class_id,"name":CLASS_DATA[class_id]["name"],"stats":CLASS_DATA[class_id].duplicate(true)})
  return result
-func select_class(class_id: String) -> bool:
+func select_class(class_id: String, allow_initial_unlock: bool = false) -> bool:
  if not CLASS_DATA.has(class_id):
   return false
  var class_data: Dictionary = CLASS_DATA[class_id]
  var tier := str(class_data.get("tier", ""))
- if tier in ["神明", "天斗士"] and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70 if tier == "神明" else 45)):
+ if not allow_initial_unlock and tier in ["神明", "天斗士"] and int(profile.get("level", 1)) < int(class_data.get("unlock_level", 70 if tier == "神明" else 45)):
   return false
  if str(profile.get("class_id", "pegasus")) == class_id:
   return true
