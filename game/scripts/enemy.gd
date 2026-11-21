@@ -66,6 +66,7 @@ var divine_mark_power := 0.0
 var boss_control_pressure := 0.0
 var boss_control_resist_timer := 0.0
 var boss_control_resistance := 0.72
+var boss_presentation_hit_cooldown := 0.0
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -224,6 +225,8 @@ func _ready() -> void:
     telegraph_mesh.visible = false
     add_child(telegraph_mesh)
     _load_authored_enemy_model()
+    if is_boss and is_instance_valid(game) and game.has_method("play_boss_presentation"):
+        game.call("play_boss_presentation", self, "entrance")
 
 func _load_authored_enemy_model() -> void:
     # Optional GLB bundle; a clean source checkout remains playable via procedural visuals.
@@ -456,6 +459,7 @@ func _physics_process(delta: float) -> void:
         move_and_slide()
         return
 
+    boss_presentation_hit_cooldown = maxf(0.0, boss_presentation_hit_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
     freeze_timer = maxf(0.0, freeze_timer - delta)
@@ -629,6 +633,8 @@ func _begin_attack() -> void:
     telegraph_mesh.scale = Vector3.ONE * (boss_range_multiplier if _boss_heavy_attack else 1.0)
     telegraph_mesh.visible = true
     if is_instance_valid(game):
+        if is_boss and _boss_heavy_attack:
+            game.call("play_boss_presentation", self, "ultimate")
         game.call("show_notice", display_name + "：" + _get_boss_attack_warning())
 
 func _get_boss_telegraph_color() -> Color:
@@ -893,6 +899,7 @@ func take_damage(amount: float) -> void:
         if is_instance_valid(game):
             game.call("spawn_effect", global_position + Vector3.UP * 1.5, Color(1.0, 0.16, 0.08), 2.1)
         if is_instance_valid(game):
+            game.call("play_boss_presentation", self, "phase_two")
             game.call("show_notice", "Boss 进入第二阶段！攻击速度与伤害提升")
 
     if is_boss and _boss_phase_two and not _boss_enraged and health <= max_health * 0.25:
@@ -919,7 +926,7 @@ func take_damage(amount: float) -> void:
             if is_instance_valid(enrage_material):
                 enrage_material.emission = _base_color.lightened(0.35) * 1.8
         if is_instance_valid(game):
-            game.call("spawn_effect", global_position + Vector3.UP * 1.8, _base_color.lightened(0.4), 2.8)
+            game.call("play_boss_presentation", self, "enrage")
             game.call("show_notice", "Boss 最终狂暴阶段！攻击节奏与破坏力大幅提升")
 
     if health <= 0.0:
@@ -931,6 +938,10 @@ func take_damage(amount: float) -> void:
         _play_authored_enemy_action("defeat", 0.06)
         authored_enemy_death_timer = maxf(0.7, authored_enemy_action_timer)
         if is_instance_valid(game):
+            if is_boss:
+                game.call("play_boss_presentation", self, "defeat")
+            else:
+                game.call("spawn_effect", global_position + Vector3.UP, Color(0.7, 0.7, 0.8), 1.2)
             game.call("on_enemy_defeated", self)
         return
 
@@ -947,6 +958,9 @@ func take_damage(amount: float) -> void:
         _play_authored_enemy_action("hit_heavy" if is_boss else "hit_light", 0.04)
     hit_flash_timer = 0.14
     body_material.albedo_color = Color(1.0, 0.78, 0.55)
+    if is_boss and boss_presentation_hit_cooldown <= 0.0 and is_instance_valid(game):
+        boss_presentation_hit_cooldown = 1.1
+        game.call("play_boss_presentation", self, "hit")
 
 
 func _register_boss_control(duration: float) -> float:

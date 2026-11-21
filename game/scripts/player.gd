@@ -26,6 +26,7 @@ var pivot: Node3D
 var camera_arm: SpringArm3D
 var camera_node: Camera3D
 var camera_pitch := -9.0
+var camera_presentation_tween: Tween
 var visual_root: Node3D
 var visual_pose_tween: Tween
 var upper_arm_nodes: Array[MeshInstance3D] = []
@@ -1145,6 +1146,52 @@ func rotate_camera(screen_delta: Vector2) -> void:
     var vertical_sign := -1.0 if invert_y else 1.0
     camera_pitch = clampf(camera_pitch - screen_delta.y * 0.10 * sensitivity * vertical_sign, -35.0, 18.0)
     camera_node.rotation_degrees.x = camera_pitch
+
+
+func play_boss_camera_presentation(event_name: String) -> void:
+    if not is_instance_valid(camera_arm) or not is_instance_valid(camera_node):
+        return
+    if camera_presentation_tween and camera_presentation_tween.is_running():
+        camera_presentation_tween.kill()
+    var normal_distance := clampf(float(SettingsManager.get_value("camera", "distance", 7.5)), 3.0, 14.0)
+    var normal_fov := 75.0
+    var focus_distance := normal_distance - 1.4
+    var focus_fov := 69.0
+    var hold_time := 0.32
+    match event_name:
+        "entrance":
+            focus_distance = normal_distance - 1.8
+            focus_fov = 66.0
+            hold_time = 0.75
+        "phase_two":
+            focus_distance = normal_distance - 1.7
+            focus_fov = 67.0
+            hold_time = 0.62
+        "enrage":
+            focus_distance = normal_distance - 2.0
+            focus_fov = 65.0
+            hold_time = 0.72
+        "ultimate":
+            focus_distance = normal_distance - 1.6
+            focus_fov = 67.0
+            hold_time = 0.38
+        "hit":
+            focus_distance = normal_distance - 0.55
+            focus_fov = 72.0
+            hold_time = 0.12
+        "defeat":
+            focus_distance = normal_distance - 1.7
+            focus_fov = 66.0
+            hold_time = 0.65
+    focus_distance = clampf(focus_distance, 3.0, 14.0)
+    camera_presentation_tween = create_tween()
+    camera_presentation_tween.set_parallel(true)
+    camera_presentation_tween.tween_property(camera_arm, "spring_length", focus_distance, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    camera_presentation_tween.tween_property(camera_node, "fov", focus_fov, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    camera_presentation_tween.chain().tween_interval(hold_time)
+    camera_presentation_tween.tween_property(camera_arm, "spring_length", normal_distance, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+    camera_presentation_tween.tween_property(camera_node, "fov", normal_fov, 0.38).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
 
 func set_move_input(value: Vector2) -> void:
     move_input = value.limit_length(1.0)

@@ -375,13 +375,13 @@ func _run_tests() -> void:
 	var enemy_catalog_audit: Dictionary = EnemyDatabase.validate_archetypes()
 	assert(bool(enemy_catalog_audit.get("valid", false)) and int(enemy_catalog_audit.get("archetype_count", 0)) >= 50, "all enemy archetypes pass combat-stat validation: " + str(enemy_catalog_audit.get("errors", [])))
 	var expected_boss_specials := {
-		"hypnos_guardian": "dream_drain",
-		"thanatos_reaper": "death_burst",
+		"hypnos_guardian": "sleeping_field",
+		"thanatos_reaper": "death_mark",
 		"hades_emperor": "soul_leech",
 		"poseidon_emperor": "tidal_pull",
 		"apollo_trial": "solar_flare",
-		"zeus_trial": "lightning_followup",
-		"universe_arbiter": "void_drain",
+		"zeus_trial": "storm_chain",
+		"universe_arbiter": "cosmic_collapse",
 		"judge_griffin": "gravity_crush",
 		"judge_garuda": "judge_combo",
 		"judge_wyvern": "wing_slam",
@@ -396,18 +396,18 @@ func _run_tests() -> void:
 		"pope_saga": "void_drain",
 		"god_warrior_thor": "gravity_crush",
 		"god_warrior_fenrir": "wing_slam",
-		"god_warrior_hagen": "solar_flare",
-		"god_warrior_mime": "dream_drain",
-		"god_warrior_alberich": "rift_drain",
+		"god_warrior_hagen": "frostfire",
+		"god_warrior_mime": "sonic_wave",
+		"god_warrior_alberich": "crystal_seal",
 		"god_warrior_syd": "lightning_followup",
 		"god_warrior_bud": "death_burst",
 		"god_warrior_siegfried": "judge_combo",
 		"mariner_baian": "tidal_pull",
-		"mariner_io": "judge_combo",
+		"mariner_io": "six_beasts",
 		"mariner_krishna": "gravity_crush",
-		"mariner_kasa": "dream_drain",
+		"mariner_kasa": "mirror_feint",
 		"mariner_isaac": "rift_drain",
-		"mariner_sorrento": "dream_drain",
+		"mariner_sorrento": "sonic_wave",
 		"mariner_kanon": "void_drain"
 	}
 	for boss_id in expected_boss_specials:

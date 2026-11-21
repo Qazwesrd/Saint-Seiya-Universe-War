@@ -507,6 +507,54 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
         if is_instance_valid(sun):
             sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
 
+func play_boss_presentation(boss: Node3D, event_name: String) -> void:
+    if not is_instance_valid(boss) or not bool(boss.get("is_boss")):
+        return
+    var special := str(boss.get("boss_special"))
+    var accent := Color(0.56, 0.72, 1.0)
+    match special:
+        "frostfire": accent = Color(0.36, 0.78, 1.0)
+        "sonic_wave": accent = Color(0.78, 0.56, 1.0)
+        "crystal_seal": accent = Color(0.52, 0.38, 0.92)
+        "six_beasts": accent = Color(0.28, 0.82, 0.62)
+        "mirror_feint": accent = Color(0.82, 0.48, 1.0)
+        "sleeping_field": accent = Color(0.68, 0.72, 1.0)
+        "death_mark": accent = Color(1.0, 0.22, 0.3)
+        "storm_chain": accent = Color(0.52, 0.72, 1.0)
+        "cosmic_collapse": accent = Color(0.82, 0.72, 1.0)
+        "solar_flare": accent = Color(1.0, 0.68, 0.18)
+        "tidal_pull": accent = Color(0.16, 0.68, 1.0)
+        "void_drain", "soul_leech", "rift_drain": accent = Color(0.78, 0.24, 0.62)
+    var effect_radius := 2.2
+    var effect_shape := "halo"
+    match event_name:
+        "entrance":
+            effect_radius = 3.0
+            effect_shape = "ring"
+        "phase_two":
+            effect_radius = 3.4
+            effect_shape = "flare"
+        "enrage":
+            effect_radius = 4.0
+            effect_shape = "star"
+        "ultimate":
+            effect_radius = 3.6
+            effect_shape = "wave"
+        "hit":
+            effect_radius = 1.35
+            effect_shape = "shard"
+        "defeat":
+            effect_radius = 4.2
+            effect_shape = "void"
+    spawn_effect(boss.global_position + Vector3.UP * (2.0 if event_name != "hit" else 1.4), accent, effect_radius, effect_shape, 0.58)
+    if is_instance_valid(player) and player.has_method("play_boss_camera_presentation"):
+        player.call("play_boss_camera_presentation", event_name)
+    if event_name == "entrance":
+        show_notice("强敌来袭：" + str(boss.get("display_name")))
+    elif event_name == "defeat":
+        show_notice("首领战结束：" + str(boss.get("display_name")))
+
+
 func spawn_skill_effect(at: Vector3, visual_profile: Dictionary) -> void:
     if visual_profile.is_empty() or not bool(SettingsManager.get_value("graphics", "effects", true)):
         return
