@@ -1794,8 +1794,21 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         toward_attacker.y = 0.0
         if toward_attacker.length_squared() > 0.001:
             facing_dot = (-global_transform.basis.z).dot(toward_attacker.normalized())
+    var hit_part := ""
+    if attacker_position != Vector3.ZERO:
+        var local_attacker := to_local(attacker_position)
+        if local_attacker.y >= 1.82:
+            hit_part = "head"
+        elif local_attacker.y <= 0.55:
+            hit_part = "legs"
+        elif absf(local_attacker.x) >= 0.58:
+            hit_part = "arms"
+        elif local_attacker.y <= 0.92:
+            hit_part = "waist"
+        else:
+            hit_part = "chest"
     var passive_reduction: float = SkillSystem.get_damage_reduction(class_id, facing_dot)
-    var armor_reduction: float = ArmorSystem.get_damage_reduction()
+    var armor_reduction: float = ArmorSystem.get_damage_reduction(hit_part)
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - armor_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     var class_guard_ratio: float = SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
     if class_guard_ratio > 0.0 and class_passive_guard_cooldown <= 0.0 and divine_guard_shield <= 0.0 and health - final_damage <= max_health * 0.35:
@@ -1807,7 +1820,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
     health = maxf(0.0, health - health_damage)
     CombatSessionManager.record_damage_taken(health_damage)
     if health_damage > 0.0:
-        var armor_damage: Dictionary = ArmorSystem.damage_random_part(maxi(2, roundi(amount * 0.08)))
+        var armor_damage: Dictionary = ArmorSystem.damage_hit_part(hit_part, maxi(2, roundi(amount * 0.08))) if not hit_part.is_empty() else ArmorSystem.damage_random_part(maxi(2, roundi(amount * 0.08)))
         if not armor_damage.is_empty():
             _play_armor_damage_feedback(armor_damage)
         _flash(Color(1.0, 0.12, 0.12))
