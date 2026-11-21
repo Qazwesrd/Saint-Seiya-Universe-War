@@ -539,6 +539,8 @@ func on_enemy_defeated(enemy: Node3D) -> void:
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
         SideQuestManager.record_event("boss_defeated" if defeated_boss else "enemy_defeated", {"chapter_id": active_world_chapter_id})
+        if defeated_boss:
+            SideQuestManager.record_event("dark_boss_defeated", {"chapter_id": active_world_chapter_id, "archetype_id": str(enemy.get("archetype_id", ""))})
         _record_campaign_encounter_progress(enemy)
         if CampaignManager.can_complete_active_mission():
             var encounter_mission: Dictionary = CampaignManager.get_active_mission()
