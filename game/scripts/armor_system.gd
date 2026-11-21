@@ -197,7 +197,7 @@ func get_bonus_stats() -> Dictionary:
   health_bonus += float(class_data.get("hp", 0.0)) * 0.04 * condition * awaken
   dark_cosmos_bonus = 12.0 * condition * awaken
   dark_speed_bonus = 0.08 * condition * awaken
- return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":1.10 if stage_id == "dark_cloth" else 1.0}
+ return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0}
 func _commit(previous: Dictionary) -> bool:
  if RPGState.save_slot(RPGState.active_slot):
   RPGState.state_changed.emit()
