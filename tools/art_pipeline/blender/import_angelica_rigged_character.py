@@ -165,8 +165,11 @@ def main() -> int:
     # Reuse the validated mesh construction path from the static importer.
     from import_angelica_ski_json import make_mesh_object
 
+    # SKI v9+ may use a skin-local bone-name table; its vertex indices refer to that table.
+    # Older SKI versions omit it and use the skeleton-wide identity index range.
+    mesh_bone_names = [str(name) for name in ski.get("bone_names", [])] or bone_names
     for item in ski.get("skin_meshes", []):
-        objects.append(make_mesh_object(item, collection, materials, bone_names))
+        objects.append(make_mesh_object(item, collection, materials, mesh_bone_names))
     for item in ski.get("rigid_meshes", []):
         objects.append(make_mesh_object(item, collection, materials, bone_names))
 
