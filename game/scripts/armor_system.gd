@@ -5,6 +5,8 @@ const STAGES := {
  "gold":{"name":"黄金圣衣","attack":4.0,"defense":7.0,"hp":28.0},
  "sea_scale":{"name":"海界鳞衣","attack":4.0,"defense":6.0,"hp":24.0},
  "surplice":{"name":"冥衣","attack":5.0,"defense":6.0,"hp":22.0},
+ "dark_cloth":{"name":"黑暗圣衣","attack":5.5,"defense":4.5,"hp":26.0},
+ "platinum":{"name":"白金圣衣","attack":8.0,"defense":8.0,"hp":48.0},
  "god_cloth":{"name":"神圣衣","attack":7.0,"defense":9.0,"hp":40.0},
  "god_armor":{"name":"主神圣衣","attack":9.0,"defense":12.0,"hp":55.0}
 }
@@ -37,6 +39,8 @@ func unlock_stage(stage_id: String) -> bool:
   "gold": {"level": 25, "chapter": "sanctuary_twelve_houses", "requires_completion": true},
   "sea_scale": {"level": 30, "chapter": "poseidon"},
   "surplice": {"level": 40, "chapter": "hades"},
+  "dark_cloth": {"level": 12, "chapter": "galaxy_wars", "requires_completion": true},
+  "platinum": {"level": 55, "chapter": "original_final", "requires_completion": true},
   "god_cloth": {"level": 45, "chapter": "hades"},
   "god_armor": {"level": 70, "chapter": "heaven"}
  }
@@ -126,9 +130,9 @@ func awaken_current() -> bool:
  var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
  var stage := str(data.get("current_stage", "bronze"))
- if not ["gold", "god_cloth", "god_armor"].has(stage) or bool(data.get("awakened", false)):
+ if not ["gold", "dark_cloth", "platinum", "god_cloth", "god_armor"].has(stage) or bool(data.get("awakened", false)):
   return false
- var cost := 5000 if stage == "gold" else 12000
+ var cost := 3500 if stage == "dark_cloth" else (9000 if stage == "platinum" else (5000 if stage == "gold" else 12000))
  if int(RPGState.profile.get("currency", 0)) < cost:
   return false
  RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
