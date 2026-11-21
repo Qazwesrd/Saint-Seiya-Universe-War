@@ -4,7 +4,7 @@ extends Control
 
 const ITEMS := {
 	"人物": [
-		{"id": "pegasus", "name": "天马座人物原型", "path": "res://assets/characters/pegasus/model/character.glb"},
+		{"id": "pegasus", "name": "天马座人物原型", "path": "assets/characters/pegasus/model/character.glb"},
 		{"id": "dragon", "name": "天龙座人物原型", "path": "res://assets/characters/dragon/model/character.glb"},
 		{"id": "cygnus", "name": "天鹅座人物原型", "path": "res://assets/characters/cygnus/model/character.glb"},
 		{"id": "phoenix", "name": "凤凰座人物原型", "path": "res://assets/characters/phoenix/model/character.glb"}
@@ -226,7 +226,7 @@ func _show_item() -> void:
 		_build_effect_preview(item)
 		status_label.text = "这是展厅内的程序化特效预览，用于先确认元素色彩、层次和尺度。正式技能还需制作专属动画、粒子、命中和终结段。"
 		return
-	var path := str(item.path)
+	var path := "res://" + str(item.path)
 	if not ResourceLoader.exists(path):
 		status_label.text = "模型资源尚未安装：\n%s\n\n当前分支中的模型由 Blender 美术流水线生成并作为 Actions artifact 输出。安装对应美术资源包后即可在这里查看。\n\n注意：目录数量或角色数据不等于最终模型完成。" % path
 		return
@@ -306,7 +306,7 @@ func _input(event: InputEvent) -> void:
 		drag_active = event.pressed
 		last_pointer = event.position
 	elif event is InputEventMouseMotion and drag_active:
-		var delta := event.position - last_pointer
-		preview_root.rotate_y(-delta.x * 0.008)
-		preview_root.rotate_x(-delta.y * 0.004)
+		var pointer_delta: Vector2 = event.position - last_pointer
+		preview_root.rotate_y(-pointer_delta.x * 0.008)
+		preview_root.rotate_x(-pointer_delta.y * 0.004)
 		last_pointer = event.position
