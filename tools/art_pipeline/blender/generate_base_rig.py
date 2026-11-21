@@ -109,20 +109,53 @@ def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=
     return obj
 
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
+    """Build a tapered, faceted anatomical limb from a ring-loft mesh.
+
+    The profile narrows toward joints and avoids the constant-radius cylinder
+    silhouette used by the earliest blockout.
+    """
     a, b = Vector(start), Vector(end)
     direction = b - a
-    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=direction.length, location=(a + b) / 2)
-    obj = bpy.context.object
-    obj.name = name
-    obj.rotation_mode = "QUATERNION"
-    obj.rotation_quaternion = direction.to_track_quat("Z", "Y")
-    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-    bevel = obj.modifiers.new("Soft_Edges", "BEVEL")
-    bevel.width = radius * 0.22
-    bevel.segments = 2
-    obj.data.materials.append(mat)
+    axis = direction.normalized()
+    reference = Vector((0, 1, 0))
+    if abs(axis.dot(reference)) > 0.92:
+        reference = Vector((1, 0, 0))
+    tangent = axis.cross(reference).normalized()
+    bitangent = axis.cross(tangent).normalized()
+    profiles = ((0.00, 0.72), (0.12, 0.91), (0.34, 1.00),
+                (0.62, 0.88), (0.86, 0.70), (1.00, 0.62))
+    sides = max(10, vertices)
+    mesh_vertices = []
+    for t, factor in profiles:
+        center = a.lerp(b, t)
+        ring_radius = radius * factor
+        for index in range(sides):
+            angle = (2.0 * math.pi * index) / sides
+            offset = tangent * (math.cos(angle) * ring_radius)
+            offset += bitangent * (math.sin(angle) * ring_radius)
+            mesh_vertices.append(tuple(center + offset))
+    faces = []
+    faces.append(tuple(reversed(range(sides))))
+    for ring in range(len(profiles) - 1):
+        for index in range(sides):
+            nxt = (index + 1) % sides
+            a0 = ring * sides + index
+            a1 = ring * sides + nxt
+            b0 = (ring + 1) * sides + index
+            b1 = (ring + 1) * sides + nxt
+            faces.append((a0, a1, b1, b0))
+    last = (len(profiles) - 1) * sides
+    faces.append(tuple(last + index for index in range(sides)))
+    mesh = bpy.data.meshes.new(name + "_Mesh")
+    mesh.from_pydata(mesh_vertices, [], faces)
+    mesh.materials.append(mat)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
     group = obj.vertex_groups.new(name=bone_name)
-    group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
     modifier = obj.modifiers.new("Armature", "ARMATURE")
     modifier.object = rig
     obj.parent = rig
@@ -192,11 +225,14 @@ def build_body(rig):
     parts.append(add_weighted_ellipsoid("Nose_Tip", (0, -0.151, 1.772), (0.022, 0.019, 0.016), "Head", SKIN, rig, 12, 8))
     for side, sign in (("Left", 1), ("Right", -1)):
         x = lambda v: v * sign
-        # Anatomical deltoid mass: broad across the shoulder, flattened in depth
-        # so the silhouette reads as a shoulder rather than a spherical joint.
-        parts.append(add_weighted_ellipsoid(
-            side + "ShoulderMesh", (x(0.315), 0, 1.465),
-            (0.145, 0.105, 0.115), side + "Shoulder", CLOTH, rig, 20, 12))
+        # Angular deltoid shell: a shaped low-profile mesh replaces the
+        # spherical shoulder joint and blends into the upper-arm silhouette.
+        parts.append(add_weighted_armor_plate(
+            side + "ShoulderMesh", (x(0.315), -0.012, 1.465),
+            [(-0.105, 0.035), (-0.075, 0.105), (0.015, 0.132),
+             (0.105, 0.082), (0.145, 0.005), (0.105, -0.075),
+             (0.025, -0.105), (-0.075, -0.075)],
+            0.155, side + "Shoulder", CLOTH, rig, 0.018))
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
