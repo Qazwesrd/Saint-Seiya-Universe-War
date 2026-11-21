@@ -1688,6 +1688,20 @@ func _open_collection(root: Control) -> void:
     var defeat_label := Label.new()
     defeat_label.text = "累计击败敌人：" + str(data.get("enemy_defeats",0)) + "    Boss：" + str(data.get("boss_defeats",0))
     box.add_child(defeat_label)
+    var bond_info: Dictionary = CollectionSystem.get_active_companion_bond()
+    var bond_title := Label.new()
+    bond_title.text = "伙伴羁绊成长"
+    bond_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(bond_title)
+    var bond_label := Label.new()
+    if bond_info.is_empty():
+        bond_label.text = "当前没有出战伙伴"
+    elif int(bond_info.get("level", 1)) >= int(bond_info.get("max_level", 20)):
+        bond_label.text = "%s  Lv.%d/%d  ·  %s（已满级）" % [str(bond_info.get("name", "伙伴")), int(bond_info.get("level", 1)), int(bond_info.get("max_level", 20)), str(bond_info.get("perk", ""))]
+    else:
+        bond_label.text = "%s  Lv.%d/%d  ·  羁绊经验 %d/%d\\n当前共鸣：%s\\n击败普通敌人 +12，击败 Boss +55；羁绊等级提升会增强属性。" % [str(bond_info.get("name", "伙伴")), int(bond_info.get("level", 1)), int(bond_info.get("max_level", 20)), int(bond_info.get("exp", 0)), int(bond_info.get("next_exp", 100)), str(bond_info.get("perk", "初识伙伴"))]
+    bond_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    box.add_child(bond_label)
     var sections := [
         {"kind":"companion","title":"伙伴","catalog":CollectionSystem.COMPANIONS,"owned":data.get("companions",[]),"active":data.get("active_companion","")},
         {"kind":"pet","title":"宠物","catalog":CollectionSystem.PETS,"owned":data.get("pets",[]),"active":data.get("active_pet","")},
