@@ -3,12 +3,19 @@ const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd"
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
 const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
 const ArtAssetAudit = preload("res://scripts/art_asset_audit.gd")
+const BossChapterCombatCatalog = preload("res://scripts/boss_chapter_combat_catalog.gd")
 ## Headless scene-based smoke test so project AutoLoads are initialized normally.
 
 func _ready() -> void:
 	call_deferred("_run_tests")
 
 func _run_tests() -> void:
+	assert(BossChapterCombatCatalog.validate_catalog(), "all seven campaign chapters have complete boss combat profiles")
+	var chapter_profile_ids := {}
+	for boss_id in ["arena_boss", "gold_taurus", "god_warrior_siegfried", "poseidon_emperor", "hades_emperor", "zeus_trial", "primordial_void"]:
+		var chapter_profile: Dictionary = BossChapterCombatCatalog.get_profile(boss_id)
+		chapter_profile_ids[str(chapter_profile.get("chapter_id", ""))] = true
+	assert(chapter_profile_ids.size() == 7, "boss archetypes map to all seven chapter combat identities")
 	var guard_test_player = preload("res://scripts/player.gd").new()
 	guard_test_player.max_health = 100.0
 	guard_test_player.apply_divine_guard(0.18, 6.0)
