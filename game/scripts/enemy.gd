@@ -804,6 +804,8 @@ func take_damage(amount: float) -> void:
         telegraph_mesh.visible = false
         telegraph_mesh.scale = Vector3.ONE
         _boss_heavy_attack = false
+        _boss_combo_remaining = 0
+        _boss_combo_followup_active = false
         state = BrainState.CHASE
         state_timer = 0.0
         _play_authored_enemy_action("phase_shift", 0.08)
