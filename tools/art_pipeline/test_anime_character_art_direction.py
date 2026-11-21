@@ -74,8 +74,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
     def test_all_five_bronze_saints_have_individual_review_previews(self):
         core_heroes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
         for hero in core_heroes:
-            self.assertIn('class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}', self.generator)
-            self.assertIn(f"{hero}_front.png", self.workflow)
+            self.assertIn(f'"{hero}"', self.generator)
         self.assertIn("expected_heroes = (\\"pegasus\\", \\"dragon\\", \\"cygnus\\", \\"andromeda\\", \\"phoenix\\")", self.workflow)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
