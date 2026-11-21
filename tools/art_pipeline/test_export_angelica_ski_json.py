@@ -31,6 +31,9 @@ def mesh(weighted=True):
 
 class AngelicaSkiJsonTests(unittest.TestCase):
 
+    def test_normalizes_autoangel_lookup_paths(self):
+        self.assertEqual(MODULE.normalize_package_lookup_path("Models/Pegasus/Body.SKI"), "models\\\\pegasus\\\\body.ski")
+
     def test_normalizes_windows_archive_paths(self):
         self.assertEqual(MODULE.normalize_entry_path(r"Models\\Pegasus\\body.ski"), "Models/Pegasus/body.ski")
 
