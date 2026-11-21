@@ -143,3 +143,12 @@ art/                  自制或已获授权的美术源文件（不提交大型�
 已新增并注册 EventBus、SettingsManager、LocalizationManager、AudioManager、SaveManager、ResourcePackManager、DialogueManager、SceneFlowManager 等通用服务；章节离线资源包目录与角色/圣衣/地图/动画/音频/VFX/UI/材质资源目录规范已建立。详见 `docs/CORE_FRAMEWORK_ARCHITECTURE.md`。
 
 当前工作重点是先补齐底层模块边界、数据归属、资源规范和自动检查，再集中制作完整游戏内容。框架源码提交不代表全部模块已通过 Godot 引擎或 Android 真机验收。
+
+
+## 多阵营角色创建与新手进程
+
+- 新增12个可选阵营和阵营化职业列表，角色创建时选择阵营、出生地区与职业。
+- 鸿钧老祖可从鸿蒙神域角色列表直接创建，标记为本游戏至高神；鸿钧新手任务设置圣域/鸿蒙双入口共享进度。
+- 新角色使用1—9级阵营新手试炼；动漫篇章任务入口在角色达到10级前保持锁定。
+- 详细实现边界和后续验收见 `docs/MULTI_FACTION_CHARACTER_CREATION.md`。
+- 当前是角色创建和任务进度框架；12套独立地图、阵营导师NPC实体、专属角色模型/技能动作仍待后续制作和实机验收。
