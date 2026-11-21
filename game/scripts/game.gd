@@ -23,6 +23,7 @@ var sanctuary_active := false
 var sanctuary_origin := Vector3(0, 0.15, 7)
 var _daily_boss_challenge_active := false
 var _daily_boss_challenge_id := ""
+var _world_landmark_scan_timer := 0.0
 func _ready() -> void:
     CombatSessionManager.begin_encounter("galaxy_arena_trial")
     _build_world()
@@ -44,6 +45,23 @@ func _ready() -> void:
     else:
         hud.call("set_notice", "当前主线目标：" + str(CampaignManager.get_active_mission().get("name", "与引导员交谈")))
     _refresh_story_encounter()
+func _process(delta: float) -> void:
+    _world_landmark_scan_timer += delta
+    if _world_landmark_scan_timer < 0.45:
+        return
+    _world_landmark_scan_timer = 0.0
+    if not is_instance_valid(player):
+        return
+    var region: Dictionary = WorldExplorationManager.get_region(active_world_chapter_id)
+    for landmark in region.get("landmarks", []):
+        var landmark_id := str(landmark.get("id", ""))
+        if landmark_id.is_empty() or WorldExplorationManager.discovered_landmarks.has(landmark_id):
+            continue
+        var landmark_position: Vector3 = landmark.get("position", Vector3.ZERO)
+        if player.global_position.distance_to(landmark_position) <= 3.2:
+            if WorldExplorationManager.discover_landmark(landmark_id):
+                show_notice("发现新地标：" + str(landmark.get("name", "未知地点")))
+
 func _build_world() -> void:
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
