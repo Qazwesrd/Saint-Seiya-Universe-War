@@ -19,6 +19,19 @@ func _run_tests() -> void:
 		if str(hongmeng_option.get("preset_id", "")) == "hongjun":
 			hongjun_selectable = true
 	assert(hongjun_selectable, "Hongjun is directly selectable from character creation")
+	var original_onboarding_profile: Dictionary = RPGState.profile.duplicate(true)
+	var hongjun_test_profile: Dictionary = original_onboarding_profile.duplicate(true)
+	FactionDatabase.initialize_character_profile(hongjun_test_profile, "hongmeng", "hongjun")
+	RPGState.profile = hongjun_test_profile
+	assert(bool(RPGState.profile.get("is_supreme_deity", false)), "Hongjun profile is marked as the game's supreme deity")
+	assert(str(RPGState.profile.get("spawn_region", "")) == "zixiao_palace", "Hongjun starts in the Zixiao Palace region")
+	assert(FactionDatabase.can_interact_with_mentor("sanctuary"), "Hongjun tutorial accepts the Sanctuary entry")
+	assert(FactionDatabase.can_interact_with_mentor("hongmeng"), "Hongjun tutorial accepts the Hongmeng entry")
+	assert(not FactionDatabase.can_interact_with_mentor("underworld"), "Hongjun tutorial does not accept unrelated faction entries")
+	assert(CampaignManager.get_active_mission().is_empty(), "anime campaign missions stay locked below level 10 for new faction characters")
+	RPGState.profile["level"] = 10
+	assert(not CampaignManager.get_active_mission().is_empty(), "anime campaign missions become available at level 10")
+	RPGState.profile = original_onboarding_profile
 	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
 	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
 	RPGState.profile["currency"] = 50000
