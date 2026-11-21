@@ -60,6 +60,7 @@ func _process(delta: float) -> void:
         var landmark_position: Vector3 = landmark.get("position", Vector3.ZERO)
         if player.global_position.distance_to(landmark_position) <= 3.2:
             if WorldExplorationManager.discover_landmark(landmark_id):
+                SideQuestManager.record_event("landmark_discovered", {"chapter_id": active_world_chapter_id, "landmark_id": landmark_id})
                 show_notice("发现新地标：" + str(landmark.get("name", "未知地点")))
 
 func _build_world() -> void:
@@ -536,6 +537,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
                 completed_story_mission = campaign_mission
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
+        SideQuestManager.record_event("boss_defeated" if defeated_boss else "enemy_defeated", {"chapter_id": active_world_chapter_id})
         _record_campaign_encounter_progress(enemy)
         if CampaignManager.can_complete_active_mission():
             var encounter_mission: Dictionary = CampaignManager.get_active_mission()
