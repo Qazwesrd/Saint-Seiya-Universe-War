@@ -757,7 +757,8 @@ def render_profession_turntable(profession_id, index):
     preview_root = ROOT / "game" / "art_previews" / "characters"
     preview_root.mkdir(parents=True, exist_ok=True)
     scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
+    scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in available_engines else "BLENDER_EEVEE"
     scene.render.resolution_x = 960
     scene.render.resolution_y = 960
     scene.render.resolution_percentage = 100
@@ -768,7 +769,6 @@ def render_profession_turntable(profession_id, index):
     scene.render.image_settings.color_depth = "8"
     scene.render.filepath = str(preview_root / (profession_id + "_front.png"))
     scene.render.image_settings.compression = 15
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
     scene.view_settings.view_transform = "Standard"
     scene.view_settings.look = "AgX - Medium High Contrast"
 
