@@ -17,7 +17,10 @@ func _on_profile_slot_loaded(_slot: int) -> void:
 
 func interact_with_guide() -> Dictionary:
     if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
-        return FactionDatabase.interact_with_mentor("sanctuary")
+        var entry_faction := str(RPGState.profile.get("faction_id", "sanctuary"))
+        if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
+            entry_faction = "sanctuary"
+        return FactionDatabase.interact_with_mentor(entry_faction)
     if status == "not_started":
         status = "active"
         if not _save_progress():
@@ -100,9 +103,15 @@ func get_tracker_text() -> String:
 func get_map_objective() -> String:
     if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
         var tutorial: Dictionary = RPGState.profile.get("faction_tutorial", {})
-        if str(tutorial.get("status", "")) == "not_started": return "阵营导师"
-        if str(tutorial.get("status", "")) == "active": return "训练首领" if int(tutorial.get("defeated_normal", 0)) >= FactionDatabase.TUTORIAL_NORMAL_TARGET else "训练对手"
-        if str(tutorial.get("status", "")) == "ready_to_return": return "返回阵营导师"
+        var tutorial_status := str(tutorial.get("status", ""))
+        if tutorial_status == "not_started":
+            return "阵营导师"
+        if tutorial_status == "active":
+            if int(tutorial.get("defeated_normal", 0)) >= FactionDatabase.TUTORIAL_NORMAL_TARGET:
+                return "训练首领"
+            return "训练对手"
+        if tutorial_status == "ready_to_return":
+            return "返回阵营导师"
         return "达到10级"
     if status == "not_started" or status == "ready_to_return":
         return "返回引导员"
@@ -170,3 +179,9 @@ func reset_progress() -> void:
         defeated_normal = previous_normal
         boss_defeated = previous_boss
     quest_changed.emit()
+
+
+func interact_with_hongmeng_guide() -> Dictionary:
+    if str(RPGState.profile.get("character_preset_id", "")) != "hongjun":
+        return {"speaker":"紫霄宫接引仙官","text":"只有鸿钧老祖角色可以从鸿蒙神域接取这条双入口任务。","action":"denied"}
+    return FactionDatabase.interact_with_mentor("hongmeng")
