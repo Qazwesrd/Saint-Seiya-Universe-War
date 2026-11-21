@@ -58,6 +58,7 @@ var body_mat: StandardMaterial3D
 var visual_flash_timer := 0.0
 var visual_flash_color := Color.WHITE
 var armor_root: Node3D
+var costume_root: Node3D
 var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
@@ -488,7 +489,8 @@ func _get_visual_armor_signature() -> String:
         "class_id": RPGState.profile.get("class_id", "pegasus"),
         "equipped_relic": RPGState.profile.get("equipped_relic", ""),
         "equipment": RPGState.profile.get("equipment", {}),
-        "armor_state": RPGState.profile.get("armor_state", {})
+        "armor_state": RPGState.profile.get("armor_state", {}),
+        "appearance_state": RPGState.profile.get("appearance_state", {})
     })
 
 func _get_armor_transform_key() -> String:
@@ -692,6 +694,11 @@ func _build_armor_visuals() -> void:
     armor_visual_wear_profile = ArmorSystem.get_visual_wear_profile(ArmorSystem.get_condition_ratio())
     var stage_id := str(stage_state.get("current_stage", "bronze"))
     var stage_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(stage_id, bool(stage_state.get("awakened", false)))
+    var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+    var faction_armor_profile: Dictionary = CharacterVisualCatalog.get_faction_armor_profile(faction_id, class_id)
+    stage_palette["metal"] = faction_armor_profile.get("metal", stage_palette.get("metal", armor_base_color))
+    stage_palette["trim"] = faction_armor_profile.get("trim", stage_palette.get("trim", accent))
+    accent = faction_armor_profile.get("accent", accent)
     var armor_part_profiles: Dictionary = CharacterVisualCatalog.get_class_armor_part_profiles(class_id, stage_id, bool(stage_state.get("awakened", false)))
     var head_part_scale: Vector3 = armor_part_profiles.get("head", {}).get("scale", Vector3.ONE)
     var chest_part_scale: Vector3 = armor_part_profiles.get("chest", {}).get("scale", Vector3.ONE)
@@ -1353,11 +1360,173 @@ func _build_armor_visuals() -> void:
         glow_material.emission = accent * stage_glow
         glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
+    _build_faction_armor_details(faction_id, faction_armor_profile, stage_metal_color, stage_trim_color, stage_metallic)
     _build_armor_wear_cracks()
+    _build_costume_visuals()
     if armor_was_repaired:
         _play_combat_feedback(Color(0.36, 1.0, 0.68), 0.34)
         _play_armor_repair_feedback()
 
+
+
+
+func _build_faction_armor_details(faction_id: String, profile: Dictionary, metal: Color, trim: Color, metallic: float) -> void:
+    if not is_instance_valid(armor_root):
+        return
+    var family := str(profile.get("family", "saint_cloth"))
+    var crest := PrismMesh.new()
+    var crest_size := Vector3(0.12, 0.34, 0.10)
+    var shoulder_size := Vector3(0.24, 0.34, 0.16)
+    var core_size := Vector3(0.12, 0.22, 0.08)
+    match family:
+        "dark_cloth":
+            crest_size = Vector3(0.10, 0.28, 0.09)
+            shoulder_size = Vector3(0.30, 0.42, 0.18)
+            core_size = Vector3(0.10, 0.24, 0.08)
+        "surplice":
+            crest_size = Vector3(0.16, 0.38, 0.11)
+            shoulder_size = Vector3(0.36, 0.46, 0.20)
+            core_size = Vector3(0.16, 0.30, 0.10)
+        "scale":
+            crest_size = Vector3(0.12, 0.40, 0.10)
+            shoulder_size = Vector3(0.18, 0.48, 0.16)
+        "steel_armor":
+            crest_size = Vector3(0.20, 0.20, 0.14)
+            shoulder_size = Vector3(0.34, 0.30, 0.24)
+            core_size = Vector3(0.20, 0.20, 0.12)
+        "god_robe", "god_cloth":
+            crest_size = Vector3(0.14, 0.42, 0.10)
+            shoulder_size = Vector3(0.38, 0.40, 0.16)
+        "primordial_armor":
+            crest_size = Vector3(0.18, 0.44, 0.12)
+            shoulder_size = Vector3(0.42, 0.42, 0.20)
+            core_size = Vector3(0.18, 0.32, 0.12)
+    crest.size = crest_size
+    var crown := _add_armor_piece(crest, Vector3(0.0, 2.08, -0.18), Vector3.ONE, trim, metallic, "head")
+    crown.rotation.x = deg_to_rad(-12.0)
+    var shoulder := PrismMesh.new()
+    shoulder.size = shoulder_size
+    for side in [-1.0, 1.0]:
+        var guard := _add_armor_piece(shoulder, Vector3(side * 0.53, 1.57, -0.015), Vector3(1.0, 1.0, 0.82), metal.lightened(0.10), metallic, "arms")
+        guard.rotation.z = -side * (0.18 if family in ["dark_cloth", "surplice", "fallen_armor"] else 0.08)
+    var chest_core := PrismMesh.new()
+    chest_core.size = core_size
+    var core := _add_armor_piece(chest_core, Vector3(0.0, 1.30, -0.485), Vector3.ONE, trim, metallic, "chest")
+    core.rotation.z = deg_to_rad(45.0) if family == "steel_armor" else 0.0
+    if family == "surplice":
+        for side in [-1.0, 1.0]:
+            var rib := PrismMesh.new()
+            rib.size = Vector3(0.07, 0.28, 0.045)
+            var rib_piece := _add_armor_piece(rib, Vector3(side * 0.30, 1.22, -0.47), Vector3.ONE, trim.darkened(0.12), metallic, "chest")
+            rib_piece.rotation.z = -side * 0.30
+    elif family == "dark_cloth":
+        for side in [-1.0, 1.0]:
+            var spike := PrismMesh.new()
+            spike.size = Vector3(0.075, 0.26, 0.08)
+            var spike_piece := _add_armor_piece(spike, Vector3(side * 0.56, 1.70, 0.0), Vector3.ONE, trim, metallic, "arms")
+            spike_piece.rotation.z = -side * 0.52
+    elif family == "scale":
+        for side in [-1.0, 1.0]:
+            var fin := PrismMesh.new()
+            fin.size = Vector3(0.12, 0.34, 0.06)
+            var fin_piece := _add_armor_piece(fin, Vector3(side * 0.62, 1.54, 0.0), Vector3.ONE, trim, metallic, "arms")
+            fin_piece.rotation.z = -side * 0.68
+    elif family == "steel_armor":
+        var reactor := TorusMesh.new()
+        reactor.inner_radius = 0.07
+        reactor.outer_radius = 0.13
+        var reactor_piece := _add_armor_piece(reactor, Vector3(0.0, 1.30, -0.53), Vector3.ONE, trim, 0.96, "chest")
+        reactor_piece.rotation.x = deg_to_rad(90.0)
+        for side in [-1.0, 1.0]:
+            var servo := BoxMesh.new()
+            servo.size = Vector3(0.12, 0.30, 0.12)
+            _add_armor_piece(servo, Vector3(side * 0.26, 0.48, -0.12), Vector3.ONE, metal, metallic, "legs")
+    elif family in ["god_robe", "god_cloth"]:
+        for side in [-1.0, 1.0]:
+            var rune := PrismMesh.new()
+            rune.size = Vector3(0.10, 0.38, 0.06)
+            var rune_piece := _add_armor_piece(rune, Vector3(side * 0.44, 1.66, 0.02), Vector3.ONE, trim, metallic, "arms")
+            rune_piece.rotation.z = -side * 0.42
+    elif family == "primordial_armor":
+        var orbit := TorusMesh.new()
+        orbit.inner_radius = 0.34
+        orbit.outer_radius = 0.37
+        var orbit_piece := _add_armor_piece(orbit, Vector3(0.0, 1.40, 0.28), Vector3(1.0, 0.85, 0.35), trim, 1.0, "chest")
+        orbit_piece.rotation.x = deg_to_rad(72.0)
+
+
+func _build_costume_visuals() -> void:
+    if is_instance_valid(costume_root):
+        costume_root.queue_free()
+        costume_root = null
+    var appearance: Dictionary = RPGState.profile.get("appearance_state", {})
+    var costume_id := str(appearance.get("equipped_costume", ""))
+    if costume_id.is_empty() or not bool(appearance.get("costume_visible", true)):
+        if is_instance_valid(armor_root):
+            armor_root.visible = true
+        return
+    var costume: Dictionary = CharacterVisualCatalog.get_costume_profile(costume_id)
+    if costume.is_empty():
+        return
+    if is_instance_valid(armor_root):
+        armor_root.visible = false
+    costume_root = Node3D.new()
+    costume_root.name = "StandaloneCostume_" + costume_id
+    visual_root.add_child(costume_root)
+    var outfit_color: Color = costume.get("accent", Color(0.24, 0.32, 0.58))
+    var cloth := StandardMaterial3D.new()
+    cloth.albedo_color = outfit_color
+    cloth.roughness = 0.82
+    cloth.metallic = 0.02
+    var trim := StandardMaterial3D.new()
+    trim.albedo_color = outfit_color.lightened(0.28)
+    trim.roughness = 0.68
+    var torso := BoxMesh.new()
+    torso.size = Vector3(0.58, 0.66, 0.34)
+    var torso_piece := MeshInstance3D.new()
+    torso_piece.mesh = torso
+    torso_piece.position = Vector3(0.0, 1.22, -0.005)
+    torso_piece.material_override = cloth
+    costume_root.add_child(torso_piece)
+    for side in [-1.0, 1.0]:
+        var sleeve := BoxMesh.new()
+        sleeve.size = Vector3(0.22, 0.48, 0.24)
+        var sleeve_piece := MeshInstance3D.new()
+        sleeve_piece.mesh = sleeve
+        sleeve_piece.position = Vector3(side * 0.48, 1.12, 0.0)
+        sleeve_piece.rotation.z = -side * 0.12
+        sleeve_piece.material_override = cloth
+        costume_root.add_child(sleeve_piece)
+        var trouser := BoxMesh.new()
+        trouser.size = Vector3(0.22, 0.58, 0.28)
+        var trouser_piece := MeshInstance3D.new()
+        trouser_piece.mesh = trouser
+        trouser_piece.position = Vector3(side * 0.19, 0.42, 0.015)
+        trouser_piece.material_override = cloth
+        costume_root.add_child(trouser_piece)
+    var collar := PrismMesh.new()
+    collar.size = Vector3(0.42, 0.12, 0.28)
+    var collar_piece := MeshInstance3D.new()
+    collar_piece.mesh = collar
+    collar_piece.position = Vector3(0.0, 1.57, -0.015)
+    collar_piece.material_override = trim
+    costume_root.add_child(collar_piece)
+    if costume_id == "school" or costume_id == "royal":
+        var tie := PrismMesh.new()
+        tie.size = Vector3(0.10, 0.30, 0.035)
+        var tie_piece := MeshInstance3D.new()
+        tie_piece.mesh = tie
+        tie_piece.position = Vector3(0.0, 1.30, -0.19)
+        tie_piece.material_override = trim
+        costume_root.add_child(tie_piece)
+    if costume_id == "christmas":
+        var hem := BoxMesh.new()
+        hem.size = Vector3(0.62, 0.10, 0.36)
+        var hem_piece := MeshInstance3D.new()
+        hem_piece.mesh = hem
+        hem_piece.position = Vector3(0.0, 0.90, 0.0)
+        hem_piece.material_override = trim
+        costume_root.add_child(hem_piece)
 
 func _load_authored_character_model(class_id: String) -> void:
     if is_instance_valid(authored_character_model):
@@ -1438,6 +1607,11 @@ func _play_authored_action_animation(animation_name: String, blend_time: float =
     _sync_authored_armor_animation(animation_name, blend_time)
 
 func _load_authored_armor_model() -> void:
+    var appearance: Dictionary = RPGState.profile.get("appearance_state", {})
+    if not str(appearance.get("equipped_costume", "")).is_empty() and bool(appearance.get("costume_visible", true)):
+        if is_instance_valid(armor_root):
+            armor_root.visible = false
+        return
     if is_instance_valid(authored_armor_model):
         authored_armor_model.queue_free()
         authored_armor_model = null
