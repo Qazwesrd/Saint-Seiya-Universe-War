@@ -166,6 +166,13 @@ func get_combat_stats() -> Dictionary:
  stats["max_health"] += float(collection_bonus.get("max_health",0.0))
  stats["max_cosmos"] += float(collection_bonus.get("max_cosmos",0.0))
  stats["speed"] += float(collection_bonus.get("speed",0.0))
+ var growth_bonus: Dictionary = GrowthSystems.get_growth_stat_bonus()
+ stats["attack"] += float(growth_bonus.get("attack", 0.0))
+ stats["defense"] += float(growth_bonus.get("defense", 0.0))
+ stats["max_health"] += float(growth_bonus.get("max_health", 0.0))
+ stats["max_cosmos"] += float(growth_bonus.get("max_cosmos", 0.0))
+ stats["cosmos_regen"] = float(growth_bonus.get("cosmos_regen", 0.0))
+ stats["critical_rate"] = float(growth_bonus.get("critical_rate", 0.0))
  return stats
 func exp_to_next_level() -> int:
  return 100+(int(profile.get("level",1))-1)*65
