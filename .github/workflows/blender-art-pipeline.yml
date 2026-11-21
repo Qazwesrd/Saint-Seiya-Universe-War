@@ -158,6 +158,7 @@ jobs:
             game/assets/armors/*/model/armor.glb
             game/assets/enemies/*/model/enemy.glb
             game/assets/enemies/*/manifest.json
+            game/art_previews/characters/*.png
             game/assets/characters/*/manifest.json
             game/assets/armors/*/manifest.json
           if-no-files-found: error
