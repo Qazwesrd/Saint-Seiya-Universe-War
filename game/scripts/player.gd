@@ -1780,13 +1780,26 @@ func toggle_lock() -> void:
     var target_name := str(locked_target.get("display_name")) if locked_target.get("display_name") != null else "敌人"
     game.call("show_notice", "已锁定：" + target_name)
 
+static func get_capsule_contact_point_local(attacker_local_position: Vector3, center_y: float = 0.9, radius: float = 0.43, height: float = 1.8) -> Vector3:
+    # Find the nearest point on the player's vertical capsule collider.
+    var segment_half_height := maxf(0.0, height * 0.5 - radius)
+    var axis_point := Vector3(0.0, clampf(attacker_local_position.y, center_y - segment_half_height, center_y + segment_half_height), 0.0)
+    var outward := attacker_local_position - axis_point
+    if outward.length_squared() <= 0.000001:
+        outward = Vector3.UP
+    return axis_point + outward.normalized() * radius
+
+func get_attack_contact_position(attacker_world_position: Vector3) -> Vector3:
+    var contact_local := get_capsule_contact_point_local(to_local(attacker_world_position))
+    return to_global(contact_local)
+
 static func get_armor_hit_zone_from_local_position(local_position: Vector3) -> String:
-    # Approximate the struck body zone from the attacker's position in the player's local space.
-    if local_position.y >= 1.82:
+    # The contact point is exact on the capsule collider; anatomical zones are mapped approximately onto it.
+    if local_position.y >= 1.58:
         return "head"
     if local_position.y <= 0.55:
         return "legs"
-    if absf(local_position.x) >= 0.58:
+    if absf(local_position.x) >= 0.34 and local_position.y >= 0.72 and local_position.y <= 1.55:
         return "arms"
     if local_position.y <= 0.92:
         return "waist"
