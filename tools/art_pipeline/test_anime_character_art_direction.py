@@ -87,10 +87,10 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
             "Dragon_Ancient_Shield",
             "Dragon_Shield_Silver_Dragon_Ridge",
             "Cygnus_Ice_Crystal_Helm_Crest",
-            "Cygnus_Left_Frost_Wing_Pauldron",
+            '"Cygnus_" + side + "_Frost_Wing_Pauldron"',
             "Andromeda_Chain_Link_",
             "Andromeda_Chain_Wrist_Anchor",
-            "Phoenix_Left_Flame_Feather_",
+            '"Phoenix_" + side + "_Flame_Feather_"',
             "Phoenix_Fire_Cosmos_Gem",
         )
         for part in required_parts:
