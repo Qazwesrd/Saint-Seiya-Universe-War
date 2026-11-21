@@ -143,23 +143,40 @@ jobs:
           godot --headless --verbose --path game --export-debug "Android" ../build/android/Saint-Seiya-Universe-War-debug.apk
           test -s build/android/Saint-Seiya-Universe-War-debug.apk
 
-      - name: Verify the offline game data is embedded in the APK
+      - name: Verify exported Godot resources are embedded in the APK
         run: |
           set -eu
           apk="build/android/Saint-Seiya-Universe-War-debug.apk"
           test -s "$apk"
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
-          awk 'substr($0, length($0) - 3) == ".pck" { print }' /tmp/apk-entries.txt > /tmp/embedded-pck-entries.txt
-          count="$(wc -l < /tmp/embedded-pck-entries.txt | tr -d ' ')"
-          if [ "$count" -lt 1 ]; then
-            echo "No embedded Godot PCK was found in the APK. APK asset entries:"
+
+          # Godot Android exports store project resources directly under APK assets/.
+          # Do not require a standalone .pck file for this platform.
+          grep -Fx "assets/scenes/main.tscn" /tmp/apk-entries.txt
+          grep -Fx "assets/assets/armors/aries_gold_cloth/manifest.json" /tmp/apk-entries.txt
+          grep -E '^assets/\.godot/imported/.*\.scn
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saint-Seiya-Universe-War-Android-ARM64-debug
+          path: build/android/Saint-Seiya-Universe-War-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+ /tmp/apk-entries.txt > /tmp/imported-resource-entries.txt
+          imported_count="$(wc -l < /tmp/imported-resource-entries.txt | tr -d ' ')"
+          if [ "$imported_count" -lt 1 ]; then
+            echo "No imported Godot scene resources were found in the APK."
             grep -F "assets/" /tmp/apk-entries.txt | head -n 120 || true
             exit 1
           fi
+
+          asset_count="$(grep -E '^assets/' /tmp/apk-entries.txt | wc -l | tr -d ' ')"
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "EMBEDDED_PCK_COUNT=$count"
-          cat /tmp/embedded-pck-entries.txt
+          echo "EMBEDDED_ASSET_COUNT=$asset_count"
+          echo "IMPORTED_GODOT_RESOURCE_COUNT=$imported_count"
+          echo "APK_MAIN_SCENE=assets/scenes/main.tscn"
+          echo "APK_CONTENT_MANIFEST=assets/assets/armors/aries_gold_cloth/manifest.json"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
