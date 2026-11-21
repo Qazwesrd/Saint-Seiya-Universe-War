@@ -111,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
         "SKI_JSON_EXPORT_PASS "
         f"skin_meshes={len(payload['skin_meshes'])} "
