@@ -123,7 +123,7 @@ jobs:
                   errors.append(f"{label}: catalog has {len(ids)}, expected {expected_count}")
               if actual != expected_count or missing:
                   errors.append(f"{label}: missing or extra model files; missing IDs={missing}")
-          exported_enemy_lines = sum(line.startswith("ENEMY_MODEL_EXPORTED ") for line in Path("blender-export.log").read_text(encoding="utf-8", errors="replace").splitlines())
+          exported_enemy_lines = sum("ENEMY_MODEL_EXPORTED " in line for line in Path("blender-export.log").read_text(encoding="utf-8", errors="replace").splitlines())
           print(f"ART_BUNDLE_CHECK enemy_export_log_lines={exported_enemy_lines}")
           if exported_enemy_lines != 57:
               errors.append(f"enemy export log has {exported_enemy_lines} entries, expected 57")
