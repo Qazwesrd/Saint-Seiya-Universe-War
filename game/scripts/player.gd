@@ -527,7 +527,7 @@ func _on_rpg_state_changed() -> void:
 func _refresh_character_stance_profile() -> void:
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
-    var is_hongjun := bool(RPGState.profile.get("is_supreme_deity", false)) and str(RPGState.profile.get("character_name", "")) in ["鸿钧", "鸿钧老祖"]
+    var is_hongjun := bool(RPGState.profile.get("is_supreme_deity", false))
     character_stance_profile = CharacterStanceDatabase.get_profile(class_id, faction_id, is_hongjun)
 
 func _play_armor_transform_effect() -> void
