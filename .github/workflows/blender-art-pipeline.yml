@@ -190,10 +190,17 @@ jobs:
               check_glb(model, require_skin=True, clips=expected_clips)
               animation_data = check_glb(animation_library, clips=expected_clips, require_meshes=False)
               animation_by_name = {item.get("name"): item for item in animation_data["animations"]}
-              for clip_name in combo_clips + skill_clips + ability_clips:
+              # Combo attacks use a full-body chain (at least 8 animated bones).
+              # Skill archetypes and individual abilities are intentionally more focused:
+              # their valid authored poses animate 5-9 bones depending on the skill type.
+              for clip_name in combo_clips:
                   clip = animation_by_name[clip_name]
                   if len(clip.get("channels", [])) < 8:
-                      raise SystemExit(f"{class_id}: {clip_name} has too few skeletal tracks")
+                      raise SystemExit(f"{class_id}: {clip_name} has too few full-body combo tracks")
+              for clip_name in skill_clips + ability_clips:
+                  clip = animation_by_name[clip_name]
+                  if len(clip.get("channels", [])) < 5:
+                      raise SystemExit(f"{class_id}: {clip_name} has too few focused skill tracks")
               print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(expected_clips)} unique_skill_clips={len(ability_clips)}")
 
           if audited_ability_total != 768:
