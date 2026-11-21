@@ -389,6 +389,8 @@ func damage_boss_armor(amount: float) -> Dictionary:
     for _attempt in range(BOSS_ARMOR_ZONES.size()):
         var zone := BOSS_ARMOR_ZONES[boss_armor_hit_cursor % BOSS_ARMOR_ZONES.size()]
         boss_armor_hit_cursor = (boss_armor_hit_cursor + 1) % BOSS_ARMOR_ZONES.size()
+        if not boss_armor_nodes.has(zone):
+            continue
         if float(boss_armor_integrity.get(zone, 1.0)) <= 0.0:
             continue
         var integrity := maxf(0.0, float(boss_armor_integrity.get(zone, 1.0)) - clampf(maxf(0.0, amount) / max_health * 2.4, 0.08, 0.35))
