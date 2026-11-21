@@ -25,7 +25,7 @@ func _run_tests() -> void:
 	assert(GrowthSystems.unlock_wing("star_wing"), "first wing can be unlocked with offline game currency")
 	assert(str(GrowthSystems.get_wing_profile().get("equipped", "")) == "star_wing", "newly unlocked wing is equipped")
 	assert(GrowthSystems.upgrade_wing(), "equipped wing can be enhanced with offline currency")
-	assert(float(GrowthSystems.get_growth_stat_bonus().get("health", 0.0)) >= 0.0, "wing growth profile returns valid combat bonuses")
+	assert(float(GrowthSystems.get_growth_stat_bonus().get("max_health", 0.0)) >= 0.0, "wing growth profile returns valid combat bonuses")
 	assert(int(GrowthSystems.get_power_breakdown().get("total", 0)) > 0, "combat power is calculated from character progression")
 	assert(GrowthSystems.set_wing_visible(false) and not bool(GrowthSystems.get_wing_profile().get("visible", true)), "wing appearance visibility can be toggled")
 	RPGState.profile = growth_original_profile
