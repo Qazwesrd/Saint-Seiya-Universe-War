@@ -27,6 +27,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         cls.generator = GENERATOR.read_text(encoding="utf-8")
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
         cls.direction = DIRECTION.read_text(encoding="utf-8")
+        cls.manifest_builder = MANIFEST_BUILDER.read_text(encoding="utf-8")
 
     def test_every_playable_visual_profile_has_a_signature_pose_style(self):
         profiles = dictionary_ids(self.visual, "const PROFILES := {", 4)
@@ -59,6 +60,16 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('f"{class_id}_signature_idle"', self.generator)
         self.assertIn('"signature_idle"', self.workflow)
         self.assertIn('len(signature_pose.get("channels", [])) < 10', self.workflow)
+
+    def test_delivery_manifests_block_prototypes_from_final_release(self):
+        self.assertIn('"tier": "prototype_blockout"', self.manifest_builder)
+        self.assertIn('"canon_identity_verified": False', self.manifest_builder)
+        self.assertIn('"visual_review_required": True', self.manifest_builder)
+        self.assertIn('"approved_for_final_release": False', self.manifest_builder)
+        self.assertIn('"signature_idle"', self.manifest_builder)
+        self.assertIn('"{asset_id}_signature_idle"', self.manifest_builder)
+        self.assertIn('def migrate_manifest(current: dict, expected_data: dict)', self.manifest_builder)
+        self.assertIn('animation.get("required_clips") != expected_animation["required_clips"]', self.manifest_builder)
 
     def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
         self.assertIn("不得由随机职业色或通用装饰替代", self.direction)
