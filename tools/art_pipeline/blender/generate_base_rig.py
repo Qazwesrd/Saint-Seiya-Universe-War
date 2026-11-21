@@ -1250,6 +1250,80 @@ def build_profession_models(shard_index=0, shard_count=1):
                     "Pegasus_" + side + "_Pauldron_Enamel",
                     (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
                     side + "Shoulder", enamel, rig, 16, 10))
+        if class_id == "dragon":
+            # Dragon Bronze Cloth: a separate shield silhouette follows the left forearm.
+            jade = material("Dragon_Jade_Scale", (0.12, 0.43, 0.31), 0.78, 0.22)
+            silver = material("Dragon_Silver_Forging", (0.72, 0.82, 0.86), 0.91, 0.18)
+            ornaments.append(add_weighted_armor_plate(
+                "Dragon_Ancient_Shield", (0.535, -0.205, 1.105),
+                [(0, 0.30), (0.19, 0.18), (0.17, -0.13), (0, -0.34),
+                 (-0.17, -0.13), (-0.19, 0.18)],
+                0.105, "LeftForearm", jade, rig, 0.025))
+            ornaments.append(add_weighted_armor_plate(
+                "Dragon_Shield_Silver_Dragon_Ridge", (0.535, -0.268, 1.12),
+                [(0, 0.22), (0.055, 0.08), (0.025, -0.18), (0, -0.24),
+                 (-0.025, -0.18), (-0.055, 0.08)],
+                0.025, "LeftForearm", silver, rig, 0.008))
+            ornaments.append(add_weighted_pauldron(
+                "Dragon_Left_Dragon_Scale_Pauldron", (0.35, -0.10, 1.49),
+                0.205, 0.105, 0.10, "LeftShoulder", jade, rig, 1))
+        elif class_id == "cygnus":
+            # Cygnus Bronze Cloth: ice-crystal crest and layered frost pauldrons.
+            ice = material("Cygnus_Glacier_Crystal", (0.34, 0.78, 0.94), 0.72, 0.16)
+            frost = material("Cygnus_Frost_Silver", (0.72, 0.88, 0.96), 0.91, 0.14)
+            ornaments.append(add_weighted_armor_plate(
+                "Cygnus_Ice_Crystal_Helm_Crest", (0, -0.145, 1.965),
+                [(0, 0.25), (0.045, 0.09), (0.13, 0.015), (0.045, -0.035),
+                 (0, -0.16), (-0.045, -0.035), (-0.13, 0.015), (-0.045, 0.09)],
+                0.065, "Head", ice, rig, 0.012))
+            for side, sign in (("Left", 1), ("Right", -1)):
+                ornaments.append(add_weighted_pauldron(
+                    "Cygnus_" + side + "_Frost_Wing_Pauldron",
+                    (sign * 0.35, -0.115, 1.50), 0.19, 0.095, 0.095,
+                    side + "Shoulder", frost, rig, sign))
+                ornaments.append(add_weighted_armor_plate(
+                    "Cygnus_" + side + "_Ice_Greave",
+                    (sign * 0.15, -0.115, 0.36),
+                    [(-0.075, 0.17), (0, 0.25), (0.075, 0.17),
+                     (0.045, -0.12), (0, -0.20), (-0.045, -0.12)],
+                    0.10, side + "Shin", ice, rig, 0.012))
+        elif class_id == "andromeda":
+            # Andromeda Bronze Cloth: articulated chain links are individually weighted
+            # to the forearm so the signature weapon remains attached during attacks.
+            chain = material("Andromeda_Rose_Chain", (0.78, 0.42, 0.58), 0.88, 0.18)
+            chain_highlight = material("Andromeda_Chain_Light", (0.92, 0.72, 0.82), 0.92, 0.14)
+            for link_index in range(7):
+                x = 0.405 + link_index * 0.043
+                z = 1.015 + (link_index % 2) * 0.035
+                ornaments.append(add_weighted_ellipsoid(
+                    "Andromeda_Chain_Link_" + str(link_index + 1),
+                    (x, -0.19, z), (0.026, 0.018, 0.042),
+                    "RightForearm", chain if link_index % 2 == 0 else chain_highlight,
+                    rig, segments=12, rings=8))
+            ornaments.append(add_weighted_ellipsoid(
+                "Andromeda_Chain_Wrist_Anchor", (0.50, -0.205, 1.12),
+                (0.075, 0.035, 0.065), "RightForearm", chain_highlight, rig, 16, 10))
+            ornaments.append(add_weighted_armor_plate(
+                "Andromeda_Chest_Star_Plate", (0, -0.235, 1.385),
+                [(0, 0.15), (0.045, 0.045), (0.15, 0), (0.045, -0.045),
+                 (0, -0.15), (-0.045, -0.045), (-0.15, 0), (-0.045, 0.045)],
+                0.035, "Chest", chain_highlight, rig, 0.008))
+        elif class_id == "phoenix":
+            # Phoenix Bronze Cloth: layered, flame-feather wings are skinned to the chest.
+            flame = material("Phoenix_Flame_Ember", (0.78, 0.16, 0.045), 0.68, 0.20)
+            ember = material("Phoenix_Gold_Fire", (0.96, 0.52, 0.12), 0.82, 0.16)
+            for side, sign in (("Left", 1), ("Right", -1)):
+                for feather_index in range(3):
+                    offset = feather_index * 0.105
+                    ornaments.append(add_weighted_armor_plate(
+                        "Phoenix_" + side + "_Flame_Feather_" + str(feather_index + 1),
+                        (sign * (0.30 + offset), 0.105, 1.42 + feather_index * 0.045),
+                        [(0, 0.22), (sign * 0.10, 0.10), (sign * 0.19, -0.12),
+                         (sign * 0.08, -0.06), (0, -0.24), (-sign * 0.025, -0.02)],
+                        0.055, "Chest", flame if feather_index % 2 == 0 else ember, rig, 0.01))
+            ornaments.append(add_weighted_ellipsoid(
+                "Phoenix_Fire_Cosmos_Gem", (0, -0.255, 1.39),
+                (0.055, 0.025, 0.07), "Chest", ember, rig, 20, 12))
         make_animation_library(rig, class_id)
         make_signature_idle_pose(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
