@@ -1265,12 +1265,15 @@ def build_profession_models(shard_index=0, shard_count=1):
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
               "combo_clips=" + ",".join(required_profession_clips),
               "skill_archetypes=7")
-        if index == 0:
+        # Render all five Bronze Saint protagonists for the first user-facing art review.
+        # These are still blockout prototypes; previews are evidence for visual review,
+        # not approval as final canon-accurate character art.
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             render_profession_turntable(class_id, index)
             preview_path = ROOT / "game" / "art_previews" / "characters" / (class_id + "_front.png")
             if not preview_path.is_file() or preview_path.stat().st_size < 128:
-                raise RuntimeError("Representative character preview missing or too small: " + str(preview_path))
-            print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front",
+                raise RuntimeError("Core Bronze Saint preview missing or too small: " + str(preview_path))
+            print("CORE_BRONZE_SAINT_PREVIEW_RENDERED", class_id, "views=front",
                   "bytes=" + str(preview_path.stat().st_size))
 
 def build_equipment_models(shard_index=0, shard_count=1):
