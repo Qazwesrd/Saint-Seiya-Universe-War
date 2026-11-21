@@ -87,13 +87,23 @@ func validate_catalog() -> bool:
 			hongjun_found = true
 	return hongjun_found
 
+func get_tutorial_entry_points() -> Array:
+	if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
+		return ["sanctuary", "hongmeng"]
+	return [str(RPGState.profile.get("faction_id", "sanctuary"))]
+
+func can_interact_with_mentor(entry_faction_id: String) -> bool:
+	return entry_faction_id in get_tutorial_entry_points()
+
 func get_tutorial_mentor_name() -> String:
 	var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
 	if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
 		return "紫霄宫 / 圣域双入口引导者"
 	return str(get_faction(faction_id).get("mentor", "阵营引导者"))
 
-func interact_with_mentor() -> Dictionary:
+func interact_with_mentor(entry_faction_id: String = "") -> Dictionary:
+	if not entry_faction_id.is_empty() and not can_interact_with_mentor(entry_faction_id):
+		return {"speaker":get_tutorial_mentor_name(),"text":"该任务入口不属于当前角色的阵营权限。","action":"denied"}
 	var progress: Dictionary = RPGState.profile.get("faction_tutorial", {}).duplicate(true)
 	var speaker := get_tutorial_mentor_name()
 	if progress.is_empty():
