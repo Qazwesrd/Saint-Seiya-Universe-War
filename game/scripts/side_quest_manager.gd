@@ -63,8 +63,8 @@ func get_quest_overview() -> Array[Dictionary]:
 		if is_hidden and not state["discovered_hidden"].has(quest_id):
 			continue
 		var current := clampi(int(state["progress"].get(quest_id, 0)), 0, int(quest.get("target", 1)))
-		var claimed := state["claimed"].has(quest_id)
-		var accepted := state["accepted"].has(quest_id) or is_hidden
+		var claimed: bool = state["claimed"].has(quest_id)
+		var accepted: bool = state["accepted"].has(quest_id) or is_hidden
 		var status := "claimed" if claimed else ("completed" if accepted and current >= int(quest.get("target", 1)) else ("in_progress" if accepted else "available"))
 		var entry: Dictionary = quest.duplicate(true)
 		entry["current"] = current
