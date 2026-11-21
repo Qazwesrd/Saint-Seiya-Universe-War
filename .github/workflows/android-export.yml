@@ -85,11 +85,11 @@ jobs:
           animation_count="$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l | tr -d " " )"
           armor_count="$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l | tr -d " " )"
           enemy_count="$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l | tr -d " " )"
-          echo "Generated bundle: environments=$environment_count/7 characters=$character_count/32 animation_libraries=$animation_count/32 armors=$armor_count/49 enemies=$enemy_count/57"
+          echo "Generated bundle: environments=$environment_count/7 characters=$character_count/32 animation_libraries=$animation_count/32 armors=$armor_count/82 enemies=$enemy_count/57"
           test "$environment_count" -eq 7
           test "$character_count" -eq 32
           test "$animation_count" -eq 32
-          test "$armor_count" -eq 49
+          test "$armor_count" -eq 82
           test "$enemy_count" -eq 57
 
       - name: Import and validate project
