@@ -751,6 +751,7 @@ func _apply_gravity(delta: float) -> void:
         velocity.y = minf(velocity.y, 0.0)
 
 func _begin_boss_guard() -> void:
+    _boss_attack_count += 1
     state = BrainState.GUARD
     state_timer = 0.72 if not _boss_enraged else 0.58
     _boss_guard_hits = 0
