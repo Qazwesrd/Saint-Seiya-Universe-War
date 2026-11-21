@@ -93,5 +93,36 @@ const HEAVENLY_ADVANCED_SKILLS := {{
         self.assertEqual(report["skill_deficits_by_class"], {})
 
 
+    def test_audit_includes_divine_advanced_skills_with_four_space_catalog_indent(self):
+        base = ", ".join('{"id":"divine_%d"}' % i for i in range(1, 7))
+        advanced = ", ".join('{"id":"divine_advanced_%d"}' % i for i in range(1, 19))
+        skill_source = f'''const CLASS_SKILLS := {{
+}}
+const DIVINE_CLASS_SKILLS := {{
+    "apollo": {{"abilities": [{base}], "passive": {{}}}},
+}}
+const EXTENDED_DIVINE_CLASS_SKILLS := {{
+}}
+const HEAVENLY_CLASS_SKILLS := {{
+}}
+const ADVANCED_CLASS_SKILLS := {{
+}}
+const DIVINE_ADVANCED_SKILLS := {{
+    "apollo": [{advanced}],
+}}
+const EXTENDED_DIVINE_ADVANCED_SKILLS := {{
+}}
+const HEAVENLY_ADVANCED_SKILLS := {{
+}}'''
+        report = audit_sources(
+            'const CLASS_DATA := {\n "apollo": {"name":"阿波罗"},\n}',
+            'const PROFILES := {\n    "apollo": {"crest":"sun"},\n}',
+            skill_source,
+            'const ARCHETYPES := {\n    "guard": {"is_boss": false},\n}',
+        )
+        self.assertEqual(report["skill_counts_by_class"]["apollo"], 24)
+        self.assertEqual(report["skill_deficits_by_class"], {})
+
+
 if __name__ == "__main__":
     unittest.main()
