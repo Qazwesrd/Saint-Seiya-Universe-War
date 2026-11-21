@@ -50,7 +50,7 @@ def build_payload(entry_path: str, skin: Any) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "source_entry": entry_path.replace("\\\\", "/"),
+        "source_entry": entry_path.replace("\\", "/"),
         "ski_version": int(skin.version),
         "textures": list(skin.textures),
         "bone_names": list(skin.bone_names),
