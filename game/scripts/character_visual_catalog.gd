@@ -130,7 +130,7 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         dark_profile["metallic"] = maxf(0.92, float(dark_profile.get("metallic", 0.82)))
         return dark_profile
     if item_id == "platinum_cloth_archive":
-        return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant", "crest": "star", "shoulder_scale": Vector3(1.42, 1.18, 1.08), "glow": 0.34, "metallic": 1.0, "silhouette": "celestial"}
+        return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant", "glow": 0.34, "metallic": 1.0}
     if EQUIPMENT_PROFILES.has(item_id):
         return EQUIPMENT_PROFILES[item_id].duplicate(true)
     var category := str(equipment.get("category", ""))
