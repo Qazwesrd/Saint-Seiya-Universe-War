@@ -488,6 +488,7 @@ func _advance_story_sequence() -> void:
     _close_story_sequence()
 
 func _close_story_sequence() -> void:
+    var closed_event := str(story_panel.get_meta("story_event", "")) if is_instance_valid(story_panel) else ""
     if is_instance_valid(story_panel):
         story_panel.queue_free()
     story_panel = null
@@ -496,6 +497,8 @@ func _close_story_sequence() -> void:
     story_continue_button = null
     story_lines.clear()
     get_tree().paused = story_was_paused
+    if closed_event == "outro" and is_instance_valid(game) and game.has_method("on_story_sequence_closed"):
+        game.call("on_story_sequence_closed", closed_event)
 
 
 func _show_compact_dialogue(root: Control, data: Dictionary) -> void:

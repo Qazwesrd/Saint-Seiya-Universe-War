@@ -459,6 +459,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         if CampaignManager.can_complete_active_mission():
             var campaign_result: Dictionary = CampaignManager.complete_active_mission()
             if bool(campaign_result.get("success", false)):
+                completed_story_mission = campaign_mission
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if not is_daily_boss:
         _record_campaign_encounter_progress(enemy)
@@ -470,8 +471,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
                 show_notice("剧情任务完成：" + str(encounter_mission.get("name", "")))
         QuestManager.on_enemy_defeated(defeated_boss)
         EncounterDirector.report_enemy_defeated()
-        if defeated_boss and not completed_story_mission.is_empty():
-            _show_boss_story_scene("outro", completed_story_mission, str(enemy.get("archetype_id")))
+
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
@@ -498,7 +498,17 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         var battle_summary: Dictionary = CombatSessionManager.finish_encounter()
         if is_instance_valid(hud) and hud.has_method("show_battle_result"):
             hud.call("show_battle_result", battle_summary, {"exp": exp_reward, "coins": coin_reward})
-    _refresh_story_encounter()
+    if defeated_boss and not completed_story_mission.is_empty():
+        _show_boss_story_scene("outro", completed_story_mission, str(enemy.get("archetype_id")))
+    else:
+        _refresh_story_encounter()
+
+
+func on_story_sequence_closed(event_name: String) -> void:
+    if event_name == "outro":
+        _refresh_story_encounter()
+
+
 func update_hud() -> void:
     if is_instance_valid(hud) and is_instance_valid(player):
         hud.call("set_status", player.get("health"), player.get("max_health"), player.get("cosmos"), player.get("max_cosmos"), player.get("skill_cd"), player.get("burst_cd"))
