@@ -3,7 +3,7 @@ extends SceneTree
 ## Usage:
 ## godot --headless --path game --script res://tools/verify_chapter_pck.gd -- --pck /absolute/path/chapter.pck
 
-const PROBE_RESOURCE := "res://assets/environments/galaxy_wars/ci_pck_probe.json"
+const PROBE_RESOURCE := "res://" + "assets/environments/galaxy_wars/" + "ci_pck_probe.json"
 const EXPECTED_CONTENT := "{\"probe\":\"chapter pck builder verified\"}"
 
 func _initialize() -> void:
