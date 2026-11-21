@@ -62,6 +62,7 @@ var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
 var visual_armor_signature := ""
+var last_armor_condition_ratio := 1.0
 var authored_character_model: Node3D
 var authored_animation_player: AnimationPlayer
 var authored_animation_state := ""
@@ -362,15 +363,17 @@ func _play_armor_damage_feedback(damage_result: Dictionary) -> void:
    part_position = Vector3(0.0, 0.68, -0.30)
   "legs":
    part_position = Vector3(0.20, 0.42, -0.25)
- _play_combat_feedback(Color(1.0, 0.48, 0.22), 0.22)
+ var part_broken := int(damage_result.get("after", 100)) <= 0
+ _play_combat_feedback(Color(1.0, 0.30, 0.16) if part_broken else Color(1.0, 0.48, 0.22), 0.28 if part_broken else 0.22)
  var severity := clampf(float(damage_result.get("before", 100) - damage_result.get("after", 100)) / 18.0, 0.2, 1.0)
- for shard_index in range(3):
+ var shard_count := 5 if part_broken else 3
+ for shard_index in range(shard_count):
   var shard := MeshInstance3D.new()
   shard.name = "ArmorImpactShard"
   var shard_mesh := PrismMesh.new()
   shard_mesh.size = Vector3(0.035 + severity * 0.025, 0.07 + severity * 0.045, 0.025)
   shard.mesh = shard_mesh
-  shard.position = part_position + Vector3((float(shard_index) - 1.0) * 0.10, float(shard_index % 2) * 0.06, 0.0)
+  shard.position = part_position + Vector3((float(shard_index) - float(shard_count - 1) * 0.5) * 0.075, float(shard_index % 2) * 0.06, 0.0)
   shard.rotation = Vector3(0.2 * float(shard_index), 0.0, -0.35 + float(shard_index) * 0.35)
   var shard_material := StandardMaterial3D.new()
   shard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -558,6 +561,11 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
     material.emission_enabled = true
     var part_condition := float(part_wear.get("condition", 1.0))
     material.emission = piece_color * 0.06 * part_condition
+    if part_condition <= 0.0:
+        material.albedo_color = piece_color.darkened(0.68)
+        material.metallic = 0.28
+        material.roughness = 0.86
+        material.emission = Color(0.12, 0.018, 0.025)
     piece.visible = part_condition > 0.0
     piece.material_override = material
     armor_root.add_child(piece)
@@ -610,10 +618,31 @@ func _build_armor_wear_cracks() -> void:
                 crack_material.emission = Color(0.16, 0.025, 0.035) * severity
                 crack.material_override = crack_material
                 armor_root.add_child(crack)
+            if condition <= 0.0:
+                # Broken plates leave a few fixed low-poly fragments around the fracture edge.
+                for debris_index in range(2):
+                    var debris_mesh := PrismMesh.new()
+                    debris_mesh.size = Vector3(0.045, 0.10, 0.035)
+                    var debris := MeshInstance3D.new()
+                    debris.mesh = debris_mesh
+                    debris.position = anchor + Vector3((float(debris_index) - 0.5) * 0.11, -0.08, 0.018)
+                    debris.rotation.z = -0.48 if debris_index == 0 else 0.52
+                    var debris_material := StandardMaterial3D.new()
+                    debris_material.albedo_color = Color(0.16, 0.075, 0.055)
+                    debris_material.metallic = 0.42
+                    debris_material.roughness = 0.78
+                    debris_material.emission_enabled = true
+                    debris_material.emission = Color(0.18, 0.025, 0.018)
+                    debris.material_override = debris_material
+                    armor_root.add_child(debris)
 
 func _build_armor_visuals() -> void:
     if not is_instance_valid(visual_root):
         return
+    var had_previous_armor := is_instance_valid(armor_root)
+    var current_armor_condition := ArmorSystem.get_condition_ratio()
+    var armor_was_repaired := had_previous_armor and current_armor_condition > last_armor_condition_ratio + 0.01
+    last_armor_condition_ratio = current_armor_condition
     if is_instance_valid(armor_root):
         armor_root.queue_free()
     armor_wing_nodes.clear()
@@ -777,9 +806,37 @@ func _build_armor_visuals() -> void:
             shoulder_plate_width = 0.30
             shoulder_plate_height = 0.24
     shoulder_plate_mesh.size = Vector3(shoulder_plate_width * stage_structure, shoulder_plate_height * silhouette_height, 0.18)
+    var class_shoulder_scale: Vector3 = visual_profile.get("shoulder_scale", Vector3.ONE)
     for shoulder_side in [-1.0, 1.0]:
-        var shoulder_plate := _add_armor_piece(shoulder_plate_mesh, Vector3(shoulder_side * 0.56 * silhouette_width, 1.64, -0.12), Vector3(1.0, 1.0, 0.9), stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "arms")
+        var shoulder_plate := _add_armor_piece(shoulder_plate_mesh, Vector3(shoulder_side * 0.56 * silhouette_width, 1.64, -0.12), Vector3(class_shoulder_scale.x, class_shoulder_scale.y, class_shoulder_scale.z * 0.9), stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "arms")
         shoulder_plate.rotation.z = -shoulder_side * (0.22 if ornament_id in ["war_spikes", "thorn_wings", "forge_plates", "tidal_fins", "fin"] else 0.08)
+        match ornament_id:
+            "war_spikes", "thorn_wings", "forge_plates":
+                var shoulder_rivet := SphereMesh.new()
+                shoulder_rivet.radius = 0.075
+                shoulder_rivet.height = 0.12
+                _add_armor_piece(shoulder_rivet, Vector3(shoulder_side * 0.56, 1.64, -0.235), Vector3.ONE, accent.lightened(0.18), 0.96, "arms")
+            "tidal_fins", "fin", "scale":
+                var fin_mesh := PrismMesh.new()
+                fin_mesh.size = Vector3(0.12, 0.38, 0.07)
+                var shoulder_fin := _add_armor_piece(fin_mesh, Vector3(shoulder_side * 0.66, 1.68, 0.015), Vector3.ONE, accent, stage_metallic, "arms")
+                shoulder_fin.rotation.z = -shoulder_side * 0.62
+            "royal_wings", "heaven_wings", "solar_wings", "radiant":
+                var wing_plate := PrismMesh.new()
+                wing_plate.size = Vector3(0.20, 0.32, 0.075)
+                var shoulder_wing := _add_armor_piece(wing_plate, Vector3(shoulder_side * 0.72, 1.60, 0.02), Vector3(1.0, 1.0, 0.85), accent.lightened(0.12), stage_metallic, "arms")
+                shoulder_wing.rotation.z = -shoulder_side * 0.82
+            "time_rings", "dream_wings", "sound", "aegis":
+                var ring_mesh := TorusMesh.new()
+                ring_mesh.inner_radius = 0.075
+                ring_mesh.outer_radius = 0.12
+                var shoulder_ring := _add_armor_piece(ring_mesh, Vector3(shoulder_side * 0.61, 1.66, -0.13), Vector3.ONE, accent, 0.96, "arms")
+                shoulder_ring.rotation.x = deg_to_rad(72.0)
+            "chain", "comet", "swift_wings", "feather":
+                var crest_plate := PrismMesh.new()
+                crest_plate.size = Vector3(0.12, 0.26, 0.07)
+                var shoulder_crest := _add_armor_piece(crest_plate, Vector3(shoulder_side * 0.70, 1.55, -0.02), Vector3.ONE, accent, stage_metallic, "arms")
+                shoulder_crest.rotation.z = -shoulder_side * 0.48
     var shoulder_detail_mesh := PrismMesh.new()
     var shoulder_form := str(class_armor_details.get("shoulder_form", "balanced"))
     match shoulder_form:
@@ -1269,6 +1326,8 @@ func _build_armor_visuals() -> void:
         glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
     _build_armor_wear_cracks()
+    if armor_was_repaired:
+        _play_combat_feedback(Color(0.36, 1.0, 0.68), 0.34)
 
 
 func _load_authored_character_model(class_id: String) -> void:
