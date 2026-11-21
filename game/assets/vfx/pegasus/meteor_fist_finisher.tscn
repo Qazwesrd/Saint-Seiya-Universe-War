@@ -1,4 +1,6 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/vfx/pegasus_meteor_finisher_animator.gd" id="1"]
 
 [sub_resource type="StandardMaterial3D" id="CosmosCore"]
 shading_mode = 1
@@ -54,6 +56,7 @@ radial_segments = 8
 size = Vector3(0.16, 0.62, 0.12)
 
 [node name="PegasusMeteorFistFinisher" type="Node3D"]
+script = ExtResource("1")
 metadata/skill_id = "pegasus_skill_6"
 metadata/skill_name = "闪影流星拳"
 metadata/effect_role = "three-stage afterimage rush and impact burst"
