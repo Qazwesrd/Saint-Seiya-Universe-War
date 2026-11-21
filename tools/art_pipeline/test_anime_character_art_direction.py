@@ -17,7 +17,7 @@ def dictionary_ids(source: str, marker: str, indent: int) -> set[str]:
     start = source.index(marker) + len(marker)
     end = source.index("\n}", start)
     body = source[start:end]
-    return set(re.findall(rf'^ {{{indent}}}"([^"]+)"\\s*:', body, re.M))
+    return set(re.findall(rf'^ {{{indent}}}"([^"]+)"\s*:', body, re.M))
 
 
 class AnimeCharacterArtDirectionTests(unittest.TestCase):
@@ -31,11 +31,11 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
     def test_every_playable_visual_profile_has_a_signature_pose_style(self):
         profiles = dictionary_ids(self.visual, "const PROFILES := {", 4)
         style_block = re.search(
-            r"PROFESSION_COMBO_STYLES = \\{(.*?)^\\}",
+            r"PROFESSION_COMBO_STYLES = \{(.*?)^\}",
             self.generator, re.S | re.M,
         )
         self.assertIsNotNone(style_block)
-        style_ids = set(re.findall(r'"([^"]+)"\\s*:', style_block.group(1)))
+        style_ids = set(re.findall(r'"([^"]+)"\s*:', style_block.group(1)))
         self.assertEqual(profiles, style_ids)
 
     def test_surplice_and_dark_cloth_use_distinct_material_families(self):
