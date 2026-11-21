@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if kind == "bon":
         print(f"ANGELICA_BON_EXPORT_PASS bones={len(payload['bones'])} hooks={len(payload['hooks'])}")
     else:
