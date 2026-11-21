@@ -1145,6 +1145,9 @@ def build_equipment_models(shard_index=0, shard_count=1):
             continue
         reset_scene()
         rig = create_rig()
+        # Armor uses the exact same humanoid skeleton and baseline motion clips
+        # as the profession model, allowing the runtime armor rig to animate in sync.
+        make_animation_library(rig)
         pieces = build_armor(rig)
         variation = 0.88 + (index % 7) * 0.045
         accent_mat = material("Armor_" + equipment_id + "_Accent", (
@@ -1164,6 +1167,7 @@ def build_equipment_models(shard_index=0, shard_count=1):
             destination,
             required_nodes=("Humanoid_Base_Rig",) + tuple(piece.name for piece in pieces),
             require_skin=True,
+            required_clips=REQUIRED_CLIPS,
             require_independent_skinned_nodes=tuple(piece.name for piece in pieces),
         )
         if index == 0:
