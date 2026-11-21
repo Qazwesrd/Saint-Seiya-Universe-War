@@ -752,6 +752,78 @@ def catalog_ids(gd_path, marker):
         raise RuntimeError("catalog block malformed: " + marker)
     return re.findall(r'^\s*"([^"]+)"\s*:\s*\{', match.group(1), re.M)
 
+def render_profession_turntable(profession_id, index):
+    """Render three evidence views from the exact generated in-project GLB scene."""
+    preview_root = ROOT / "game" / "art_previews" / "characters"
+    preview_root.mkdir(parents=True, exist_ok=True)
+    scene = bpy.context.scene
+    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.render.resolution_x = 960
+    scene.render.resolution_y = 960
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGBA"
+    scene.render.film_transparent = False
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.color_depth = "8"
+    scene.render.filepath = str(preview_root / (profession_id + "_front.png"))
+    scene.render.image_settings.compression = 15
+    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.view_settings.view_transform = "Standard"
+    scene.view_settings.look = "AgX - Medium High Contrast"
+
+    world = bpy.data.worlds.new("Preview_World_" + profession_id) if not bpy.data.worlds else bpy.data.worlds[0]
+    scene.world = world
+    world.use_nodes = True
+    world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.018, 0.026, 0.055, 1.0)
+    world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
+
+    floor_mat = material("Preview_Floor_" + profession_id, (0.025, 0.035, 0.065), 0.28, 0.42)
+    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -0.035))
+    floor = bpy.context.object
+    floor.name = "Preview_Studio_Floor"
+    floor.data.materials.append(floor_mat)
+
+    def area_light(name, location, energy, color, size):
+        data = bpy.data.lights.new(name, "AREA")
+        data.energy = energy
+        data.color = color
+        data.shape = "DISK"
+        data.size = size
+        obj = bpy.data.objects.new(name, data)
+        scene.collection.objects.link(obj)
+        obj.location = location
+        obj.rotation_euler = (Vector((0, 0, 1.0)) - obj.location).to_track_quat("-Z", "Y").to_euler()
+        return obj
+
+    area_light("Preview_Key", (4.2, -4.5, 5.2), 850, (0.78, 0.86, 1.0), 4.0)
+    area_light("Preview_Fill", (-4.0, -2.0, 2.8), 520, (0.35, 0.58, 1.0), 3.5)
+    area_light("Preview_Rim", (0.5, 3.0, 4.0), 1000, (1.0, 0.58, 0.25), 3.0)
+
+    camera_data = bpy.data.cameras.new("Preview_Camera_" + profession_id)
+    camera = bpy.data.objects.new("Preview_Camera_" + profession_id, camera_data)
+    scene.collection.objects.link(camera)
+    scene.camera = camera
+    camera_data.type = "ORTHO"
+    camera_data.ortho_scale = 2.65
+    camera_data.lens = 55
+    views = (
+        ("front", (0.0, -6.5, 2.0)),
+        ("side", (6.5, 0.0, 2.0)),
+        ("back", (0.0, 6.5, 2.0)),
+    )
+    for view_name, position in views:
+        camera.location = position
+        camera.rotation_euler = (Vector((0, 0, 1.0)) - camera.location).to_track_quat("-Z", "Y").to_euler()
+        scene.render.filepath = str(preview_root / (profession_id + "_" + view_name + ".png"))
+        bpy.ops.render.render(write_still=True)
+    # Keep preview-only studio objects out of subsequent GLB exports.
+    for obj in [floor, camera] + [obj for obj in scene.objects if obj.type == "LIGHT"]:
+        bpy.data.objects.remove(obj, do_unlink=True)
+    if world.users == 0:
+        bpy.data.worlds.remove(world)
+
+
 def build_profession_models():
     """Export one distinct rigged silhouette per playable profession (prototype quality)."""
     classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
@@ -815,6 +887,8 @@ def build_profession_models():
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
               "combo_clips=" + ",".join(required_profession_clips),
               "skill_archetypes=7")
+        render_profession_turntable(class_id, index)
+        print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front,side,back")
 
 def build_equipment_models():
     """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""
