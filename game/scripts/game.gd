@@ -540,7 +540,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     if not is_daily_boss:
         SideQuestManager.record_event("boss_defeated" if defeated_boss else "enemy_defeated", {"chapter_id": active_world_chapter_id})
         if defeated_boss:
-            SideQuestManager.record_event("dark_boss_defeated", {"chapter_id": active_world_chapter_id, "archetype_id": str(enemy.get("archetype_id", ""))})
+            SideQuestManager.record_event("dark_boss_defeated", {"chapter_id": active_world_chapter_id, "archetype_id": str(enemy.get("archetype_id"))})
         _record_campaign_encounter_progress(enemy)
         if CampaignManager.can_complete_active_mission():
             var encounter_mission: Dictionary = CampaignManager.get_active_mission()
@@ -562,7 +562,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
     var auto_pickup := bool(SettingsManager.get_value("controls", "auto_pickup", true))
-    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)), auto_pickup, str(enemy.get("archetype_id", "")))
+    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)), auto_pickup, str(enemy.get("archetype_id")))
     if not auto_pickup:
         for drop in drops:
             _spawn_loot_pickup(enemy.global_position, drop)
