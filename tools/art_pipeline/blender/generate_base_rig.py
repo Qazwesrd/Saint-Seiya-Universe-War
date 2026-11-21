@@ -888,10 +888,14 @@ def build_profession_models():
               "skill_archetypes=7")
         if index == 0:
             render_profession_turntable(class_id, index)
-        print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front")
+            preview_path = ROOT / "game" / "art_previews" / "characters" / (class_id + "_front.png")
+            if not preview_path.is_file() or preview_path.stat().st_size < 128:
+                raise RuntimeError("Representative character preview missing or too small: " + str(preview_path))
+            print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front",
+                  "bytes=" + str(preview_path.stat().st_size))
 
 def build_equipment_models():
-    """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""
+    """Export every catalogued independent nine-piece skinned armor kit (stylized prototypes)."""
     equipment_ids = catalog_ids(ROOT / "game/scripts/equipment_database.gd", "const EQUIPMENT := {")
     output_root = ROOT / "game/assets/armors"
     for index, equipment_id in enumerate(equipment_ids):
