@@ -110,7 +110,7 @@ def parse_entries(source: str, marker: str, indent: int) -> dict[str, str]:
     if marker_at < 0:
         raise ValueError(f"Missing GDScript catalog marker: {marker}")
     body = source[marker_at + len(marker):]
-    closing = re.search(r"^\\}", body, re.M)
+    closing = re.search(r"^\}", body, re.M)
     if closing:
         body = body[:closing.start()]
     pattern = re.compile(rf"^{r' ' * indent}\"([A-Za-z0-9_]+)\"\s*:\s*\{{", re.M)
@@ -267,6 +267,12 @@ def run_self_test(catalogs: dict[str, dict[str, str]]) -> None:
     if "capsule body" not in NEGATIVE or "five separated fingers" not in character_prompt(
         "pegasus", catalogs["characters"]["pegasus"])[0]:
         raise AssertionError("Character anatomy quality constraints are missing")
+    try:
+        local_url("https://example.com")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Non-local generation endpoint was not rejected")
     print("PROMPT_ENGINE_SELF_TEST_PASS characters=32 armors=82 enemies=57 local_only=true")
 
 # CI runs --self-test to verify the exact production catalogs and offline-only guard.
