@@ -169,8 +169,10 @@ jobs:
 
           # Godot Android exports project resources directly under APK assets/.
           # A standalone .pck file is not required for this platform.
-          grep -Fx "assets/scenes/main.tscn" /tmp/apk-entries.txt
-          grep -Fx "assets/assets/armors/aries_gold_cloth/manifest.json" /tmp/apk-entries.txt
+          # Validate the actual configured startup scene and a checked-in bespoke skill scene.
+          # The former manifest path was never part of the repository and caused false failures.
+          grep -Fx "assets/scenes/main_menu.tscn" /tmp/apk-entries.txt
+          grep -Fx "assets/assets/vfx/pegasus/meteor_fist_finisher.tscn" /tmp/apk-entries.txt
           grep -E '^assets/\.godot/imported/.*\.scn$' /tmp/apk-entries.txt > /tmp/imported-resource-entries.txt
           imported_count="$(wc -l < /tmp/imported-resource-entries.txt | tr -d ' ')"
           if [ "$imported_count" -lt 1 ]; then
@@ -183,8 +185,8 @@ jobs:
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
           echo "EMBEDDED_ASSET_COUNT=$asset_count"
           echo "IMPORTED_GODOT_RESOURCE_COUNT=$imported_count"
-          echo "APK_MAIN_SCENE=assets/scenes/main.tscn"
-          echo "APK_CONTENT_MANIFEST=assets/assets/armors/aries_gold_cloth/manifest.json"
+          echo "APK_MAIN_SCENE=assets/scenes/main_menu.tscn"
+          echo "APK_SIGNATURE_SKILL_SCENE=assets/assets/vfx/pegasus/meteor_fist_finisher.tscn"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
