@@ -25,7 +25,7 @@ const WORLD_PROFILES := {
 	"asgard":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.12,0.19,0.25),"ambient_color":Color(0.35,0.55,0.72),"accent_color":Color(0.48,0.82,1.0),"structure":"crystals"},
 	"steel":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.09,0.12,0.15),"ambient_color":Color(0.34,0.4,0.46),"accent_color":Color(0.45,0.72,0.86),"structure":"machines"},
 	"bluegrad":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.09,0.16,0.25),"ambient_color":Color(0.28,0.52,0.75),"accent_color":Color(0.62,0.88,1.0),"structure":"crystals"},
-	"fallen":{"spawn_position":Vector3(0.0,0.15,0.075),"ground_color":Color(0.06,0.035,0.075),"ambient_color":Color(0.3,0.15,0.28),"accent_color":Color(0.72,0.22,0.42),"structure":"wings"},
+	"fallen":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.06,0.035,0.075),"ambient_color":Color(0.3,0.15,0.28),"accent_color":Color(0.72,0.22,0.42),"structure":"wings"},
 	"titans":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.13,0.105,0.09),"ambient_color":Color(0.48,0.36,0.26),"accent_color":Color(0.86,0.62,0.32),"structure":"columns"},
 	"giants":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.12,0.09,0.075),"ambient_color":Color(0.42,0.32,0.24),"accent_color":Color(0.72,0.48,0.28),"structure":"giants"},
 	"hongmeng":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.045,0.035,0.12),"ambient_color":Color(0.3,0.25,0.58),"accent_color":Color(0.72,0.55,1.0),"structure":"orbs"}
