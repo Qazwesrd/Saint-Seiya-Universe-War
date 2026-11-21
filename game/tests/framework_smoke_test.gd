@@ -11,6 +11,14 @@ func _ready() -> void:
 
 func _run_tests() -> void:
 	assert(BossChapterCombatCatalog.validate_catalog(), "all seven campaign chapters have complete boss combat profiles")
+	for dark_enemy_id in ["dark_phoenix_revenant", "dark_dragon_wraith", "dark_black_knight_champion"]:
+		assert(EnemyDatabase.has_archetype(dark_enemy_id), "Dark Saint encounter archetype exists: " + dark_enemy_id)
+		assert(bool(EnemyDatabase.get_archetype(dark_enemy_id).get("is_boss", false)), "Dark Saint encounter archetype is a boss: " + dark_enemy_id)
+	var dark_commander_quest: Dictionary = {}
+	for dark_quest_entry in SideQuestManager.QUESTS:
+		if str(dark_quest_entry.get("id", "")) == "side_dark_knight_trial":
+			dark_commander_quest = dark_quest_entry
+	assert(str(dark_commander_quest.get("required_archetype_id", "")) == "dark_black_knight_champion", "Dark Saint challenge requires defeating its named commander")
 	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
 	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
 	var bond_before: Dictionary = CollectionSystem.get_active_companion_bond()
@@ -20,7 +28,7 @@ func _run_tests() -> void:
 	var bond_after: Dictionary = CollectionSystem.get_active_companion_bond()
 	assert(int(bond_after.get("exp", 0)) >= int(bond_before.get("exp", 0)) or int(bond_after.get("level", 1)) > int(bond_before.get("level", 1)), "companion bond progress persists")
 	assert(WorldExplorationManager.get_regions().size() == 7, "world map exposes all seven campaign regions")
-	assert(SideQuestManager.QUESTS.size() == 21, "seven chapters each define a side quest, an NPC commission and a hidden landmark quest")
+	assert(SideQuestManager.QUESTS.size() == 22, "seven chapters plus the Dark Saint commander challenge define optional quest content")
 	var available_side_quests: Array[Dictionary] = SideQuestManager.get_quest_overview()
 	var has_starting_side_quest := false
 	var hidden_quest_visible := false
