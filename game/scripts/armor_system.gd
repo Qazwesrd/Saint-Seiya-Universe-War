@@ -184,7 +184,20 @@ func get_bonus_stats() -> Dictionary:
  var level_sum := 0
  for part in PARTS: level_sum += int(levels.get(part,0))
  var awaken := 1.25 if bool(data.get("awakened",false)) else 1.0
- return {"attack":(float(base["attack"])+float(level_sum))*condition*awaken,"defense":(float(base["defense"])+float(level_sum)*0.8)*condition*awaken,"max_health":float(base["hp"])*condition*awaken}
+ var attack_bonus := (float(base["attack"])+float(level_sum))*condition*awaken
+ var defense_bonus := (float(base["defense"])+float(level_sum)*0.8)*condition*awaken
+ var health_bonus := float(base["hp"])*condition*awaken
+ var dark_cosmos_bonus := 0.0
+ var dark_speed_bonus := 0.0
+ if stage_id == "dark_cloth":
+  # Dark Cosmos resonance reinforces aggressive combat while retaining class identity.
+  var class_data: Dictionary = RPGState.CLASS_DATA.get(str(RPGState.profile.get("class_id", "pegasus")), RPGState.CLASS_DATA.get("pegasus", {}))
+  attack_bonus += float(class_data.get("attack", 0.0)) * 0.10 * condition * awaken
+  defense_bonus += float(class_data.get("defense", 0.0)) * 0.05 * condition * awaken
+  health_bonus += float(class_data.get("hp", 0.0)) * 0.04 * condition * awaken
+  dark_cosmos_bonus = 12.0 * condition * awaken
+  dark_speed_bonus = 0.08 * condition * awaken
+ return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":1.10 if stage_id == "dark_cloth" else 1.0}
 func _commit(previous: Dictionary) -> bool:
  if RPGState.save_slot(RPGState.active_slot):
   RPGState.state_changed.emit()
