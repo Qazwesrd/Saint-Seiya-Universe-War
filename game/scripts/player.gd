@@ -1401,6 +1401,20 @@ func _build_faction_armor_details(faction_id: String, profile: Dictionary, metal
             crest_size = Vector3(0.18, 0.44, 0.12)
             shoulder_size = Vector3(0.42, 0.42, 0.20)
             core_size = Vector3(0.18, 0.32, 0.12)
+        "ice_armor":
+            crest_size = Vector3(0.12, 0.42, 0.10)
+            shoulder_size = Vector3(0.24, 0.44, 0.18)
+        "fallen_armor":
+            crest_size = Vector3(0.18, 0.42, 0.12)
+            shoulder_size = Vector3(0.42, 0.46, 0.20)
+            core_size = Vector3(0.16, 0.28, 0.10)
+        "chronotector":
+            crest_size = Vector3(0.18, 0.32, 0.12)
+            shoulder_size = Vector3(0.36, 0.36, 0.20)
+        "giant_plate":
+            crest_size = Vector3(0.24, 0.34, 0.16)
+            shoulder_size = Vector3(0.48, 0.50, 0.28)
+            core_size = Vector3(0.20, 0.30, 0.14)
     crest.size = crest_size
     var crown := _add_armor_piece(crest, Vector3(0.0, 2.08, -0.18), Vector3.ONE, trim, metallic, "head")
     crown.rotation.x = deg_to_rad(-12.0)
@@ -1447,6 +1461,35 @@ func _build_faction_armor_details(faction_id: String, profile: Dictionary, metal
             rune.size = Vector3(0.10, 0.38, 0.06)
             var rune_piece := _add_armor_piece(rune, Vector3(side * 0.44, 1.66, 0.02), Vector3.ONE, trim, metallic, "arms")
             rune_piece.rotation.z = -side * 0.42
+    elif family == "ice_armor":
+        for side in [-1.0, 1.0]:
+            var ice_spur := PrismMesh.new()
+            ice_spur.size = Vector3(0.09, 0.42, 0.08)
+            var spur_piece := _add_armor_piece(ice_spur, Vector3(side * 0.60, 1.55, -0.01), Vector3.ONE, trim, metallic, "arms")
+            spur_piece.rotation.z = -side * 0.38
+    elif family == "fallen_armor":
+        for side in [-1.0, 1.0]:
+            var fallen_spur := PrismMesh.new()
+            fallen_spur.size = Vector3(0.13, 0.48, 0.10)
+            var fallen_piece := _add_armor_piece(fallen_spur, Vector3(side * 0.58, 1.60, 0.04), Vector3.ONE, trim, metallic, "arms")
+            fallen_piece.rotation.z = -side * 0.62
+    elif family == "chronotector":
+        var time_ring := TorusMesh.new()
+        time_ring.inner_radius = 0.18
+        time_ring.outer_radius = 0.22
+        var time_piece := _add_armor_piece(time_ring, Vector3(0.0, 1.30, -0.52), Vector3(1.0, 1.0, 0.36), trim, 1.0, "chest")
+        time_piece.rotation.x = deg_to_rad(90.0)
+    elif family == "giant_plate":
+        for side in [-1.0, 1.0]:
+            var heavy_guard := BoxMesh.new()
+            heavy_guard.size = Vector3(0.30, 0.42, 0.24)
+            _add_armor_piece(heavy_guard, Vector3(side * 0.58, 1.50, 0.02), Vector3.ONE, metal, metallic, "arms")
+    elif family == "saint_cloth":
+        for side in [-1.0, 1.0]:
+            var saint_wing := PrismMesh.new()
+            saint_wing.size = Vector3(0.16, 0.32, 0.07)
+            var saint_piece := _add_armor_piece(saint_wing, Vector3(side * 0.58, 1.58, 0.02), Vector3.ONE, trim, metallic, "arms")
+            saint_piece.rotation.z = -side * 0.22
     elif family == "primordial_armor":
         var orbit := TorusMesh.new()
         orbit.inner_radius = 0.34
