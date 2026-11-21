@@ -105,15 +105,42 @@ func _build_world() -> void:
 func _apply_campaign_world_theme() -> void:
     if not is_instance_valid(world_theme_manager):
         return
-    var mission := CampaignManager.get_active_mission()
-    var mission_id := str(mission.get("id", ""))
-    var chapter := CampaignDatabase.get_chapter_for_mission(mission_id)
-    var chapter_id := str(chapter.get("id", "galaxy_wars"))
+    var chapter_id := str(WorldExplorationManager.active_region_id)
+    var chapter := CampaignDatabase.get_chapter(chapter_id)
+    if chapter.is_empty():
+        var mission := CampaignManager.get_active_mission()
+        chapter = CampaignDatabase.get_chapter_for_mission(str(mission.get("id", "")))
+        chapter_id = str(chapter.get("id", "galaxy_wars"))
     if chapter_id == active_world_chapter_id:
         return
     if bool(world_theme_manager.call("apply_theme", chapter_id)):
         active_world_chapter_id = chapter_id
-        show_notice("已进入篇章区域：" + str(chapter.get("name", "银河战争篇")))
+        show_notice("已进入区域：" + str(chapter.get("name", "银河竞技场")))
+        
+func travel_to_world_region(chapter_id: String) -> bool:
+    if not is_instance_valid(player):
+        show_notice("角色尚未准备完成，暂时无法传送")
+        return false
+    if EncounterDirector.active:
+        show_notice("战斗进行中无法跨区域传送，请先完成当前战斗")
+        return false
+    for enemy in enemies:
+        if is_instance_valid(enemy) and not bool(enemy.get("is_defeated")):
+            show_notice("附近仍有敌人，清理战场后再传送")
+            return false
+    var travel_result: Dictionary = WorldExplorationManager.travel_to_region(chapter_id)
+    if not bool(travel_result.get("success", false)):
+        show_notice(str(travel_result.get("reason", "区域传送失败")))
+        return false
+    player.call("cancel_auto_move")
+    player.velocity = Vector3.ZERO
+    var region: Dictionary = travel_result.get("region", {})
+    player.global_position = region.get("spawn_position", Vector3(0.0, 0.15, 7.0))
+    active_world_chapter_id = ""
+    _apply_campaign_world_theme()
+    show_notice("已抵达：" + str(region.get("name", "未知区域")) + "。探索地标可记录地图发现")
+    _refresh_story_encounter()
+    return true
 
 func _spawn_guide_npc() -> void:
     guide_npc = Node3D.new()
@@ -202,6 +229,9 @@ func _refresh_story_encounter() -> void:
             return
     var mission := CampaignManager.get_active_mission()
     var mission_id := str(mission.get("id", ""))
+    var mission_chapter_id := str(CampaignDatabase.get_chapter_for_mission(mission_id).get("id", ""))
+    if not mission_chapter_id.is_empty() and active_world_chapter_id != mission_chapter_id:
+        return
     var mission_state := CampaignManager.get_mission_progress(mission_id)
     var objectives: Array = mission_state.get("objectives", [])
     if mission_id == "gw_002":
