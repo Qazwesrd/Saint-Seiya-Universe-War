@@ -62,7 +62,6 @@ var body_mat: StandardMaterial3D
 var visual_flash_timer := 0.0
 var visual_flash_color := Color.WHITE
 var armor_root: Node3D
-var armor_attachment_anchors: Dictionary = {}
 var costume_root: Node3D
 var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
@@ -282,7 +281,6 @@ func _animate_visual_motion(delta: float) -> void:
     var cloth_sway := sin(clock * 1.35) * (0.045 + movement_ratio * 0.09)
     if tenkishi_flight_active:
         cloth_sway *= 1.7
-    _sync_armor_attachment_anchors()
     for skirt_index in range(armor_skirt_nodes.size()):
         var skirt_side := -1.0 if skirt_index % 2 == 0 else 1.0
         var skirt_base := armor_skirt_base_angles[skirt_index] if skirt_index < armor_skirt_base_angles.size() else 0.0
@@ -607,47 +605,6 @@ func _get_armor_visual_part(piece_position: Vector3) -> String:
         return "waist"
     return "legs"
 
-func _create_armor_attachment_anchors() -> void:
-    armor_attachment_anchors.clear()
-    var anchor_specs := {
-        "head": Vector3(0.0, 1.95, 0.0),
-        "chest": Vector3(0.0, 1.20, 0.0),
-        "waist": Vector3(0.0, 0.72, 0.0),
-        "arms_left": Vector3(-0.49, 1.17, 0.0),
-        "arms_right": Vector3(0.49, 1.17, 0.0),
-        "forearms_left": Vector3(-0.54, 0.76, -0.015),
-        "forearms_right": Vector3(0.54, 0.76, -0.015),
-        "legs_left": Vector3(-0.21, 0.40, 0.015),
-        "legs_right": Vector3(0.21, 0.40, 0.015)
-    }
-    for anchor_id in anchor_specs:
-        var anchor := Node3D.new()
-        anchor.name = "ArmorAnchor_" + str(anchor_id)
-        anchor.position = anchor_specs[anchor_id]
-        armor_root.add_child(anchor)
-        armor_attachment_anchors[anchor_id] = anchor
-
-
-func _get_armor_attachment_anchor(part_id: String, side_x: float = 0.0, part_y: float = 99.0) -> Node3D:
-    var anchor_id := CharacterVisualCatalog.resolve_armor_attachment_anchor(part_id, side_x, part_y)
-    if anchor_id.is_empty():
-        return null
-    var anchor: Variant = armor_attachment_anchors.get(anchor_id)
-    return anchor as Node3D if anchor is Node3D else null
-
-func _sync_armor_attachment_anchors() -> void:
-    for limb_index in range(2):
-        var arm_anchor := _get_armor_attachment_anchor("arms", -1.0 if limb_index == 0 else 1.0)
-        if is_instance_valid(arm_anchor) and limb_index < upper_arm_nodes.size():
-            arm_anchor.rotation = upper_arm_nodes[limb_index].rotation
-        var leg_anchor := _get_armor_attachment_anchor("legs", -1.0 if limb_index == 0 else 1.0)
-        if is_instance_valid(leg_anchor) and limb_index < leg_nodes.size():
-            leg_anchor.rotation = leg_nodes[limb_index].rotation
-        var forearm_anchor := _get_armor_attachment_anchor("arms", -1.0 if limb_index == 0 else 1.0, 0.76)
-        if is_instance_valid(forearm_anchor) and limb_index < forearm_nodes.size():
-            forearm_anchor.rotation = forearm_nodes[limb_index].rotation
-
-
 func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3, piece_color: Color, metallic: float = 0.72, part_id: String = "") -> MeshInstance3D:
     var piece := MeshInstance3D.new()
     piece.mesh = mesh
@@ -670,12 +627,7 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
         material.emission = Color(0.12, 0.018, 0.025)
     piece.visible = part_condition > 0.0
     piece.material_override = material
-    var attachment := _get_armor_attachment_anchor(resolved_part, piece_position.x, piece_position.y)
-    if is_instance_valid(attachment):
-        piece.position = attachment.to_local(armor_root.to_global(piece_position))
-        attachment.add_child(piece)
-    else:
-        armor_root.add_child(piece)
+    armor_root.add_child(piece)
     return piece
 
 func _build_armor_wear_cracks() -> void:
@@ -780,7 +732,6 @@ func _build_armor_visuals() -> void:
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
     visual_root.add_child(armor_root)
-    _create_armor_attachment_anchors()
 
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
