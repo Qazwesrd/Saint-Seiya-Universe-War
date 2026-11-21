@@ -175,6 +175,12 @@ func _run_tests() -> void:
 	assert(str(armor_hit_result.get("tier", "")) == "worn", "armor impact reports the resulting visual condition tier")
 	assert(ArmorSystem.get_part_durability("head") == 65, "targeted armor damage is committed to the selected part")
 	assert(ArmorSystem.damage_part("invalid_part", 10).is_empty(), "invalid armor part damage is safely rejected")
+	var armor_detail_classes: Array = CharacterVisualCatalog.PROFILES.keys()
+	assert(armor_detail_classes.size() == 32, "armor detail profiles cover all 32 classes")
+	for armor_class_id in armor_detail_classes:
+		var armor_detail: Dictionary = CharacterVisualCatalog.get_class_armor_detail_profile(str(armor_class_id))
+		assert(not armor_detail.is_empty(), "each class has a dedicated armor detail profile")
+		assert(str(armor_detail.get("shoulder_form", "")).length() > 0 and str(armor_detail.get("helmet_form", "")).length() > 0, "each class defines shoulder and helmet silhouette forms")
 	RPGState.profile["armor_state"] = saved_wear_state
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	assert(SkillAnimationCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback animation profiles")
