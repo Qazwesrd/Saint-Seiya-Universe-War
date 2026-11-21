@@ -146,6 +146,7 @@ func _ready() -> void:
     _button(root, "商城", Vector2(22, 154), Vector2(112, 214), func(): _open_shop(root), Color(0.28, 0.22, 0.08))
     _button(root, "每日首领", Vector2(118, 154), Vector2(230, 214), func(): _open_daily_boss(root), Color(0.42, 0.16, 0.12))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
+    _button(root, "成长系统", Vector2(340, 294), Vector2(490, 350), func(): _open_growth_panel(root), Color(0.32, 0.24, 0.08))
     _button(root, "伙伴图鉴", Vector2(118, 224), Vector2(230, 284), func(): _open_collection(root), Color(0.28, 0.18, 0.45))
     _button(root, "黑暗军团挑战", Vector2(236, 224), Vector2(390, 284), func(): game.call("start_dark_faction_trial"), Color(0.32, 0.08, 0.18))
     flight_button = _button(root, "天翼飞行", Vector2(-520, -190), Vector2(-410, -126), func(): _call_player("toggle_tenkishi_flight"), Color(0.08, 0.38, 0.52))
@@ -1826,6 +1827,141 @@ func _open_sanctuary(root: Control) -> void:
  root.add_child(popup)
  popup.popup_centered()
 
+
+func _open_growth_panel(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(650, 660)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(630, 640)
+    popup.add_child(scroll)
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 9)
+    box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    scroll.add_child(box)
+
+    var title := Label.new()
+    title.text = "小宇宙 · 星盘 · 战力翅膀"
+    title.add_theme_font_size_override("font_size", 25)
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    box.add_child(title)
+
+    var power: Dictionary = GrowthSystems.get_power_breakdown()
+    var breakdown: Dictionary = power.get("breakdown", {})
+    var power_label := Label.new()
+    power_label.text = "综合战力：%d\n等级与职业：%d  基础属性与装备：%d\n小宇宙境界：%d  翅膀成长：%d  星盘：%d" % [
+        int(power.get("total", 0)),
+        int(breakdown.get("等级与职业", 0)),
+        int(breakdown.get("基础属性与装备", 0)),
+        int(breakdown.get("小宇宙境界", 0)),
+        int(breakdown.get("翅膀成长", 0)),
+        int(breakdown.get("小宇宙星盘", 0))
+    ]
+    power_label.add_theme_font_size_override("font_size", 17)
+    box.add_child(power_label)
+
+    var cosmos: Dictionary = power.get("cosmos", {})
+    var cosmos_label := Label.new()
+    cosmos_label.text = "小宇宙：%s Lv.%d / %d    当前星币：%d" % [
+        str(cosmos.get("rank", "初识小宇宙")),
+        int(cosmos.get("level", 1)),
+        int(cosmos.get("max_level", 20)),
+        int(RPGState.profile.get("currency", 0))
+    ]
+    box.add_child(cosmos_label)
+    var cosmos_upgrade := Button.new()
+    cosmos_upgrade.text = "燃烧小宇宙 · 境界提升（消耗 %d 星币）" % int(cosmos.get("upgrade_cost", 250))
+    cosmos_upgrade.pressed.connect(func():
+        var ok: bool = RPGState.upgrade_cosmos()
+        set_notice("小宇宙境界提升成功" if ok else "星币不足或当前境界已达上限")
+        popup.queue_free()
+    )
+    box.add_child(cosmos_upgrade)
+
+    var star_title := Label.new()
+    star_title.text = "小宇宙星盘 · 已用 %d / %d 点，可用 %d 点" % [
+        int(power.get("star_map", {}).get("used_points", 0)),
+        int(power.get("star_map", {}).get("unlocked_points", 0)),
+        int(power.get("star_map", {}).get("available_points", 0))
+    ]
+    star_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(star_title)
+    for node in power.get("star_map", {}).get("nodes", []):
+        var node_id := str(node.get("id", ""))
+        var node_rank := int(node.get("rank", 0))
+        var node_button := Button.new()
+        node_button.text = "%s Lv.%d/%d · 每级消耗 %d 星币" % [
+            str(node.get("name", node_id)),
+            node_rank,
+            int(node.get("max_rank", 5)),
+            int(node.get("cost", 100)) * (node_rank + 1)
+        ]
+        node_button.disabled = not bool(node.get("unlocked", false)) or node_rank >= int(node.get("max_rank", 5)) or int(power.get("star_map", {}).get("available_points", 0)) <= 0
+        var selected_node := node_id
+        node_button.pressed.connect(func():
+            var ok: bool = GrowthSystems.allocate_cosmos_node(selected_node)
+            set_notice("星盘节点已强化" if ok else "星币不足、星盘点数不足或节点未解锁")
+            popup.queue_free()
+        )
+        box.add_child(node_button)
+    var reset_nodes := Button.new()
+    reset_nodes.text = "重置星盘（返还节点点数，不返还星币）"
+    reset_nodes.pressed.connect(func():
+        var ok: bool = GrowthSystems.reset_cosmos_star_map()
+        set_notice("星盘已重置" if ok else "当前没有已分配的星盘节点")
+        popup.queue_free()
+    )
+    box.add_child(reset_nodes)
+
+    var wing_title := Label.new()
+    wing_title.text = "战力翅膀 · 独立外观与成长"
+    wing_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(wing_title)
+    var wing_profile: Dictionary = power.get("wings", {})
+    var wing_label := Label.new()
+    wing_label.text = "当前：%s · 阶位 %d · 等级 %d" % [
+        str(wing_profile.get("name", "未装备翅膀")),
+        int(wing_profile.get("rank", 0)),
+        int(wing_profile.get("level", 0))
+    ]
+    box.add_child(wing_label)
+    var wing_upgrade := Button.new()
+    wing_upgrade.text = "强化 / 进阶翅膀（消耗 %d 星币）" % (int(wing_profile.get("level", 1)) * 180 + int(wing_profile.get("rank", 1)) * 250)
+    wing_upgrade.disabled = str(wing_profile.get("equipped", "")).is_empty() or (int(wing_profile.get("rank", 0)) >= 5 and int(wing_profile.get("level", 0)) >= 10)
+    wing_upgrade.pressed.connect(func():
+        var ok: bool = GrowthSystems.upgrade_wing()
+        set_notice("翅膀成长成功" if ok else "星币不足或翅膀已达当前上限")
+        popup.queue_free()
+    )
+    box.add_child(wing_upgrade)
+    var visibility := Button.new()
+    visibility.text = "隐藏翅膀外观" if bool(wing_profile.get("visible", true)) else "显示翅膀外观"
+    visibility.pressed.connect(func():
+        GrowthSystems.set_wing_visible(not bool(wing_profile.get("visible", true)))
+        set_notice("翅膀显示设置已更新")
+        popup.queue_free()
+    )
+    box.add_child(visibility)
+    for wing in GrowthSystems.get_wing_catalog():
+        var wing_id := str(wing.get("id", ""))
+        var owned: Array = wing_profile.get("owned", [])
+        var is_owned := owned.has(wing_id)
+        var wing_button := Button.new()
+        wing_button.text = ( "已拥有 · " if is_owned else "解锁 · " ) + str(wing.get("name", wing_id)) + ("" if is_owned else "（%d 星币）" % int(wing.get("unlock_cost", 0)))
+        wing_button.disabled = not is_owned and int(RPGState.profile.get("currency", 0)) < int(wing.get("unlock_cost", 0))
+        var selected_wing := wing_id
+        wing_button.pressed.connect(func():
+            var ok: bool = GrowthSystems.equip_wing(selected_wing) if is_owned else GrowthSystems.unlock_wing(selected_wing)
+            set_notice("翅膀已装备" if ok else "翅膀解锁或装备失败")
+            popup.queue_free()
+        )
+        box.add_child(wing_button)
+
+    var close := Button.new()
+    close.text = "关闭"
+    close.pressed.connect(func(): popup.queue_free())
+    box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
 
 func show_battle_result(summary: Dictionary, rewards: Dictionary = {}) -> void:
     var root := get_child(0) as Control
