@@ -49,7 +49,8 @@ const ITEM_DATA := {
  "bronze_helmet":{"name":"青铜头盔","slot":"head","attack":0,"defense":3,"price":120},
  "bronze_chest":{"name":"青铜胸甲","slot":"chest","attack":0,"defense":6,"price":220},
  "bronze_greaves":{"name":"青铜腿甲","slot":"legs","attack":1,"defense":3,"price":160},
- "cosmos_potion":{"name":"小宇宙恢复药剂","slot":"consumable","attack":0,"defense":0,"price":45}
+ "cosmos_potion":{"name":"小宇宙恢复药剂","slot":"consumable","attack":0,"defense":0,"price":45},
+ "dark_cosmos_fragment":{"name":"暗黑小宇宙碎片","slot":"material","attack":0,"defense":0,"price":0}
 }
 var active_slot := 1
 var profile: Dictionary = {}
