@@ -44,6 +44,40 @@ const DARK_CLASS_PASSIVES := {
  "hephaestus":{"name":"黑曜神锻","focus":"defense","attack_rate":0.04,"defense_rate":0.085,"health_rate":0.065,"speed_rate":0.0,"cosmos_rate":1.0},
  "aphrodite":{"name":"暗影魅惑","focus":"control","attack_rate":0.05,"defense_rate":0.04,"health_rate":0.04,"speed_rate":0.025,"cosmos_rate":2.0}
 }
+const PLATINUM_CLASS_PASSIVES := {
+ "pegasus":{"name":"星辉流星","focus":"attack","attack_rate":0.055,"defense_rate":0.015,"health_rate":0.015,"speed_rate":0.025,"cosmos_rate":1.0},
+ "dragon":{"name":"天穹龙壁","focus":"defense","attack_rate":0.015,"defense_rate":0.06,"health_rate":0.045,"speed_rate":0.0,"cosmos_rate":1.0},
+ "cygnus":{"name":"极光冰环","focus":"control","attack_rate":0.03,"defense_rate":0.03,"health_rate":0.02,"speed_rate":0.015,"cosmos_rate":2.0},
+ "andromeda":{"name":"星链回响","focus":"control","attack_rate":0.035,"defense_rate":0.025,"health_rate":0.025,"speed_rate":0.01,"cosmos_rate":2.0},
+ "phoenix":{"name":"涅槃日轮","focus":"attack","attack_rate":0.06,"defense_rate":0.01,"health_rate":0.025,"speed_rate":0.015,"cosmos_rate":1.0},
+ "sea_dragon":{"name":"沧海星潮","focus":"cosmos","attack_rate":0.035,"defense_rate":0.025,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":3.0},
+ "tenmou":{"name":"天穹壁垒","focus":"defense","attack_rate":0.02,"defense_rate":0.055,"health_rate":0.05,"speed_rate":0.0,"cosmos_rate":1.0},
+ "lyra":{"name":"天籁星弦","focus":"attack","attack_rate":0.05,"defense_rate":0.015,"health_rate":0.015,"speed_rate":0.02,"cosmos_rate":2.0},
+ "sea_swallow":{"name":"流星迅羽","focus":"mobility","attack_rate":0.03,"defense_rate":0.02,"health_rate":0.025,"speed_rate":0.04,"cosmos_rate":1.0},
+ "tenkishi":{"name":"天界辉翼","focus":"mobility","attack_rate":0.035,"defense_rate":0.035,"health_rate":0.03,"speed_rate":0.035,"cosmos_rate":2.0},
+ "apollo":{"name":"太阳圣冕","focus":"attack","attack_rate":0.06,"defense_rate":0.025,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":3.0},
+ "athena":{"name":"智慧星盾","focus":"defense","attack_rate":0.02,"defense_rate":0.055,"health_rate":0.055,"speed_rate":0.0,"cosmos_rate":3.0},
+ "hades":{"name":"冥界星蚀","focus":"attack","attack_rate":0.055,"defense_rate":0.03,"health_rate":0.035,"speed_rate":0.0,"cosmos_rate":3.0},
+ "poseidon":{"name":"海皇星潮","focus":"cosmos","attack_rate":0.035,"defense_rate":0.035,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":3.0},
+ "zeus":{"name":"雷霆星裁","focus":"attack","attack_rate":0.065,"defense_rate":0.03,"health_rate":0.025,"speed_rate":0.015,"cosmos_rate":3.0},
+ "artemis":{"name":"月华星守","focus":"defense","attack_rate":0.025,"defense_rate":0.05,"health_rate":0.04,"speed_rate":0.015,"cosmos_rate":2.0},
+ "hypnos":{"name":"永昼安眠","focus":"defense","attack_rate":0.015,"defense_rate":0.055,"health_rate":0.04,"speed_rate":0.0,"cosmos_rate":3.0},
+ "thanatos":{"name":"终焉星镰","focus":"attack","attack_rate":0.065,"defense_rate":0.015,"health_rate":0.025,"speed_rate":0.015,"cosmos_rate":1.0},
+ "odin":{"name":"神域星壁","focus":"defense","attack_rate":0.025,"defense_rate":0.05,"health_rate":0.045,"speed_rate":0.01,"cosmos_rate":2.0},
+ "ares":{"name":"战神辉锋","focus":"attack","attack_rate":0.07,"defense_rate":0.01,"health_rate":0.02,"speed_rate":0.015,"cosmos_rate":1.0},
+ "eris":{"name":"纷争星环","focus":"control","attack_rate":0.045,"defense_rate":0.02,"health_rate":0.04,"speed_rate":0.015,"cosmos_rate":2.0},
+ "abel":{"name":"真红日耀","focus":"attack","attack_rate":0.06,"defense_rate":0.025,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":2.0},
+ "lucifer":{"name":"晨星天翼","focus":"mobility","attack_rate":0.045,"defense_rate":0.015,"health_rate":0.025,"speed_rate":0.045,"cosmos_rate":1.0},
+ "saturn":{"name":"时轮星域","focus":"control","attack_rate":0.04,"defense_rate":0.04,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":3.0},
+ "pallas":{"name":"圣剑星辉","focus":"control","attack_rate":0.045,"defense_rate":0.03,"health_rate":0.025,"speed_rate":0.015,"cosmos_rate":2.0},
+ "chronos":{"name":"创世时序","focus":"cosmos","attack_rate":0.045,"defense_rate":0.045,"health_rate":0.04,"speed_rate":0.01,"cosmos_rate":4.0},
+ "hera":{"name":"天后星冠","focus":"defense","attack_rate":0.015,"defense_rate":0.06,"health_rate":0.045,"speed_rate":0.0,"cosmos_rate":3.0},
+ "demeter":{"name":"大地丰星","focus":"health","attack_rate":0.015,"defense_rate":0.04,"health_rate":0.065,"speed_rate":0.0,"cosmos_rate":2.0},
+ "hestia":{"name":"圣火恒星","focus":"health","attack_rate":0.02,"defense_rate":0.055,"health_rate":0.055,"speed_rate":0.0,"cosmos_rate":2.0},
+ "hermes":{"name":"神行星轨","focus":"mobility","attack_rate":0.045,"defense_rate":0.01,"health_rate":0.02,"speed_rate":0.05,"cosmos_rate":1.0},
+ "hephaestus":{"name":"神锻星炉","focus":"defense","attack_rate":0.03,"defense_rate":0.065,"health_rate":0.05,"speed_rate":0.0,"cosmos_rate":2.0},
+ "aphrodite":{"name":"爱神星辉","focus":"control","attack_rate":0.035,"defense_rate":0.03,"health_rate":0.03,"speed_rate":0.02,"cosmos_rate":3.0}
+}
 const PARTS := ["head","chest","arms","waist","legs"]
 const PART_NAMES := {"head":"头盔","chest":"胸甲","arms":"护腕","waist":"腰甲","legs":"腿甲"}
 var damage_ticks := 0
@@ -254,6 +288,10 @@ func get_dark_class_passive(class_id: String = "") -> Dictionary:
  var selected_class := class_id if not class_id.is_empty() else str(RPGState.profile.get("class_id", "pegasus"))
  return DARK_CLASS_PASSIVES.get(selected_class, {}).duplicate(true)
 
+func get_platinum_class_passive(class_id: String = "") -> Dictionary:
+ var selected_class := class_id if not class_id.is_empty() else str(RPGState.profile.get("class_id", "pegasus"))
+ return PLATINUM_CLASS_PASSIVES.get(selected_class, {}).duplicate(true)
+
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_data()
  var stage_id := str(data.get("current_stage","bronze"))
@@ -299,6 +337,7 @@ func get_bonus_stats() -> Dictionary:
    health_bonus += float(base["hp"]) * 0.05 * condition * awaken
  var platinum_resonance := 1.0
  var platinum_star_bonus := 0.0
+ var platinum_speed_bonus := 0.0
  if stage_id == "platinum":
   var platinum_awakened := bool(data.get("awakened", false))
   platinum_resonance = 1.18 if platinum_awakened else 1.12
@@ -306,7 +345,15 @@ func get_bonus_stats() -> Dictionary:
   attack_bonus += float(base["attack"]) * (0.18 if platinum_awakened else 0.10) * condition
   defense_bonus += float(base["defense"]) * (0.16 if platinum_awakened else 0.08) * condition
   health_bonus += float(base["hp"]) * (0.15 if platinum_awakened else 0.08) * condition
- return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus + platinum_star_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0,"platinum_star_resonance":platinum_resonance,"platinum_awakened":bool(data.get("awakened", false)) if stage_id == "platinum" else false,"dark_class_passive":get_dark_class_passive(),"dark_set_tier":(2 if stage_id == "dark_cloth" and intact_parts == PARTS.size() else (1 if stage_id == "dark_cloth" and intact_parts >= 3 else 0))}
+  var class_data: Dictionary = RPGState.CLASS_DATA.get(str(RPGState.profile.get("class_id", "pegasus")), RPGState.CLASS_DATA.get("pegasus", {}))
+  var class_passive := get_platinum_class_passive()
+  var awakening_factor := 1.25 if platinum_awakened else 1.0
+  attack_bonus += float(class_data.get("attack", 0.0)) * float(class_passive.get("attack_rate", 0.0)) * condition * awakening_factor
+  defense_bonus += float(class_data.get("defense", 0.0)) * float(class_passive.get("defense_rate", 0.0)) * condition * awakening_factor
+  health_bonus += float(class_data.get("hp", 0.0)) * float(class_passive.get("health_rate", 0.0)) * condition * awakening_factor
+  platinum_speed_bonus = float(class_passive.get("speed_rate", 0.0)) * condition * awakening_factor
+  platinum_star_bonus += float(class_passive.get("cosmos_rate", 0.0)) * condition * awakening_factor
+ return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus + platinum_star_bonus,"speed":dark_speed_bonus + platinum_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0,"platinum_star_resonance":platinum_resonance,"platinum_awakened":bool(data.get("awakened", false)) if stage_id == "platinum" else false,"dark_class_passive":get_dark_class_passive(),"platinum_class_passive":get_platinum_class_passive() if stage_id == "platinum" else {},"dark_set_tier":(2 if stage_id == "dark_cloth" and intact_parts == PARTS.size() else (1 if stage_id == "dark_cloth" and intact_parts >= 3 else 0))}
 func _commit(previous: Dictionary) -> bool:
  if RPGState.save_slot(RPGState.active_slot):
   RPGState.state_changed.emit()
