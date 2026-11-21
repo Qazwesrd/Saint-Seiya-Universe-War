@@ -9,6 +9,13 @@ var wave_index := -1
 var living_enemies := 0
 var active := false
 
+func get_dark_faction_trial_waves() -> Array[Dictionary]:
+	return [
+		{"spawns":[{"archetype_id":"dark_saint_scout","count":2,"position":Vector3(-3,0.1,-5)},{"archetype_id":"dark_saint_raider","count":1,"position":Vector3(3,0.1,-5)}]},
+		{"spawns":[{"archetype_id":"dark_saint_raider","count":2,"position":Vector3(-3,0.1,-6)},{"archetype_id":"dark_saint_elite","count":1,"position":Vector3(3,0.1,-6)}]},
+		{"spawns":[{"archetype_id":"dark_saint_captain","count":1,"position":Vector3(-2,0.1,-7)},{"archetype_id":"dark_black_knight_champion","count":1,"boss":true,"position":Vector3(2,0.1,-8)}]}
+	]
+
 func start(new_encounter_id: String, wave_definitions: Array[Dictionary]) -> bool:
 	if new_encounter_id.is_empty() or wave_definitions.is_empty() or active:
 		return false
