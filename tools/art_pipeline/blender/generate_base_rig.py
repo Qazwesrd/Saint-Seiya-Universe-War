@@ -21,7 +21,7 @@ REQUIRED_CLIPS = (
     "idle", "walk", "run", "jump", "fall", "land",
     "basic_attack_1", "basic_attack_2", "basic_attack_3",
     "skill_cast", "hit_light", "hit_heavy", "dodge", "block",
-    "victory", "defeat",
+    "victory", "defeat", "phase_shift",
 )
 
 def reset_scene():
@@ -244,6 +244,10 @@ def make_animation_library(rig):
         elif clip == "defeat":
             key_pose(rig, 18, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
             key_pose(rig, 24, {"Chest": (0.8, 0, 0), "Head": (0.4, 0, 0), "Hips": (0.3, 0, 0)})
+        elif clip == "phase_shift":
+            key_pose(rig, 8, {"LeftUpperArm": (-1.1, 0, -0.55), "RightUpperArm": (-1.1, 0, 0.55), "Chest": (-0.22, 0, 0)})
+            key_pose(rig, 16, {"LeftUpperArm": (-2.0, 0, -0.85), "RightUpperArm": (-2.0, 0, 0.85), "Chest": (-0.12, 0, 0), "Head": (-0.18, 0, 0)})
+            key_pose(rig, 24, {"LeftUpperArm": (-0.4, 0, -0.2), "RightUpperArm": (-0.4, 0, 0.2)})
         else:
             key_pose(rig, 24, {"Spine": (0, 0, 0)})
         scene.frame_start, scene.frame_end = 1, 25 if clip in ("walk", "run") else 24
