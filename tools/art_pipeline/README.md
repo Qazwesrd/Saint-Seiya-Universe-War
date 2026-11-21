@@ -84,3 +84,14 @@ py tools/art_pipeline/export_angelica_ski_json.py "D:\\Games\\SeiyaClient\\eleme
 ```
 
 `--entry` 必须使用 PCK 清单中的实际路径。若 PCK 没有 PKX 分卷，可省略 `--pkx`。输出包含 SKI 版本、骨骼名称及每个网格的顶点和蒙皮数据；当前输出是网格交换数据，不是完整带骨骼动画的 GLB，也不代表已经完成原版角色重建。
+
+
+## 在 Blender 中查看 SKI 网格
+
+先按上面的步骤生成 `pegasus_ski.json`，再在安装了 Blender 4.x 的电脑上执行：
+
+```powershell
+blender --background --python tools/art_pipeline/blender/import_angelica_ski_json.py -- --input "D:\\SeiyaInventory\\pegasus_ski.json" --output "D:\\SeiyaInventory\\pegasus_preview.blend"
+```
+
+该导入器会创建网格对象、UV、材质槽和顶点组（保留骨骼权重索引，供后续绑定使用）。当前是静态网格检查场景：尚未生成 BON 骨架、骨骼动作、材质贴图连接或完整 GLB；没有真实客户端样本前，也不能保证所有 SKI 版本都兼容。
