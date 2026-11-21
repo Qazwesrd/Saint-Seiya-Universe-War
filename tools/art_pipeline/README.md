@@ -70,6 +70,6 @@ py -m pip install autoangel
 py tools/art_pipeline/inventory_angelica_pck.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --output "D:\\SeiyaInventory\\models"
 ```
 
-若没有分卷文件，可省略 `--pkx`。如果有多个 PKX 分卷，可重复指定 `--pkx`。工具只调用 AutoAngel 的 `read_pck` 和 `file_list` 读取索引，不调用提取或保存接口；报告写到独立目录。输出 JSON/CSV 可用于统计 SKI、BON、SMD、STCK、ECM、GFX 和纹理文件。
+若没有分卷文件，可省略 `--pkx`。如果有多个 PKX 分卷，可重复指定 `--pkx`。工具调用 AutoAngel 的 `read_pck`、`file_list` 和只读 `scan_entries` 读取索引与压缩数据元信息，不调用提取、构建或保存接口；报告写到独立目录。JSON/CSV 会记录资源路径、扩展名、原始大小、压缩大小和归档哈希，可用于筛选 SKI、BON、SMD、STCK、ECM、GFX 和纹理文件。
 
 注意：AutoAngel 的 MIT 许可证允许按其许可证条件使用；本项目仅将其作为用户本机的可选依赖，不把客户端文件或提取资源提交到公开仓库。首次接入具体游戏客户端仍需用真实样本验证版本和配置是否匹配。
