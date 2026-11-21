@@ -46,6 +46,8 @@ var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
 var combat_pose_motion := "strike"
+var current_action_state := "idle"
+var action_state_timer := 0.0
 var combat_feedback_node: MeshInstance3D
 var combat_feedback_material: StandardMaterial3D
 var combat_feedback_timer := 0.0
@@ -247,11 +249,19 @@ func _animate_visual_motion(delta: float) -> void:
             guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.18 + shield_ratio * 0.24)
             guard_shield_material.emission_energy_multiplier = 0.8 + shield_ratio * 1.8
     var planar_speed := Vector2(velocity.x, velocity.z).length()
+    action_state_timer = maxf(0.0, action_state_timer - delta)
+    if action_state_timer <= 0.0 and current_action_state in ["attack", "hit", "death"]:
+        _set_action_state(_resolve_locomotion_action_state(planar_speed), 0.0)
+    elif current_action_state in ["idle", "walk", "run"]:
+        var locomotion_state := _resolve_locomotion_action_state(planar_speed)
+        if locomotion_state != current_action_state:
+            _set_action_state(locomotion_state, 0.0)
     authored_action_animation_timer = maxf(0.0, authored_action_animation_timer - delta)
     if authored_action_animation_timer <= 0.0:
-        var animation_name := "run" if planar_speed >= 5.0 else ("walk" if planar_speed >= 0.35 else "idle")
-        if not is_on_floor():
-            animation_name = "jump" if velocity.y > 0.5 else "fall"
+        var animation_name := current_action_state
+        if current_action_state == "death": animation_name = "defeat"
+        elif current_action_state == "attack": animation_name = "attack"
+        elif current_action_state == "hit": animation_name = "hit_light"
         _play_authored_animation(animation_name)
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var stance_gait_scale := float(character_stance_profile.get("gait_scale", 1.0))
@@ -298,8 +308,10 @@ func _animate_visual_motion(delta: float) -> void:
         if is_instance_valid(gem_material):
             gem_material.emission_energy_multiplier = gem_pulse
         gem.scale = Vector3.ONE * (0.96 + gem_pulse * 0.08)
-    var target_roll := -move_input.x * 0.10 + float(character_stance_profile.get("torso_roll", 0.0))
-    var target_pitch := move_input.y * 0.055 + float(character_stance_profile.get("torso_pitch", 0.0))
+    var action_roll := 1.18 if current_action_state == "death" else (0.16 if current_action_state == "hit" else 0.0)
+    var action_pitch := -0.16 if current_action_state == "attack" else (0.12 if current_action_state == "hit" else 0.0)
+    var target_roll := -move_input.x * 0.10 + float(character_stance_profile.get("torso_roll", 0.0)) + action_roll
+    var target_pitch := move_input.y * 0.055 + float(character_stance_profile.get("torso_pitch", 0.0)) + action_pitch
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
     visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
     combat_pose_timer = maxf(0.0, combat_pose_timer - delta)
@@ -317,6 +329,14 @@ func _animate_visual_motion(delta: float) -> void:
         var arm_target := gait + stance_arm_offset
         var forearm_target := -0.12 * movement_ratio + stance_forearm_offset
         var leg_target := -gait * 0.9 + stance_leg_offset
+        if current_action_state == "death":
+            arm_target = -1.42 if limb_index == 1 else -1.18
+            forearm_target = -0.92
+            leg_target = 0.0
+        elif current_action_state == "hit":
+            arm_target += 0.22 if limb_index == 1 else 0.12
+        elif current_action_state == "attack":
+            arm_target = lerpf(arm_target, -0.98 if limb_index == 1 else -0.34, pose_weight)
         if combat_pose_motion == "dash":
             arm_target = lerpf(arm_target, 0.52 if limb_index == 1 else 0.34, pose_weight)
             forearm_target = lerpf(forearm_target, -0.62, pose_weight)
@@ -364,6 +384,26 @@ func _animate_visual_motion(delta: float) -> void:
             forearm_nodes[limb_index].rotation.x = lerp_angle(forearm_nodes[limb_index].rotation.x, forearm_target, minf(1.0, delta * 12.0))
         if limb_index < leg_nodes.size():
             leg_nodes[limb_index].rotation.x = lerp_angle(leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
+
+func _resolve_locomotion_action_state(planar_speed: float) -> String:
+    if not is_on_floor():
+        return "run" if planar_speed >= 5.0 else "walk"
+    if planar_speed >= 5.0:
+        return "run"
+    if planar_speed >= 0.35:
+        return "walk"
+    return "idle"
+
+func _set_action_state(state_id: String, duration: float = 0.0) -> void:
+    if not CharacterStanceDatabase.get_supported_action_states().has(state_id):
+        return
+    current_action_state = state_id
+    action_state_timer = maxf(0.0, duration)
+    var animation_name := state_id
+    if state_id == "death": animation_name = "defeat"
+    elif state_id == "attack": animation_name = "attack"
+    elif state_id == "hit": animation_name = "hit_light"
+    _play_authored_animation(animation_name)
 
 func _play_armor_damage_feedback(damage_result: Dictionary) -> void:
  if not is_instance_valid(visual_root) or not bool(damage_result.get("changed", false)):
@@ -467,6 +507,7 @@ func _play_skill_pose(profile: Dictionary) -> void:
     var pose_scale := clampf(float(profile.get("pose_scale", 1.08)), 1.0, 1.24)
     combat_pose_duration = maxf(0.24, float(profile.get("total_duration", 0.7)))
     combat_pose_timer = combat_pose_duration
+    _set_action_state("attack", combat_pose_duration)
     combat_pose_strength = 1.0
     combat_pose_motion = str(profile.get("motion", "strike"))
     var rotation_target := base_yaw + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
@@ -1900,6 +1941,8 @@ func tenkishi_flight_step(direction: float) -> void:
         game.call("show_notice", "天翼上升" if direction > 0.0 else "天翼俯冲")
 
 func attack() -> void:
+    if current_action_state == "death" or training_down_timer > 0.0:
+        return
     if attack_cd > 0.0:
         return
     if basic_combo_reset <= 0.0:
@@ -2106,6 +2149,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
             _play_armor_damage_feedback(armor_damage)
         _flash(Color(1.0, 0.12, 0.12))
         combat_pose_motion = "hit"
+        _set_action_state("hit", 0.28)
         combat_pose_duration = 0.26
         combat_pose_timer = combat_pose_duration
         combat_pose_strength = 0.9
@@ -2119,6 +2163,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         health = max_health
         training_down_timer = 0.9
         velocity = Vector3.ZERO
+        _set_action_state("death", training_down_timer)
         _play_authored_action_animation("defeat", 0.06)
         game.call("show_notice", "角色倒地，正在恢复……")
 func absorb_divine_guard_damage(incoming_damage: float) -> float:
@@ -2163,6 +2208,7 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
     knockback_velocity = flat_direction.normalized() * force
 
 func guard() -> void:
+    _set_action_state("attack", 0.42)
     apply_temporary_buff(0.0, 0.35, 1.2)
     _play_authored_action_animation("block", 0.05)
     combat_pose_motion = "guard"
