@@ -40,7 +40,7 @@ def build_payload(entry_path: str, parsed: Any, kind: str) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "schema_version": 1,
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "source_entry": entry_path.replace("\\\\", "/"),
+        "source_entry": entry_path.replace("\\", "/"),
         "kind": kind,
     }
     if kind == "bon":
