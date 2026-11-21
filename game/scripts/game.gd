@@ -9,6 +9,7 @@ const SkillSummonScript = preload("res://scripts/skill_summon.gd")
 const SkillFieldScript = preload("res://scripts/skill_field.gd")
 const SkillProjectileScript = preload("res://scripts/skill_projectile.gd")
 const SkillVisualCatalogScript = preload("res://scripts/skill_visual_catalog.gd")
+const BossStoryCatalogScript = preload("res://scripts/boss_story_catalog.gd")
 const LootPickupScript = preload("res://scripts/loot_pickup.gd")
 const WorldThemeManagerScript = preload("res://scripts/world_theme_manager.gd")
 var player: CharacterBody3D
@@ -181,6 +182,7 @@ func interact_with_guide() -> void:
         if CampaignManager.can_complete_active_mission():
             var campaign_result: Dictionary = CampaignManager.complete_active_mission()
             if bool(campaign_result.get("success", false)):
+                completed_story_mission = campaign_mission
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if is_instance_valid(hud):
         hud.call("show_dialogue", dialogue)
@@ -226,6 +228,7 @@ func _refresh_story_encounter() -> void:
                 {"spawns": [{"archetype_id": "arena_boss", "count": 1, "boss": true, "position": Vector3(0, 0.1, -9)}]}
             ]
             if EncounterDirector.start("story_gw_003", boss_waves):
+                _show_boss_story_scene("intro", mission, "arena_boss")
                 _spawn_encounter_wave(EncounterDirector.get_current_wave())
                 show_notice("剧情推进：训练首领登场")
     elif not mission.is_empty():
@@ -246,8 +249,26 @@ func _start_data_driven_campaign_encounter(mission: Dictionary, mission_state: D
         return
     var encounter_id := "story_" + str(mission.get("id", "unknown"))
     if EncounterDirector.start(encounter_id, definitions):
+        var first_boss_id := ""
+        for spawn in definitions[0].get("spawns", []):
+            if bool(spawn.get("boss", false)):
+                first_boss_id = str(spawn.get("archetype_id", ""))
+                break
+        if not first_boss_id.is_empty():
+            _show_boss_story_scene("intro", mission, first_boss_id)
         _spawn_encounter_wave(EncounterDirector.get_current_wave())
         show_notice("剧情遭遇开始：" + str(mission.get("name", "章节战斗")))
+
+func _show_boss_story_scene(event_name: String, mission: Dictionary, boss_id: String) -> void:
+    if not is_instance_valid(hud) or mission.is_empty():
+        return
+    var chapter_id := str(CampaignDatabase.get_chapter_for_mission(str(mission.get("id", ""))).get("id", ""))
+    var archetype: Dictionary = EnemyDatabase.get_archetype(boss_id)
+    var boss_name := str(archetype.get("name", boss_id))
+    var scene: Dictionary = BossStoryCatalogScript.get_scene(chapter_id, boss_id, event_name, boss_name)
+    if not scene.is_empty() and hud.has_method("show_story_sequence"):
+        hud.call("show_story_sequence", scene)
+
 
 func _record_campaign_encounter_progress(enemy: Node3D) -> void:
     var mission: Dictionary = CampaignManager.get_active_mission()
@@ -421,6 +442,7 @@ func apply_class_skill_effect(class_id: String, reach: float) -> void:
 
 func on_enemy_defeated(enemy: Node3D) -> void:
     var defeated_boss := bool(enemy.get("is_boss"))
+    var completed_story_mission: Dictionary = {}
     var is_daily_boss := _daily_boss_challenge_active and defeated_boss
     if is_daily_boss:
         if DailyBossManager.mark_boss_defeated(_daily_boss_challenge_id):
@@ -444,9 +466,12 @@ func on_enemy_defeated(enemy: Node3D) -> void:
             var encounter_mission: Dictionary = CampaignManager.get_active_mission()
             var encounter_result: Dictionary = CampaignManager.complete_active_mission()
             if bool(encounter_result.get("success", false)):
+                completed_story_mission = encounter_mission
                 show_notice("剧情任务完成：" + str(encounter_mission.get("name", "")))
         QuestManager.on_enemy_defeated(defeated_boss)
         EncounterDirector.report_enemy_defeated()
+        if defeated_boss and not completed_story_mission.is_empty():
+            _show_boss_story_scene("outro", completed_story_mission, str(enemy.get("archetype_id")))
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)

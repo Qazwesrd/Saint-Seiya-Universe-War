@@ -5,6 +5,14 @@ var notice_label: Label
 var enemy_label: Label
 var quest_label: Label
 var dialogue_panel: Panel
+var story_lines: Array = []
+var story_index := 0
+var story_title := ""
+var story_panel: Panel
+var story_speaker_label: Label
+var story_message_label: Label
+var story_continue_button: Button
+var story_was_paused := false
 var hp_bar: ProgressBar
 var cosmos_bar: ProgressBar
 var skill_button: Button
@@ -412,6 +420,83 @@ func show_dialogue(data: Dictionary) -> void:
         _show_cinematic_dialogue(root, data)
     else:
         _show_compact_dialogue(root, data)
+
+func show_story_sequence(data: Dictionary) -> void:
+    var root := get_child(0) as Control
+    story_lines = data.get("lines", []).duplicate(true)
+    if story_lines.is_empty():
+        return
+    story_index = 0
+    story_title = str(data.get("title", "圣斗士星矢 · 宇宙之战"))
+    story_was_paused = get_tree().paused
+    get_tree().paused = true
+    if is_instance_valid(story_panel):
+        story_panel.queue_free()
+    story_panel = Panel.new()
+    story_panel.set_meta("story_event", str(data.get("event", "")))
+    story_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+    story_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    _style_panel(story_panel, Color(0.008, 0.012, 0.035, 0.985), Color(0.82, 0.62, 0.2))
+    root.add_child(story_panel)
+    var box := VBoxContainer.new()
+    box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    box.add_theme_constant_override("separation", 18)
+    story_panel.add_child(box)
+    var chapter := Label.new()
+    chapter.text = story_title
+    chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    chapter.add_theme_font_size_override("font_size", 28)
+    box.add_child(chapter)
+    var spacer := Control.new()
+    spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(spacer)
+    story_speaker_label = Label.new()
+    story_speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    story_speaker_label.add_theme_font_size_override("font_size", 30)
+    story_speaker_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.38))
+    box.add_child(story_speaker_label)
+    story_message_label = Label.new()
+    story_message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    story_message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    story_message_label.add_theme_font_size_override("font_size", 23)
+    story_message_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(story_message_label)
+    story_continue_button = Button.new()
+    story_continue_button.custom_minimum_size = Vector2(220, 62)
+    story_continue_button.pressed.connect(_advance_story_sequence)
+    box.add_child(story_continue_button)
+    var bottom_spacer := Control.new()
+    bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(bottom_spacer)
+    _refresh_story_sequence()
+
+func _refresh_story_sequence() -> void:
+    if not is_instance_valid(story_speaker_label) or story_index < 0 or story_index >= story_lines.size():
+        return
+    var line: Dictionary = story_lines[story_index]
+    story_speaker_label.text = str(line.get("speaker", "旁白"))
+    story_message_label.text = str(line.get("text", ""))
+    var event_name := str(story_panel.get_meta("story_event", "")) if is_instance_valid(story_panel) else ""
+    if is_instance_valid(story_continue_button):
+        story_continue_button.text = "进入战斗" if event_name == "intro" and story_index == story_lines.size() - 1 else ("继续" if story_index < story_lines.size() - 1 else "结束剧情")
+
+func _advance_story_sequence() -> void:
+    if story_index < story_lines.size() - 1:
+        story_index += 1
+        _refresh_story_sequence()
+        return
+    _close_story_sequence()
+
+func _close_story_sequence() -> void:
+    if is_instance_valid(story_panel):
+        story_panel.queue_free()
+    story_panel = null
+    story_speaker_label = null
+    story_message_label = null
+    story_continue_button = null
+    story_lines.clear()
+    get_tree().paused = story_was_paused
+
 
 func _show_compact_dialogue(root: Control, data: Dictionary) -> void:
     if is_instance_valid(dialogue_panel):
