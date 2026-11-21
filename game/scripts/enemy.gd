@@ -883,8 +883,9 @@ func _get_boss_attack_warning() -> String:
     return warning
 
 func _get_attack_contact_position(target: Node3D) -> Vector3:
-    # Enemy root nodes sit at ground level; pass an upper-body contact origin instead
-    # so the player's hit-zone classifier does not treat every melee strike as a leg hit.
+    # Ask the target collider for its nearest surface contact; retain a safe fallback for other targets.
+    if target.has_method("get_attack_contact_position"):
+        return target.call("get_attack_contact_position", global_position)
     return global_position + target.global_transform.basis.y * 1.15
 
 func _resolve_attack(target: Node3D) -> void:
