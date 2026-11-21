@@ -1780,6 +1780,18 @@ func toggle_lock() -> void:
     var target_name := str(locked_target.get("display_name")) if locked_target.get("display_name") != null else "敌人"
     game.call("show_notice", "已锁定：" + target_name)
 
+static func get_armor_hit_zone_from_local_position(local_position: Vector3) -> String:
+    # Approximate the struck body zone from the attacker's position in the player's local space.
+    if local_position.y >= 1.82:
+        return "head"
+    if local_position.y <= 0.55:
+        return "legs"
+    if absf(local_position.x) >= 0.58:
+        return "arms"
+    if local_position.y <= 0.92:
+        return "waist"
+    return "chest"
+
 func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) -> void:
     if invulnerable > 0.0: return
     custom_combo_run_id += 1
@@ -1796,17 +1808,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
             facing_dot = (-global_transform.basis.z).dot(toward_attacker.normalized())
     var hit_part := ""
     if attacker_position != Vector3.ZERO:
-        var local_attacker := to_local(attacker_position)
-        if local_attacker.y >= 1.82:
-            hit_part = "head"
-        elif local_attacker.y <= 0.55:
-            hit_part = "legs"
-        elif absf(local_attacker.x) >= 0.58:
-            hit_part = "arms"
-        elif local_attacker.y <= 0.92:
-            hit_part = "waist"
-        else:
-            hit_part = "chest"
+        hit_part = get_armor_hit_zone_from_local_position(to_local(attacker_position))
     var passive_reduction: float = SkillSystem.get_damage_reduction(class_id, facing_dot)
     var armor_reduction: float = ArmorSystem.get_damage_reduction(hit_part)
     var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - armor_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
