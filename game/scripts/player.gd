@@ -525,6 +525,7 @@ func _build_armor_visuals() -> void:
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var visual_profile := CharacterVisualCatalog.get_profile(class_id)
     var relic_visual_profile := CharacterVisualCatalog.get_equipment_profile(EquipmentDatabase.get_equipped_relic())
+    visual_profile.merge(relic_visual_profile, true)
     var ornament_id := str(relic_visual_profile.get("ornament", visual_profile.get("ornament", "")))
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
     visual_class_id = class_id
@@ -569,8 +570,10 @@ func _build_armor_visuals() -> void:
     match stage_id:
         "silver":
             stage_structure = 1.04
-        "gold", "sea_scale", "surplice":
+        "gold", "sea_scale", "surplice", "dark_cloth":
             stage_structure = 1.10
+        "platinum":
+            stage_structure = 1.20
         "god_cloth":
             stage_structure = 1.18
         "god_armor":
@@ -592,7 +595,7 @@ func _build_armor_visuals() -> void:
     var collar := BoxMesh.new()
     collar.size = Vector3(0.82 * silhouette_width * stage_structure, 0.12 * silhouette_height, 0.24)
     _add_armor_piece(collar, Vector3(0.0, 1.58, -0.24), Vector3.ONE, accent.darkened(0.12), stage_metallic, "chest")
-    if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"]:
+    if stage_id in ["gold", "sea_scale", "surplice", "dark_cloth", "platinum", "god_cloth", "god_armor"]:
         var chest_side_plate := PrismMesh.new()
         chest_side_plate.size = Vector3(0.18 * stage_structure, 0.42 * silhouette_height, 0.16)
         for side in [-1.0, 1.0]:
@@ -803,6 +806,10 @@ func _build_armor_visuals() -> void:
             tasset_mesh.size = Vector3(0.20, 0.48, 0.16)
         "surplice":
             tasset_mesh.size = Vector3(0.28, 0.46, 0.16)
+        "dark_cloth":
+            tasset_mesh.size = Vector3(0.30, 0.48, 0.18)
+        "platinum":
+            tasset_mesh.size = Vector3(0.34, 0.54, 0.20)
         "god_cloth":
             tasset_mesh.size = Vector3(0.32, 0.52, 0.18)
         "god_armor":
