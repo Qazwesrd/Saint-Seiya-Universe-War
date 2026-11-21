@@ -63,6 +63,7 @@ var authored_character_model: Node3D
 var authored_animation_player: AnimationPlayer
 var authored_animation_state := ""
 var authored_action_animation_timer := 0.0
+var training_down_timer := 0.0
 var authored_was_on_floor := true
 var authored_armor_model: Node3D
 var is_mounted := false
@@ -1157,6 +1158,14 @@ func cancel_auto_move() -> void:
 func _physics_process(delta: float) -> void:
     pivot.global_position = global_position + Vector3(0, 1.5, 0)
     _animate_visual_motion(delta)
+    if training_down_timer > 0.0:
+        training_down_timer = maxf(0.0, training_down_timer - delta)
+        velocity = Vector3.ZERO
+        move_and_slide()
+        if training_down_timer <= 0.0:
+            global_position = Vector3(0, 0.2, 7)
+            game.call("show_notice", "角色已恢复，继续战斗！")
+        return
     visual_flash_timer = maxf(0.0, visual_flash_timer - delta)
     if is_instance_valid(body_mat):
         var flash_strength := clampf(visual_flash_timer / 0.16, 0.0, 1.0)
@@ -1428,8 +1437,10 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         _flash(Color(0.35, 0.8, 1.0))
     if health <= 0.0:
         health = max_health
-        global_position = Vector3(0, 0.2, 7)
-        game.call("show_notice", "角色倒地，已在训练场复位")
+        training_down_timer = 0.9
+        velocity = Vector3.ZERO
+        _play_authored_action_animation("defeat", 0.06)
+        game.call("show_notice", "角色倒地，正在恢复……")
 func absorb_divine_guard_damage(incoming_damage: float) -> float:
     var absorbed_damage := minf(divine_guard_shield, maxf(0.0, incoming_damage))
     divine_guard_shield = maxf(0.0, divine_guard_shield - absorbed_damage)
