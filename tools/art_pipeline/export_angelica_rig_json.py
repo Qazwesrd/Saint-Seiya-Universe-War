@@ -13,6 +13,10 @@ from typing import Any
 def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
+def write_payload(output: Path, payload: dict[str, Any]) -> None:
+    write_payload(output, payload)
+
+
 def track_payload(track: Any) -> dict[str, Any]:
     frame_ids = getattr(track, "key_frame_ids", None)
     return {
