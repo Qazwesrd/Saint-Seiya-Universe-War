@@ -570,11 +570,72 @@ func _begin_attack() -> void:
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
     state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
     _play_authored_enemy_action("basic_attack_3" if _boss_heavy_attack else "basic_attack_1", 0.045)
+    var warning_color := _get_boss_telegraph_color()
+    if is_instance_valid(telegraph_material):
+        telegraph_material.albedo_color = warning_color
+        telegraph_material.emission = warning_color * (1.25 if _boss_phase_two else 1.0)
     telegraph_mesh.scale = Vector3.ONE * (boss_range_multiplier if _boss_heavy_attack else 1.0)
     telegraph_mesh.visible = true
     if is_instance_valid(game):
-        var warning := "重击范围预警！及时闪避" if _boss_heavy_attack else "正在蓄力攻击！"
-        game.call("show_notice", display_name + "：" + warning)
+        game.call("show_notice", display_name + "：" + _get_boss_attack_warning())
+
+func _get_boss_telegraph_color() -> Color:
+    if not is_boss:
+        return Color(1.0, 0.18, 0.12, 0.72)
+    var color := Color(1.0, 0.22, 0.12, 0.82)
+    match boss_special:
+        "dream_drain":
+            color = Color(0.68, 0.28, 1.0, 0.84)
+        "soul_leech", "void_drain", "rift_drain":
+            color = Color(0.78, 0.12, 0.48, 0.86)
+        "tidal_pull":
+            color = Color(0.12, 0.68, 1.0, 0.84)
+        "solar_flare":
+            color = Color(1.0, 0.68, 0.12, 0.86)
+        "lightning_followup":
+            color = Color(0.42, 0.82, 1.0, 0.86)
+        "gravity_crush":
+            color = Color(0.52, 0.38, 0.92, 0.86)
+        "wing_slam":
+            color = Color(0.88, 0.9, 1.0, 0.86)
+        "death_burst", "judge_combo", "judgment_combo":
+            color = Color(1.0, 0.16, 0.22, 0.86)
+        _:
+            color = Color(1.0, 0.34, 0.12, 0.82)
+    if _boss_phase_two:
+        color = color.lightened(0.16)
+    return color
+
+func _get_boss_attack_warning() -> String:
+    if not is_boss:
+        return "正在蓄力攻击！"
+    if not _boss_heavy_attack:
+        return "正在蓄力攻击，注意Boss动作！"
+    var warning := "重击范围预警！及时闪避"
+    match boss_special:
+        "dream_drain":
+            warning = "梦境侵蚀即将发动！拉开距离或及时闪避"
+        "soul_leech", "void_drain":
+            warning = "灵魂汲取即将发动！避免正面硬抗"
+        "rift_drain":
+            warning = "空间撕裂即将发动！注意躲避"
+        "tidal_pull":
+            warning = "潮汐牵引即将发动！准备脱离牵引范围"
+        "solar_flare":
+            warning = "太阳耀斑即将爆发！及时闪避"
+        "lightning_followup":
+            warning = "雷霆追击即将落下！保持移动"
+        "gravity_crush":
+            warning = "重力碾压即将发动！迅速脱离"
+        "wing_slam":
+            warning = "巨翼砸击即将发动！向侧方闪避"
+        "death_burst":
+            warning = "死亡连斩即将发动！准备连续闪避"
+        "judge_combo", "judgment_combo":
+            warning = "审判连击即将发动！注意连续攻击"
+    if _boss_phase_two:
+        warning = "第二阶段·" + warning
+    return warning
 
 func _resolve_attack(target: Node3D) -> void:
     telegraph_mesh.visible = false
@@ -689,6 +750,13 @@ func take_damage(amount: float) -> void:
 
     if is_boss and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
+        # Cancel any pending attack telegraph so it cannot remain visible during
+        # the phase-change lock or resolve immediately when the boss resumes.
+        telegraph_mesh.visible = false
+        telegraph_mesh.scale = Vector3.ONE
+        _boss_heavy_attack = false
+        state = BrainState.CHASE
+        state_timer = 0.0
         _play_authored_enemy_action("phase_shift", 0.08)
         boss_phase_transition_timer = maxf(0.85, authored_enemy_action_timer)
         boss_phase_burst_timer = 1.35
