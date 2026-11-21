@@ -1400,18 +1400,20 @@ func get_skill_damage_multiplier(class_id: String, target: Node = null) -> float
     var passive := get_passive(class_id)
     var effect := str(passive.get("effect", ""))
     var value := float(passive.get("value", 0.0))
+    var class_multiplier := 1.0
     if effect == "damage":
         # Sea Dragon's damage passive is positional and is applied only by
         # get_position_damage_multiplier; do not also grant a permanent bonus.
-        if class_id == "sea_dragon":
-            return 1.0
-        # Passive skill bonuses are separate from cosmos progression; callers
-        # apply the cosmos multiplier exactly once to avoid double scaling.
-        return 1.0 + value
-    if effect == "control_damage" and is_instance_valid(target):
+        if class_id != "sea_dragon":
+            # Passive skill bonuses are separate from cosmos progression; callers
+            # apply the cosmos multiplier exactly once to avoid double scaling.
+            class_multiplier = 1.0 + value
+    elif effect == "control_damage" and is_instance_valid(target):
         if target.has_method("is_controlled") and bool(target.call("is_controlled")):
-            return 1.0 + value
-    return 1.0
+            class_multiplier = 1.0 + value
+    # Every profession's awakened or unawakened Dark Cloth empowers skills.
+    var armor_profile: Dictionary = ArmorSystem.get_bonus_stats()
+    return class_multiplier * float(armor_profile.get("dark_resonance", 1.0))
 
 func get_position_damage_multiplier(class_id: String, target_facing_dot: float, target_is_boss: bool = false) -> float:
     if class_id != "sea_dragon" or target_facing_dot > 0.25:
