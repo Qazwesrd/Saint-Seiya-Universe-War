@@ -615,6 +615,8 @@ func _create_armor_attachment_anchors() -> void:
         "waist": Vector3(0.0, 0.72, 0.0),
         "arms_left": Vector3(-0.49, 1.17, 0.0),
         "arms_right": Vector3(0.49, 1.17, 0.0),
+        "forearms_left": Vector3(-0.54, 0.76, -0.015),
+        "forearms_right": Vector3(0.54, 0.76, -0.015),
         "legs_left": Vector3(-0.21, 0.40, 0.015),
         "legs_right": Vector3(0.21, 0.40, 0.015)
     }
@@ -626,10 +628,11 @@ func _create_armor_attachment_anchors() -> void:
         armor_attachment_anchors[anchor_id] = anchor
 
 
-func _get_armor_attachment_anchor(part_id: String, side_x: float = 0.0) -> Node3D:
+func _get_armor_attachment_anchor(part_id: String, side_x: float = 0.0, part_y: float = 99.0) -> Node3D:
     var anchor_id := part_id
     if part_id == "arms":
-        anchor_id = "arms_left" if side_x < 0.0 else "arms_right"
+        var limb_prefix := "forearms" if part_y < 0.98 else "arms"
+        anchor_id = limb_prefix + ("_left" if side_x < 0.0 else "_right")
     elif part_id == "legs":
         anchor_id = "legs_left" if side_x < 0.0 else "legs_right"
     var anchor: Variant = armor_attachment_anchors.get(anchor_id)
@@ -645,7 +648,7 @@ func _sync_armor_attachment_anchors(delta: float) -> void:
         var leg_anchor := _get_armor_attachment_anchor("legs", -1.0 if limb_index == 0 else 1.0)
         if is_instance_valid(leg_anchor) and limb_index < leg_nodes.size():
             leg_anchor.rotation = leg_nodes[limb_index].rotation
-        var forearm_anchor := _get_armor_attachment_anchor("forearms", -1.0 if limb_index == 0 else 1.0)
+        var forearm_anchor := _get_armor_attachment_anchor("arms", -1.0 if limb_index == 0 else 1.0, 0.76)
         if is_instance_valid(forearm_anchor) and limb_index < forearm_nodes.size():
             forearm_anchor.rotation = forearm_nodes[limb_index].rotation
 
@@ -672,7 +675,7 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
         material.emission = Color(0.12, 0.018, 0.025)
     piece.visible = part_condition > 0.0
     piece.material_override = material
-    var attachment := _get_armor_attachment_anchor(resolved_part, piece_position.x)
+    var attachment := _get_armor_attachment_anchor(resolved_part, piece_position.x, piece_position.y)
     if is_instance_valid(attachment):
         piece.position = attachment.to_local(armor_root.to_global(piece_position))
         attachment.add_child(piece)
