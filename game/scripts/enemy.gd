@@ -44,6 +44,7 @@ var enemy_wing_nodes: Array[MeshInstance3D] = []
 var enemy_wing_base_angles: Array[float] = []
 var hit_flash_timer := 0.0
 var boss_phase_burst_timer := 0.0
+var boss_phase_transition_timer := 0.0
 var _boss_phase_two := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
@@ -410,6 +411,13 @@ func _physics_process(delta: float) -> void:
         return
     _animate_enemy_limbs(delta)
     _update_authored_enemy_animation(delta, Vector2(velocity.x, velocity.z).length())
+    if boss_phase_transition_timer > 0.0:
+        boss_phase_transition_timer = maxf(0.0, boss_phase_transition_timer - delta)
+        velocity.x = move_toward(velocity.x, 0.0, 36.0 * delta)
+        velocity.z = move_toward(velocity.z, 0.0, 36.0 * delta)
+        _apply_gravity(delta)
+        move_and_slide()
+        return
 
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
@@ -682,6 +690,7 @@ func take_damage(amount: float) -> void:
     if is_boss and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
         _play_authored_enemy_action("phase_shift", 0.08)
+        boss_phase_transition_timer = maxf(0.85, authored_enemy_action_timer)
         boss_phase_burst_timer = 1.35
         speed *= 1.25
         attack_damage *= 1.25
