@@ -45,6 +45,40 @@ jobs:
           test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
           test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
           test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 50
+      - name: Validate all 32 profession models and 17 animation clips
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "tools/art_pipeline")
+          from build_manifests import catalog_ids
+          from validate_authored_assets import check_glb
+
+          root = Path("game/assets/characters")
+          class_ids = catalog_ids(Path("game/scripts/character_visual_catalog.gd"), "const PROFILES := {")
+          required_clips = (
+              "idle", "walk", "run", "jump", "fall", "land",
+              "basic_attack_1", "basic_attack_2", "basic_attack_3",
+              "skill_cast", "hit_light", "hit_heavy", "dodge", "block",
+              "victory", "defeat", "phase_shift",
+          )
+          if len(class_ids) != 32 or len(set(class_ids)) != 32:
+              raise SystemExit(f"Expected 32 unique professions, found {len(class_ids)}")
+
+          for class_id in class_ids:
+              model = root / class_id / "model/character.glb"
+              animation_library = root / class_id / "animations/animation_library.glb"
+              if not model.is_file() or not animation_library.is_file():
+                  raise SystemExit(f"{class_id}: profession model or animation library is missing")
+              check_glb(model, require_skin=True, clips=list(required_clips))
+              check_glb(animation_library, clips=list(required_clips), require_meshes=False)
+              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(required_clips)}")
+
+          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips)}")
+          PY
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4
         with:
