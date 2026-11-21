@@ -178,22 +178,82 @@ def build_body(rig):
         parts.append(add_weighted_ellipsoid(side + "FootMesh", (x(0.15), -0.10, 0.08), (0.075, 0.15, 0.065), side + "Foot", CLOTH, rig))
     return join_meshes(parts, "Humanoid_Base_Mesh", rig)
 
-def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR_MAT):
-    obj = add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=12, rings=8)
+def add_weighted_armor_plate(name, center, outline, depth, bone_name, mat, rig, bevel=0.025):
+    """Create a shaped, beveled plate from an X/Z silhouette, facing the -Y camera."""
+    cx, cy, cz = center
+    count = len(outline)
+    vertices = [(cx + x, cy - depth / 2, cz + z) for x, z in outline]
+    vertices += [(cx + x, cy + depth / 2, cz + z) for x, z in outline]
+    faces = [tuple(range(count)), tuple(range(count, count * 2))]
+    for index in range(count):
+        nxt = (index + 1) % count
+        faces.append((index, nxt, nxt + count, index + count))
+    mesh = bpy.data.meshes.new(name + "_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(mat)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    if bevel:
+        mod = obj.modifiers.new("Forged_Bevel", "BEVEL")
+        mod.width = bevel
+        mod.segments = 3
+        mod.limit_method = "ANGLE"
+        normal = obj.modifiers.new("Weighted_Highlight_Normals", "WEIGHTED_NORMAL")
+    group = obj.vertex_groups.new(name=bone_name)
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    modifier = obj.modifiers.new("Armor_Skeleton", "ARMATURE")
+    modifier.object = rig
+    obj.parent = rig
     return obj
 
+
+def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR_MAT):
+    # Retained for compatibility with the source-template builder.
+    return add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=16, rings=10)
+
+
 def build_armor(rig):
-    # Keep every armor component as its own mesh object. Joining these objects
-    # would make the exported kit impossible to equip/remove piece by piece.
+    """Build a nine-piece articulated armor set with forged silhouettes, not sphere placeholders."""
     parts = []
-    parts.append(armor_piece("Armor_Helmet", (0, -0.005, 1.83), (0.16, 0.145, 0.19), "Head", rig, GOLD))
-    parts.append(armor_piece("Armor_Chest", (0, -0.13, 1.36), (0.29, 0.075, 0.27), "Chest", rig, GOLD))
+    # Helmet: raised crown, brow and pointed cheek silhouette; front faces -Y.
+    parts.append(add_weighted_armor_plate(
+        "Armor_Helmet", (0, -0.055, 1.84),
+        [(-0.155, -0.10), (-0.145, 0.055), (-0.085, 0.16), (0, 0.205),
+         (0.085, 0.16), (0.145, 0.055), (0.155, -0.10), (0.075, -0.17),
+         (0.0, -0.12), (-0.075, -0.17)],
+        0.16, "Head", GOLD, rig, 0.018))
+    # Chest cuirass: broad shoulders tapering to a pointed abdominal waist.
+    parts.append(add_weighted_armor_plate(
+        "Armor_Chest", (0, -0.155, 1.365),
+        [(-0.285, 0.16), (-0.19, 0.255), (-0.07, 0.22), (0, 0.265),
+         (0.07, 0.22), (0.19, 0.255), (0.285, 0.16), (0.22, -0.08),
+         (0.105, -0.205), (0, -0.245), (-0.105, -0.205), (-0.22, -0.08)],
+        0.095, "Chest", GOLD, rig, 0.022))
     for side, sign in (("Left", 1), ("Right", -1)):
-        x = lambda v: v * sign
-        parts.append(armor_piece("Armor_" + side + "_Shoulder", (x(0.33), -0.02, 1.48), (0.17, 0.16, 0.12), side + "Shoulder", rig, GOLD))
-        parts.append(armor_piece("Armor_" + side + "_Forearm", (x(0.49), -0.01, 1.10), (0.075, 0.085, 0.17), side + "Forearm", rig, ARMOR_MAT))
-        parts.append(armor_piece("Armor_" + side + "_Leg", (x(0.15), -0.01, 0.34), (0.095, 0.105, 0.20), side + "Shin", rig, ARMOR_MAT))
-    parts.append(armor_piece("Armor_Waist", (0, -0.11, 0.94), (0.25, 0.09, 0.12), "Hips", rig, GOLD))
+        # Winged pauldron with a sharp outer point and layered lower edge.
+        parts.append(add_weighted_armor_plate(
+            "Armor_" + side + "_Shoulder", (sign * 0.335, -0.055, 1.49),
+            [(0, 0.12), (0.095, 0.105), (0.205, 0.035), (0.245, -0.055),
+             (0.16, -0.035), (0.115, -0.12), (0.025, -0.085), (-0.055, -0.015)],
+            0.17, side + "Shoulder", GOLD, rig, 0.018))
+        # Forearm bracer and shin guard use tapered, faceted armor profiles.
+        parts.append(add_weighted_armor_plate(
+            "Armor_" + side + "_Forearm", (sign * 0.49, -0.075, 1.105),
+            [(-0.072, 0.17), (0.055, 0.145), (0.082, 0.07),
+             (0.065, -0.145), (0, -0.19), (-0.07, -0.13), (-0.085, 0.06)],
+            0.105, side + "Forearm", ARMOR_MAT, rig, 0.014))
+        parts.append(add_weighted_armor_plate(
+            "Armor_" + side + "_Leg", (sign * 0.15, -0.075, 0.345),
+            [(-0.095, 0.19), (0, 0.225), (0.095, 0.19), (0.082, 0.045),
+             (0.055, -0.17), (0, -0.215), (-0.07, -0.15), (-0.09, 0.025)],
+            0.12, side + "Shin", ARMOR_MAT, rig, 0.016))
+    # Waist fauld: segmented-looking pointed skirt profile.
+    parts.append(add_weighted_armor_plate(
+        "Armor_Waist", (0, -0.14, 0.945),
+        [(-0.245, 0.095), (-0.18, 0.14), (0.18, 0.14), (0.245, 0.095),
+         (0.205, -0.035), (0.12, -0.12), (0, -0.17), (-0.12, -0.12), (-0.205, -0.035)],
+        0.11, "Hips", GOLD, rig, 0.018))
     return parts
 def key_pose(rig, frame, values):
     for bone_name, rotation in values.items():
