@@ -26,7 +26,7 @@ characters/<class_id>/
 ## 交付要求
 
 - 模型需具备可复用骨骼、正确比例、材质槽和装备挂点。
-- 基础动作至少包括 idle、walk、run、jump、fall、land、basic_attack_1/2/3、skill_cast、hit_light、hit_heavy、dodge、block、victory、defeat。
+- 基础动作至少包括 idle、walk、run、jump、fall、land、basic_attack_1/2/3、skill_cast、hit_light、hit_heavy、dodge、block、victory、defeat、phase_shift（Boss 阶段转换）。
 - 飞行职业额外提供 flight_idle、flight_move、flight_rise、flight_dive、air_attack。
 - 立绘需与游戏内职业外观一致；不得使用临时占位图冒充最终资源。
 - Android 资源需提供 LOD 与贴图压缩版本，并在目标设备上检查内存和帧率。
