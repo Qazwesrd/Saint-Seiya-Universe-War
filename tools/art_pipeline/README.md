@@ -140,3 +140,24 @@ py -m unittest discover -s tools/art_pipeline -p "test_angelica_animation.py" -v
 ```
 
 **重要限制：** 该阶段只把离散关键帧样本写入 Blender 动作，不实现 Angelica 插值模式、根运动/骨骼坐标基校准、事件轨道、动作融合或 SMD 动作片段切分。动画起始帧与轨道帧编号的时间解释仍需用真实客户端样本校准；没有原版客户端时，自动化测试只能证明数据转换逻辑，不证明原版动作播放正确。运行时需先打开与 BON 对应的 rigged preview 文件。
+
+
+## 导出 ECM 组合模型与装备挂接关系（实验性）
+
+ECM（Composite Model）描述一个组合模型的主体 SMD、子模型装备槽位、父模型挂点名、子模型对应挂点、骨骼缩放，以及组合动作中的 GFX/声音事件。AutoAngel 的 ECM 解析接口提供 get_child()、get_bone_scale()、get_event() 等读取入口；本项目只把解析结果转换为中立 JSON，不复制第三方解析库源码。
+
+```powershell
+py tools/art_pipeline/export_angelica_ecm_json.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --entry "models\\characters\\pegasus.ecm" --output "D:\\SeiyaInventory\\pegasus_ecm.json"
+```
+
+可省略不存在的 PKX 参数；有多个分卷时重复添加 --pkx。输出包括主体 SMD 路径、子模型路径和槽位、父/子挂点名、骨骼缩放格式、组合动作事件及持续 GFX 引用。源 PCK/PKX 只读，JSON 必须写到归档目录之外。
+
+ECM 结构验证与依赖图检查：
+
+```powershell
+py -m unittest discover -s tools/art_pipeline -p "test_angelica_ecm.py" -v
+```
+
+验证器检查资源路径安全性、重复装备槽位、挂点名称、骨骼缩放数值、组合动作事件，并可在提供 BON 挂点名集合时检查父挂点是否存在。validate_ecm_graph() 可对多个 ECM JSON 检查子模型引用是否闭合及是否存在循环引用。单个 ECM 文件无法证明其引用的子模型一定存在；只有把同一资源包中相关 ECM 都导出后，图检查才可完成跨文件解析。
+
+**限制：** 目前是 ECM 元数据导出和结构校验，不是 Blender 装备挂接成品。挂点矩阵的坐标轴、父子模型局部变换、装备比例、child hook 语义和真实人物组合外观仍需原版客户端样本校准。当前没有原版客户端，因此不能宣称已验证天马圣衣或其他原版装备的正确挂接。
