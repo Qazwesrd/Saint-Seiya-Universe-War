@@ -125,12 +125,32 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         var dark_profile: Dictionary = get_profile(str(equipment.get("class_id", "")))
         var class_accent: Color = dark_profile.get("accent", Color(0.72, 0.42, 0.92))
         dark_profile["accent"] = class_accent.darkened(0.28).lerp(Color(0.28, 0.08, 0.42), 0.58)
+        # Keep the shared void treatment while retaining the class-specific design language
+        # for armor builders, previews, and later authored model variants.
+        dark_profile["class_accent"] = class_accent
+        dark_profile["class_ornament"] = str(dark_profile.get("ornament", "crest"))
+        dark_profile["class_crest"] = str(dark_profile.get("crest", "star"))
+        dark_profile["class_silhouette"] = str(dark_profile.get("silhouette", "balanced"))
         dark_profile["ornament"] = "dark_aura"
+        dark_profile["stage_variant"] = "dark_cloth"
         dark_profile["glow"] = maxf(0.22, float(dark_profile.get("glow", 0.1)))
         dark_profile["metallic"] = maxf(0.92, float(dark_profile.get("metallic", 0.82)))
         return dark_profile
-    if item_id == "platinum_cloth_archive":
-        return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant", "glow": 0.34, "metallic": 1.0}
+    if item_id == "platinum_cloth_archive" or item_id.begins_with("platinum_") or str(equipment.get("category", "")) == "白金圣衣 Platinum Cloth":
+        var platinum_class_id := str(equipment.get("class_id", ""))
+        if not platinum_class_id.is_empty() and PROFILES.has(platinum_class_id):
+            var platinum_profile: Dictionary = get_profile(platinum_class_id)
+            var class_accent: Color = platinum_profile.get("accent", Color(0.9, 0.94, 1.0))
+            platinum_profile["class_accent"] = class_accent
+            platinum_profile["class_ornament"] = str(platinum_profile.get("ornament", "crest"))
+            platinum_profile["class_crest"] = str(platinum_profile.get("crest", "star"))
+            platinum_profile["class_silhouette"] = str(platinum_profile.get("silhouette", "balanced"))
+            platinum_profile["accent"] = Color(0.9, 0.94, 1.0).lerp(class_accent, 0.24)
+            platinum_profile["stage_variant"] = "platinum"
+            platinum_profile["glow"] = maxf(0.34, float(platinum_profile.get("glow", 0.1)))
+            platinum_profile["metallic"] = 1.0
+            return platinum_profile
+        return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant", "glow": 0.34, "metallic": 1.0, "stage_variant": "platinum"}
     if EQUIPMENT_PROFILES.has(item_id):
         return EQUIPMENT_PROFILES[item_id].duplicate(true)
     var category := str(equipment.get("category", ""))
