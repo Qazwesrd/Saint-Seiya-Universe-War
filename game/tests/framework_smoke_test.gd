@@ -21,6 +21,11 @@ func _run_tests() -> void:
 	assert(str(underworld_armor.get("family", "")) == "surplice" and str(underworld_armor.get("palette_family", "")) == "black_violet", "Underworld uses a black-violet Surplice identity")
 	assert(str(dark_saint_armor.get("family", "")) == "dark_cloth" and str(dark_saint_armor.get("palette_family", "")) == "graphite_steel_blue", "Dark Saints use graphite and steel-blue Dark Cloth, not purple Surplice")
 	assert(underworld_armor.get("metal", Color.BLACK) != dark_saint_armor.get("metal", Color.BLACK), "Surplice and Dark Cloth base metals are visually distinct")
+	var dark_cloth_item_profile: Dictionary = CharacterVisualCatalog.get_equipment_profile({"id":"dark_cloth_catalog_item","category":"黑暗圣衣 Dark Cloth"})
+	var surplice_item_profile: Dictionary = CharacterVisualCatalog.get_equipment_profile({"id":"surplice_catalog_item","category":"冥衣 Surplice"})
+	assert(str(dark_cloth_item_profile.get("palette_family", "")) == "graphite_steel_blue", "Dark Cloth equipment category resolves to graphite steel-blue palette")
+	assert(dark_cloth_item_profile.get("accent", Color.BLACK) != surplice_item_profile.get("accent", Color.BLACK), "equipment category lookup cannot accidentally recolor Dark Cloth purple")
+
 	assert(str(CharacterVisualCatalog.get_faction_armor_profile("sea").get("chest", "")) == "overlapping_scales", "Sea faction armor uses layered scale construction")
 	assert(str(CharacterVisualCatalog.get_faction_armor_profile("asgard").get("family", "")) == "god_robe", "Asgard faction armor uses the God Robe family")
 	assert(str(CharacterVisualCatalog.get_faction_armor_profile("steel").get("family", "")) == "steel_armor", "Steel faction armor uses a mechanical armor family")
