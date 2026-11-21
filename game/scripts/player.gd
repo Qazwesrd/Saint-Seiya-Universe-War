@@ -1619,7 +1619,8 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         if toward_attacker.length_squared() > 0.001:
             facing_dot = (-global_transform.basis.z).dot(toward_attacker.normalized())
     var passive_reduction: float = SkillSystem.get_damage_reduction(class_id, facing_dot)
-    var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
+    var armor_reduction: float = ArmorSystem.get_damage_reduction()
+    var final_damage := maxf(1.0, (amount - defense * 0.25) * (1.0 - passive_reduction) * (1.0 - armor_reduction) * (1.0 - clampf(temporary_damage_reduction, 0.0, 0.65)))
     var class_guard_ratio: float = SkillSystem.get_passive_guard_ratio(str(RPGState.profile.get("class_id", "pegasus")))
     if class_guard_ratio > 0.0 and class_passive_guard_cooldown <= 0.0 and divine_guard_shield <= 0.0 and health - final_damage <= max_health * 0.35:
         apply_divine_guard(class_guard_ratio, 4.0)
@@ -1630,7 +1631,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
     health = maxf(0.0, health - health_damage)
     CombatSessionManager.record_damage_taken(health_damage)
     if health_damage > 0.0:
-        ArmorSystem.damage_random_part(1)
+        ArmorSystem.damage_random_part(maxi(2, roundi(amount * 0.08)))
         _flash(Color(1.0, 0.12, 0.12))
         combat_pose_motion = "hit"
         combat_pose_duration = 0.26
