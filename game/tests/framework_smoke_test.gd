@@ -96,7 +96,7 @@ func _run_tests() -> void:
 	assert(str(SettingsManager.get_value("system", "language", "zh_CN")) in ["zh_CN", "en_US"], "settings service")
 	assert(bool(ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", false)), "Android ETC2 ASTC texture compression is enabled")
 	assert(load("res://scripts/loot_pickup.gd") != null, "manual offline loot pickup actor is present")
-	var armor_palette_ids := ["bronze", "silver", "gold", "sea_scale", "surplice", "god_cloth", "god_armor"]
+	var armor_palette_ids := ["bronze", "silver", "gold", "sea_scale", "surplice", "dark_cloth", "platinum", "god_cloth", "god_armor"]
 	for armor_palette_id in armor_palette_ids:
 		var armor_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(armor_palette_id)
 		assert(armor_palette.has("metal") and armor_palette.has("trim"), "armor stage has metal and trim colors: " + armor_palette_id)
@@ -265,7 +265,7 @@ func _run_tests() -> void:
 		var catalog_class_id := str(class_entry.get("id", ""))
 		assert(SkillSystem.get_ability_catalog(catalog_class_id).size() == 24, "24 skills configured for " + catalog_class_id)
 	assert(ArmorSystem.unlock_all_stages(), "unlock all armor stages saves successfully")
-	assert(ArmorSystem.get_state().get("unlocked_stages", []).size() == 7, "all seven armor stages unlocked")
+	assert(ArmorSystem.get_state().get("unlocked_stages", []).size() == ArmorSystem.get_stage_ids().size() and ArmorSystem.get_stage_ids().size() == 9, "all nine armor progression stages unlocked")
 	assert(ArmorSystem.equip_stage("gold"), "equip unlocked gold cloth stage")
 	assert(ArmorSystem.get_current_stage_name() == "黄金圣衣", "armor stage selection reflected")
 	assert(ArmorSystem.equip_stage("bronze"), "restore bronze cloth stage")
@@ -485,6 +485,25 @@ func _run_tests() -> void:
 		if str(equipment_entry.get("category", "")) == "黄金圣衣 Gold Cloth":
 			gold_cloth_count += 1
 	assert(gold_cloth_count == 12, "equipment archive contains all twelve zodiac Gold Cloths")
+  var dark_cloth_count := 0
+  var dark_cloth_classes: Dictionary = {}
+  for equipment_id in EquipmentDatabase.EQUIPMENT:
+      var equipment_entry: Dictionary = EquipmentDatabase.EQUIPMENT[equipment_id]
+      if str(equipment_entry.get("category", "")) != "黑暗圣衣 Dark Cloth":
+          continue
+      dark_cloth_count += 1
+      var dark_class_id := str(equipment_entry.get("class_id", ""))
+      assert(RPGState.CLASS_DATA.has(dark_class_id), "Dark Cloth maps to a playable profession: " + dark_class_id)
+      assert(not dark_cloth_classes.has(dark_class_id), "each profession has one dedicated Dark Cloth: " + dark_class_id)
+      dark_cloth_classes[dark_class_id] = true
+      assert(str(equipment_entry.get("required_chapter", "")) == "galaxy_wars", "Dark Cloth is tied to the Dark Saints story arc: " + dark_class_id)
+      var dark_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": equipment_id, "class_id": dark_class_id, "category": "黑暗圣衣 Dark Cloth"})
+      assert(str(dark_visual.get("ornament", "")) == "dark_aura" and dark_visual.has("shoulder_scale"), "Dark Cloth preserves class silhouette with dark aura: " + dark_class_id)
+  assert(dark_cloth_count == RPGState.CLASS_DATA.size() and dark_cloth_count == 32, "all 32 playable professions have a dedicated Dark Cloth")
+  assert(dark_cloth_classes.size() == RPGState.CLASS_DATA.size(), "Dark Cloth coverage has no missing playable profession")
+  assert(EquipmentDatabase.EQUIPMENT.has("platinum_cloth_archive"), "Platinum Cloth is present in the equipment archive")
+  var platinum_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": "platinum_cloth_archive", "category": "白金圣衣 Platinum Cloth"})
+  assert(str(platinum_visual.get("ornament", "")) == "radiant", "Platinum Cloth uses its own radiant visual identity")
 	var zodiac_gold_ids := ["aries_gold_cloth", "taurus_gold_cloth", "gemini_gold_cloth", "cancer_gold_cloth", "leo_gold_cloth", "virgo_gold_cloth", "libra_gold_cloth", "scorpio_gold_cloth", "sagittarius_gold_cloth", "capricorn_gold_cloth", "aquarius_gold_cloth", "pisces_gold_cloth"]
 	for zodiac_gold_id in zodiac_gold_ids:
 		var zodiac_visual: Dictionary = visual_catalog_script.get_equipment_profile({"id": zodiac_gold_id, "category": "黄金圣衣 Gold Cloth"})
