@@ -475,10 +475,20 @@ func download_all_missing_packs() -> bool:
 		if not bool(info.get("auto_download", false)) or bool(info.get("required", false)):
 			continue
 		var status := get_pack_status(pack_id)
-		if bool(status.get("valid", false)):
-			continue
-		var downloaded: bool = await download_pack_from_catalog(pack_id)
-		if not downloaded:
+		if not bool(status.get("valid", false)):
+			var downloaded: bool = await download_pack_from_catalog(pack_id)
+			if not downloaded:
+				return false
+			status = get_pack_status(pack_id)
+		if not bool(status.get("valid", false)):
+			pack_install_finished.emit(pack_id, false, "资源包文件已处理，但完整性校验仍未通过")
+			return false
+		if not is_pack_mounted(pack_id) and not mount_pack(pack_id):
+			pack_install_finished.emit(pack_id, false, "资源包已安装且校验通过，但挂载失败；可重试修复")
+			return false
+		var final_status := get_pack_mount_status(pack_id)
+		if not bool(final_status.get("valid", false)) or not bool(final_status.get("mounted", false)):
+			pack_install_finished.emit(pack_id, false, "章节资源未达到可进入游戏状态：" + pack_id)
 			return false
 	return true
 
