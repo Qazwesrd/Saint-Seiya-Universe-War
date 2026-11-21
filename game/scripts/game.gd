@@ -709,6 +709,22 @@ func spawn_skill_effect(at: Vector3, visual_profile: Dictionary) -> void:
     var glow := clampf(float(visual_profile.get("glow", 0.4)), 0.0, 0.6)
     var layers := clampi(int(visual_profile.get("effect_layers", 1)), 1, 3)
     var signature := int(visual_profile.get("signature", 0))
+    var signature_scene_path := str(visual_profile.get("scene_path", ""))
+    if not signature_scene_path.is_empty() and ResourceLoader.exists(signature_scene_path):
+        var signature_scene := load(signature_scene_path) as PackedScene
+        if signature_scene != null:
+            var signature_root := signature_scene.instantiate() as Node3D
+            if signature_root != null:
+                signature_root.position = at
+                signature_root.scale = Vector3.ONE * 0.12
+                add_child(signature_root)
+                var signature_tween := create_tween()
+                signature_tween.set_parallel(true)
+                signature_tween.tween_property(signature_root, "scale", Vector3.ONE * clampf(2.2 * impact_scale, 1.2, 3.8), 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+                signature_tween.tween_property(signature_root, "rotation:y", TAU * 0.28, 0.58)
+                signature_tween.tween_property(signature_root, "position:y", at.y + 0.28, 0.58)
+                signature_tween.chain().tween_callback(signature_root.queue_free)
+                return
     spawn_effect(at, effect_color, clampf(2.2 * impact_scale, 1.2, 3.8), shape, glow)
     if layers >= 2:
         var secondary_shape := str(visual_profile.get("secondary_shape", "ring"))
