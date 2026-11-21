@@ -544,8 +544,8 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
 func show_boss_battle_line(boss: Node3D, event_name: String) -> void:
     if not is_instance_valid(boss) or not bool(boss.get("is_boss")) or not is_instance_valid(hud):
         return
-    var boss_id := str(boss.get("archetype_id", ""))
-    var boss_name := str(boss.get("display_name", "强敌"))
+    var boss_id := str(boss.get("archetype_id")) if boss.get("archetype_id") != null else ""
+    var boss_name := str(boss.get("display_name")) if boss.get("display_name") != null else "强敌"
     var line: Dictionary = BossStoryCatalogScript.get_battle_line(boss_id, event_name, boss_name)
     if not line.is_empty() and hud.has_method("show_boss_callout"):
         hud.call("show_boss_callout", line)
