@@ -71,6 +71,15 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('def migrate_manifest(current: dict, expected_data: dict)', self.manifest_builder)
         self.assertIn('animation.get("required_clips") != expected_animation["required_clips"]', self.manifest_builder)
 
+    def test_all_five_bronze_saints_have_individual_review_previews(self):
+        core_heroes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
+        for hero in core_heroes:
+            self.assertIn('class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}', self.generator)
+            self.assertIn(f"{hero}_front.png", self.workflow)
+        self.assertIn("expected_heroes = (\\"pegasus\\", \\"dragon\\", \\"cygnus\\", \\"andromeda\\", \\"phoenix\\")", self.workflow)
+        self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
+        self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
+
     def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
         self.assertIn("不得由随机职业色或通用装饰替代", self.direction)
         self.assertIn("冥衣", self.direction)
