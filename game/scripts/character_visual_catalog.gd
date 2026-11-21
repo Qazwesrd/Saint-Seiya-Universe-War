@@ -219,6 +219,76 @@ static func get_class_armor_detail_profile(class_id: String) -> Dictionary:
         "wing_span": float(profile.get("wing_span", 0.0))
     }
 
+static func get_class_armor_part_profiles(class_id: String, stage_id: String = "bronze", awakened: bool = false) -> Dictionary:
+    if not PROFILES.has(class_id):
+        return {}
+    var identity: Dictionary = PROFILES[class_id]
+    var ornament := str(identity.get("ornament", "crest"))
+    var crest := str(identity.get("crest", "star"))
+    var shoulder_scale: Vector3 = identity.get("shoulder_scale", Vector3.ONE)
+    var stage_scale := 1.0
+    match stage_id:
+        "silver":
+            stage_scale = 1.03
+        "gold", "sea_scale", "surplice", "dark_cloth":
+            stage_scale = 1.07
+        "platinum", "god_cloth":
+            stage_scale = 1.12
+        "god_armor":
+            stage_scale = 1.16
+    if awakened:
+        stage_scale *= 1.025
+    var helmet_form := "crown"
+    match crest:
+        "horn", "spear", "thorn", "anvil":
+            helmet_form = "crest_spike"
+        "wing", "ice", "fin", "rune":
+            helmet_form = "crest_fin"
+        "flame", "sun", "bolt":
+            helmet_form = "crest_flame"
+        "halo", "aegis", "crown", "crescent":
+            helmet_form = "halo"
+        "clock", "dream":
+            helmet_form = "arcane"
+    var chest_form := "plated"
+    if ornament in ["chain", "sound", "time_rings", "dream_wings"]:
+        chest_form = "arcane_core"
+    elif ornament in ["tidal_fins", "fin", "scale", "moon_wings"]:
+        chest_form = "lamellar"
+    elif ornament in ["war_spikes", "thorn_wings", "forge_plates", "fallen_wings"]:
+        chest_form = "reinforced"
+    var arm_form := "guard"
+    if ornament in ["royal_wings", "heaven_wings", "solar_wings", "radiant"]:
+        arm_form = "wing_guard"
+    elif ornament in ["tidal_fins", "fin", "scale"]:
+        arm_form = "fin_guard"
+    elif ornament in ["chain", "comet", "swift_wings", "feather"]:
+        arm_form = "streamlined"
+    var waist_form := "tasset"
+    if ornament in ["chain", "sound", "time_rings", "dream_wings"]:
+        waist_form = "arcane_belt"
+    elif ornament in ["war_spikes", "thorn_wings", "forge_plates"]:
+        waist_form = "reinforced_tasset"
+    elif ornament in ["tidal_fins", "fin", "scale", "moon_wings"]:
+        waist_form = "fin_tasset"
+    var leg_form := "greaves"
+    if ornament in ["tidal_fins", "fin", "scale", "moon_wings"]:
+        leg_form = "fin_greaves"
+    elif ornament in ["war_spikes", "thorn_wings", "forge_plates"]:
+        leg_form = "heavy_greaves"
+    elif ornament in ["chain", "comet", "swift_wings", "feather"]:
+        leg_form = "light_greaves"
+    return {
+        "class_id": class_id,
+        "stage_id": stage_id,
+        "awakened": awakened,
+        "head": {"form": helmet_form, "scale": Vector3(1.0, 1.0, 1.0) * stage_scale, "crest": crest},
+        "chest": {"form": chest_form, "scale": Vector3(1.0, 1.0, 1.0) * stage_scale, "ornament": ornament},
+        "arms": {"form": arm_form, "scale": Vector3(shoulder_scale.x, shoulder_scale.y, shoulder_scale.z) * stage_scale, "ornament": ornament},
+        "waist": {"form": waist_form, "scale": Vector3(1.0, 1.0, 1.0) * stage_scale, "ornament": ornament},
+        "legs": {"form": leg_form, "scale": Vector3(1.0, 1.0, 1.0) * stage_scale, "ornament": ornament}
+    }
+
 static func validate_catalog() -> Dictionary:
     var errors: Array[String] = []
     for class_id in PROFILES:
