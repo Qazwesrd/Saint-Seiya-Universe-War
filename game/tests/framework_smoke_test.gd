@@ -13,6 +13,18 @@ func _run_tests() -> void:
 	var growth_original_profile: Dictionary = RPGState.profile.duplicate(true)
 	assert(FactionDatabase.validate_catalog(), "all playable classes are assigned to selectable faction starts and Hongjun is selectable")
 	assert(FactionDatabase.get_factions().size() == 12, "twelve faction starts are registered")
+	for faction_entry in FactionDatabase.get_factions():
+		var tutorial_faction_id := str(faction_entry.get("id", ""))
+		var tutorial_guard_id := EnemyDatabase.get_tutorial_archetype_id(tutorial_faction_id, false)
+		var tutorial_boss_id := EnemyDatabase.get_tutorial_archetype_id(tutorial_faction_id, true)
+		assert(EnemyDatabase.has_archetype(tutorial_guard_id), "faction has its own tutorial guard archetype: " + tutorial_faction_id)
+		assert(EnemyDatabase.has_archetype(tutorial_boss_id), "faction has its own tutorial boss archetype: " + tutorial_faction_id)
+		var tutorial_guard_data: Dictionary = EnemyDatabase.get_archetype(tutorial_guard_id)
+		var tutorial_boss_data: Dictionary = EnemyDatabase.get_archetype(tutorial_boss_id)
+		assert(not bool(tutorial_guard_data.get("is_boss", true)) and bool(tutorial_boss_data.get("is_boss", false)), "faction guard and boss roles are distinct: " + tutorial_faction_id)
+		assert(str(tutorial_guard_data.get("name", "")) != str(EnemyDatabase.get_archetype("arena_guard").get("name", "")), "faction guard has a distinct identity: " + tutorial_faction_id)
+		assert(str(tutorial_boss_data.get("name", "")) != str(EnemyDatabase.get_archetype("arena_boss").get("name", "")), "faction boss has a distinct identity: " + tutorial_faction_id)
+
 	for faction in FactionDatabase.get_factions():
 		var faction_id := str(faction.get("id", ""))
 		assert(str(FactionDatabase.get_world_profile(faction_id).get("faction_id", "")) == faction_id, "world profile retains its faction identity: " + faction_id)
