@@ -239,6 +239,8 @@ def make_profession_combo_animations(rig, profession_id):
         scene.frame_set(1)
         neutral = {bone.name: (0.0, 0.0, 0.0) for bone in rig.pose.bones}
         key_pose(rig, 1, neutral)
+        # Blender 5 layered Actions do not expose the legacy Action.fcurves API.
+        authored_keyframes = [{"frame": 1, "pose": neutral}]
 
         primary = "Right" if step in (1, 3) else "Left"
         secondary = "Left" if primary == "Right" else "Right"
@@ -280,22 +282,25 @@ def make_profession_combo_animations(rig, profession_id):
             primary + "Thigh": (-l * 0.35, 0.0, 0.0),
         }
         key_pose(rig, 6, windup)
+        authored_keyframes.append({"frame": 6, "pose": windup})
         key_pose(rig, 11, impact)
+        authored_keyframes.append({"frame": 11, "pose": impact})
         key_pose(rig, 17, follow)
+        authored_keyframes.append({"frame": 17, "pose": follow})
         key_pose(rig, 24, neutral)
+        authored_keyframes.append({"frame": 24, "pose": neutral})
 
         scene.frame_start, scene.frame_end = 1, 24
         track = rig.animation_data.nla_tracks.new()
         track.name = clip_name
         strip = track.strips.new(clip_name, 1, action)
         strip.name = clip_name
-        # Fingerprint the actual authored keyframe payload, not just the clip name.
+        # Fingerprint the authored skeletal keyframe payload, not the clip name.
+        # This remains compatible with Blender 4.x and Blender 5 layered Actions.
         payload = {
-            curve.data_path + ":" + str(curve.array_index): [
-                [round(float(point.co.x), 4), round(float(point.co.y), 6)]
-                for point in curve.keyframe_points
-            ]
-            for curve in action.fcurves
+            "profession": profession_id,
+            "clip": clip_name,
+            "keyframes": authored_keyframes,
         }
         signatures[clip_name] = hashlib.sha256(
             json.dumps(payload, sort_keys=True).encode("utf-8")
