@@ -354,6 +354,32 @@ const DOWNLOAD_CHUNK_BYTES := 4 * 1024 * 1024
 const DOWNLOAD_HTTP_BODY_LIMIT := 5 * 1024 * 1024
 const DOWNLOAD_TIMEOUT_SECONDS := 90.0
 
+func download_pack_from_catalog(pack_id: String) -> bool:
+	var info := get_pack_info(pack_id)
+	var base_url := str(catalog.get("cdn_base_url", ""))
+	var manifest_hash := str(info.get("manifest_sha256", ""))
+	var manifest_size := int(info.get("manifest_size_bytes", 0))
+	if not bool(info.get("auto_download", false)):
+		pack_install_finished.emit(pack_id, false, "该资源包未配置为自动下载")
+		return false
+	if base_url.is_empty() or manifest_hash.is_empty() or manifest_size <= 0:
+		pack_install_finished.emit(pack_id, false, "国内 CDN 地址或资源清单校验信息尚未配置")
+		return false
+	return await download_pack_from_cdn(pack_id, base_url, manifest_hash, manifest_size)
+
+func download_all_missing_packs() -> bool:
+	for pack_id_variant in catalog.get("packs", {}):
+		var pack_id := str(pack_id_variant)
+		var info := get_pack_info(pack_id)
+		if not bool(info.get("auto_download", false)) or bool(info.get("required", false)):
+			continue
+		var status := get_pack_status(pack_id)
+		if bool(status.get("valid", false)):
+			continue
+		if not await download_pack_from_catalog(pack_id):
+			return false
+	return true
+
 func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha256: String, manifest_size_bytes: int) -> bool:
 	var info := get_pack_info(pack_id)
 	if info.is_empty() or bool(info.get("required", false)):
