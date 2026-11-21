@@ -47,6 +47,10 @@ CLOTH = material("Prototype_Undersuit", (0.075, 0.10, 0.16), 0.05, 0.78)
 ARMOR_MAT = material("Prototype_Armor_Silver", (0.48, 0.58, 0.68), 0.78, 0.28)
 GOLD = material("Prototype_Armor_Gold", (0.78, 0.48, 0.12), 0.82, 0.24)
 ACCENT = material("Prototype_Accent", (0.12, 0.48, 0.72), 0.45, 0.3)
+HAIR = material("Prototype_Hair_Midnight", (0.035, 0.055, 0.11), 0.08, 0.42)
+EYE_WHITE = material("Prototype_Eye_White", (0.88, 0.91, 0.96), 0.02, 0.3)
+EYE_IRIS = material("Prototype_Eye_Cosmic_Blue", (0.025, 0.28, 0.72), 0.28, 0.22)
+EYE_PUPIL = material("Prototype_Eye_Pupil", (0.008, 0.012, 0.025), 0.0, 0.18)
 
 def create_rig():
     bpy.ops.object.armature_add(enter_editmode=True, location=(0, 0, 0))
@@ -145,6 +149,24 @@ def build_body(rig):
     parts.append(add_weighted_ellipsoid("Torso", (0, 0, 1.31), (0.27, 0.15, 0.39), "Chest", CLOTH, rig))
     parts.append(add_weighted_ellipsoid("NeckMesh", (0, 0, 1.61), (0.075, 0.075, 0.11), "Neck", SKIN, rig))
     parts.append(add_weighted_ellipsoid("HeadMesh", (0, 0, 1.79), (0.14, 0.13, 0.19), "Head", SKIN, rig))
+    # Stylized anime-hero face and hair details. All pieces follow the Head bone.
+    # The face looks toward -Y, matching the game's forward-facing character convention.
+    parts.append(add_weighted_ellipsoid("Hair_Cap", (0, 0.012, 1.925), (0.153, 0.145, 0.105), "Head", HAIR, rig, 20, 12))
+    parts.append(add_weighted_ellipsoid("Hair_Front_Sweep", (0, -0.105, 1.875), (0.145, 0.075, 0.075), "Head", HAIR, rig, 20, 12))
+    parts.append(add_weighted_ellipsoid("Hair_Left_Lock", (0.105, -0.075, 1.82), (0.055, 0.065, 0.13), "Head", HAIR, rig, 14, 10))
+    parts.append(add_weighted_ellipsoid("Hair_Right_Lock", (-0.105, -0.075, 1.82), (0.055, 0.065, 0.13), "Head", HAIR, rig, 14, 10))
+    # Three swept crown locks create a recognizable silhouette instead of a smooth sphere.
+    parts.append(add_weighted_ellipsoid("Hair_Crown_Lock_Center", (0, 0.005, 2.015), (0.045, 0.075, 0.12), "Head", HAIR, rig, 14, 10))
+    parts.append(add_weighted_ellipsoid("Hair_Crown_Lock_Left", (0.075, 0.015, 1.995), (0.045, 0.07, 0.095), "Head", HAIR, rig, 14, 10))
+    parts.append(add_weighted_ellipsoid("Hair_Crown_Lock_Right", (-0.075, 0.015, 1.995), (0.045, 0.07, 0.095), "Head", HAIR, rig, 14, 10))
+    for side, sign in (("Left", 1), ("Right", -1)):
+        parts.append(add_weighted_ellipsoid(side + "Eye_White", (sign * 0.052, -0.119, 1.815), (0.031, 0.018, 0.019), "Head", EYE_WHITE, rig, 16, 10))
+        parts.append(add_weighted_ellipsoid(side + "Eye_Iris", (sign * 0.052, -0.135, 1.815), (0.014, 0.008, 0.015), "Head", EYE_IRIS, rig, 12, 8))
+        parts.append(add_weighted_ellipsoid(side + "Eye_Pupil", (sign * 0.052, -0.142, 1.815), (0.006, 0.004, 0.010), "Head", EYE_PUPIL, rig, 10, 8))
+        parts.append(add_weighted_ellipsoid(side + "Eyebrow", (sign * 0.053, -0.119, 1.85), (0.038, 0.012, 0.009), "Head", HAIR, rig, 14, 8))
+        parts.append(add_weighted_ellipsoid(side + "Ear", (sign * 0.143, -0.005, 1.79), (0.026, 0.035, 0.052), "Head", SKIN, rig, 12, 8))
+    parts.append(add_weighted_ellipsoid("Nose_Bridge", (0, -0.132, 1.79), (0.018, 0.026, 0.042), "Head", SKIN, rig, 12, 8))
+    parts.append(add_weighted_ellipsoid("Nose_Tip", (0, -0.151, 1.772), (0.022, 0.019, 0.016), "Head", SKIN, rig, 12, 8))
     for side, sign in (("Left", 1), ("Right", -1)):
         x = lambda v: v * sign
         parts.append(add_weighted_ellipsoid(side + "ShoulderMesh", (x(0.31), 0, 1.47), (0.14, 0.14, 0.14), side + "Shoulder", CLOTH, rig))
