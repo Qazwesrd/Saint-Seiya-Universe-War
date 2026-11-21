@@ -42,9 +42,20 @@ def _normalize_entry(entry: Any) -> dict[str, Any]:
     }
 
 
-def build_report(pck_path: Path, pkx_paths: list[Path], package: Any) -> dict[str, Any]:
-    entries = [_normalize_entry(item) for item in package.file_list()]
+def _read_entries(package: Any) -> list[dict[str, Any]]:
+    paths = list(package.file_list())
+    metadata: list[Any] = []
+    scanner = getattr(package, "scan_entries", None)
+    if callable(scanner) and paths:
+        scanner(paths=paths, on_chunk=lambda chunk: metadata.extend(chunk))
+    source = metadata if metadata else paths
+    entries = [_normalize_entry(item) for item in source]
     entries.sort(key=lambda item: item["path"].casefold())
+    return entries
+
+
+def build_report(pck_path: Path, pkx_paths: list[Path], package: Any) -> dict[str, Any]:
+    entries = _read_entries(package)
     counts = Counter(item["extension"] or "[no extension]" for item in entries)
     return {
         "schema_version": 1,
@@ -71,8 +82,11 @@ def main(argv: list[str] | None = None) -> int:
     if not pck_path.is_file() or any(not path.is_file() for path in pkx_paths):
         parser.error("PCK and PKX inputs must be regular files")
     source_files = [pck_path, *pkx_paths]
-    if any(output == path or path in output.parents for path in source_files):
-        parser.error("--output cannot be the same as, or inside, a source archive path")
+    if any(
+        output == path or path.parent == output or path.parent in output.parents
+        for path in source_files
+    ):
+        parser.error("--output must be outside every source archive directory")
 
     try:
         import autoangel
