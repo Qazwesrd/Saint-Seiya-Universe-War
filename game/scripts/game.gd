@@ -352,6 +352,33 @@ func damage_nearby(damage: float, reach: float, cone_degrees: float = 120.0) -> 
             var target_facing_dot := target_forward.dot(toward_attacker.normalized()) if toward_attacker.length_squared() > 0.001 else 1.0
             var position_multiplier: float = SkillSystem.get_position_damage_multiplier(class_id, target_facing_dot, bool(enemy.get("is_boss")))
             enemy.call("take_damage", damage * target_multiplier * position_multiplier, player.global_position)
+func try_resolve_boss_ultimate_clash(player_power: float) -> bool:
+    if not is_instance_valid(player):
+        return false
+    var nearest_boss: Node3D
+    var nearest_distance := INF
+    for enemy in enemies:
+        if not is_instance_valid(enemy) or not bool(enemy.get("is_boss")) or not enemy.has_method("is_ultimate_telegraph_active"):
+            continue
+        if not bool(enemy.call("is_ultimate_telegraph_active")):
+            continue
+        var distance := player.global_position.distance_to(enemy.global_position)
+        if distance <= 11.0 and distance < nearest_distance:
+            nearest_boss = enemy
+            nearest_distance = distance
+    if not is_instance_valid(nearest_boss):
+        return false
+    var won := bool(nearest_boss.call("resolve_ultimate_clash", player_power))
+    var accent := Color(1.0, 0.72, 0.2) if won else Color(0.55, 0.22, 1.0)
+    spawn_effect((player.global_position + nearest_boss.global_position) * 0.5 + Vector3.UP, accent, 5.0 if won else 4.0, "wave", 0.85)
+    if won:
+        nearest_boss.call("take_damage", player_power * 1.5, player.global_position)
+        show_notice("必杀技对抗胜利！压制首领并造成额外伤害！")
+    else:
+        player.cosmos = maxf(0.0, player.cosmos - 18.0)
+        show_notice("必杀技对抗失败！小宇宙被压制，注意闪避首领攻击！")
+    return true
+
 func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knockback: float, launch: float, stagger: float) -> void:
     if not is_instance_valid(player):
         return
