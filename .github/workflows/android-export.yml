@@ -172,21 +172,35 @@ jobs:
           library_bytes="$(wc -c < /tmp/libgodot_android.so | tr -d ' ')"
           test "$library_bytes" -gt 1000000
 
-          # Godot can append its PCK payload to the APK instead of storing it
-          # as a ZIP entry. Verify the embedded GDPC header and resource paths
-          # directly in the signed APK byte stream.
-          pck_offset="$(grep -aob 'GDPC' "$apk" | tail -n 1 | cut -d: -f1 || true)"
-          test -n "$pck_offset" || { echo "Godot PCK signature GDPC not found in APK"; exit 1; }
-          grep -aFq 'res://scenes/main_menu.tscn' "$apk" || {
+          # APK is a ZIP container: inspect and extract the PCK entry before
+          # checking its binary header and resource paths. Searching the raw
+          # APK cannot see strings inside a compressed ZIP member.
+          pck_entry="$(grep -Ei '(^|/)[^/]+\.pck$' /tmp/apk-entries.txt | head -n 1 || true)"
+          test -n "$pck_entry" || {
+            echo "No .pck resource archive found among APK ZIP entries."
+            echo "APK entries containing pack/assets:"
+            grep -Ei 'pack|pck|assets' /tmp/apk-entries.txt || true
+            exit 1
+          }
+          unzip -p "$apk" "$pck_entry" > /tmp/game-main.pck
+          test -s /tmp/game-main.pck
+          pck_magic="$(head -c 4 /tmp/game-main.pck)"
+          test "$pck_magic" = "GDPC" || {
+            echo "Unexpected PCK header in $pck_entry: $pck_magic"
+            exit 1
+          }
+          grep -aFq 'res://scenes/main_menu.tscn' /tmp/game-main.pck || {
             echo "Required project resource missing: res://scenes/main_menu.tscn"; exit 1;
           }
-          grep -aFq 'res://assets/vfx/pegasus/meteor_fist_finisher.tscn' "$apk" || {
+          grep -aFq 'res://assets/vfx/pegasus/meteor_fist_finisher.tscn' /tmp/game-main.pck || {
             echo "Required project resource missing: res://assets/vfx/pegasus/meteor_fist_finisher.tscn"; exit 1;
           }
-          echo "APK_PCK_MAGIC_OFFSET=$pck_offset"
-          echo "APK_MAIN_SCENE=verified in embedded PCK"
-          echo "APK_SIGNATURE_SKILL_SCENE=verified in embedded PCK"
+          echo "APK_PCK_ENTRY=$pck_entry"
+          echo "APK_PCK_HEADER=verified"
+          echo "APK_MAIN_SCENE=verified in PCK"
+          echo "APK_SIGNATURE_SKILL_SCENE=verified in PCK"
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
+          echo "APK_PCK_BYTES=$(wc -c < /tmp/game-main.pck | tr -d ' ')"
           echo "APK_ENGINE_LIBRARY=$engine_lib"
           echo "APK_ENGINE_LIBRARY_BYTES=$library_bytes"
           sha256sum "$apk"
