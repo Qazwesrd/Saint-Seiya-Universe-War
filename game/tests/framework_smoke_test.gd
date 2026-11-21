@@ -25,6 +25,11 @@ func _run_tests() -> void:
 		if str(dark_drop.get("item_id", "")) == "dark_cosmos_fragment":
 			has_dark_fragment_drop = true
 	assert(has_dark_fragment_drop and RPGState.ITEM_DATA.has("dark_cosmos_fragment"), "Dark Saint bosses have a dedicated Dark Cosmos Fragment material drop")
+	assert(RPGState.ITEM_DATA.has("platinum_star_shard"), "Platinum awakening has its own Star Shard material")
+	var dark_awakening_cost: Dictionary = ArmorSystem.get_awakening_requirements("dark_cloth")
+	var platinum_awakening_cost: Dictionary = ArmorSystem.get_awakening_requirements("platinum")
+	assert(str(dark_awakening_cost.get("material_id", "")) == "dark_cosmos_fragment" and int(dark_awakening_cost.get("material_count", 0)) == 5, "Dark Cloth awakening consumes five Dark Cosmos Fragments")
+	assert(str(platinum_awakening_cost.get("material_id", "")) == "platinum_star_shard" and int(platinum_awakening_cost.get("material_count", 0)) == 5, "Platinum awakening consumes five distinct Star Shards")
 	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
 	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
 	var bond_before: Dictionary = CollectionSystem.get_active_companion_bond()
@@ -741,6 +746,13 @@ func _run_tests() -> void:
 	awakened_dark_state["awakened"] = true
 	RPGState.profile["armor_state"] = awakened_dark_state
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.265), "awakened Dark Cloth raises skill resonance to fifteen percent")
+  RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","platinum"],"current_stage":"platinum","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
+  var platinum_base_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+  assert(is_equal_approx(float(platinum_base_bonus.get("platinum_star_resonance", 0.0)), 1.12), "Platinum Cloth has its own star-radiance skill multiplier")
+  assert(float(platinum_base_bonus.get("max_cosmos", 0.0)) > 0.0, "Platinum Cloth grants star-radiance Cosmos capacity")
+  RPGState.profile["armor_state"]["awakened"] = true
+  var platinum_awakened_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+  assert(is_equal_approx(float(platinum_awakened_bonus.get("platinum_star_resonance", 0.0)), 1.18), "Platinum awakening strengthens its own star-radiance multiplier")
 	RPGState.profile["armor_state"] = saved_armor_state
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.1), "removing Dark Cloth restores the class skill multiplier")
 	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("pegasus"), 1.08), "Pegasus combo passive applies to combo finishers")
