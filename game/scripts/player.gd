@@ -65,6 +65,7 @@ var visual_armor_signature := ""
 var last_armor_condition_ratio := 1.0
 var authored_character_model: Node3D
 var authored_animation_player: AnimationPlayer
+var authored_armor_animation_player: AnimationPlayer
 var authored_animation_state := ""
 var authored_action_animation_timer := 0.0
 var training_down_timer := 0.0
@@ -1405,6 +1406,25 @@ func _play_authored_animation(animation_name: String, blend_time: float = 0.12) 
         return
     authored_animation_state = animation_name
     authored_animation_player.play(animation_name, blend_time)
+    _sync_authored_armor_animation(animation_name, blend_time)
+
+func _sync_authored_armor_animation(animation_name: String, blend_time: float = 0.12) -> void:
+    if not is_instance_valid(authored_armor_animation_player):
+        return
+    var armor_clip := animation_name
+    if not authored_armor_animation_player.has_animation(armor_clip):
+        if "attack" in animation_name:
+            armor_clip = "basic_attack_1"
+        elif "skill" in animation_name:
+            armor_clip = "skill_cast"
+        elif animation_name in ["hit", "hit_light", "hit_heavy"]:
+            armor_clip = "hit_light"
+        elif animation_name in ["dodge", "block", "victory", "defeat", "jump", "fall", "land"]:
+            armor_clip = animation_name
+        else:
+            armor_clip = "idle"
+    if authored_armor_animation_player.has_animation(armor_clip):
+        authored_armor_animation_player.play(armor_clip, blend_time)
 
 func _play_authored_action_animation(animation_name: String, blend_time: float = 0.06) -> void:
     if not is_instance_valid(authored_animation_player):
@@ -1415,11 +1435,13 @@ func _play_authored_action_animation(animation_name: String, blend_time: float =
     authored_action_animation_timer = clampf(clip.length, 0.2, 1.0)
     authored_animation_state = ""
     authored_animation_player.play(animation_name, blend_time)
+    _sync_authored_armor_animation(animation_name, blend_time)
 
 func _load_authored_armor_model() -> void:
     if is_instance_valid(authored_armor_model):
         authored_armor_model.queue_free()
         authored_armor_model = null
+    authored_armor_animation_player = null
     if is_instance_valid(armor_root):
         armor_root.visible = true
     var relic: Dictionary = EquipmentDatabase.get_equipped_relic()
@@ -1441,7 +1463,13 @@ func _load_authored_armor_model() -> void:
     authored_armor_model.name = "AuthoredArmorModel"
     authored_armor_model.position = Vector3.ZERO
     authored_armor_model.scale = Vector3.ONE
+    authored_armor_animation_player = _find_animation_player(authored_armor_model)
     visual_root.add_child(authored_armor_model)
+    if is_instance_valid(authored_armor_animation_player):
+        var initial_clip := authored_animation_state if not authored_animation_state.is_empty() else "idle"
+        _sync_authored_armor_animation(initial_clip)
+    else:
+        push_warning("Authored armor model has no animation player; armor will remain static: " + model_path)
     if is_instance_valid(armor_root):
         armor_root.visible = false
 
