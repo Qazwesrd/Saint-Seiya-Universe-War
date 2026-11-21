@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Any
 
 
+def normalize_entry_path(entry_path: str) -> str:
+    return str(entry_path).replace("\\", "/").lstrip("/")
+
 def track_payload(track: Any) -> dict[str, Any]:
     frame_ids = getattr(track, "key_frame_ids", None)
     return {
@@ -40,7 +43,7 @@ def build_payload(entry_path: str, parsed: Any, kind: str) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "schema_version": 1,
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "source_entry": entry_path.replace("\\", "/"),
+        "source_entry": normalize_entry_path(entry_path),
         "kind": kind,
     }
     if kind == "bon":
