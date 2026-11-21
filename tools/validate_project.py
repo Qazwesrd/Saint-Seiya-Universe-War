@@ -73,7 +73,11 @@ if catalog_file.is_file():
     try:
         catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
         require(isinstance(catalog.get("packs"), dict), "资源包目录缺少 packs 字典")
-        require(catalog.get("delivery_mode") == "offline_local", "资源包交付模式必须为离线本地")
+        require(catalog.get("delivery_mode") == "single_apk_embedded", "最终交付必须是单 APK 内置离线资源")
+        require(catalog.get("resource_container") == "godot_main_pck_inside_apk", "离线资源必须随 APK 主资源包交付")
+        require(catalog.get("external_downloads_required") is False, "正式安装不得依赖外部资源下载")
+        require(catalog.get("install_time_copy_required") is False, "正式安装不得要求玩家手动复制数据包")
+        require(catalog.get("offline_ready_after_install") is True, "安装完成后必须可离线运行")
         for pack_id, pack in catalog.get("packs", {}).items():
             require(bool(re.fullmatch(r"[a-z][a-z0-9_]*", pack_id)), f"资源包编号无效：{pack_id}")
             require(isinstance(pack, dict) and bool(pack.get("name")), f"资源包元数据不完整：{pack_id}")
