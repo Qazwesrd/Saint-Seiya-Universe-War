@@ -18,7 +18,7 @@ class AngelicaRigJsonTests(unittest.TestCase):
         self.assertEqual(MODULE.normalize_package_lookup_path("Models/Pegasus/Body.SKI"), r"models\pegasus\body.ski")
 
     def test_normalizes_windows_archive_paths(self):
-        self.assertEqual(MODULE.normalize_entry_path(r"Models\\Pegasus\\idle.stck"), "Models/Pegasus/idle.stck")
+        self.assertEqual(MODULE.normalize_entry_path(r"Models\Pegasus\idle.stck"), "Models/Pegasus/idle.stck")
 
     def test_writes_valid_json_with_real_newline(self):
         with tempfile.TemporaryDirectory() as directory:
