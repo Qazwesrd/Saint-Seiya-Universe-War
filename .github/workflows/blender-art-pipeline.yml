@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "tools/art_pipeline/blender/**"
+      - "tools/art_pipeline/batch_asset_factory.py"
       - "game/scripts/enemy_database.gd"
       - "game/scripts/character_visual_catalog.gd"
       - "game/scripts/skill_animation_catalog.gd"
@@ -12,8 +13,13 @@ on:
   pull_request:
     paths:
       - "tools/art_pipeline/blender/**"
+      - "tools/art_pipeline/batch_asset_factory.py"
       - ".github/workflows/blender-art-pipeline.yml"
   workflow_dispatch:
+
+concurrency:
+  group: blender-art-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
