@@ -82,6 +82,24 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
 
+    def test_core_bronze_saints_have_distinct_skinned_signature_equipment(self):
+        required_parts = (
+            "Dragon_Ancient_Shield",
+            "Dragon_Shield_Silver_Dragon_Ridge",
+            "Cygnus_Ice_Crystal_Helm_Crest",
+            "Cygnus_Left_Frost_Wing_Pauldron",
+            "Andromeda_Chain_Link_",
+            "Andromeda_Chain_Wrist_Anchor",
+            "Phoenix_Left_Flame_Feather_",
+            "Phoenix_Fire_Cosmos_Gem",
+        )
+        for part in required_parts:
+            self.assertIn(part, self.generator)
+        self.assertIn('"LeftForearm"', self.generator)
+        self.assertIn('"RightForearm"', self.generator)
+        self.assertIn('"Head"', self.generator)
+        self.assertIn('"Chest"', self.generator)
+
     def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
         self.assertIn("不得由随机职业色或通用装饰替代", self.direction)
         self.assertIn("冥衣", self.direction)
