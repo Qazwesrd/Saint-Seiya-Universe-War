@@ -550,6 +550,9 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         EncounterDirector.report_enemy_defeated()
 
     CollectionSystem.record_enemy_defeat(bool(enemy.get("is_boss")) )
+    var bond_result: Dictionary = CollectionSystem.record_companion_bond_xp(55 if defeated_boss else 12)
+    if int(bond_result.get("levels_gained", 0)) > 0:
+        show_notice("伙伴羁绊提升至 Lv.%d！" % int(bond_result.get("level", 1)))
     CombatSessionManager.record_enemy_defeated(defeated_boss)
     enemies.erase(enemy)
     var exp_reward := int(enemy.get("exp_reward"))
