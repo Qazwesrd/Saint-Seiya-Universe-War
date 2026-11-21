@@ -564,6 +564,7 @@ def build_enemy_models():
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
+        make_animation_library(rig)
         # Archetype-specific body scale and metallic palette create readable
         # silhouettes while keeping a shared, animation-compatible skeleton.
         width = (1.18 if is_boss else 0.94) + (index % 5) * 0.045
@@ -623,8 +624,9 @@ def build_enemy_models():
             destination,
             required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
             require_skin=True,
+            required_clips=REQUIRED_CLIPS,
         )
-        print("ENEMY_MODEL_EXPORTED", enemy_id, "boss=" + str(is_boss), destination.stat().st_size)
+        print("ENEMY_MODEL_EXPORTED", enemy_id, "boss=" + str(is_boss), "clips=" + str(len(REQUIRED_CLIPS)), destination.stat().st_size)
     print("ENEMY_MODEL_TOTAL", len(enemy_ids))
 
 def main():
