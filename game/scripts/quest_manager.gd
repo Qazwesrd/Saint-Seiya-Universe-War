@@ -17,7 +17,7 @@ func _on_profile_slot_loaded(_slot: int) -> void:
 
 func interact_with_guide() -> Dictionary:
     if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
-        return FactionDatabase.interact_with_mentor()
+        return FactionDatabase.interact_with_mentor("sanctuary")
     if status == "not_started":
         status = "active"
         if not _save_progress():
