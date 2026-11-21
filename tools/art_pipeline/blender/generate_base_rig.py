@@ -1194,6 +1194,7 @@ def build_profession_models(shard_index=0, shard_count=1):
                 [(-0.18, 0.10), (-0.12, 0.14), (0.12, 0.14), (0.18, 0.10),
                  (0.13, -0.12), (0, -0.19), (-0.13, -0.12)],
                 0.075, "Hips", bronze, rig, 0.014))
+            for side, sign in (("Left", 1), ("Right", -1)):
                 ornaments.append(add_weighted_ellipsoid(
                     "Pegasus_" + side + "_Pauldron_Enamel",
                     (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
