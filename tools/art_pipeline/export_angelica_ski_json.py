@@ -18,8 +18,8 @@ def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
 def write_payload(output: Path, payload: dict[str, Any]) -> None:
-    write_payload(output, payload)
-
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 def _mesh_payload(mesh: Any, *, weighted: bool) -> dict[str, Any]:
     payload = {
@@ -117,8 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"SKI_CONVERSION_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_payload(output, payload)
     print(
         "SKI_JSON_EXPORT_PASS "
         f"skin_meshes={len(payload['skin_meshes'])} "
