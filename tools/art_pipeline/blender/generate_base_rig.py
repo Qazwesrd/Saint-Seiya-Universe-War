@@ -1106,6 +1106,64 @@ def build_enemy_models():
                         (span * 0.55, 0.07, 0.25 + (index % 4) * 0.045),
                         "Chest", shell, rig, segments=14, rings=8
                     )
+        if enemy_id == "pope_saga":
+            # Dedicated ceremonial armor silhouette for the Pope Saga boss.
+            saga_gold = material("PopeSaga_Gold", (0.92, 0.62, 0.19), 0.92, 0.2)
+            saga_edge = material("PopeSaga_Edge", (1.0, 0.84, 0.43), 0.9, 0.16)
+            saga_violet = material("PopeSaga_Enamel", (0.16, 0.035, 0.29), 0.7, 0.22)
+            saga_gem = material("PopeSaga_CosmicGem", (0.16, 0.42, 0.95), 0.62, 0.12)
+            add_weighted_armor_plate("PopeSaga_Diadem", (0, -0.15, 1.91),
+                [(-0.16,-0.03),(-0.12,0.06),(0,0.04),(0.12,0.06),(0.16,-0.03),(0,-0.07)],
+                0.07, "Head", saga_gold, rig, 0.012)
+            for side, sign in (("Left", 1), ("Right", -1)):
+                add_weighted_armor_plate("PopeSaga_" + side + "_CrownWing",
+                    (sign*0.12,-0.10,1.94), [(0,-0.06),(sign*0.07,0.0),(sign*0.15,0.19),(sign*0.03,0.13)],
+                    0.055, "Head", saga_edge, rig, 0.01)
+                add_weighted_armor_plate("PopeSaga_" + side + "_CheekGuard",
+                    (sign*0.12,-0.10,1.79), [(0,0.08),(sign*0.07,0.04),(sign*0.05,-0.13),(0,-0.16)],
+                    0.06, "Head", saga_gold, rig, 0.012)
+                add_weighted_armor_plate("PopeSaga_" + side + "_Pauldron",
+                    (sign*0.34,-0.08,1.48), [(-0.12,0.04),(-0.07,0.13),(0.05,0.12),(0.15,0.01),(0.10,-0.11),(-0.06,-0.12)],
+                    0.15, side + "Shoulder", saga_gold, rig, 0.022)
+                add_weighted_armor_plate("PopeSaga_" + side + "_Bracer",
+                    (sign*0.49,-0.07,1.10), [(-0.07,0.14),(0.045,0.12),(0.07,-0.13),(-0.045,-0.16)],
+                    0.12, side + "Forearm", saga_gold, rig, 0.016)
+                add_weighted_armor_plate("PopeSaga_" + side + "_Greave",
+                    (sign*0.15,-0.07,0.34), [(-0.09,0.15),(0.07,0.15),(0.095,-0.13),(0,-0.18),(-0.085,-0.11)],
+                    0.13, side + "Shin", saga_gold, rig, 0.018)
+                add_weighted_ellipsoid("PopeSaga_" + side + "_ShoulderGem",
+                    (sign*0.37,-0.16,1.49), (0.045,0.025,0.052), side + "Shoulder", saga_gem, rig, 16, 10)
+                add_weighted_armor_plate("PopeSaga_" + side + "_WaistTasset",
+                    (sign*0.145,-0.12,0.83), [(-0.075,0.13),(0.075,0.13),(0.09,-0.18),(0,-0.25),(-0.09,-0.18)],
+                    0.075, "Hips", saga_violet, rig, 0.012)
+            add_weighted_armor_plate("PopeSaga_ChestCuirass", (0,-0.16,1.37),
+                [(-0.245,0.16),(-0.17,0.245),(0,0.20),(0.17,0.245),(0.245,0.16),(0.18,-0.11),(0,-0.19),(-0.18,-0.11)],
+                0.105, "Chest", saga_gold, rig, 0.025)
+            add_weighted_armor_plate("PopeSaga_ChestEnamel", (0,-0.22,1.37),
+                [(-0.16,0.12),(-0.105,0.17),(0,0.145),(0.105,0.17),(0.16,0.12),(0.12,-0.08),(0,-0.13),(-0.12,-0.08)],
+                0.035, "Chest", saga_violet, rig, 0.01)
+            add_weighted_ellipsoid("PopeSaga_ChestGem", (0,-0.25,1.40),
+                (0.052,0.025,0.066), "Chest", saga_gem, rig, 20, 12)
+            add_weighted_armor_plate("PopeSaga_Collar", (0,-0.10,1.58),
+                [(-0.18,-0.03),(-0.13,0.09),(0,0.15),(0.13,0.09),(0.18,-0.03),(0,-0.10)],
+                0.12, "Chest", saga_edge, rig, 0.016)
+            cape_vertices = [(-0.18,0.10,1.55),(0.18,0.10,1.55),(-0.34,0.17,1.20),(0.34,0.17,1.20),
+                (-0.43,0.22,0.63),(0.43,0.22,0.63),(-0.30,0.18,0.18),(0.30,0.18,0.18)]
+            cape_mesh = bpy.data.meshes.new("PopeSaga_MantleMesh")
+            cape_mesh.from_pydata(cape_vertices, [], [(0,2,3,1),(2,4,5,3),(4,6,7,5)])
+            cape_mesh.materials.append(saga_violet)
+            cape_mesh.update()
+            cape = bpy.data.objects.new("PopeSaga_LongMantle", cape_mesh)
+            bpy.context.collection.objects.link(cape)
+            cape.vertex_groups.new(name="Chest").add(list(range(len(cape_vertices))), 1.0, "REPLACE")
+            cape_armature = cape.modifiers.new("MantleArmature", "ARMATURE")
+            cape_armature.object = rig
+            cape.parent = rig
+            cape.modifiers.new("MantleThickness", "SOLIDIFY").thickness = 0.025
+            add_weighted_limb("PopeSaga_Scepter", (-0.54,-0.12,0.86), (-0.56,-0.12,1.43),
+                0.022, "RightHand", saga_edge, rig, 12)
+            add_weighted_ellipsoid("PopeSaga_ScepterOrb", (-0.56,-0.12,1.48),
+                (0.075,0.055,0.075), "RightHand", saga_gem, rig, 20, 12)
         destination = output_root / enemy_id / "model/enemy.glb"
         export_glb(destination, [rig, body] + [
             obj for obj in bpy.context.scene.objects
@@ -1117,6 +1175,12 @@ def build_enemy_models():
             require_skin=True,
             required_clips=REQUIRED_CLIPS,
         )
+        if enemy_id == "pope_saga":
+            render_profession_turntable("pope_saga", index, "bosses")
+            preview_path = ROOT / "game" / "art_previews" / "bosses" / "pope_saga_front.png"
+            if not preview_path.is_file() or preview_path.stat().st_size < 10000:
+                raise RuntimeError("Pope Saga preview render missing or too small")
+            print("BOSS_PREVIEW_RENDERED", preview_path, preview_path.stat().st_size)
         print("ENEMY_MODEL_EXPORTED", enemy_id, "boss=" + str(is_boss), "clips=" + str(len(REQUIRED_CLIPS)), destination.stat().st_size)
     print("ENEMY_MODEL_TOTAL", len(enemy_ids))
 
