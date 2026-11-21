@@ -17,6 +17,10 @@ from typing import Any
 def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
+def write_payload(output: Path, payload: dict[str, Any]) -> None:
+    write_payload(output, payload)
+
+
 def _mesh_payload(mesh: Any, *, weighted: bool) -> dict[str, Any]:
     payload = {
         "name": str(mesh.name),
