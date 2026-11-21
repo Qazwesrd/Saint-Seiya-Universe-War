@@ -468,6 +468,8 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         reward_text += "，等级提升 %d 级！" % level_gains
     show_notice(reward_text)
     if defeated_boss:
+        if is_instance_valid(player) and player.has_method("_play_authored_action_animation"):
+            player.call("_play_authored_action_animation", "victory", 0.08)
         var battle_summary: Dictionary = CombatSessionManager.finish_encounter()
         if is_instance_valid(hud) and hud.has_method("show_battle_result"):
             hud.call("show_battle_result", battle_summary, {"exp": exp_reward, "coins": coin_reward})
