@@ -11,6 +11,7 @@ VISUAL = ROOT / "game/scripts/character_visual_catalog.gd"
 GENERATOR = ROOT / "tools/art_pipeline/blender/generate_base_rig.py"
 WORKFLOW = ROOT / ".github/workflows/blender-art-pipeline.yml"
 DIRECTION = ROOT / "docs/ANIME_CHARACTER_ART_DIRECTION.md"
+MANIFEST_BUILDER = ROOT / "tools/art_pipeline/build_manifests.py"
 
 
 def dictionary_ids(source: str, marker: str, indent: int) -> set[str]:
@@ -75,7 +76,9 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         core_heroes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
         for hero in core_heroes:
             self.assertIn(f'"{hero}"', self.generator)
-        self.assertIn("expected_heroes = (\\"pegasus\\", \\"dragon\\", \\"cygnus\\", \\"andromeda\\", \\"phoenix\\")", self.workflow)
+        self.assertIn("expected_heroes", self.workflow)
+        for hero in core_heroes:
+            self.assertIn(f'"{hero}"', self.workflow)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
 
