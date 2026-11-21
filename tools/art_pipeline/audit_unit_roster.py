@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit the real playable-unit, skill-profile and enemy catalogs without inflating counts."""
+"""Audit playable classes, visual profiles, complete 24-skill catalogs and enemies."""
 from __future__ import annotations
 
 import argparse
@@ -11,13 +11,25 @@ ROOT = Path(__file__).resolve().parents[2]
 TARGET_PLAYABLE_CLASSES = 76
 MIN_CLASS_SKILLS = 24
 
+SKILL_DICTIONARY_MARKERS = (
+    ("CLASS_SKILLS", 4),
+    ("DIVINE_CLASS_SKILLS", 4),
+    ("EXTENDED_DIVINE_CLASS_SKILLS", 1),
+    ("HEAVENLY_CLASS_SKILLS", 1),
+)
+ADVANCED_SKILL_MARKERS = (
+    ("ADVANCED_CLASS_SKILLS", 4),
+    ("DIVINE_ADVANCED_SKILLS", 1),
+    ("EXTENDED_DIVINE_ADVANCED_SKILLS", 1),
+    ("HEAVENLY_ADVANCED_SKILLS", 1),
+)
+
 
 def dictionary_body(source: str, marker: str) -> str:
-    """Extract only the dictionary belonging to marker, excluding later constants."""
     start = source.find(marker)
     if start < 0:
         raise ValueError(f"catalog marker not found: {marker}")
-    opening = source.find("{", start + len(marker) - 1)
+    opening = source.find("{", start + len(marker))
     if opening < 0:
         raise ValueError(f"catalog dictionary not opened: {marker}")
     depth = 0
@@ -44,9 +56,8 @@ def dictionary_body(source: str, marker: str) -> str:
     raise ValueError(f"catalog dictionary is not closed: {marker}")
 
 
-def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
-    body = dictionary_body(source, marker)
-    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\s*:\s*\{{', re.M)
+def top_level_entries_from_body(body: str, indent: int) -> dict[str, str]:
+    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\s*:\s*[\[\{{]', re.M)
     matches = list(entry_re.finditer(body))
     result: dict[str, str] = {}
     for index, match in enumerate(matches):
@@ -55,35 +66,73 @@ def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
     return result
 
 
+def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
+    return top_level_entries_from_body(dictionary_body(source, marker), indent)
+
+
+def _base_skill_ids(entry_body: str) -> set[str]:
+    match = re.search(r'"abilities"\s*:\s*\[(.*?)\]\s*,\s*"passive"', entry_body, re.S)
+    if not match:
+        return set()
+    return set(re.findall(r'"id"\s*:\s*"([^"]+)"', match.group(1)))
+
+
+def _advanced_skill_ids(entry_body: str) -> set[str]:
+    return set(re.findall(r'"id"\s*:\s*"([^"]+)"', entry_body))
+
+
 def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
                   enemy_catalog: str) -> dict:
     classes = top_level_entries(class_data, "const CLASS_DATA := {", 1)
     visuals = top_level_entries(visual_catalog, "const PROFILES := {", 4)
-    skills = top_level_entries(skill_catalog, "const CLASS_SKILLS := {", 4)
     enemies = top_level_entries(enemy_catalog, "const ARCHETYPES := {", 4)
+
+    base_profiles: dict[str, set[str]] = {}
+    advanced_profiles: dict[str, set[str]] = {}
+    for marker, indent in SKILL_DICTIONARY_MARKERS:
+        try:
+            entries = top_level_entries(skill_catalog, f"const {marker} := {{", indent)
+        except ValueError:
+            entries = {}
+        for class_id, body in entries.items():
+            base_profiles.setdefault(class_id, set()).update(_base_skill_ids(body))
+
+    for marker, indent in ADVANCED_SKILL_MARKERS:
+        try:
+            entries = top_level_entries(skill_catalog, f"const {marker} := {{", indent)
+        except ValueError:
+            entries = {}
+        for class_id, body in entries.items():
+            advanced_profiles.setdefault(class_id, set()).update(_advanced_skill_ids(body))
 
     class_ids = set(classes)
     visual_ids = set(visuals)
-    skill_ids = set(skills)
+    skill_profile_ids = set(base_profiles)
     missing_visuals = sorted(class_ids - visual_ids)
     orphan_visuals = sorted(visual_ids - class_ids)
-    missing_skill_profiles = sorted(class_ids - skill_ids)
+    missing_skill_profiles = sorted(class_ids - skill_profile_ids)
+
+    skill_ids_by_class: dict[str, set[str]] = {}
+    for class_id in class_ids | skill_profile_ids | set(advanced_profiles):
+        skill_ids_by_class[class_id] = (
+            base_profiles.get(class_id, set()) | advanced_profiles.get(class_id, set())
+        )
+    skill_counts = {key: len(value) for key, value in sorted(skill_ids_by_class.items())}
+    duplicate_or_missing_skill_ids = sorted(
+        class_id for class_id in skill_profile_ids
+        if not base_profiles.get(class_id) or any(not skill_id for skill_id in skill_ids_by_class[class_id])
+    )
+    deficits = {
+        class_id: max(0, MIN_CLASS_SKILLS - count)
+        for class_id, count in skill_counts.items()
+        if class_id in class_ids and count < MIN_CLASS_SKILLS
+    }
+
     boss_ids = sorted(
         enemy_id for enemy_id, body in enemies.items()
         if re.search(r'"is_boss"\s*:\s*true', body)
     )
     normal_ids = sorted(set(enemies) - set(boss_ids))
-
-    skill_counts: dict[str, int] = {}
-    for class_id, body in skills.items():
-        match = re.search(r'"abilities"\s*:\s*\[(.*?)\]\s*,\s*"passive"', body, re.S)
-        skill_counts[class_id] = len(re.findall(r'"id"\s*:', match.group(1))) if match else 0
-
-    deficits = {
-        class_id: max(0, MIN_CLASS_SKILLS - count)
-        for class_id, count in skill_counts.items()
-        if count < MIN_CLASS_SKILLS
-    }
     return {
         "playable_class_target": TARGET_PLAYABLE_CLASSES,
         "playable_classes_registered": len(classes),
@@ -92,11 +141,12 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
         "visual_profiles": len(visuals),
         "visual_profiles_missing": missing_visuals,
         "orphan_visual_profiles": orphan_visuals,
-        "class_skill_profiles": len(skills),
+        "class_skill_profiles": len(skill_profile_ids),
         "classes_missing_skill_profiles": missing_skill_profiles,
         "minimum_unique_skills_per_class": MIN_CLASS_SKILLS,
-        "skill_counts_by_class": dict(sorted(skill_counts.items())),
+        "skill_counts_by_class": skill_counts,
         "skill_deficits_by_class": dict(sorted(deficits.items())),
+        "classes_with_invalid_skill_ids": duplicate_or_missing_skill_ids,
         "enemy_archetypes": len(enemies),
         "boss_archetypes": len(boss_ids),
         "non_boss_archetypes": len(normal_ids),
@@ -106,6 +156,7 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
             len(classes) == TARGET_PLAYABLE_CLASSES
             and not missing_visuals and not orphan_visuals
             and not missing_skill_profiles and not deficits
+            and not duplicate_or_missing_skill_ids
         ) else "incomplete",
     }
 
@@ -135,7 +186,7 @@ def main() -> int:
             f"visual_profiles={report['visual_profiles']} "
             f"skill_profiles={report['class_skill_profiles']} "
             f"classes_missing_skill_profiles={len(report['classes_missing_skill_profiles'])} "
-            f"classes_below_{MIN_CLASS_SKILLS}_skills={len(report['skill_deficits_by_class'])} "
+            f"classes_below_{MIN_CLASS_SKILLS}_unique_skills={len(report['skill_deficits_by_class'])} "
             f"enemies={report['enemy_archetypes']} "
             f"bosses={report['boss_archetypes']} "
             f"non_bosses={report['non_boss_archetypes']} "
