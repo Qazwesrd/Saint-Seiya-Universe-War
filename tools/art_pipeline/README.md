@@ -121,3 +121,22 @@ blender --background --python tools/art_pipeline/blender/import_angelica_rigged_
 
 
 补充：SKI v9 及以上可能包含自己的骨骼名称映射表，网格顶点中的骨骼索引应按该表解释；旧版 SKI 没有此表时才使用 BON 的全骨架索引。实验性 rigged importer 已按这两种情况分别处理，仍需真实角色样本验证索引映射及坐标轴。
+
+
+## 将 STCK 动作关键帧导入 Blender（实验性）
+
+完成 SKI + BON 的 Armature 预览后，可以将单独导出的 STCK JSON 应用到当前打开的 Blender rigged preview：
+
+```powershell
+blender --background "D:\\SeiyaInventory\\pegasus_rigged_preview.blend" --python tools/art_pipeline/blender/import_angelica_stck_animation.py -- --bon "D:\\SeiyaInventory\\pegasus_bon.json" --stck "D:\\SeiyaInventory\\pegasus_idle.json" --output "D:\\SeiyaInventory\\pegasus_idle_preview.blend" --action-name "idle"
+```
+
+导入器会按 BON 骨骼索引定位 Armature pose bone，把 STCK 的位置轨道写入 Location，把 XYZW 四元数重排为 Blender 的 WXYZ 并写入 Quaternion Rotation。轨道有 `key_frame_ids` 时使用实际帧编号；旧版 V1 缺少帧编号时按数组顺序生成样本。时间换算会分别使用动画帧率、轨道帧率和 Blender 场景帧率。
+
+纯 Python 时间/数据转换函数位于 `angelica_animation.py`，可在没有 Blender 或游戏客户端的情况下运行单元测试：
+
+```powershell
+py -m unittest tools.art_pipeline.test_angelica_animation -v
+```
+
+**重要限制：** 该阶段只把离散关键帧样本写入 Blender 动作，不实现 Angelica 插值模式、根运动/骨骼坐标基校准、事件轨道、动作融合或 SMD 动作片段切分。动画起始帧与轨道帧编号的时间解释仍需用真实客户端样本校准；没有原版客户端时，自动化测试只能证明数据转换逻辑，不证明原版动作播放正确。运行时需先打开与 BON 对应的 rigged preview 文件。
