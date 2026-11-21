@@ -28,7 +28,7 @@ def dictionary_body(source: str, marker: str) -> str:
         if in_string:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == '"':
                 in_string = False
@@ -45,9 +45,8 @@ def dictionary_body(source: str, marker: str) -> str:
 
 
 def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
-    """Return top-level dictionary entries by their exact GDScript indentation."""
     body = dictionary_body(source, marker)
-    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\\s*:\\s*\\{{', re.M)
+    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\s*:\s*\{{', re.M)
     matches = list(entry_re.finditer(body))
     result: dict[str, str] = {}
     for index, match in enumerate(matches):
@@ -71,14 +70,14 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
     missing_skill_profiles = sorted(class_ids - skill_ids)
     boss_ids = sorted(
         enemy_id for enemy_id, body in enemies.items()
-        if re.search(r'"is_boss"\\s*:\\s*true', body)
+        if re.search(r'"is_boss"\s*:\s*true', body)
     )
     normal_ids = sorted(set(enemies) - set(boss_ids))
 
     skill_counts: dict[str, int] = {}
     for class_id, body in skills.items():
-        match = re.search(r'"abilities"\\s*:\\s*\\[(.*?)\\]\\s*,\\s*"passive"', body, re.S)
-        skill_counts[class_id] = len(re.findall(r'"id"\\s*:', match.group(1))) if match else 0
+        match = re.search(r'"abilities"\s*:\s*\[(.*?)\]\s*,\s*"passive"', body, re.S)
+        skill_counts[class_id] = len(re.findall(r'"id"\s*:', match.group(1))) if match else 0
 
     deficits = {
         class_id: max(0, MIN_CLASS_SKILLS - count)
