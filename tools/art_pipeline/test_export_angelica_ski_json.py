@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -28,6 +30,19 @@ def mesh(weighted=True):
 
 
 class AngelicaSkiJsonTests(unittest.TestCase):
+
+    def test_normalizes_windows_archive_paths(self):
+        self.assertEqual(MODULE.normalize_entry_path(r"Models\\Pegasus\\body.ski"), "Models/Pegasus/body.ski")
+
+    def test_writes_valid_json_with_real_newline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "nested" / "skin.json"
+            MODULE.write_payload(output, {"ok": True})
+            raw = output.read_bytes()
+            self.assertTrue(raw.endswith(b"\\n"))
+            self.assertFalse(raw.endswith(b"\\\\n"))
+            self.assertEqual(json.loads(raw.decode("utf-8")), {"ok": True})
+
     def test_exports_mesh_geometry_and_skinning_data(self):
         payload = MODULE._mesh_payload(mesh(), weighted=True)
         self.assertEqual(len(payload["positions"]), 9)
