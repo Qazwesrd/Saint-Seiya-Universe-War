@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
+const BossChapterCombatCatalog = preload("res://scripts/boss_chapter_combat_catalog.gd")
 
 enum BrainState { CHASE, WINDUP, RECOVERY, GUARD, STAGGER, DEAD }
 
@@ -23,6 +24,7 @@ var boss_heavy_multiplier := 1.55
 var boss_range_multiplier := 1.5
 var boss_recovery := 0.72
 var boss_special := "none"
+var boss_chapter_profile: Dictionary = {}
 var state: BrainState = BrainState.CHASE
 var state_timer := 0.0
 var attack_cooldown := 0.8
@@ -100,6 +102,11 @@ func _ready() -> void:
     boss_range_multiplier = float(archetype.get("boss_range_multiplier", 1.5))
     boss_recovery = float(archetype.get("boss_recovery", 0.72))
     boss_special = str(archetype.get("boss_special", "none"))
+    if is_boss:
+        boss_chapter_profile = BossChapterCombatCatalog.get_profile(archetype_id)
+        boss_heavy_interval = maxi(1, roundi(float(boss_heavy_interval) * float(boss_chapter_profile.get("heavy_interval_scale", 1.0))))
+        boss_windup *= float(boss_chapter_profile.get("windup_scale", 1.0))
+        boss_recovery *= float(boss_chapter_profile.get("recovery_scale", 1.0))
     exp_reward = int(archetype.get("exp_reward", 30)) + maxi(0, enemy_level - 1) * 2
     coin_reward = int(archetype.get("coin_reward", 40)) + maxi(0, enemy_level - 1) * 3
     drop_tier = str(archetype.get("drop_tier", "normal"))
@@ -772,7 +779,8 @@ func resolve_ultimate_clash(attacker_power: float) -> bool:
     if not is_ultimate_telegraph_active():
         return false
     var phase_multiplier := 1.0 + (0.18 if _boss_phase_two else 0.0) + (0.22 if _boss_enraged else 0.0)
-    var required_power := max_health * 0.055 * phase_multiplier
+    var chapter_threshold := float(boss_chapter_profile.get("clash_threshold", 1.0))
+    var required_power := max_health * 0.055 * phase_multiplier * chapter_threshold
     if attacker_power >= required_power:
         state = BrainState.RECOVERY
         state_timer = 1.65
