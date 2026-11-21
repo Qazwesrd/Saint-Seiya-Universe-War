@@ -13,7 +13,7 @@ const ITEMS := {
 		{"id": "aries_gold_cloth", "name": "白羊座黄金圣衣", "path": "assets/armors/aries_gold_cloth/model/armor.glb"},
 		{"id": "taurus_gold_cloth", "name": "金牛座黄金圣衣", "path": "assets/armors/taurus_gold_cloth/model/armor.glb"},
 		{"id": "gemini_gold_cloth", "name": "双子座黄金圣衣", "path": "assets/armors/gemini_gold_cloth/model/armor.glb"},
-		{"id": "pegasus_bronze_cloth", "name": "天马座青铜圣衣", "path": "assets/armors/pegasus_bronze_cloth/model/armor.glb"}
+		{"id": "bronze_cloth_archive", "name": "青铜圣衣档案原型（非天马专属）", "path": "assets/armors/bronze_cloth_archive/model/armor.glb"}
 	],
 	"BOSS": [
 		{"id": "pope_saga", "name": "教皇撒加", "path": "assets/enemies/pope_saga/model/enemy.glb"},
@@ -22,12 +22,13 @@ const ITEMS := {
 		{"id": "hades_emperor", "name": "冥王哈迪斯", "path": "assets/enemies/hades_emperor/model/enemy.glb"}
 	],
 	"技能特效": [
-		{"id": "cosmos", "name": "小宇宙星辰", "element": "cosmos", "color": Color(0.35, 0.68, 1.0)},
-		{"id": "ice", "name": "冰霜星尘", "element": "ice", "color": Color(0.45, 0.86, 1.0)},
-		{"id": "fire", "name": "凤凰烈焰", "element": "fire", "color": Color(1.0, 0.28, 0.08)},
-		{"id": "lightning", "name": "黄金雷霆", "element": "lightning", "color": Color(1.0, 0.88, 0.25)},
-		{"id": "dark", "name": "冥界暗影", "element": "dark", "color": Color(0.62, 0.28, 0.9)},
-		{"id": "water", "name": "海皇潮汐", "element": "water", "color": Color(0.18, 0.72, 1.0)}
+		{"id": "pegasus_meteor", "name": "天马闪影流星拳（专属场景）", "path": "assets/vfx/pegasus/meteor_fist_finisher.tscn", "color": Color(0.25, 0.65, 1.0)},
+		{"id": "cosmos", "name": "小宇宙星辰", "path": "assets/vfx/cosmos/effect.tscn", "element": "cosmos", "color": Color(0.35, 0.68, 1.0)},
+		{"id": "ice", "name": "冰河系冰霜特效", "path": "assets/vfx/ice/effect.tscn", "element": "ice", "color": Color(0.45, 0.86, 1.0)},
+		{"id": "fire", "name": "凤凰系烈焰特效", "path": "assets/vfx/fire/effect.tscn", "element": "fire", "color": Color(1.0, 0.28, 0.08)},
+		{"id": "lightning", "name": "黄金雷霆特效", "path": "assets/vfx/lightning/effect.tscn", "element": "lightning", "color": Color(1.0, 0.88, 0.25)},
+		{"id": "dark", "name": "冥界暗影特效", "path": "assets/vfx/dark/effect.tscn", "element": "dark", "color": Color(0.62, 0.28, 0.9)},
+		{"id": "water", "name": "海皇潮汐特效", "path": "assets/vfx/water/effect.tscn", "element": "water", "color": Color(0.18, 0.72, 1.0)}
 	]
 }
 
@@ -223,8 +224,15 @@ func _show_item() -> void:
 	var item: Dictionary = ITEMS[category][item_index]
 	title_label.text = "%s\n%s  (%d/%d)" % [category, item.name, item_index + 1, ITEMS[category].size()]
 	if category == "技能特效":
+		var effect_path := "res://" + str(item.get("path", ""))
+		if ResourceLoader.exists(effect_path):
+			var effect_scene := load(effect_path) as PackedScene
+			if effect_scene != null:
+				preview_root.add_child(effect_scene.instantiate())
+				status_label.text = "已加载项目中的真实技能特效场景：\\n%s\\n\\n可旋转检查特效构图。最终验收还需在角色战斗动作中检查时序、命中位置、粒子数量和移动端性能。" % effect_path
+				return
 		_build_effect_preview(item)
-		status_label.text = "这是展厅内的程序化特效预览，用于先确认元素色彩、层次和尺度。正式技能还需制作专属动画、粒子、命中和终结段。"
+		status_label.text = "该元素目前显示程序化预览，尚无专属场景文件。"
 		return
 	var path := "res://" + str(item.path)
 	if not ResourceLoader.exists(path):
