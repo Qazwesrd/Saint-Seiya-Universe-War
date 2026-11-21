@@ -178,31 +178,47 @@ def join_meshes(objects, name, rig):
 
 def build_body(rig):
     parts = []
-    parts.append(add_weighted_ellipsoid("Pelvis", (0, 0, 0.91), (0.22, 0.14, 0.17), "Hips", CLOTH, rig))
-    parts.append(add_weighted_ellipsoid("Torso", (0, 0, 1.31), (0.27, 0.15, 0.39), "Chest", CLOTH, rig))
-    # Athletic anime-hero anatomy: layered pectorals, segmented abdomen and
-    # obliques add readable form beneath armor instead of one smooth capsule.
-    for side, sign in (("Left", 1), ("Right", -1)):
-        parts.append(add_weighted_ellipsoid(
-            side + "_Pectoral", (sign * 0.135, -0.125, 1.48),
-            (0.142, 0.052, 0.105), "Chest", CLOTH, rig, 20, 12))
-        parts.append(add_weighted_ellipsoid(
-            side + "_Upper_Oblique", (sign * 0.205, -0.105, 1.285),
-            (0.072, 0.052, 0.125), "Chest", CLOTH, rig, 16, 10))
-        parts.append(add_weighted_ellipsoid(
-            side + "_Lower_Oblique", (sign * 0.16, -0.105, 1.12),
-            (0.078, 0.047, 0.095), "Hips", CLOTH, rig, 16, 10))
-    for row, z in enumerate((1.285, 1.205, 1.125)):
-        width = (0.092, 0.084, 0.075)[row]
-        for side, sign in (("Left", 1), ("Right", -1)):
-            parts.append(add_weighted_ellipsoid(
-                side + "_Abdominal_" + str(row + 1),
-                (sign * (0.052 if row == 0 else 0.047), -0.151, z),
-                (width, 0.035, 0.043), "Chest" if row < 2 else "Hips",
-                CLOTH, rig, 16, 10))
-    parts.append(add_weighted_ellipsoid(
-        "Sternum", (0, -0.153, 1.405), (0.028, 0.025, 0.12),
-        "Chest", CLOTH, rig, 12, 8))
+    # Continuous tapered torso shell: a ring-loft replaces stacked oval
+    # muscle pieces, giving the chest, waist and pelvis one coherent silhouette.
+    def torso_shell(name, profiles, bone_name):
+        sides = 20
+        verts = []
+        faces = []
+        for z, rx, ry in profiles:
+            for index in range(sides):
+                angle = 2.0 * math.pi * index / sides
+                verts.append((math.cos(angle) * rx, math.sin(angle) * ry, z))
+        for ring in range(len(profiles) - 1):
+            for index in range(sides):
+                nxt = (index + 1) % sides
+                a = ring * sides + index
+                b = ring * sides + nxt
+                c = (ring + 1) * sides + nxt
+                d = (ring + 1) * sides + index
+                faces.append((a, b, c, d))
+        faces.append(tuple(reversed(range(sides))))
+        last = (len(profiles) - 1) * sides
+        faces.append(tuple(last + index for index in range(sides)))
+        mesh = bpy.data.meshes.new(name + "_Mesh")
+        mesh.from_pydata(verts, [], faces)
+        mesh.materials.append(CLOTH)
+        mesh.update()
+        obj = bpy.data.objects.new(name, mesh)
+        bpy.context.collection.objects.link(obj)
+        for polygon in mesh.polygons:
+            polygon.use_smooth = True
+        group = obj.vertex_groups.new(name=bone_name)
+        group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+        modifier = obj.modifiers.new("Armature", "ARMATURE")
+        modifier.object = rig
+        obj.parent = rig
+        return obj
+
+    parts.append(torso_shell("Unified_Torso", [
+        (0.80, 0.17, 0.115), (0.88, 0.205, 0.13),
+        (1.02, 0.18, 0.12), (1.18, 0.205, 0.125),
+        (1.34, 0.255, 0.145), (1.46, 0.29, 0.145),
+        (1.54, 0.205, 0.12)], "Chest"))
     parts.append(add_weighted_ellipsoid("NeckMesh", (0, 0, 1.61), (0.075, 0.075, 0.11), "Neck", SKIN, rig))
     parts.append(add_weighted_ellipsoid("HeadMesh", (0, 0, 1.79), (0.14, 0.13, 0.19), "Head", SKIN, rig))
     # Stylized anime-hero face and hair details. All pieces follow the Head bone.
@@ -314,9 +330,9 @@ def build_armor(rig):
         # Winged pauldron with a sharp outer point and layered lower edge.
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Shoulder", (sign * 0.335, -0.055, 1.49),
-            [(0, 0.12), (0.095, 0.105), (0.205, 0.035), (0.245, -0.055),
-             (0.16, -0.035), (0.115, -0.12), (0.025, -0.085), (-0.055, -0.015)],
-            0.17, side + "Shoulder", GOLD, rig, 0.018))
+            [(0, 0.095), (0.060, 0.085), (0.135, 0.025), (0.155, -0.045),
+             (0.105, -0.035), (0.070, -0.095), (0.015, -0.070), (-0.040, -0.010)],
+            0.125, side + "Shoulder", GOLD, rig, 0.014))
         # Forearm bracer and shin guard use tapered, faceted armor profiles.
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Forearm", (sign * 0.49, -0.075, 1.105),
