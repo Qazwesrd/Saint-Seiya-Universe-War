@@ -287,12 +287,9 @@ def build_body(rig):
         x = lambda v: v * sign
         # Angular deltoid shell: a shaped low-profile mesh replaces the
         # spherical shoulder joint and blends into the upper-arm silhouette.
-        parts.append(add_weighted_armor_plate(
+        parts.append(add_weighted_pauldron(
             side + "ShoulderMesh", (x(0.315), -0.012, 1.465),
-            [(-0.072, 0.025), (-0.055, 0.075), (0.010, 0.095),
-             (0.078, 0.060), (0.105, 0.005), (0.075, -0.055),
-             (0.018, -0.075), (-0.055, -0.052)],
-            0.115, side + "Shoulder", CLOTH, rig, 0.014))
+            0.105, 0.105, 0.115, side + "Shoulder", CLOTH, rig, sign))
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
@@ -315,6 +312,51 @@ def build_body(rig):
         parts.append(add_weighted_limb(side + "ShinMesh", (x(0.15), 0, 0.49), (x(0.15), 0, 0.12), 0.075, side + "Shin", CLOTH, rig))
         parts.append(add_weighted_foot(side + "FootMesh", x(0.15), side + "Foot", CLOTH, rig))
     return join_meshes(parts, "Humanoid_Base_Mesh", rig)
+
+def add_weighted_pauldron(name, center, width, height, depth, bone_name, mat, rig, side=1):
+    """Build a domed, wraparound shoulder shell with a curved crown and rolled rim."""
+    cx, cy, cz = center
+    sides = 16
+    # Depth profile runs from the back rim, over the crown, to the raised front.
+    profile = ((depth * 0.50, 0.68), (depth * 0.28, 0.90),
+               (0.0, 1.00), (-depth * 0.28, 0.94),
+               (-depth * 0.43, 0.72), (-depth * 0.48, 0.34))
+    vertices = []
+    for y_offset, factor in profile:
+        for index in range(sides):
+            angle = 2.0 * math.pi * index / sides
+            # The outer edge flares slightly toward the arm; the inner edge
+            # remains narrow so the shell follows the deltoid instead of a block.
+            x = math.cos(angle) * width * factor
+            z = math.sin(angle) * height * factor
+            vertices.append((cx + x * side, cy + y_offset, cz + z))
+    faces = []
+    for ring in range(len(profile) - 1):
+        for index in range(sides):
+            nxt = (index + 1) % sides
+            a = ring * sides + index
+            b = ring * sides + nxt
+            d = (ring + 1) * sides + index
+            e = (ring + 1) * sides + nxt
+            faces.append((a, b, e, d))
+    faces.append(tuple(reversed(range(sides))))
+    last = (len(profile) - 1) * sides
+    faces.append(tuple(last + index for index in range(sides)))
+    mesh = bpy.data.meshes.new(name + "_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(mat)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    group = obj.vertex_groups.new(name=bone_name)
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    modifier = obj.modifiers.new("Pauldron_Skeleton", "ARMATURE")
+    modifier.object = rig
+    obj.parent = rig
+    return obj
+
 
 def add_weighted_armor_plate(name, center, outline, depth, bone_name, mat, rig, bevel=0.025):
     """Create a shaped, beveled plate from an X/Z silhouette, facing the -Y camera."""
@@ -372,11 +414,9 @@ def build_armor(rig):
         0.095, "Chest", GOLD, rig, 0.022))
     for side, sign in (("Left", 1), ("Right", -1)):
         # Winged pauldron with a sharp outer point and layered lower edge.
-        parts.append(add_weighted_armor_plate(
+        parts.append(add_weighted_pauldron(
             "Armor_" + side + "_Shoulder", (sign * 0.335, -0.055, 1.49),
-            [(0, 0.095), (0.060, 0.085), (0.135, 0.025), (0.155, -0.045),
-             (0.105, -0.035), (0.070, -0.095), (0.015, -0.070), (-0.040, -0.010)],
-            0.125, side + "Shoulder", GOLD, rig, 0.014))
+            0.145, 0.115, 0.125, side + "Shoulder", GOLD, rig, sign))
         # Forearm bracer and shin guard use tapered, faceted armor profiles.
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Forearm", (sign * 0.49, -0.075, 1.105),
@@ -1050,14 +1090,11 @@ def build_profession_models(shard_index=0, shard_count=1):
         ornaments = []
         shoulder_factor = 0.78 + (index % 6) * 0.045
         for side, sign in (("Left", 1), ("Right", -1)):
-            ornaments.append(add_weighted_armor_plate(
+            ornaments.append(add_weighted_pauldron(
                 class_id + "_" + side + "_Signature_Pauldron",
                 (sign * (0.34 * shoulder_factor), -0.105, 1.48),
-                [(-0.095 * shoulder_factor, 0.025), (-0.065 * shoulder_factor, 0.085),
-                 (0.010 * shoulder_factor, 0.105), (0.105 * shoulder_factor, 0.060),
-                 (0.115 * shoulder_factor, -0.020), (0.050 * shoulder_factor, -0.085),
-                 (-0.070 * shoulder_factor, -0.070)],
-                0.095, side + "Shoulder", profession_mat, rig, 0.016
+                0.105 * shoulder_factor, 0.095 * shoulder_factor, 0.095,
+                side + "Shoulder", profession_mat, rig, sign
             ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
