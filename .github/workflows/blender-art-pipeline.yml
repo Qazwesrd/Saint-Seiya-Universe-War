@@ -44,8 +44,8 @@ jobs:
           test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
           test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
           test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
-          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
-          test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 50
+          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 57
+          test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 57
       - name: Validate all 32 profession models and 27 animation clips
         shell: bash
         run: |
