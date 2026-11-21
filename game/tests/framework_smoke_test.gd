@@ -19,6 +19,12 @@ func _run_tests() -> void:
 		if str(dark_quest_entry.get("id", "")) == "side_dark_knight_trial":
 			dark_commander_quest = dark_quest_entry
 	assert(str(dark_commander_quest.get("required_archetype_id", "")) == "dark_black_knight_champion", "Dark Saint challenge requires defeating its named commander")
+	var dark_boss_drops: Array[Dictionary] = LootManager.get_drop_table(true, "dark_black_knight_champion")
+	var has_dark_fragment_drop := false
+	for dark_drop in dark_boss_drops:
+		if str(dark_drop.get("item_id", "")) == "dark_cosmos_fragment":
+			has_dark_fragment_drop = true
+	assert(has_dark_fragment_drop and RPGState.ITEM_DATA.has("dark_cosmos_fragment"), "Dark Saint bosses have a dedicated Dark Cosmos Fragment material drop")
 	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
 	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
 	var bond_before: Dictionary = CollectionSystem.get_active_companion_bond()
