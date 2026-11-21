@@ -812,9 +812,9 @@ def catalog_ids(gd_path, marker):
         raise RuntimeError("catalog block malformed: " + marker)
     return re.findall(r'^\s*"([^"]+)"\s*:\s*\{', match.group(1), re.M)
 
-def render_profession_turntable(profession_id, index):
-    """Render one acceptance preview from the exact generated in-project character scene."""
-    preview_root = ROOT / "game" / "art_previews" / "characters"
+def render_profession_turntable(profession_id, index, preview_category="characters"):
+    """Render one acceptance preview from the exact generated in-project asset scene."""
+    preview_root = ROOT / "game" / "art_previews" / preview_category
     preview_root.mkdir(parents=True, exist_ok=True)
     scene = bpy.context.scene
     available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
@@ -982,6 +982,12 @@ def build_equipment_models():
             require_skin=True,
             require_independent_skinned_nodes=tuple(piece.name for piece in pieces),
         )
+        if index == 0:
+            render_profession_turntable(equipment_id, index, "armors")
+            preview_path = ROOT / "game" / "art_previews" / "armors" / (equipment_id + "_front.png")
+            if not preview_path.is_file() or preview_path.stat().st_size < 128:
+                raise RuntimeError("Representative armor preview missing or too small: " + str(preview_path))
+            print("ARMOR_PREVIEW_RENDERED", equipment_id, "views=front", "bytes=" + str(preview_path.stat().st_size))
         print("EQUIPMENT_MODEL_EXPORTED", equipment_id, destination.stat().st_size)
 
 
