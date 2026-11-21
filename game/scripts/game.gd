@@ -18,6 +18,7 @@ var enemies: Array[Node3D] = []
 var world_theme_manager: Node3D
 var active_world_chapter_id := ""
 var guide_npc: Node3D
+var hongmeng_guide_npc: Node3D
 var teleport_point: Node3D
 var sanctuary_active := false
 var sanctuary_origin := Vector3(0, 0.15, 7)
@@ -37,6 +38,8 @@ func _ready() -> void:
     CollectionSystem.collection_changed.connect(_spawn_followers)
     _build_sanctuary()
     _spawn_guide_npc()
+    if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
+        _spawn_hongmeng_guide_npc()
     _spawn_teleport_point()
     hud = HUDScript.new()
     hud.set("game", self)
@@ -221,6 +224,13 @@ func _spawn_guide_npc() -> void:
     guide_npc.position = player.global_position + Vector3(0, 0, 2)
     add_child(guide_npc)
 
+func _spawn_hongmeng_guide_npc() -> void:
+    hongmeng_guide_npc = Node3D.new()
+    hongmeng_guide_npc.set_script(GuideNpcScript)
+    hongmeng_guide_npc.set("display_name_override", "紫霄宫接引仙官")
+    hongmeng_guide_npc.position = player.global_position + Vector3(8.0, 0.0, -7.0)
+    add_child(hongmeng_guide_npc)
+
 func _spawn_teleport_point() -> void:
     teleport_point = Node3D.new()
     teleport_point.set_script(TeleportPointScript)
@@ -247,6 +257,8 @@ func navigate_to_objective() -> void:
         var tutorial_status := str(tutorial.get("status", "not_started"))
         if tutorial_status in ["not_started", "ready_to_return", "completed"]:
             target = guide_npc
+            if is_instance_valid(hongmeng_guide_npc) and player.global_position.distance_to(hongmeng_guide_npc.global_position) < player.global_position.distance_to(guide_npc.global_position):
+                target = hongmeng_guide_npc
         elif int(tutorial.get("defeated_normal", 0)) < FactionDatabase.TUTORIAL_NORMAL_TARGET:
             var nearest_distance := INF
             for enemy in enemies:
@@ -288,11 +300,15 @@ func navigate_to_objective() -> void:
 func interact_with_guide() -> void:
     if not is_instance_valid(player) or not is_instance_valid(guide_npc):
         return
-    if player.global_position.distance_to(guide_npc.global_position) > 4.8:
+    var use_hongmeng_entry := false
+    if is_instance_valid(hongmeng_guide_npc) and player.global_position.distance_to(hongmeng_guide_npc.global_position) <= 4.8:
+        use_hongmeng_entry = true
+    var near_sanctuary_entry := player.global_position.distance_to(guide_npc.global_position) <= 4.8
+    if not near_sanctuary_entry and not use_hongmeng_entry:
         show_notice("靠近%s后再交谈" % FactionDatabase.get_tutorial_mentor_name())
         return
     SideQuestManager.record_event("talk_to_guide", {"chapter_id": active_world_chapter_id})
-    var dialogue: Dictionary = QuestManager.interact_with_guide()
+    var dialogue: Dictionary = QuestManager.interact_with_hongmeng_guide() if use_hongmeng_entry else QuestManager.interact_with_guide()
     var campaign_mission: Dictionary = CampaignManager.get_active_mission()
     if not campaign_mission.is_empty() and campaign_mission.get("encounter", {}).is_empty():
         var campaign_state := CampaignManager.get_mission_progress(str(campaign_mission.get("id", "")))
