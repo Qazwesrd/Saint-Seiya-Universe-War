@@ -76,7 +76,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.blender_bundle.outputs.run_id }}
-          path: game/assets
+          path: game
       - name: Verify complete generated model bundle
         run: |
           set -eu
