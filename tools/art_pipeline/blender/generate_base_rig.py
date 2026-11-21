@@ -857,10 +857,27 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     if missing_clips:
         raise RuntimeError("GLB is missing animation clips: " + ", ".join(missing_clips))
     accessors = document.get("accessors", [])
+    skin_joint_indices = {
+        joint
+        for skin in skins
+        for joint in skin.get("joints", [])
+    }
     for clip_name in required_clips:
         clip = by_clip_name[clip_name]
         if not clip.get("channels") or not clip.get("samplers"):
             raise RuntimeError(f"Animation clip has no tracks: {clip_name}")
+        animated_nodes = {
+            channel.get("target", {}).get("node")
+            for channel in clip["channels"]
+            if isinstance(channel.get("target", {}).get("node"), int)
+        }
+        if require_skin:
+            animated_joint_count = len(animated_nodes.intersection(skin_joint_indices))
+            if animated_joint_count < 8:
+                raise RuntimeError(
+                    f"Animation clip does not animate enough skinned joints: {clip_name} "
+                    f"({animated_joint_count} joints)"
+                )
         for sampler in clip["samplers"]:
             for accessor_key in ("input", "output"):
                 accessor_index = sampler.get(accessor_key)
