@@ -71,6 +71,7 @@ func _build_interface() -> void:
 	game_entry_buttons.append(_add_button(layout, "开始新游戏 / 新建存档", _on_new_game_pressed))
 	game_entry_buttons.append(_add_button(layout, "继续游戏 / 存档管理", _on_continue_pressed))
 	_add_button(layout, "游戏设置", _on_settings_pressed)
+	_add_button(layout, "3D美术展厅（角色 / 圣衣 / BOSS / 技能）", _on_art_gallery_pressed)
 	_add_button(layout, "退出游戏", _on_exit_pressed)
 
 	settings_panel = _build_settings_panel()
@@ -586,3 +587,6 @@ func _download_game_data() -> void:
 		status_label.text = "完整离线数据已校验。现在可以断网游玩。"
 	else:
 		status_label.text = "数据下载未完成；已保留可续传文件，可重试并自动切换下载线路。"
+
+func _on_art_gallery_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/art_gallery.tscn")
