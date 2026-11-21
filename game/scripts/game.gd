@@ -1152,6 +1152,11 @@ func apply_ability_effect(class_id: String, ability: Dictionary, reach: float) -
             _spawn_skill_projectile(class_id, ability, true)
         "projectile":
             _spawn_skill_projectile(class_id, ability, false)
+    # Route every activated skill through its authored visual profile. This is
+    # the runtime entry point for dedicated scenes such as Pegasus Meteor Fist.
+    var skill_visual_profile: Dictionary = SkillVisualCatalogScript.get_profile(class_id, ability)
+    var skill_visual_origin := player.global_position + (-player.global_transform.basis.z * 1.7) + Vector3.UP * 0.9
+    spawn_skill_effect(skill_visual_origin, skill_visual_profile)
     if affected > 0:
         show_notice("%s生效：影响 %d 名敌人" % [ability_name, affected])
     elif is_support_ability or "增益" in ability_type or "突进" in ability_type or "位移" in ability_type or "冲锋" in ability_type or "蓄力" in ability_type or "反击" in ability_type or "反制" in ability_type:
