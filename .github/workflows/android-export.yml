@@ -151,19 +151,11 @@ jobs:
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
 
-          # Godot Android exports store project resources directly under APK assets/.
-          # Do not require a standalone .pck file for this platform.
+          # Godot Android exports project resources directly under APK assets/.
+          # A standalone .pck file is not required for this platform.
           grep -Fx "assets/scenes/main.tscn" /tmp/apk-entries.txt
           grep -Fx "assets/assets/armors/aries_gold_cloth/manifest.json" /tmp/apk-entries.txt
-          grep -E '^assets/\.godot/imported/.*\.scn
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Saint-Seiya-Universe-War-Android-ARM64-debug
-          path: build/android/Saint-Seiya-Universe-War-debug.apk
-          if-no-files-found: error
-          retention-days: 14
- /tmp/apk-entries.txt > /tmp/imported-resource-entries.txt
+          grep -E '^assets/\.godot/imported/.*\.scn$' /tmp/apk-entries.txt > /tmp/imported-resource-entries.txt
           imported_count="$(wc -l < /tmp/imported-resource-entries.txt | tr -d ' ')"
           if [ "$imported_count" -lt 1 ]; then
             echo "No imported Godot scene resources were found in the APK."
