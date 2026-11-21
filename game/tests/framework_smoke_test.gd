@@ -702,6 +702,14 @@ func _run_tests() -> void:
 		assert(is_finite(SkillSystem.get_passive_stagger_multiplier(audited_class_id)), audited_class_id + " passive stagger multiplier is finite")
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("pegasus"), 1.0), "classes without stagger passives keep neutral stagger")
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("pegasus"), 1.0), "combo-only passive does not increase basic or ordinary skill damage")
+	var saved_armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
+	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","dark_cloth"],"current_stage":"dark_cloth","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
+	var dark_armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+	assert(is_equal_approx(float(dark_armor_bonus.get("dark_resonance", 1.0)), 1.10), "Dark Cloth grants a ten-percent skill resonance to every profession")
+	assert(float(dark_armor_bonus.get("max_cosmos", 0.0)) > 0.0 and float(dark_armor_bonus.get("speed", 0.0)) > 0.0, "Dark Cloth adds Cosmos capacity and movement speed")
+	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.21), "Dark Cloth resonance stacks multiplicatively with the Phoenix skill passive")
+	RPGState.profile["armor_state"] = saved_armor_state
+	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.1), "removing Dark Cloth restores the class skill multiplier")
 	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("pegasus"), 1.08), "Pegasus combo passive applies to combo finishers")
 	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("dragon"), 1.0), "classes without combo passive keep neutral combo damage")
 	assert(is_equal_approx(SkillSystem.get_damage_reduction("dragon"), 0.12), "Dragon defensive passive exposes its damage reduction")
