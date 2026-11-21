@@ -51,7 +51,7 @@ jobs:
               ("characters", Path("game/scripts/character_visual_catalog.gd"), "const PROFILES := {",
                Path("game/assets/characters"), "model/character.glb", 32),
               ("armors", Path("game/scripts/equipment_database.gd"), "const EQUIPMENT := {",
-               Path("game/assets/armors"), "model/armor.glb", 49),
+               Path("game/assets/armors"), "model/armor.glb", 82),
               ("enemies", Path("game/scripts/enemy_database.gd"), "const ARCHETYPES := {",
                Path("game/assets/enemies"), "model/enemy.glb", 57),
           ]
