@@ -137,7 +137,7 @@ jobs:
           if errors:
               raise SystemExit("\\n".join(errors))
           PY
-      - name: Validate all 32 profession models and 27 animation clips
+      - name: Validate all 32 profession models and 51 animation clips
         shell: bash
         run: |
           set -euo pipefail
