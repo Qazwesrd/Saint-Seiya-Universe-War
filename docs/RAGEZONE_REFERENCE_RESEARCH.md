@@ -14,17 +14,32 @@ The thread describes an early community server-emulator effort. Its author expli
 ### 2. Saint Seiya Online release thread (2021)
 URL: https://forum.ragezone.com/threads/release-saint-seiya-online.1200232/
 
-A forum developer comment states that the released source did not match the server and that skill content was missing for a proper build. Therefore, code fragments and data from this release must not be assumed to be mutually compatible or complete.
+The first post advertises a one-click server VM plus a client, with a 2021 installation recipe and a Baidu Pan link. A developer reply says they also had original server packages and tools, and identifies tools for gshop, npcgen, and sEledit. The thread is useful as a possible route to inspect the original data formats and client assets, but its attachments require forum access and their current availability/integrity has not been verified. The post itself says the release was not tested by its poster.
 
-### 3. Age of Hades release thread (2024; updated discussion through 2025)
+Do not treat the posted VM credentials, old network configuration, or one-click instructions as safe defaults. Any archive must be scanned and inspected in an isolated environment before execution.
+
+### 3. Angelica engine source discussion (2021; later replies through 2025)
+URL: https://forum.ragezone.com/threads/angelica-engine-missing-som-files.1200707/
+
+The discussion concerns missing headers and dependencies when compiling the Saint Seiya Online client. A participant explicitly says the client skill library has no source code and the client source is incomplete, suitable only for study/reference. Fyyre later points to Angelica 3 / 3.1 material behind forum access. This may help explain file formats and engine dependencies, but does not establish a complete buildable SSO client or a redistribution license.
+
+### 4. Age of Hades release thread (2024; updated discussion through 2025)
 URL: https://forum.ragezone.com/threads/release-server-files-saint-seiya-age-of-hades-client-installation-tutorial-news-updates-2025.1226902/
 
 The thread contains community-shared client/server installation material. A 2025 reply reports mixed/incomplete translations; another says the complete server source was never present in the thread and that the available source was outdated and missing files. It is a version-mismatched and incomplete reference, not a reliable production dependency.
 
-### 4. Later source availability discussion (2025)
+### 5. Later source availability discussion (2025)
 URL: https://forum.ragezone.com/threads/is-complete-client-and-server-source-code-for-this-game-something-that-doesnt-already-exist-here.1252635/
 
 Replies report that the source being discussed was from 2016, incomplete, and lacked a full client/server set. Use this as a warning against treating forum archives as a complete reconstruction kit.
+
+## Next acquisition and inspection targets
+
+1. Obtain the 2021 client + server VM archive from the release thread, if the attachment remains accessible to the user.
+2. Obtain the separately mentioned gshop, npcgen, and sEledit tools, if available and authorized for inspection.
+3. Obtain the Angelica 3 / 3.1 source archive only for understanding engine/file-format dependencies; do not assume it is a complete game client.
+4. Ask the uploader/rightsholder for explicit permission before redistributing source or extracted proprietary assets in a public APK/repository.
+5. Record archive filename, source post, uploader, file size, SHA-256, archive listing, detected executables, and license/permission evidence before any extraction or execution.
 
 ## Permitted engineering use
 
