@@ -166,25 +166,31 @@ jobs:
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
 
-          # Godot Android embeds the project PCK in the ARM64 engine shared library,
-          # rather than exposing each project resource as a separate APK ZIP entry.
-          # Verify the actual embedded PCK by checking resource paths in that library.
+          # Godot 4.4's Android exporter writes each project resource to
+          # assets/<res:// path>. The PCK is not appended to libgodot_android.so.
+          # Verify the engine library and two real project resources in the APK.
           engine_lib="lib/arm64-v8a/libgodot_android.so"
+          main_scene="assets/scenes/main_menu.tscn"
+          skill_scene="assets/assets/vfx/pegasus/meteor_fist_finisher.tscn"
           grep -Fx "$engine_lib" /tmp/apk-entries.txt
+          grep -Fx "$main_scene" /tmp/apk-entries.txt
+          grep -Fx "$skill_scene" /tmp/apk-entries.txt
+
           unzip -p "$apk" "$engine_lib" > /tmp/libgodot_android.so
+          unzip -p "$apk" "$main_scene" > /tmp/main_menu.tscn
+          unzip -p "$apk" "$skill_scene" > /tmp/meteor_fist_finisher.tscn
           test -s /tmp/libgodot_android.so
-          # Exported resources are remapped/compiled, so original .tscn path strings
-          # are not a reliable check. Verify the embedded Godot PCK header instead.
-          grep -a -q 'GDPC' /tmp/libgodot_android.so
+          test -s /tmp/main_menu.tscn
+          test -s /tmp/meteor_fist_finisher.tscn
           library_bytes="$(wc -c < /tmp/libgodot_android.so | tr -d ' ')"
           test "$library_bytes" -gt 1000000
 
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "EMBEDDED_ENGINE_LIBRARY=$engine_lib"
-          echo "EMBEDDED_GODOT_PCK_HEADER=GDPC"
-          echo "EMBEDDED_ENGINE_LIBRARY_BYTES=$library_bytes"
-          echo "APK_MAIN_SCENE=res://scenes/main_menu.tscn"
-          echo "APK_SIGNATURE_SKILL_SCENE=res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
+          echo "APK_ENGINE_LIBRARY=$engine_lib"
+          echo "APK_MAIN_SCENE=$main_scene"
+          echo "APK_SIGNATURE_SKILL_SCENE=$skill_scene"
+          echo "APK_ENGINE_LIBRARY_BYTES=$library_bytes"
+          sha256sum "$apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
