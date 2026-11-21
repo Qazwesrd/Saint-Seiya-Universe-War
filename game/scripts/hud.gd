@@ -84,6 +84,7 @@ func _ready() -> void:
     _button(root, "交谈 / 接任务", Vector2(22, 294), Vector2(190, 350), func(): game.call("interact_with_guide"), Color(0.38, 0.28, 0.08))
     _button(root, "任务导航", Vector2(202, 294), Vector2(330, 350), func(): game.call("navigate_to_objective"), Color(0.12, 0.32, 0.42))
     _button(root, "传送", Vector2(22, 470), Vector2(140, 520), func(): game.call("use_teleport_point"), Color(0.08, 0.28, 0.48))
+    _button(root, "世界地图", Vector2(-190, 150), Vector2(-22, 202), func(): _open_world_map(root), Color(0.12, 0.24, 0.48))
     var map := Panel.new()
     map.anchor_left = 1.0
     map.anchor_right = 1.0
@@ -814,6 +815,62 @@ func _open_combo_editor(root: Control) -> void:
     close.text = "关闭"
     close.pressed.connect(func(): popup.queue_free())
     box.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
+
+func _open_world_map(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(590, 560)
+    var outer := VBoxContainer.new()
+    outer.add_theme_constant_override("separation", 10)
+    popup.add_child(outer)
+    var title := Label.new()
+    title.text = "七大篇章 · 世界地图"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 26)
+    outer.add_child(title)
+    var subtitle := Label.new()
+    subtitle.text = "已解锁区域可免费传送；未解锁区域需推进主线剧情。"
+    subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    outer.add_child(subtitle)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(560, 420)
+    outer.add_child(scroll)
+    var list := VBoxContainer.new()
+    list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    list.add_theme_constant_override("separation", 7)
+    scroll.add_child(list)
+    for region in WorldExplorationManager.get_regions():
+        var row := HBoxContainer.new()
+        row.add_theme_constant_override("separation", 10)
+        var info := VBoxContainer.new()
+        info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        var name_label := Label.new()
+        var status_text := "当前区域" if bool(region.get("active", false)) else ("已探索" if bool(region.get("visited", false)) else "未探索")
+        name_label.text = str(region.get("name", "未知区域")) + "  ·  " + status_text
+        name_label.add_theme_font_size_override("font_size", 18)
+        info.add_child(name_label)
+        var detail := Label.new()
+        detail.text = str(region.get("description", "")) + "  地标 %d/%d" % [int(region.get("discovered_count", 0)), int(region.get("landmark_count", 0))]
+        detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        info.add_child(detail)
+        row.add_child(info)
+        var travel := Button.new()
+        travel.custom_minimum_size = Vector2(104, 48)
+        travel.text = "当前区域" if bool(region.get("active", false)) else ("前往" if bool(region.get("unlocked", false)) else "未解锁")
+        travel.disabled = not bool(region.get("unlocked", false)) or bool(region.get("active", false))
+        var region_id := str(region.get("id", ""))
+        travel.pressed.connect(func():
+            popup.queue_free()
+            game.call("travel_to_world_region", region_id)
+        )
+        row.add_child(travel)
+        list.add_child(row)
+    var close := Button.new()
+    close.text = "关闭地图"
+    close.custom_minimum_size = Vector2(180, 46)
+    close.pressed.connect(func(): popup.queue_free())
+    outer.add_child(close)
     root.add_child(popup)
     popup.popup_centered()
 
