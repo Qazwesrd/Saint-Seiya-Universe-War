@@ -149,24 +149,16 @@ jobs:
           apk="build/android/Saint-Seiya-Universe-War-debug.apk"
           test -s "$apk"
           command -v jar
-          entries="$(jar tf "$apk" | grep -E '(^|/)main\\.pck
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Saint-Seiya-Universe-War-Android-ARM64-debug
-          path: build/android/Saint-Seiya-Universe-War-debug.apk
-          if-no-files-found: error
-          retention-days: 14
- || true)"
-          count="$(printf '%s\\n' "$entries" | sed '/^$/d' | wc -l | tr -d ' ')"
+          jar tf "$apk" > /tmp/apk-entries.txt
+          awk '($0 == "assets/main.pck" || $0 ~ /\/main.pck$/) { print }' /tmp/apk-entries.txt > /tmp/main-pck-entries.txt
+          count="$(wc -l < /tmp/main-pck-entries.txt | tr -d ' ')"
           if [ "$count" -ne 1 ]; then
             echo "Expected exactly one embedded Godot main.pck, found $count"
-            printf '%s\\n' "$entries"
+            cat /tmp/main-pck-entries.txt
             exit 1
           fi
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "EMBEDDED_MAIN_PCK=$entries"
+          echo "EMBEDDED_MAIN_PCK=$(cat /tmp/main-pck-entries.txt)"
           sha256sum "$apk"
 
       - name: Upload APK artifact
