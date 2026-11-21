@@ -158,7 +158,9 @@ func set_wing_visible(visible: bool) -> bool:
 func get_cosmos_star_map() -> Dictionary:
 	_ensure_profile_data()
 	var allocated: Dictionary = RPGState.profile.get("cosmos_star_nodes", {})
-	var unlocked_points := clampi(int(RPGState.profile.get("level", 1)) / 3 + int(RPGState.get_cosmos_profile().get("level", 1)) / 5, 0, 30)
+	var character_level := int(RPGState.profile.get("level", 1))
+	var cosmos_level := int(RPGState.get_cosmos_profile().get("level", 1))
+	var unlocked_points := clampi(floori(float(character_level) / 3.0) + floori(float(cosmos_level) / 5.0), 0, 30)
 	var used_points := 0
 	var bonuses := {"attack": 0.0, "defense": 0.0, "max_health": 0.0, "max_cosmos": 0.0, "cosmos_regen": 0.0, "critical_rate": 0.0}
 	var nodes: Array[Dictionary] = []
