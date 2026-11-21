@@ -13,6 +13,8 @@ func _run_tests() -> void:
 	var growth_original_profile: Dictionary = RPGState.profile.duplicate(true)
 	assert(FactionDatabase.validate_catalog(), "all playable classes are assigned to selectable faction starts and Hongjun is selectable")
 	assert(FactionDatabase.get_factions().size() == 12, "twelve faction starts are registered")
+	assert(FactionDatabase.get_world_profile("hongmeng").get("structure", "") == "orbs", "Hongmeng starting region has a distinct environment profile")
+	assert(FactionDatabase.get_world_profile("underworld").get("accent_color", Color.BLACK) != FactionDatabase.get_world_profile("sea").get("accent_color", Color.BLACK), "underworld and sea starter zones have distinct visual palettes")
 	var hongmeng_options: Array = FactionDatabase.get_class_options("hongmeng")
 	var hongjun_selectable := false
 	for hongmeng_option in hongmeng_options:
