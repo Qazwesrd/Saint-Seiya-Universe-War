@@ -16,7 +16,61 @@ const FACTIONS := {
 	"giants": {"name":"巨人族","region":"gigantes_domain","mentor":"巨人族战斗导师","class_ids":["tenmou","ares"],"intro":"从巨人领域开始，接受巨力与重装战斗试炼。"},
 	"hongmeng": {"name":"鸿蒙神域","region":"zixiao_palace","mentor":"紫霄宫接引仙官","class_ids":["chronos","apollo"],"intro":"从紫霄宫开始，接受混沌法则与创世试炼。"}
 }
+const WORLD_PROFILES := {
+	"sanctuary":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.055,0.075,0.14),"ambient_color":Color(0.32,0.38,0.62),"accent_color":Color(0.16,0.42,0.92),"structure":"columns"},
+	"dark_saints":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.075,0.045,0.055),"ambient_color":Color(0.28,0.18,0.24),"accent_color":Color(0.55,0.16,0.18),"structure":"ruins"},
+	"sea":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.025,0.12,0.19),"ambient_color":Color(0.12,0.36,0.52),"accent_color":Color(0.12,0.72,0.9),"structure":"coral"},
+	"underworld":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.045,0.025,0.09),"ambient_color":Color(0.22,0.13,0.32),"accent_color":Color(0.48,0.18,0.72),"structure":"ruins"},
+	"divine":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.16,0.15,0.2),"ambient_color":Color(0.58,0.55,0.68),"accent_color":Color(0.94,0.82,0.48),"structure":"columns"},
+	"asgard":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.12,0.19,0.25),"ambient_color":Color(0.35,0.55,0.72),"accent_color":Color(0.48,0.82,1.0),"structure":"crystals"},
+	"steel":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.09,0.12,0.15),"ambient_color":Color(0.34,0.4,0.46),"accent_color":Color(0.45,0.72,0.86),"structure":"machines"},
+	"bluegrad":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.09,0.16,0.25),"ambient_color":Color(0.28,0.52,0.75),"accent_color":Color(0.62,0.88,1.0),"structure":"crystals"},
+	"fallen":{"spawn_position":Vector3(0.0,0.15,0.075),"ground_color":Color(0.06,0.035,0.075),"ambient_color":Color(0.3,0.15,0.28),"accent_color":Color(0.72,0.22,0.42),"structure":"wings"},
+	"titans":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.13,0.105,0.09),"ambient_color":Color(0.48,0.36,0.26),"accent_color":Color(0.86,0.62,0.32),"structure":"columns"},
+	"giants":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.12,0.09,0.075),"ambient_color":Color(0.42,0.32,0.24),"accent_color":Color(0.72,0.48,0.28),"structure":"giants"},
+	"hongmeng":{"spawn_position":Vector3(0.0,0.15,7.0),"ground_color":Color(0.045,0.035,0.12),"ambient_color":Color(0.3,0.25,0.58),"accent_color":Color(0.72,0.55,1.0),"structure":"orbs"}
+}
+
 const TUTORIAL_NORMAL_TARGET := 2
+
+
+func get_world_profile(faction_id: String = "") -> Dictionary:
+	var resolved_id := faction_id
+	if resolved_id.is_empty():
+		resolved_id = str(RPGState.profile.get("faction_id", "sanctuary"))
+	return WORLD_PROFILES.get(resolved_id, WORLD_PROFILES["sanctuary"]).duplicate(true)
+
+func get_tutorial_enemy_name() -> String:
+	var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+	match faction_id:
+		"dark_saints": return "暗黑岛守卫"
+		"sea": return "海界巡逻兵"
+		"underworld": return "冥界巡逻者"
+		"divine": return "神域试炼守卫"
+		"asgard": return "仙宫神斗士"
+		"steel": return "钢铁训练机兵"
+		"bluegrad": return "蓝冰战士"
+		"fallen": return "堕天卫士"
+		"titans": return "泰坦先锋"
+		"giants": return "巨人先锋"
+		"hongmeng": return "混沌幻影"
+		_: return "圣域训练对手"
+
+func get_tutorial_boss_name() -> String:
+	var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+	match faction_id:
+		"dark_saints": return "暗黑骑士统领"
+		"sea": return "海将军试炼官"
+		"underworld": return "冥界魔星守卫"
+		"divine": return "神域审判者"
+		"asgard": return "神斗士试炼者"
+		"steel": return "钢铁重装机甲"
+		"bluegrad": return "冰原巨人"
+		"fallen": return "堕天使审判官"
+		"titans": return "泰坦神将"
+		"giants": return "巨人族统领"
+		"hongmeng": return "鸿蒙守护者"
+		_: return "圣域试炼官"
 
 func get_factions() -> Array:
 	var result: Array = []
@@ -129,13 +183,17 @@ func interact_with_mentor(entry_faction_id: String = "") -> Dictionary:
 		var previous: Dictionary = RPGState.profile.duplicate(true)
 		progress["status"] = "completed"
 		RPGState.profile["faction_tutorial"] = progress
-		RPGState.profile["exp"] = int(RPGState.profile.get("exp", 0)) + 500
-		RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) + 350
+		RPGState.profile["exp"] = int(RPGState.profile.get("exp", 0)) + 3400
+		RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) + 1200
+		while int(RPGState.profile.get("level", 1)) < RPGState.MAX_LEVEL and int(RPGState.profile.get("exp", 0)) >= RPGState.exp_to_next_level():
+			RPGState.profile["exp"] = int(RPGState.profile.get("exp", 0)) - RPGState.exp_to_next_level()
+			RPGState.profile["level"] = int(RPGState.profile.get("level", 1)) + 1
+			RPGState.profile["skill_points"] = int(RPGState.profile.get("skill_points", 0)) + 1
 		if not RPGState.save_slot(RPGState.active_slot):
 			RPGState.profile = previous
 			return {"speaker":speaker,"text":"奖励保存失败，请再次交谈领取。","action":"error"}
 		RPGState._emit_change()
-		return {"speaker":speaker,"text":"阵营新手试炼完成！获得500经验与350星币。达到10级后将接入动漫主线剧情。","action":"complete"}
+		return {"speaker":speaker,"text":"阵营新手试炼完成！获得3400经验与1200星币。达到10级后将接入动漫主线剧情。","action":"complete"}
 	return {"speaker":speaker,"text":"阵营试炼已经完成。达到10级后可继续动漫主线。","action":"completed"}
 
 func record_training_defeat(is_boss: bool) -> void:
