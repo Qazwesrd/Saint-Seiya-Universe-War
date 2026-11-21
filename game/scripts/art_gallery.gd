@@ -39,6 +39,7 @@ var camera: Camera3D
 var status_label: Label
 var title_label: Label
 var viewport: SubViewport
+var viewport_container: SubViewportContainer
 var drag_active := false
 var last_pointer := Vector2.ZERO
 
@@ -95,10 +96,15 @@ func _build_gallery() -> void:
 	stage_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(stage_panel)
 
+	viewport_container = SubViewportContainer.new()
+	viewport_container.stretch = true
+	viewport_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	viewport_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage_panel.add_child(viewport_container)
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(1000, 700)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	stage_panel.add_child(viewport)
+	viewport_container.add_child(viewport)
 
 	var world := World3D.new()
 	viewport.world_3d = world
