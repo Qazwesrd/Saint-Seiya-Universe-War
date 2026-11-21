@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,6 +13,19 @@ SPEC.loader.exec_module(MODULE)
 
 
 class AngelicaRigJsonTests(unittest.TestCase):
+
+    def test_normalizes_windows_archive_paths(self):
+        self.assertEqual(MODULE.normalize_entry_path(r"Models\\Pegasus\\idle.stck"), "Models/Pegasus/idle.stck")
+
+    def test_writes_valid_json_with_real_newline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "nested" / "rig.json"
+            MODULE.write_payload(output, {"ok": True})
+            raw = output.read_bytes()
+            self.assertTrue(raw.endswith(b"\\n"))
+            self.assertFalse(raw.endswith(b"\\\\n"))
+            self.assertEqual(json.loads(raw.decode("utf-8")), {"ok": True})
+
     def test_serializes_bon_bones_hooks_and_embedded_animation(self):
         track = SimpleNamespace(
             frame_rate=30,
