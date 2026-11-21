@@ -461,14 +461,18 @@ func _build_enemy_armor_visuals(profile: Dictionary, radius: float, height: floa
 func get_boss_weakpoint_multiplier(attacker_position: Vector3) -> float:
     if not is_boss or boss_break_active or attacker_position == Vector3.ZERO:
         return 1.0
-    var toward_attacker := attacker_position - global_position
+    # Use local transforms for detached unit tests; live enemies use world transforms.
+    var boss_origin := global_position if is_inside_tree() else position
+    var boss_forward := -global_transform.basis.z if is_inside_tree() else -transform.basis.z
+    var toward_attacker := attacker_position - boss_origin
     toward_attacker.y = 0.0
     if toward_attacker.length_squared() <= 0.001:
         return 1.0
-    var facing_dot := (-global_transform.basis.z).dot(toward_attacker.normalized())
+    var facing_dot := boss_forward.dot(toward_attacker.normalized())
     if facing_dot <= -0.55:
         return 1.22
-    if facing_dot <= -0.1:
+    # A perpendicular strike is a true flank hit (dot ~= 0), not a front hit.
+    if facing_dot <= 0.12:
         return 1.08
     return 1.0
 

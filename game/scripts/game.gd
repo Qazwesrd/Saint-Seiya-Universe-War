@@ -373,7 +373,7 @@ func damage_nearby_combat(damage: float, reach: float, cone_degrees: float, knoc
         toward_attacker.y = 0.0
         var target_facing_dot := target_forward.dot(toward_attacker.normalized()) if toward_attacker.length_squared() > 0.001 else 1.0
         var position_multiplier := SkillSystem.get_position_damage_multiplier(class_id, target_facing_dot, bool(enemy.get("is_boss")))
-        enemy.call("take_damage", damage * target_multiplier * position_multiplier)
+        enemy.call("take_damage", damage * target_multiplier * position_multiplier, player.global_position)
         if is_instance_valid(enemy) and enemy.has_method("apply_hit_reaction"):
             var passive_stagger: float = SkillSystem.get_passive_stagger_multiplier(class_id)
             enemy.call("apply_hit_reaction", offset.normalized(), knockback, launch, stagger * passive_stagger)
