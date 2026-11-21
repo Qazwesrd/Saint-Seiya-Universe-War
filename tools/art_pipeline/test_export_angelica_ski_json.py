@@ -42,8 +42,8 @@ class AngelicaSkiJsonTests(unittest.TestCase):
             output = Path(directory) / "nested" / "skin.json"
             MODULE.write_payload(output, {"ok": True})
             raw = output.read_bytes()
-            self.assertTrue(raw.endswith(b"\\n"))
-            self.assertFalse(raw.endswith(b"\\\\n"))
+            self.assertTrue(raw.endswith(b"\n"))
+            self.assertFalse(raw.endswith(b"\\n"))
             self.assertEqual(json.loads(raw.decode("utf-8")), {"ok": True})
 
     def test_exports_mesh_geometry_and_skinning_data(self):
