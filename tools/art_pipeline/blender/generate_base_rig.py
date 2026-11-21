@@ -954,11 +954,14 @@ def build_profession_models(shard_index=0, shard_count=1):
         ornaments = []
         shoulder_factor = 1.0 + (index % 6) * 0.12
         for side, sign in (("Left", 1), ("Right", -1)):
-            ornaments.append(add_weighted_ellipsoid(
+            ornaments.append(add_weighted_armor_plate(
                 class_id + "_" + side + "_Signature_Pauldron",
-                (sign * (0.34 * shoulder_factor), -0.015, 1.48),
-                (0.13 * shoulder_factor, 0.14, 0.12 + (index % 4) * 0.025),
-                side + "Shoulder", profession_mat, rig, segments=12, rings=8
+                (sign * (0.34 * shoulder_factor), -0.105, 1.48),
+                [(-0.13 * shoulder_factor, 0.035), (-0.09 * shoulder_factor, 0.13),
+                 (0.015 * shoulder_factor, 0.17), (0.14 * shoulder_factor, 0.105),
+                 (0.16 * shoulder_factor, -0.025), (0.07 * shoulder_factor, -0.13),
+                 (-0.09 * shoulder_factor, -0.105)],
+                0.13, side + "Shoulder", profession_mat, rig, 0.022
             ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
@@ -1088,11 +1091,14 @@ def build_enemy_models(shard_index=0, shard_count=1):
         if enemy_id != "pope_saga":
             shoulder = 0.38 if is_boss else 0.31
             for side, sign in (("Left", 1), ("Right", -1)):
-                add_weighted_ellipsoid(
+                add_weighted_armor_plate(
                     "Enemy_" + enemy_id + "_" + side + "_ShoulderGuard",
-                    (sign * shoulder, -0.035, 1.48 * height),
-                    (0.17 * width, 0.16, 0.14 * height),
-                    side + "Shoulder", crest, rig, segments=12, rings=8
+                    (sign * shoulder, -0.105, 1.48 * height),
+                    [(-0.15 * width, 0.035), (-0.10 * width, 0.14),
+                     (0.02 * width, 0.17), (0.16 * width, 0.10),
+                     (0.18 * width, -0.025), (0.075 * width, -0.14),
+                     (-0.10 * width, -0.11)],
+                    0.14, side + "Shoulder", crest, rig, 0.022
                 )
         # Every archetype has a signature head crest; boss archetypes get
         # additional horns, back fins or wings with valid skeleton weights.
