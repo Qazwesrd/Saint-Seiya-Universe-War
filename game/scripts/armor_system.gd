@@ -316,10 +316,21 @@ func get_part_condition_tier(part: String) -> String:
         return "unknown"
     return str(get_part_visual_wear_profile(part).get("condition_tier", "pristine"))
 
-func get_damage_reduction() -> float:
-    # A complete, intact armor set mitigates up to 8% incoming damage.
-    # Broken pieces progressively remove this protection without making combat trivial.
+func get_damage_reduction(part: String = "") -> float:
+    # Targeted hits use the protection of the struck armor piece; legacy callers
+    # without a hit zone retain the balanced whole-set mitigation.
+    if part in PARTS:
+        var protection_by_part := {"head": 0.08, "chest": 0.10, "arms": 0.045, "waist": 0.07, "legs": 0.06}
+        return clampf(float(protection_by_part.get(part, 0.0)) * float(get_part_durability(part)) / 100.0, 0.0, 0.10)
     return clampf(get_condition_ratio() * 0.08, 0.0, 0.08)
+
+func damage_hit_part(part: String, amount: int = 8) -> Dictionary:
+    if not (part in PARTS):
+        return {}
+    damage_ticks += 1
+    if damage_ticks % 5 != 0:
+        return {"part": part, "changed": false, "reason": "wear_interval"}
+    return damage_part(part, amount)
 
 func get_dark_class_passive(class_id: String = "") -> Dictionary:
  var selected_class := class_id if not class_id.is_empty() else str(RPGState.profile.get("class_id", "pegasus"))
