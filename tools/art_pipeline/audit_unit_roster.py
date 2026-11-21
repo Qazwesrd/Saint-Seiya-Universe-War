@@ -12,22 +12,47 @@ TARGET_PLAYABLE_CLASSES = 76
 MIN_CLASS_SKILLS = 24
 
 
-def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
-    """Return top-level dictionary entries by their exact GDScript indentation."""
+def dictionary_body(source: str, marker: str) -> str:
+    """Extract only the dictionary belonging to marker, excluding later constants."""
     start = source.find(marker)
     if start < 0:
         raise ValueError(f"catalog marker not found: {marker}")
-    tail = source[start + len(marker):]
-    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\s*:\s*\{{', re.M)
-    matches = list(entry_re.finditer(tail))
+    opening = source.find("{", start + len(marker) - 1)
+    if opening < 0:
+        raise ValueError(f"catalog dictionary not opened: {marker}")
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(opening, len(source)):
+        char = source[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[opening + 1:index]
+    raise ValueError(f"catalog dictionary is not closed: {marker}")
+
+
+def top_level_entries(source: str, marker: str, indent: int) -> dict[str, str]:
+    """Return top-level dictionary entries by their exact GDScript indentation."""
+    body = dictionary_body(source, marker)
+    entry_re = re.compile(rf'^ {{{indent}}}"([^"]+)"\\s*:\\s*\\{{', re.M)
+    matches = list(entry_re.finditer(body))
     result: dict[str, str] = {}
     for index, match in enumerate(matches):
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(tail)
-        # The next dictionary's exact indentation is a safe boundary for this catalog layout.
-        body = tail[match.start():end]
-        result[match.group(1)] = body
-    if not result:
-        raise ValueError(f"no entries found after catalog marker: {marker}")
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
+        result[match.group(1)] = body[match.start():end]
     return result
 
 
@@ -46,14 +71,14 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
     missing_skill_profiles = sorted(class_ids - skill_ids)
     boss_ids = sorted(
         enemy_id for enemy_id, body in enemies.items()
-        if re.search(r'"is_boss"\s*:\s*true', body)
+        if re.search(r'"is_boss"\\s*:\\s*true', body)
     )
     normal_ids = sorted(set(enemies) - set(boss_ids))
 
     skill_counts: dict[str, int] = {}
     for class_id, body in skills.items():
-        match = re.search(r'"abilities"\s*:\s*\\[(.*?)\\]\s*,\s*"passive"', body, re.S)
-        skill_counts[class_id] = len(re.findall(r'"id"\s*:', match.group(1))) if match else 0
+        match = re.search(r'"abilities"\\s*:\\s*\\[(.*?)\\]\\s*,\\s*"passive"', body, re.S)
+        skill_counts[class_id] = len(re.findall(r'"id"\\s*:', match.group(1))) if match else 0
 
     deficits = {
         class_id: max(0, MIN_CLASS_SKILLS - count)
