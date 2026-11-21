@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Any
 
 
+def normalize_entry_path(entry_path: str) -> str:
+    return str(entry_path).replace("\\", "/").lstrip("/")
+
 def _mesh_payload(mesh: Any, *, weighted: bool) -> dict[str, Any]:
     payload = {
         "name": str(mesh.name),
@@ -50,7 +53,7 @@ def build_payload(entry_path: str, skin: Any) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "source_entry": entry_path.replace("\\", "/"),
+        "source_entry": normalize_entry_path(entry_path),
         "ski_version": int(skin.version),
         "textures": list(skin.textures),
         "bone_names": list(skin.bone_names),
