@@ -615,6 +615,17 @@ func _run_tests() -> void:
 	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, 3.0)), 1.22), "boss rear weakpoint grants 22% precision damage")
 	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(3.0, 0.0, 0.0)), 1.08), "boss flank weakpoint grants 8% precision damage")
 	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, -3.0)), 1.0), "boss front armor does not grant weakpoint bonus")
+	var armor_test_boss = preload("res://scripts/enemy.gd").new()
+	armor_test_boss.is_boss = true
+	armor_test_boss.max_health = 1000.0
+	var armor_test_node := MeshInstance3D.new()
+	armor_test_boss._register_boss_armor_node(armor_test_node, "helmet")
+	var armor_hit_one: Dictionary = armor_test_boss.damage_boss_armor(1000.0)
+	assert(str(armor_hit_one.get("zone", "")) == "helmet" and float(armor_hit_one.get("integrity", 1.0)) < 1.0, "boss armor integrity decreases by named zone")
+	armor_test_boss.damage_boss_armor(1000.0)
+	var armor_hit_three: Dictionary = armor_test_boss.damage_boss_armor(1000.0)
+	assert(bool(armor_hit_three.get("broken", false)) and not armor_test_node.visible, "depleted boss armor zone visibly breaks away")
+	armor_test_boss.free()
 	weakpoint_test_boss.boss_break_active = true
 	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, 3.0)), 1.0), "break vulnerability does not stack with positional weakpoint damage")
 	weakpoint_test_boss.free()
