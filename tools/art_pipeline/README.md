@@ -107,3 +107,14 @@ py tools/art_pipeline/export_angelica_rig_json.py "D:\\Games\\SeiyaClient\\eleme
 ```
 
 BON 旧版本中内嵌的动画也会随骨架 JSON 一起保存。当前阶段完成了数据导出接口，尚未完成矩阵坐标系校准、Blender Armature 自动重建和动作重定向；这些必须使用真实客户端样本逐个验证。
+
+
+## Blender 骨架与网格组合预览（实验性）
+
+当 SKI 与 BON JSON 都准备好后，可以用新导入器将人物网格、蒙皮权重和 BON 骨骼层级组合成一个 Blender 场景：
+
+```powershell
+blender --background --python tools/art_pipeline/blender/import_angelica_rigged_character.py -- --ski "D:\\SeiyaInventory\\pegasus_ski.json" --bon "D:\\SeiyaInventory\\pegasus_bon.json" --output "D:\\SeiyaInventory\\pegasus_rigged_preview.blend"
+```
+
+导入器会创建 Armature、骨骼父子关系、网格对象、顶点组和 Armature 修改器，并把原始 BON 矩阵保存为骨骼自定义属性，便于后续校准。它目前使用 BON 的相对矩阵推导预览骨骼位置；Direct3D/Angelica 坐标轴、骨骼 bind pose、骨骼朝向和动作重定向尚未通过真实《圣斗士星矢 OL》客户端样本验收。因此该结果是用于检查层级与蒙皮绑定的实验预览，不是已确认正确的最终模型。
