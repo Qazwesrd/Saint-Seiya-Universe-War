@@ -180,7 +180,134 @@ def key_pose(rig, frame, values):
         bone.rotation_euler = rotation
         bone.keyframe_insert(data_path="rotation_euler", frame=frame, group=bone_name)
 
-def make_animation_library(rig):
+PROFESSION_COMBO_STYLES = {
+    "pegasus": "rush", "dragon": "guard_break", "cygnus": "frost",
+    "andromeda": "chain", "phoenix": "flame", "sea_dragon": "tidal",
+    "tenmou": "heavy", "lyra": "resonance", "sea_swallow": "flow",
+    "tenkishi": "aerial", "apollo": "solar", "abel": "solar",
+    "athena": "guard", "hades": "reaper", "poseidon": "tidal",
+    "zeus": "storm", "artemis": "ranged", "hypnos": "dream",
+    "thanatos": "reaper", "odin": "rune", "ares": "heavy",
+    "eris": "chaos", "lucifer": "fallen", "saturn": "chrono",
+    "pallas": "chrono", "chronos": "chrono", "hera": "royal",
+    "demeter": "nature", "hestia": "flame", "hermes": "rush",
+    "hephaestus": "heavy", "aphrodite": "grace",
+}
+
+# Arm swing, forearm fold, torso twist, hip twist, support-arm pose, leg drive.
+COMBO_STYLE_POSES = {
+    "rush": (0.98, -0.34, -0.22, 0.16, -0.30, 0.15),
+    "guard_break": (1.12, -0.72, -0.30, 0.24, -0.86, 0.30),
+    "frost": (0.78, -0.52, -0.42, 0.20, 0.45, -0.18),
+    "chain": (0.56, -1.08, -0.50, 0.28, 0.95, -0.20),
+    "flame": (1.25, -0.65, -0.55, 0.35, -0.75, 0.35),
+    "tidal": (0.90, -0.35, 0.50, -0.32, 0.55, -0.22),
+    "heavy": (1.42, -0.20, -0.28, 0.20, -0.25, 0.50),
+    "resonance": (0.65, -0.88, 0.45, -0.25, 1.10, -0.12),
+    "flow": (0.82, -0.50, 0.65, -0.40, -0.40, 0.10),
+    "aerial": (1.05, -0.42, -0.15, 0.10, 0.82, -0.60),
+    "solar": (1.18, -0.56, -0.40, 0.25, 0.86, 0.10),
+    "guard": (0.52, -0.92, -0.20, 0.10, -1.12, 0.25),
+    "reaper": (1.36, -0.16, 0.60, -0.40, -0.92, 0.35),
+    "storm": (1.30, -0.42, -0.60, 0.40, 0.65, 0.25),
+    "ranged": (0.62, -1.12, 0.20, -0.10, 0.96, -0.10),
+    "dream": (0.56, -0.72, 0.35, -0.25, 0.82, -0.20),
+    "rune": (0.86, -0.62, -0.35, 0.20, 0.72, 0.20),
+    "chaos": (1.12, -0.92, 0.70, -0.50, -0.62, 0.35),
+    "fallen": (1.22, -0.56, 0.60, -0.45, -0.72, 0.40),
+    "chrono": (0.92, -0.72, 0.10, 0.35, 0.72, -0.25),
+    "royal": (0.86, -0.82, -0.30, 0.15, 1.02, -0.10),
+    "nature": (0.72, -0.76, 0.35, -0.20, 0.82, 0.10),
+    "grace": (0.76, -0.92, 0.55, -0.35, 1.06, -0.12),
+}
+
+def make_profession_combo_animations(rig, profession_id):
+    """Author three genuinely different skeletal combo clips for one profession."""
+    import hashlib
+    import json
+
+    style = PROFESSION_COMBO_STYLES.get(profession_id, "rush")
+    arm, forearm, torso, hips, support, leg = COMBO_STYLE_POSES[style]
+    signatures = {}
+    scene = bpy.context.scene
+    for step, step_scale in enumerate((0.86, 1.0, 1.24), start=1):
+        clip_name = f"{profession_id}_basic_attack_{step}"
+        action = bpy.data.actions.new(name=clip_name)
+        if rig.animation_data is None:
+            rig.animation_data_create()
+        rig.animation_data.action = action
+        scene.frame_set(1)
+        neutral = {bone.name: (0.0, 0.0, 0.0) for bone in rig.pose.bones}
+        key_pose(rig, 1, neutral)
+
+        primary = "Right" if step in (1, 3) else "Left"
+        secondary = "Left" if primary == "Right" else "Right"
+        mirror = 1.0 if primary == "Right" else -1.0
+        # Profession index gives each member of a shared archetype a small,
+        # deterministic articulation signature without changing its identity.
+        seed = sum((index + 1) * ord(char) for index, char in enumerate(profession_id))
+        variation = 1.0 + ((seed % 9) - 4) * 0.012
+        a = arm * step_scale * variation
+        f = forearm * step_scale
+        t = torso * step_scale
+        h = hips * step_scale
+        s = support * step_scale
+        l = leg * step_scale
+
+        windup = {
+            primary + "UpperArm": (-0.62 * step_scale, 0.0, 0.12 * mirror),
+            primary + "Forearm": (-0.48 * step_scale, 0.0, 0.0),
+            "Chest": (-0.12 * step_scale, 0.0, -0.08 * mirror),
+            "Hips": (0.08 * step_scale, 0.0, -0.05 * mirror),
+        }
+        impact = {
+            primary + "UpperArm": (a, 0.0, 0.10 * mirror * step_scale),
+            primary + "Forearm": (f, 0.0, -0.06 * mirror),
+            secondary + "UpperArm": (s, 0.0, 0.08 * mirror),
+            secondary + "Forearm": (-0.22 * step_scale, 0.0, 0.0),
+            "Chest": (0.08 * step_scale, 0.0, t),
+            "Spine": (0.0, 0.0, t * 0.28),
+            "Hips": (0.0, 0.0, h),
+            primary + "Thigh": (-l, 0.0, 0.0),
+            secondary + "Thigh": (l * 0.42, 0.0, 0.0),
+        }
+        follow = {
+            primary + "UpperArm": (a * 0.42, 0.0, 0.06 * mirror),
+            primary + "Forearm": (f * 0.34, 0.0, 0.0),
+            secondary + "UpperArm": (s * 0.52, 0.0, 0.0),
+            "Chest": (0.04, 0.0, t * 0.48),
+            "Hips": (0.0, 0.0, h * 0.45),
+            primary + "Thigh": (-l * 0.35, 0.0, 0.0),
+        }
+        key_pose(rig, 6, windup)
+        key_pose(rig, 11, impact)
+        key_pose(rig, 17, follow)
+        key_pose(rig, 24, neutral)
+
+        scene.frame_start, scene.frame_end = 1, 24
+        track = rig.animation_data.nla_tracks.new()
+        track.name = clip_name
+        strip = track.strips.new(clip_name, 1, action)
+        strip.name = clip_name
+        # Fingerprint the actual authored keyframe payload, not just the clip name.
+        payload = {
+            curve.data_path + ":" + str(curve.array_index): [
+                [round(float(point.co.x), 4), round(float(point.co.y), 6)]
+                for point in curve.keyframe_points
+            ]
+            for curve in action.fcurves
+        }
+        signatures[clip_name] = hashlib.sha256(
+            json.dumps(payload, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+        rig.animation_data.action = None
+    scene.frame_set(1)
+    if len(set(signatures.values())) != 3:
+        raise RuntimeError(f"{profession_id}: combo clips do not contain distinct keyframe data")
+    return signatures
+
+def make_animation_library(rig, profession_id=""):
+
     scene = bpy.context.scene
     for clip in REQUIRED_CLIPS:
         if rig.animation_data is None:
@@ -256,6 +383,8 @@ def make_animation_library(rig):
         strip = track.strips.new(clip, 1, action)
         strip.name = clip
         rig.animation_data.action = None
+    if profession_id:
+        make_profession_combo_animations(rig, profession_id)
     scene.frame_set(1)
 def export_glb(path, objects):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -511,16 +640,19 @@ def build_profession_models():
                     (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
                     "Chest", profession_mat, rig, segments=12, rings=8
                 ))
-        make_animation_library(rig)
+        make_animation_library(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
         destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
-        validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"), require_skin=True, required_clips=REQUIRED_CLIPS)
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3))
+        validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                      require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips)
         animation_dest = output_root / class_id / "animations/animation_library.glb"
-        animation_dest.parent.mkdir(parents=True, exist_ok=True)
-        import shutil
-        shutil.copy2(animation_source, animation_dest)
-        print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size)
+        export_glb(animation_dest, [rig])
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3))
+        validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
+        print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
+              "combo_clips=" + ",".join(required_profession_clips))
 
 def build_equipment_models():
     """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""

@@ -73,11 +73,16 @@ jobs:
               animation_library = root / class_id / "animations/animation_library.glb"
               if not model.is_file() or not animation_library.is_file():
                   raise SystemExit(f"{class_id}: profession model or animation library is missing")
-              check_glb(model, require_skin=True, clips=list(required_clips))
-              check_glb(animation_library, clips=list(required_clips), require_meshes=False)
-              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(required_clips)}")
+              combo_clips = [f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)]
+              check_glb(model, require_skin=True, clips=list(required_clips) + combo_clips)
+              check_glb(animation_library, clips=list(required_clips) + combo_clips, require_meshes=False)
+              for clip_name in combo_clips:
+                  clip = next(item for item in check_glb(animation_library, require_meshes=False)["animations"] if item.get("name") == clip_name)
+                  if len(clip.get("channels", [])) < 8:
+                      raise SystemExit(f"{class_id}: {clip_name} has too few skeletal tracks")
+              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(required_clips) + len(combo_clips)}")
 
-          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips)}")
+          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips) + 3}")
           PY
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4

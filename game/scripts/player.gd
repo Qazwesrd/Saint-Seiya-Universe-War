@@ -1286,11 +1286,15 @@ func attack() -> void:
     if combo_profile.is_empty():
         combo_profile = {"motion": "strike", "startup": 0.1, "active": 0.18, "recovery": 0.24, "total_duration": 0.52, "combo_cancel_at": 0.23, "pose_scale": 1.08, "rotation_degrees": 0.0}
     _play_skill_pose(combo_profile)
-    var authored_combo_clip := str(combo_profile.get("authored_clip", ""))
+    var authored_combo_clip := "%s_basic_attack_%d" % [class_id, basic_combo_step]
     if is_instance_valid(authored_animation_player) and authored_animation_player.has_animation(authored_combo_clip):
         _play_authored_action_animation(authored_combo_clip, 0.045)
     else:
-        _play_authored_action_animation("basic_attack_%d" % basic_combo_step, 0.045)
+        var profile_clip := str(combo_profile.get("authored_clip", ""))
+        if is_instance_valid(authored_animation_player) and authored_animation_player.has_animation(profile_clip):
+            _play_authored_action_animation(profile_clip, 0.045)
+        else:
+            _play_authored_action_animation("basic_attack_%d" % basic_combo_step, 0.045)
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
     var multipliers := [0.85, 1.0, 1.45]
