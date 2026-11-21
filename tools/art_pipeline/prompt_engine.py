@@ -269,6 +269,7 @@ def run_self_test(catalogs: dict[str, dict[str, str]]) -> None:
         raise AssertionError("Character anatomy quality constraints are missing")
     print("PROMPT_ENGINE_SELF_TEST_PASS characters=32 armors=82 enemies=57 local_only=true")
 
+# CI runs --self-test to verify the exact production catalogs and offline-only guard.
 def main() -> int:
     parser = argparse.ArgumentParser(description="Offline prompt engine and localhost ComfyUI bridge.")
     parser.add_argument("--kind", choices=("characters", "armors", "enemies", "all"), default="characters")
