@@ -835,6 +835,17 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_passive_stagger_multiplier("pegasus"), 1.0), "classes without stagger passives keep neutral stagger")
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("pegasus"), 1.0), "combo-only passive does not increase basic or ordinary skill damage")
 	var saved_armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
+	var saved_armor_currency := int(RPGState.profile.get("currency", 0))
+	RPGState.profile["currency"] = 1000
+	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze"],"current_stage":"bronze","durability":{"head":65,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
+	var helmet_repair_quote: Dictionary = ArmorSystem.get_repair_quote("head")
+	assert(int(helmet_repair_quote.get("missing_durability", 0)) == 35 and int(helmet_repair_quote.get("currency_cost", 0)) == 70, "individual armor repair quote scales with missing durability")
+	assert(bool(helmet_repair_quote.get("can_repair", false)), "individual armor repair quote checks available currency")
+	var helmet_repair_result: Dictionary = ArmorSystem.repair_part("head")
+	assert(bool(helmet_repair_result.get("repaired", false)) and int(helmet_repair_result.get("after", 0)) == 100, "individual armor repair restores only the selected piece")
+	assert(int(RPGState.profile.get("currency", 0)) == 930 and ArmorSystem.get_part_durability("chest") == 100, "individual armor repair charges the quoted cost without damaging other pieces")
+	RPGState.profile["currency"] = saved_armor_currency
+	RPGState.profile["armor_state"] = saved_armor_state.duplicate(true)
 	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","dark_cloth"],"current_stage":"dark_cloth","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
 	var dark_armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
 	var dark_palette: Dictionary = CharacterVisualCatalog.get_stage_palette("dark_cloth", false)
