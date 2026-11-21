@@ -807,10 +807,9 @@ def render_profession_turntable(profession_id, index):
     camera_data.type = "ORTHO"
     camera_data.ortho_scale = 2.65
     camera_data.lens = 55
+    # User-facing acceptance preview: one representative profession image only.
     views = (
         ("front", (0.0, -6.5, 2.0)),
-        ("side", (6.5, 0.0, 2.0)),
-        ("back", (0.0, 6.5, 2.0)),
     )
     for view_name, position in views:
         camera.location = position
@@ -887,7 +886,8 @@ def build_profession_models():
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
               "combo_clips=" + ",".join(required_profession_clips),
               "skill_archetypes=7")
-        render_profession_turntable(class_id, index)
+        if index == 0:
+            render_profession_turntable(class_id, index)
         print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front,side,back")
 
 def build_equipment_models():
