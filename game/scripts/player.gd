@@ -556,7 +556,9 @@ func _add_armor_piece(mesh: Mesh, piece_position: Vector3, piece_scale: Vector3,
     material.metallic = clampf(metallic * float(part_wear.get("metallic_multiplier", 1.0)), 0.0, 1.0)
     material.roughness = clampf(float(part_wear.get("roughness", 0.24)), 0.18, 0.72)
     material.emission_enabled = true
-    material.emission = piece_color * 0.06 * float(part_wear.get("condition", 1.0))
+    var part_condition := float(part_wear.get("condition", 1.0))
+    material.emission = piece_color * 0.06 * part_condition
+    piece.visible = part_condition > 0.0
     piece.material_override = material
     armor_root.add_child(piece)
     return piece
@@ -577,6 +579,20 @@ func _build_armor_wear_cracks() -> void:
             continue
         var severity := clampf((0.35 - condition) / 0.35, 0.0, 1.0)
         var anchors: Array = crack_layout.get(part_id, [])
+        if condition <= 0.0:
+            for broken_index in range(mini(anchors.size(), 3)):
+                var broken_shard := MeshInstance3D.new()
+                var broken_mesh := PrismMesh.new()
+                broken_mesh.size = Vector3(0.045, 0.12, 0.025)
+                broken_shard.mesh = broken_mesh
+                broken_shard.position = anchors[broken_index] + Vector3(0.045 * float(broken_index - 1), -0.10, -0.025)
+                broken_shard.rotation.z = 0.32 if broken_index % 2 == 0 else -0.32
+                var broken_material := StandardMaterial3D.new()
+                broken_material.albedo_color = Color(0.12, 0.075, 0.10)
+                broken_material.metallic = 0.88
+                broken_material.roughness = 0.62
+                broken_shard.material_override = broken_material
+                armor_root.add_child(broken_shard)
         for anchor_index in range(anchors.size()):
             var anchor: Vector3 = anchors[anchor_index]
             for segment_index in range(3):
@@ -617,6 +633,7 @@ func _build_armor_visuals() -> void:
     var relic_visual_profile := CharacterVisualCatalog.get_equipment_profile(EquipmentDatabase.get_equipped_relic())
     visual_profile.merge(relic_visual_profile, true)
     var ornament_id := str(relic_visual_profile.get("ornament", visual_profile.get("ornament", "")))
+    var class_armor_details: Dictionary = CharacterVisualCatalog.get_class_armor_detail_profile(class_id)
     armor_base_color = class_data.get("color", Color(0.22, 0.52, 0.92))
     visual_class_id = class_id
     var accent: Color = relic_visual_profile.get("accent", visual_profile.get("accent", Color(1.0, 0.78, 0.28)))
@@ -763,6 +780,24 @@ func _build_armor_visuals() -> void:
     for shoulder_side in [-1.0, 1.0]:
         var shoulder_plate := _add_armor_piece(shoulder_plate_mesh, Vector3(shoulder_side * 0.56 * silhouette_width, 1.64, -0.12), Vector3(1.0, 1.0, 0.9), stage_trim_color if stage_id in ["gold", "sea_scale", "surplice", "god_cloth", "god_armor"] else bright, stage_metallic, "arms")
         shoulder_plate.rotation.z = -shoulder_side * (0.22 if ornament_id in ["war_spikes", "thorn_wings", "forge_plates", "tidal_fins", "fin"] else 0.08)
+    var shoulder_detail_mesh := PrismMesh.new()
+    var shoulder_form := str(class_armor_details.get("shoulder_form", "balanced"))
+    match shoulder_form:
+        "spiked_guard":
+            shoulder_detail_mesh.size = Vector3(0.16, 0.36, 0.15)
+        "fin":
+            shoulder_detail_mesh.size = Vector3(0.12, 0.44, 0.10)
+        "wing":
+            shoulder_detail_mesh.size = Vector3(0.28, 0.32, 0.10)
+        "arcane":
+            shoulder_detail_mesh.size = Vector3(0.18, 0.24, 0.12)
+        "streamlined":
+            shoulder_detail_mesh.size = Vector3(0.22, 0.20, 0.09)
+        _:
+            shoulder_detail_mesh.size = Vector3(0.20, 0.26, 0.12)
+    for detail_side in [-1.0, 1.0]:
+        var shoulder_detail := _add_armor_piece(shoulder_detail_mesh, Vector3(detail_side * 0.70 * silhouette_width, 1.58, -0.16), Vector3(1.0, 1.0, 0.9), accent.lightened(0.12), stage_metallic, "arms")
+        shoulder_detail.rotation.z = -detail_side * (0.34 if shoulder_form in ["spiked_guard", "fin"] else 0.18)
     var shoulder_spike := PrismMesh.new()
     shoulder_spike.size = Vector3(0.24, 0.42, 0.22)
     if ornament_id in ["time_rings", "sound", "aegis", "dream_wings"]:
@@ -1028,6 +1063,22 @@ func _build_armor_visuals() -> void:
     for temple_side in [-1.0, 1.0]:
         var temple_plate := _add_armor_piece(helmet_temple, Vector3(temple_side * 0.205, 1.91, -0.12), Vector3.ONE, dark, stage_metallic, "head")
         temple_plate.rotation.z = temple_side * 0.16
+    var helmet_form := str(class_armor_details.get("helmet_form", "crown"))
+    var helmet_side_mesh := PrismMesh.new()
+    match helmet_form:
+        "horned":
+            helmet_side_mesh.size = Vector3(0.11, 0.32, 0.12)
+        "crested":
+            helmet_side_mesh.size = Vector3(0.10, 0.25, 0.10)
+        "flame":
+            helmet_side_mesh.size = Vector3(0.12, 0.30, 0.09)
+        "halo":
+            helmet_side_mesh.size = Vector3(0.10, 0.18, 0.08)
+        _:
+            helmet_side_mesh.size = Vector3(0.10, 0.20, 0.09)
+    for helmet_detail_side in [-1.0, 1.0]:
+        var helmet_side_detail := _add_armor_piece(helmet_side_mesh, Vector3(helmet_detail_side * 0.29, 2.00, -0.005), Vector3.ONE, accent, stage_metallic, "head")
+        helmet_side_detail.rotation.z = -helmet_detail_side * (0.42 if helmet_form in ["horned", "flame"] else 0.18)
     var emblem_mesh := SphereMesh.new()
     emblem_mesh.radius = 0.11
     emblem_mesh.height = 0.18
