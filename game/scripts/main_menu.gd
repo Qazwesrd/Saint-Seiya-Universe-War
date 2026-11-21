@@ -15,13 +15,15 @@ var creation_notice: Label
 var pending_creation_slot := 0
 var download_button: Button
 var download_in_progress := false
+var game_entry_buttons: Array[Button] = []
 
 func _ready() -> void:
 	_build_interface()
 	_apply_menu_theme()
 	_update_status()
 	ResourcePackManager.pack_download_progress.connect(_on_pack_download_progress)
-	if not str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
+	_refresh_download_controls()
+	if ResourcePackManager.has_download_source():
 		_download_game_data()
 
 func _build_interface() -> void:
@@ -62,12 +64,12 @@ func _build_interface() -> void:
 	download_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	download_button.pressed.connect(_download_game_data)
 	layout.add_child(download_button)
-	if str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
+	if not ResourcePackManager.has_download_source():
 		download_button.disabled = true
-		download_button.tooltip_text = "等待配置国内 HTTPS 下载服务器"
+		download_button.tooltip_text = "等待配置国内主线路和海外备用线路"
 
-	_add_button(layout, "开始新游戏 / 新建存档", _on_new_game_pressed)
-	_add_button(layout, "继续游戏 / 存档管理", _on_continue_pressed)
+	game_entry_buttons.append(_add_button(layout, "开始新游戏 / 新建存档", _on_new_game_pressed))
+	game_entry_buttons.append(_add_button(layout, "继续游戏 / 存档管理", _on_continue_pressed))
 	_add_button(layout, "游戏设置", _on_settings_pressed)
 	_add_button(layout, "退出游戏", _on_exit_pressed)
 
@@ -98,7 +100,7 @@ func _build_interface() -> void:
 	delete_dialog.confirmed.connect(_confirm_delete_slot)
 	add_child(delete_dialog)
 
-func _add_button(parent: VBoxContainer, caption: String, action: Callable) -> void:
+func _add_button(parent: VBoxContainer, caption: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.text = caption
 	button.custom_minimum_size = Vector2(0, 58)
@@ -114,6 +116,30 @@ func _add_button(parent: VBoxContainer, caption: String, action: Callable) -> vo
 	button.add_theme_stylebox_override("disabled", _make_menu_button_style(Color(0.08, 0.09, 0.12), Color(0.25, 0.29, 0.36)))
 	button.pressed.connect(action)
 	parent.add_child(button)
+	return button
+
+func _refresh_download_controls() -> void:
+	var ready := _all_story_packs_installed()
+	for button in game_entry_buttons:
+		button.disabled = download_in_progress or not ready
+		button.tooltip_text = "" if ready else "请先下载并校验完整游戏数据"
+	if download_button != null:
+		download_button.disabled = download_in_progress or not ResourcePackManager.has_download_source()
+
+func _all_story_packs_installed() -> bool:
+	# 尚未配置正式下载线路时，保留开发原型入口；正式线路配置后强制完整数据就绪。
+	if not ResourcePackManager.has_download_source():
+		return true
+	var story_pack_count := 0
+	for pack_id in ResourcePackManager.catalog.get("packs", {}):
+		var info := ResourcePackManager.get_pack_info(str(pack_id))
+		if not bool(info.get("auto_download", false)):
+			continue
+		story_pack_count += 1
+		var status := ResourcePackManager.get_pack_status(str(pack_id))
+		if not bool(status.get("valid", false)):
+			return false
+	return story_pack_count > 0
 
 func _make_menu_button_style(fill_color: Color, border_color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -466,9 +492,15 @@ func _show_slots(message: String = "选择一个存档槽进行新建、读取�
 	slots_panel.visible = true
 
 func _on_new_game_pressed() -> void:
+	if not _all_story_packs_installed():
+		status_label.text = "请先下载并校验全部章节数据。"
+		return
 	_show_slots("新建角色只允许使用空槽位；已有进度不会被覆盖。")
 
 func _on_continue_pressed() -> void:
+	if not _all_story_packs_installed():
+		status_label.text = "请先下载并校验全部章节数据。"
+		return
 	_show_slots("选择已有存档读取，或管理备份。")
 
 func _create_slot(slot: int) -> void:
@@ -504,6 +536,9 @@ func _confirm_delete_slot() -> void:
 	_refresh_slots()
 
 func _enter_game(message: String) -> void:
+	if not _all_story_packs_installed():
+		status_label.text = "完整游戏数据尚未下载完成，暂时不能进入游戏。"
+		return
 	status_label.text = message
 	slots_panel.visible = false
 	character_creation_panel.visible = false
@@ -538,16 +573,16 @@ func _on_pack_download_progress(pack_id: String, downloaded_bytes: int, total_by
 func _download_game_data() -> void:
 	if download_in_progress:
 		return
-	if str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
-		status_label.text = "国内下载服务器尚未配置；当前不能开始完整数据下载。"
+	if not ResourcePackManager.has_download_source():
+		status_label.text = "国内主线路和海外备用线路尚未配置，暂时不能下载完整数据。"
 		return
 	download_in_progress = true
-	download_button.disabled = true
-	status_label.text = "正在检查并下载完整游戏数据，请保持网络连接……"
+	_refresh_download_controls()
+	status_label.text = "正在检查并下载完整游戏数据；国内线路失败时将自动切换备用线路……"
 	var success: bool = await ResourcePackManager.download_all_missing_packs()
 	download_in_progress = false
-	download_button.disabled = false
+	_refresh_download_controls()
 	if success:
 		status_label.text = "完整离线数据已校验。现在可以断网游玩。"
 	else:
-		status_label.text = "数据下载未完成；已保留可续传文件，请点击“下载 / 修复完整离线数据”重试。"
+		status_label.text = "数据下载未完成；已保留可续传文件，可重试并自动切换下载线路。"

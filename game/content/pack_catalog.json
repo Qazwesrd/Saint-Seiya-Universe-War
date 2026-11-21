@@ -11,13 +11,84 @@
   "manual_file_management_required": false,
   "offline_ready_after_all_packs_installed": true,
   "packs": {
-    "core": {"name": "基础游戏资源", "chapter": "core", "required": true, "install_state": "bundled", "auto_download": false},
-    "galaxy_wars": {"name": "银河战争篇", "chapter": "galaxy_wars", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "sanctuary_twelve_houses": {"name": "圣域十二宫篇", "chapter": "sanctuary", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "asgard": {"name": "北欧篇", "chapter": "asgard", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "poseidon": {"name": "海皇篇", "chapter": "poseidon", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "hades": {"name": "冥王篇", "chapter": "hades", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "heaven": {"name": "天界篇", "chapter": "heaven", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0},
-    "original_final": {"name": "原创终极篇", "chapter": "original_final", "required": false, "install_state": "planned", "auto_download": true, "manifest_sha256": "", "manifest_size_bytes": 0}
-  }
+    "core": {
+      "name": "基础游戏资源",
+      "chapter": "core",
+      "required": true,
+      "install_state": "bundled",
+      "auto_download": false
+    },
+    "galaxy_wars": {
+      "name": "银河战争篇",
+      "chapter": "galaxy_wars",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "sanctuary_twelve_houses": {
+      "name": "圣域十二宫篇",
+      "chapter": "sanctuary",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "asgard": {
+      "name": "北欧篇",
+      "chapter": "asgard",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "poseidon": {
+      "name": "海皇篇",
+      "chapter": "poseidon",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "hades": {
+      "name": "冥王篇",
+      "chapter": "hades",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "heaven": {
+      "name": "天界篇",
+      "chapter": "heaven",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    },
+    "original_final": {
+      "name": "原创终极篇",
+      "chapter": "original_final",
+      "required": false,
+      "install_state": "planned",
+      "auto_download": true,
+      "manifest_sha256": "",
+      "manifest_size_bytes": 0
+    }
+  },
+  "cdn_base_urls": [
+    "",
+    ""
+  ],
+  "cdn_failover": "try_in_order_per_request",
+  "cdn_base_urls_order": [
+    "mainland_primary",
+    "overseas_fallback"
+  ]
 }

@@ -346,7 +346,7 @@ func _remove_directory(path: String) -> bool:
 	return DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) == OK
 
 
-## 从国内 CDN 下载资源包。服务端必须支持 HTTPS、HTTP Range 和正确的 Content-Range。
+## 双线路 HTTPS 资源下载：国内 CDN 优先，海外 CDN 作为自动故障切换线路。
 ## manifest_sha256 必须由随 APK 发布的可信目录固定，不能信任下载站自行声明的哈希。
 signal pack_download_progress(pack_id: String, downloaded_bytes: int, total_bytes: int, current_file: String)
 
@@ -354,20 +354,45 @@ const DOWNLOAD_CHUNK_BYTES := 4 * 1024 * 1024
 const DOWNLOAD_HTTP_BODY_LIMIT := 5 * 1024 * 1024
 const DOWNLOAD_TIMEOUT_SECONDS := 90.0
 
+func _get_cdn_base_urls(primary_override: String = "") -> Array[String]:
+	var candidates: Array = []
+	if not primary_override.is_empty():
+		candidates.append(primary_override)
+	var configured: Variant = catalog.get("cdn_base_urls", [])
+	if typeof(configured) == TYPE_ARRAY:
+		for item in configured:
+			candidates.append(str(item))
+	var legacy_url := str(catalog.get("cdn_base_url", ""))
+	if not legacy_url.is_empty():
+		candidates.append(legacy_url)
+	var result: Array[String] = []
+	for candidate in candidates:
+		var base_url := str(candidate).strip_edges()
+		if not base_url.begins_with("https://") or not base_url.ends_with("/"):
+			continue
+		if not result.has(base_url):
+			result.append(base_url)
+	return result
+
+func has_download_source() -> bool:
+	return not _get_cdn_base_urls().is_empty()
+
 func download_pack_from_catalog(pack_id: String) -> bool:
 	var info := get_pack_info(pack_id)
-	var base_url := str(catalog.get("cdn_base_url", ""))
+	var base_urls := _get_cdn_base_urls()
 	var manifest_hash := str(info.get("manifest_sha256", ""))
 	var manifest_size := int(info.get("manifest_size_bytes", 0))
 	if not bool(info.get("auto_download", false)):
 		pack_install_finished.emit(pack_id, false, "该资源包未配置为自动下载")
 		return false
-	if base_url.is_empty() or manifest_hash.is_empty() or manifest_size <= 0:
-		pack_install_finished.emit(pack_id, false, "国内 CDN 地址或资源清单校验信息尚未配置")
+	if base_urls.is_empty() or manifest_hash.is_empty() or manifest_size <= 0:
+		pack_install_finished.emit(pack_id, false, "国内主线路或海外备用线路、资源清单校验信息尚未配置")
 		return false
-	return await download_pack_from_cdn(pack_id, base_url, manifest_hash, manifest_size)
+	return await download_pack_from_cdn(pack_id, base_urls[0], manifest_hash, manifest_size)
 
 func download_all_missing_packs() -> bool:
+	if not has_download_source():
+		return false
 	for pack_id_variant in catalog.get("packs", {}):
 		var pack_id := str(pack_id_variant)
 		var info := get_pack_info(pack_id)
@@ -458,7 +483,7 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 		var download_url := cdn_base_url + pack_id + "/" + "/".join(encoded_segments)
 		var downloaded: Dictionary = await _download_resumable(download_url, destination, int(item.get("size_bytes", 0)), str(item.get("sha256", "")), pack_id, relative_path)
 		if not bool(downloaded.get("success", false)):
-				pack_install_finished.emit(pack_id, false, str(downloaded.get("message", "资源文件下载失败")))
+			pack_install_finished.emit(pack_id, false, str(downloaded.get("message", "资源文件下载失败")))
 			return false
 
 	var validation := _validate_directory(staging, pack_id)
@@ -517,7 +542,7 @@ func _download_resumable(url: String, destination: String, expected_size: int, e
 	while existing_size < expected_size:
 		var chunk_end := mini(existing_size + DOWNLOAD_CHUNK_BYTES - 1, expected_size - 1)
 		var headers := PackedStringArray(["Range: bytes=%d-%d" % [existing_size, chunk_end], "Accept-Encoding: identity"])
-		var response: Dictionary = await _http_get_bytes(url, headers)
+		var response: Dictionary = await _http_get_bytes_with_fallback(url, headers)
 		if not bool(response.get("success", false)):
 			return {"success": false, "message": "下载中断（可再次启动继续下载）：" + file_label + "；" + str(response.get("message", ""))}
 		var status := int(response.get("status", 0))
@@ -542,6 +567,29 @@ func _download_resumable(url: String, destination: String, expected_size: int, e
 	if DirAccess.rename_absolute(ProjectSettings.globalize_path(partial_path), ProjectSettings.globalize_path(destination)) != OK:
 		return {"success": false, "message": "下载完成但无法写入目标文件：" + file_label}
 	return {"success": true, "message": "下载完成"}
+
+func _http_get_bytes_with_fallback(url: String, headers: PackedStringArray = PackedStringArray()) -> Dictionary:
+	var bases := _get_cdn_base_urls()
+	if bases.is_empty():
+		return await _http_get_bytes(url, headers)
+	var primary := bases[0]
+	if not url.begins_with(primary):
+		return await _http_get_bytes(url, headers)
+	var relative_path := url.substr(primary.length())
+	var range_request := false
+	for header in headers:
+		if header.begins_with("Range:"):
+			range_request = true
+	var last_result: Dictionary = {"success": false, "message": "所有下载线路均不可用"}
+	for base_url in bases:
+		var candidate_url := base_url + relative_path
+		var response: Dictionary = await _http_get_bytes(candidate_url, headers)
+		if bool(response.get("success", false)) and (not range_request or int(response.get("status", 0)) == 206):
+			return response
+		last_result = response
+		if bool(response.get("success", false)):
+			last_result = {"success": false, "status": int(response.get("status", 0)), "message": "备用线路切换：服务器未正确返回 HTTP 206"}
+	return last_result
 
 func _http_get_bytes(url: String, headers: PackedStringArray = PackedStringArray()) -> Dictionary:
 	var request_node := HTTPRequest.new()
