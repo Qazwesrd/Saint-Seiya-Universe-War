@@ -706,6 +706,21 @@ func _run_tests() -> void:
 	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","dark_cloth"],"current_stage":"dark_cloth","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
 	var dark_armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
 	assert(is_equal_approx(float(dark_armor_bonus.get("dark_resonance", 1.0)), 1.10), "Dark Cloth grants a ten-percent skill resonance to every profession")
+	assert(int(dark_armor_bonus.get("dark_set_tier", 0)) == 2, "five intact Dark Cloth pieces activate the complete set bonus")
+	var dark_passive_names: Dictionary = {}
+	for dark_class_profile in SkillSystem.get_class_skill_catalog():
+		var dark_class_id := str(dark_class_profile.get("id", ""))
+		var dark_passive: Dictionary = ArmorSystem.get_dark_class_passive(dark_class_id)
+		assert(not dark_passive.is_empty(), "every profession has a dedicated Dark Cloth passive: " + dark_class_id)
+		var dark_passive_name := str(dark_passive.get("name", ""))
+		assert(not dark_passive_names.has(dark_passive_name), "Dark Cloth passive names are unique across professions")
+		dark_passive_names[dark_passive_name] = true
+	assert(dark_passive_names.size() == 32, "all 32 professions have individually named Dark Cloth passives")
+	var damaged_dark_state: Dictionary = RPGState.profile["armor_state"].duplicate(true)
+	damaged_dark_state["durability"]["legs"] = 0
+	RPGState.profile["armor_state"] = damaged_dark_state
+	assert(int(ArmorSystem.get_bonus_stats().get("dark_set_tier", 0)) == 1, "three or four intact Dark Cloth pieces retain the partial set bonus")
+	RPGState.profile["armor_state"] = { "unlocked_stages":["bronze","dark_cloth"], "current_stage":"dark_cloth", "durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100}, "levels":{}, "awakened":false }
 	assert(float(dark_armor_bonus.get("max_cosmos", 0.0)) > 0.0 and float(dark_armor_bonus.get("speed", 0.0)) > 0.0, "Dark Cloth adds Cosmos capacity and movement speed")
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.21), "Dark Cloth resonance stacks multiplicatively with the Phoenix skill passive")
 	var awakened_dark_state: Dictionary = RPGState.profile["armor_state"].duplicate(true)
