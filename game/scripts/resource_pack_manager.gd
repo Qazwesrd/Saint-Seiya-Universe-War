@@ -69,14 +69,24 @@ func list_installed_packs() -> Array[Dictionary]:
 	return result
 
 func is_pack_installed(pack_id: String) -> bool:
-	return _valid_pack_id(pack_id) and FileAccess.file_exists(PACK_ROOT.path_join(pack_id).path_join("pack.json"))
+	if not _valid_pack_id(pack_id):
+		return false
+	var info := get_pack_info(pack_id)
+	if not info.is_empty() and bool(info.get("required", false)):
+		return true
+	return FileAccess.file_exists(PACK_ROOT.path_join(pack_id).path_join("pack.json"))
 
 func get_pack_status(pack_id: String) -> Dictionary:
-	if not get_pack_info(pack_id).is_empty() and bool(get_pack_info(pack_id).get("required", false)):
-		return {"installed": true, "required": true, "valid": true, "message": "基础资源随游戏内置"}
+	var info := get_pack_info(pack_id)
+	if not info.is_empty() and bool(info.get("required", false)):
+		return {"installed": true, "required": true, "valid": true, "mounted": true, "message": "基础资源随游戏内置"}
 	if not is_pack_installed(pack_id):
-		return {"installed": false, "required": false, "valid": false, "message": "尚未安装"}
-	return validate_pack(pack_id)
+		return {"installed": false, "required": false, "valid": false, "mounted": false, "message": "尚未安装"}
+	var validation := validate_pack(pack_id)
+	validation["installed"] = true
+	validation["required"] = false
+	validation["mounted"] = is_pack_mounted(pack_id)
+	return validation
 
 func validate_pack(pack_id: String) -> Dictionary:
 	var result := _validate_directory(PACK_ROOT.path_join(pack_id), pack_id)
@@ -220,6 +230,9 @@ func mount_pack(pack_id: String) -> bool:
 	return _mount_pack_recursive(pack_id, {})
 
 func _mount_pack_recursive(pack_id: String, visiting: Dictionary) -> bool:
+	var info := get_pack_info(pack_id)
+	if not info.is_empty() and bool(info.get("required", false)):
+		return true
 	if mounted_packs.has(pack_id):
 		return true
 	if visiting.has(pack_id):

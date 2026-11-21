@@ -428,28 +428,38 @@ func _run_tests() -> void:
 	assert(payload != null, "create package payload")
 	payload.store_string("offline package test")
 	payload.close()
-	var payload_reader := FileAccess.open(payload_path, FileAccess.READ)
-	assert(payload_reader != null, "read package payload")
-	var payload_size := int(payload_reader.get_length())
-	payload_reader.close()
+	var pck_path := source_dir.path_join("chapter_test.pck")
+	var pck_packer := PCKPacker.new()
+	assert(pck_packer.pack_start(ProjectSettings.globalize_path(pck_path)) == OK, "create real Godot PCK container")
+	assert(pck_packer.add_file("res://content/framework_pack_probe.txt", ProjectSettings.globalize_path(payload_path)) == OK, "add test resource to PCK")
+	assert(pck_packer.flush() == OK, "write complete Godot PCK")
+	var pck_reader := FileAccess.open(pck_path, FileAccess.READ)
+	assert(pck_reader != null, "read generated PCK")
+	var pck_size := int(pck_reader.get_length())
+	pck_reader.close()
 	var manifest := {
 		"id": "galaxy_wars",
 		"manifest_version": 1,
 		"version": 1,
-		"size_bytes": payload_size,
+		"size_bytes": pck_size,
 		"dependencies": [],
-		"files": [{"path": "payload.txt", "size_bytes": payload_size, "sha256": FileAccess.get_sha256(payload_path)}]
+		"files": [{"path": "chapter_test.pck", "size_bytes": pck_size, "sha256": FileAccess.get_sha256(pck_path)}]
 	}
 	var manifest_file := FileAccess.open(source_dir.path_join("pack.json"), FileAccess.WRITE)
 	assert(manifest_file != null, "create package manifest")
 	manifest_file.store_string(JSON.stringify(manifest))
 	manifest_file.close()
-	assert(bool(ResourcePackManager.preflight_install(source_dir, "galaxy_wars").get("allowed", false)), "resource package preflight")
-	assert(ResourcePackManager.install_from_directory(source_dir, "galaxy_wars"), "resource package staged install")
-	assert(bool(ResourcePackManager.validate_pack("galaxy_wars").get("valid", false)), "resource package installed validation")
-	assert(ResourcePackManager.remove_pack("galaxy_wars"), "resource package safe removal")
+	assert(bool(ResourcePackManager.preflight_install(source_dir, "galaxy_wars").get("allowed", false)), "real PCK resource package preflight")
+	assert(ResourcePackManager.install_from_directory(source_dir, "galaxy_wars"), "real PCK staged install and runtime mount")
+	var installed_status: Dictionary = ResourcePackManager.get_pack_mount_status("galaxy_wars")
+	assert(bool(installed_status.get("installed", false)) and bool(installed_status.get("valid", false)) and bool(installed_status.get("mounted", false)), "real PCK reports installed, verified and mounted")
+	assert(ResourceLoader.exists("res://content/framework_pack_probe.txt"), "mounted PCK exposes its resource through ResourceLoader")
+	var mounted_probe := FileAccess.open("res://content/framework_pack_probe.txt", FileAccess.READ)
+	assert(mounted_probe != null and mounted_probe.get_as_text() == "offline package test", "read resource content from mounted PCK")
+	mounted_probe.close()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(payload_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(source_dir.path_join("pack.json")))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(pck_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(source_dir))
 
 	assert(int(ResourcePackManager.get_storage_summary().get("installed_count", -1)) >= 0, "pack storage summary")
