@@ -147,6 +147,29 @@ def build_body(rig):
     parts = []
     parts.append(add_weighted_ellipsoid("Pelvis", (0, 0, 0.91), (0.22, 0.14, 0.17), "Hips", CLOTH, rig))
     parts.append(add_weighted_ellipsoid("Torso", (0, 0, 1.31), (0.27, 0.15, 0.39), "Chest", CLOTH, rig))
+    # Athletic anime-hero anatomy: layered pectorals, segmented abdomen and
+    # obliques add readable form beneath armor instead of one smooth capsule.
+    for side, sign in (("Left", 1), ("Right", -1)):
+        parts.append(add_weighted_ellipsoid(
+            side + "_Pectoral", (sign * 0.135, -0.125, 1.48),
+            (0.142, 0.052, 0.105), "Chest", CLOTH, rig, 20, 12))
+        parts.append(add_weighted_ellipsoid(
+            side + "_Upper_Oblique", (sign * 0.205, -0.105, 1.285),
+            (0.072, 0.052, 0.125), "Chest", CLOTH, rig, 16, 10))
+        parts.append(add_weighted_ellipsoid(
+            side + "_Lower_Oblique", (sign * 0.16, -0.105, 1.12),
+            (0.078, 0.047, 0.095), "Hips", CLOTH, rig, 16, 10))
+    for row, z in enumerate((1.285, 1.205, 1.125)):
+        width = (0.092, 0.084, 0.075)[row]
+        for side, sign in (("Left", 1), ("Right", -1)):
+            parts.append(add_weighted_ellipsoid(
+                side + "_Abdominal_" + str(row + 1),
+                (sign * (0.052 if row == 0 else 0.047), -0.151, z),
+                (width, 0.035, 0.043), "Chest" if row < 2 else "Hips",
+                CLOTH, rig, 16, 10))
+    parts.append(add_weighted_ellipsoid(
+        "Sternum", (0, -0.153, 1.405), (0.028, 0.025, 0.12),
+        "Chest", CLOTH, rig, 12, 8))
     parts.append(add_weighted_ellipsoid("NeckMesh", (0, 0, 1.61), (0.075, 0.075, 0.11), "Neck", SKIN, rig))
     parts.append(add_weighted_ellipsoid("HeadMesh", (0, 0, 1.79), (0.14, 0.13, 0.19), "Head", SKIN, rig))
     # Stylized anime-hero face and hair details. All pieces follow the Head bone.
