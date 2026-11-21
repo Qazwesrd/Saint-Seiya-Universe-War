@@ -161,6 +161,44 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
             return {"accent": Color(1.0, 0.78, 0.38), "ornament": "radiant"}
     return {}
 
+static func get_class_armor_detail_profile(class_id: String) -> Dictionary:
+    var profile: Dictionary = get_profile(class_id)
+    if profile.is_empty() or not PROFILES.has(class_id):
+        return {}
+    var ornament := str(profile.get("ornament", "crest"))
+    var crest := str(profile.get("crest", "star"))
+    var shoulder_form := "balanced"
+    match ornament:
+        "war_spikes", "thorn_wings", "forge_plates", "shield":
+            shoulder_form = "spiked_guard"
+        "tidal_fins", "fin", "scale", "moon_wings":
+            shoulder_form = "fin"
+        "royal_wings", "heaven_wings", "solar_wings", "radiant", "soul_wings":
+            shoulder_form = "wing"
+        "time_rings", "dream_wings", "sound", "aegis", "rune_wings":
+            shoulder_form = "arcane"
+        "chain", "comet", "swift_wings", "feather":
+            shoulder_form = "streamlined"
+    var helmet_form := "crown"
+    match crest:
+        "horn":
+            helmet_form = "horned"
+        "wing", "ice", "fin":
+            helmet_form = "crested"
+        "flame":
+            helmet_form = "flame"
+        "halo", "aegis", "crown":
+            helmet_form = "halo"
+    return {
+        "class_id": class_id,
+        "shoulder_form": shoulder_form,
+        "helmet_form": helmet_form,
+        "crest": crest,
+        "ornament": ornament,
+        "shoulder_scale": profile.get("shoulder_scale", Vector3.ONE),
+        "wing_span": float(profile.get("wing_span", 0.0))
+    }
+
 static func validate_catalog() -> Dictionary:
     var errors: Array[String] = []
     for class_id in PROFILES:
