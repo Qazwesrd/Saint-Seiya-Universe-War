@@ -33,6 +33,10 @@ var enemy_arm_nodes: Array[MeshInstance3D] = []
 var enemy_leg_nodes: Array[MeshInstance3D] = []
 var telegraph_mesh: MeshInstance3D
 var telegraph_material: StandardMaterial3D
+var authored_enemy_model: Node3D
+var authored_enemy_animation_player: AnimationPlayer
+var authored_enemy_animation_state := ""
+var authored_enemy_action_timer := 0.0
 var boss_aura_ring: MeshInstance3D
 var enemy_accent_nodes: Array[MeshInstance3D] = []
 var enemy_wing_nodes: Array[MeshInstance3D] = []
@@ -230,11 +234,60 @@ func _load_authored_enemy_model() -> void:
         push_warning("Enemy model could not be instantiated; using procedural fallback: " + model_path)
         return
     authored_model.name = "AuthoredEnemyModel"
+    authored_enemy_model = authored_model
+    authored_enemy_animation_player = _find_enemy_animation_player(authored_model)
+    authored_enemy_animation_state = ""
+    authored_enemy_action_timer = 0.0
     authored_model.scale = Vector3.ONE * (1.12 if is_boss else 1.0)
     for child in get_children():
         if child is MeshInstance3D and child != telegraph_mesh:
             (child as MeshInstance3D).visible = false
     add_child(authored_model)
+    _play_authored_enemy_animation("idle")
+
+func _find_enemy_animation_player(root: Node) -> AnimationPlayer:
+    if root is AnimationPlayer:
+        return root as AnimationPlayer
+    for child in root.get_children():
+        var found := _find_enemy_animation_player(child)
+        if is_instance_valid(found):
+            return found
+    return null
+
+func _play_authored_enemy_animation(animation_name: String, blend_time: float = 0.12) -> void:
+    if not is_instance_valid(authored_enemy_animation_player):
+        return
+    if not authored_enemy_animation_player.has_animation(animation_name):
+        return
+    if authored_enemy_animation_state == animation_name and authored_enemy_animation_player.is_playing():
+        return
+    authored_enemy_animation_state = animation_name
+    authored_enemy_animation_player.play(animation_name, blend_time)
+
+func _play_authored_enemy_action(animation_name: String, blend_time: float = 0.05) -> void:
+    if not is_instance_valid(authored_enemy_animation_player):
+        return
+    if not authored_enemy_animation_player.has_animation(animation_name):
+        return
+    var clip := authored_enemy_animation_player.get_animation(animation_name)
+    authored_enemy_action_timer = clampf(clip.length, 0.18, 1.0)
+    authored_enemy_animation_state = ""
+    authored_enemy_animation_player.play(animation_name, blend_time)
+
+func _update_authored_enemy_animation(delta: float, planar_speed: float) -> void:
+    if not is_instance_valid(authored_enemy_animation_player):
+        return
+    authored_enemy_action_timer = maxf(0.0, authored_enemy_action_timer - delta)
+    if authored_enemy_action_timer > 0.0:
+        return
+    var animation_name := "walk" if planar_speed >= 0.25 else "idle"
+    if state == BrainState.WINDUP:
+        animation_name = "skill_cast" if _boss_heavy_attack or _boss_phase_two else "basic_attack_1"
+    elif state == BrainState.STAGGER:
+        animation_name = "hit_heavy" if is_boss else "hit_light"
+    elif state == BrainState.RECOVERY:
+        animation_name = "idle"
+    _play_authored_enemy_animation(animation_name)
 
 func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
     var part := MeshInstance3D.new()
@@ -352,6 +405,7 @@ func _physics_process(delta: float) -> void:
     if state == BrainState.DEAD:
         return
     _animate_enemy_limbs(delta)
+    _update_authored_enemy_animation(delta, Vector2(velocity.x, velocity.z).length())
 
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
@@ -503,6 +557,7 @@ func _begin_attack() -> void:
         var heavy_interval := maxi(1, boss_heavy_interval - (1 if _boss_phase_two else 0))
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
     state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
+    _play_authored_enemy_action("basic_attack_3" if _boss_heavy_attack else "basic_attack_1", 0.045)
     telegraph_mesh.scale = Vector3.ONE * (boss_range_multiplier if _boss_heavy_attack else 1.0)
     telegraph_mesh.visible = true
     if is_instance_valid(game):
@@ -651,6 +706,7 @@ func take_damage(amount: float) -> void:
     if not is_boss or (state != BrainState.WINDUP and state != BrainState.RECOVERY):
         state = BrainState.STAGGER
         state_timer = 0.12 if is_boss else 0.3
+        _play_authored_enemy_action("hit_heavy" if is_boss else "hit_light", 0.04)
     hit_flash_timer = 0.14
     body_material.albedo_color = Color(1.0, 0.78, 0.55)
 
@@ -690,6 +746,7 @@ func apply_hit_reaction(direction: Vector3, force: float, lift: float, stagger_d
     else:
         state = BrainState.STAGGER
         state_timer = maxf(state_timer, stagger_duration)
+    _play_authored_enemy_action("hit_heavy" if is_boss else "hit_light", 0.04)
 
 
 func apply_status_effect(effect: String, duration: float, power: float = 0.0) -> void:
