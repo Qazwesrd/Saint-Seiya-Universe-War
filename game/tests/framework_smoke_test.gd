@@ -32,6 +32,17 @@ func _run_tests() -> void:
 	RPGState.profile["level"] = 10
 	assert(not CampaignManager.get_active_mission().is_empty(), "anime campaign missions become available at level 10")
 	RPGState.profile = original_onboarding_profile
+	var balanced_test_profile: Dictionary = original_onboarding_profile.duplicate(true)
+	balanced_test_profile["class_id"] = "apollo"
+	balanced_test_profile["level"] = 1
+	balanced_test_profile["story_balanced"] = true
+	balanced_test_profile["power_mode"] = "story_balanced"
+	balanced_test_profile["equipment"] = {}
+	RPGState.profile = balanced_test_profile
+	var balanced_divine_stats: Dictionary = RPGState.get_combat_stats()
+	assert(float(balanced_divine_stats.get("max_health", 9999.0)) <= 300.0, "level-one selectable divine characters use story-balanced health")
+	assert(float(balanced_divine_stats.get("attack", 9999.0)) <= 60.0, "level-one selectable divine characters use story-balanced attack")
+	RPGState.profile = original_onboarding_profile
 	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
 	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
 	RPGState.profile["currency"] = 50000
