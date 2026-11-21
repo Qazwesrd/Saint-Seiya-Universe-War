@@ -838,6 +838,16 @@ func _run_tests() -> void:
 		var dark_passive: Dictionary = ArmorSystem.get_dark_class_passive(dark_class_id)
 		assert(not dark_passive.is_empty(), "every profession has a dedicated Dark Cloth passive: " + dark_class_id)
 		var dark_passive_name := str(dark_passive.get("name", ""))
+		assert(not dark_passive_name.is_empty() and not dark_passive_names.has(dark_passive_name), "Dark Cloth passive names are unique across professions")
+		dark_passive_names[dark_passive_name] = true
+	assert(dark_passive_names.size() == 32, "all 32 registered classes have individually named Dark Cloth passives")
+	assert(str(dark_armor_bonus.get("dark_class_passive", {}).get("name", "")) == ArmorSystem.get_dark_class_passive("pegasus").get("name", ""), "equipped Dark Cloth exposes the selected class specialization")
+	var dark_passive_names: Dictionary = {}
+	for dark_class_profile in SkillSystem.get_class_skill_catalog():
+		var dark_class_id := str(dark_class_profile.get("id", ""))
+		var dark_passive: Dictionary = ArmorSystem.get_dark_class_passive(dark_class_id)
+		assert(not dark_passive.is_empty(), "every profession has a dedicated Dark Cloth passive: " + dark_class_id)
+		var dark_passive_name := str(dark_passive.get("name", ""))
 		assert(not dark_passive_names.has(dark_passive_name), "Dark Cloth passive names are unique across professions")
 		dark_passive_names[dark_passive_name] = true
 	assert(dark_passive_names.size() == 32, "all 32 professions have individually named Dark Cloth passives")
