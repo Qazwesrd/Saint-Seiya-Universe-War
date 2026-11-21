@@ -34,6 +34,7 @@ const ITEMS := {
 var category := "人物"
 var item_index := 0
 var preview_root: Node3D
+var stage_root: Node3D
 var camera: Camera3D
 var status_label: Label
 var title_label: Label
@@ -101,8 +102,8 @@ func _build_gallery() -> void:
 
 	var world := World3D.new()
 	viewport.world_3d = world
-	var stage := Node3D.new()
-	viewport.add_child(stage)
+	stage_root = Node3D.new()
+	viewport.add_child(stage_root)
 
 	var environment := WorldEnvironment.new()
 	var env := Environment.new()
@@ -117,17 +118,17 @@ func _build_gallery() -> void:
 	env.ambient_light_color = Color(0.55, 0.62, 0.82)
 	env.ambient_light_energy = 0.8
 	environment.environment = env
-	stage.add_child(environment)
+	stage_root.add_child(environment)
 
 	var key_light := DirectionalLight3D.new()
 	key_light.rotation_degrees = Vector3(-35, -25, 0)
 	key_light.light_energy = 1.7
-	stage.add_child(key_light)
+	stage_root.add_child(key_light)
 	var fill_light := DirectionalLight3D.new()
 	fill_light.rotation_degrees = Vector3(-15, 145, 0)
 	fill_light.light_color = Color(0.35, 0.55, 1.0)
 	fill_light.light_energy = 0.75
-	stage.add_child(fill_light)
+	stage_root.add_child(fill_light)
 
 	var floor := MeshInstance3D.new()
 	var floor_mesh := PlaneMesh.new()
@@ -139,7 +140,7 @@ func _build_gallery() -> void:
 	floor_material.roughness = 0.32
 	floor.material_override = floor_material
 	floor.position.y = -0.04
-	stage.add_child(floor)
+	stage_root.add_child(floor)
 
 	var plinth := MeshInstance3D.new()
 	var cylinder := CylinderMesh.new()
@@ -153,13 +154,13 @@ func _build_gallery() -> void:
 	plinth_mat.roughness = 0.26
 	plinth.material_override = plinth_mat
 	plinth.position.y = 0.05
-	stage.add_child(plinth)
+	stage_root.add_child(plinth)
 
 	camera = Camera3D.new()
 	camera.position = Vector3(0, 2.2, 6.8)
 	camera.look_at(Vector3(0, 1.15, 0), Vector3.UP)
 	camera.current = true
-	stage.add_child(camera)
+	stage_root.add_child(camera)
 
 	var side := VBoxContainer.new()
 	side.custom_minimum_size = Vector2(260, 0)
@@ -191,7 +192,7 @@ func _build_gallery() -> void:
 	)
 	controls.add_child(reset)
 	var hint := Label.new()
-	hint.text = "模型可自动旋转；鼠标/触屏拖动可转动展台"
+	hint.text = "模型可自动旋转；可使用鼠标/触屏拖动转动展台"
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	controls.add_child(hint)
@@ -208,7 +209,7 @@ func _step_item(direction: int) -> void:
 func _show_item() -> void:
 	if not is_instance_valid(preview_root):
 		preview_root = Node3D.new()
-		viewport.add_child(preview_root)
+		stage_root.add_child(preview_root)
 	else:
 		for child in preview_root.get_children():
 			child.queue_free()
@@ -287,3 +288,19 @@ func _build_effect_preview(item: Dictionary) -> void:
 	core_material.emission_energy_multiplier = 3.0
 	core.material_override = core_material
 	preview_root.add_child(core)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		drag_active = event.pressed
+		last_pointer = event.position
+	elif event is InputEventScreenDrag and drag_active:
+		preview_root.rotate_y(-event.relative.x * 0.008)
+		preview_root.rotate_x(-event.relative.y * 0.004)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		drag_active = event.pressed
+		last_pointer = event.position
+	elif event is InputEventMouseMotion and drag_active:
+		var delta := event.position - last_pointer
+		preview_root.rotate_y(-delta.x * 0.008)
+		preview_root.rotate_x(-delta.y * 0.004)
+		last_pointer = event.position
