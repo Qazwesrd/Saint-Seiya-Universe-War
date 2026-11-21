@@ -82,6 +82,8 @@ func _first_incomplete_mission_id() -> String:
     return CampaignDatabase.get_first_mission_id()
 
 func get_active_mission() -> Dictionary:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
+        return {}
     return CampaignDatabase.get_mission(str(progress.get("active_mission", "")))
 
 func get_active_chapter() -> Dictionary:
@@ -111,6 +113,8 @@ func get_mission_progress(mission_id: String) -> Dictionary:
     return {"mission": mission, "objectives": objectives, "completed": all_done}
 
 func accept_mission(mission_id: String) -> bool:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
+        return false
     var mission := CampaignDatabase.get_mission(mission_id)
     if mission.is_empty() or mission_id in progress["completed_missions"]:
         return false
