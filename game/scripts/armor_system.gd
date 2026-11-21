@@ -10,6 +10,40 @@ const STAGES := {
  "god_cloth":{"name":"神圣衣","attack":7.0,"defense":9.0,"hp":40.0},
  "god_armor":{"name":"主神圣衣","attack":9.0,"defense":12.0,"hp":55.0}
 }
+const DARK_CLASS_PASSIVES := {
+ "pegasus":{"name":"暗影流星","focus":"attack","attack_rate":0.075,"defense_rate":0.02,"health_rate":0.02,"speed_rate":0.035,"cosmos_rate":0.0},
+ "dragon":{"name":"黑曜龙盾","focus":"defense","attack_rate":0.02,"defense_rate":0.08,"health_rate":0.055,"speed_rate":0.0,"cosmos_rate":0.0},
+ "cygnus":{"name":"极夜冰晶","focus":"control","attack_rate":0.04,"defense_rate":0.04,"health_rate":0.025,"speed_rate":0.015,"cosmos_rate":1.0},
+ "andromeda":{"name":"暗链缚魂","focus":"control","attack_rate":0.045,"defense_rate":0.035,"health_rate":0.03,"speed_rate":0.01,"cosmos_rate":1.0},
+ "phoenix":{"name":"不灭黑炎","focus":"attack","attack_rate":0.08,"defense_rate":0.015,"health_rate":0.035,"speed_rate":0.02,"cosmos_rate":0.0},
+ "sea_dragon":{"name":"深渊逆潮","focus":"cosmos","attack_rate":0.05,"defense_rate":0.025,"health_rate":0.04,"speed_rate":0.01,"cosmos_rate":2.0},
+ "tenmou":{"name":"天猛壁垒","focus":"defense","attack_rate":0.025,"defense_rate":0.07,"health_rate":0.06,"speed_rate":0.0,"cosmos_rate":0.0},
+ "lyra":{"name":"幽冥弦刃","focus":"attack","attack_rate":0.07,"defense_rate":0.02,"health_rate":0.02,"speed_rate":0.025,"cosmos_rate":0.0},
+ "sea_swallow":{"name":"暗流迅羽","focus":"mobility","attack_rate":0.04,"defense_rate":0.025,"health_rate":0.035,"speed_rate":0.045,"cosmos_rate":0.0},
+ "tenkishi":{"name":"堕天黑翼","focus":"mobility","attack_rate":0.045,"defense_rate":0.045,"health_rate":0.04,"speed_rate":0.04,"cosmos_rate":1.0},
+ "apollo":{"name":"黑日裁决","focus":"attack","attack_rate":0.08,"defense_rate":0.02,"health_rate":0.04,"speed_rate":0.01,"cosmos_rate":1.0},
+ "athena":{"name":"暗夜神佑","focus":"defense","attack_rate":0.025,"defense_rate":0.075,"health_rate":0.07,"speed_rate":0.0,"cosmos_rate":2.0},
+ "hades":{"name":"冥渊侵蚀","focus":"attack","attack_rate":0.075,"defense_rate":0.035,"health_rate":0.045,"speed_rate":0.0,"cosmos_rate":1.0},
+ "poseidon":{"name":"黑潮统御","focus":"cosmos","attack_rate":0.05,"defense_rate":0.045,"health_rate":0.04,"speed_rate":0.01,"cosmos_rate":2.0},
+ "zeus":{"name":"暗雷神罚","focus":"attack","attack_rate":0.085,"defense_rate":0.04,"health_rate":0.035,"speed_rate":0.015,"cosmos_rate":2.0},
+ "artemis":{"name":"月蚀守望","focus":"defense","attack_rate":0.035,"defense_rate":0.065,"health_rate":0.055,"speed_rate":0.02,"cosmos_rate":1.0},
+ "hypnos":{"name":"永夜梦境","focus":"defense","attack_rate":0.02,"defense_rate":0.075,"health_rate":0.05,"speed_rate":0.0,"cosmos_rate":2.0},
+ "thanatos":{"name":"终焉黑镰","focus":"attack","attack_rate":0.085,"defense_rate":0.02,"health_rate":0.035,"speed_rate":0.02,"cosmos_rate":0.0},
+ "odin":{"name":"黑曜神域","focus":"defense","attack_rate":0.035,"defense_rate":0.07,"health_rate":0.055,"speed_rate":0.01,"cosmos_rate":1.0},
+ "ares":{"name":"黑暗战意","focus":"attack","attack_rate":0.09,"defense_rate":0.015,"health_rate":0.03,"speed_rate":0.02,"cosmos_rate":0.0},
+ "eris":{"name":"纷争暗潮","focus":"attack","attack_rate":0.065,"defense_rate":0.025,"health_rate":0.05,"speed_rate":0.02,"cosmos_rate":1.0},
+ "abel":{"name":"日蚀圣焰","focus":"attack","attack_rate":0.08,"defense_rate":0.03,"health_rate":0.04,"speed_rate":0.015,"cosmos_rate":1.0},
+ "lucifer":{"name":"堕天疾翼","focus":"mobility","attack_rate":0.065,"defense_rate":0.02,"health_rate":0.035,"speed_rate":0.05,"cosmos_rate":0.0},
+ "saturn":{"name":"暗时领域","focus":"control","attack_rate":0.055,"defense_rate":0.055,"health_rate":0.04,"speed_rate":0.015,"cosmos_rate":2.0},
+ "pallas":{"name":"黑曜时刃","focus":"control","attack_rate":0.06,"defense_rate":0.045,"health_rate":0.035,"speed_rate":0.02,"cosmos_rate":1.0},
+ "chronos":{"name":"混沌时序","focus":"cosmos","attack_rate":0.06,"defense_rate":0.06,"health_rate":0.05,"speed_rate":0.01,"cosmos_rate":3.0},
+ "hera":{"name":"暗曜王权","focus":"defense","attack_rate":0.025,"defense_rate":0.08,"health_rate":0.06,"speed_rate":0.0,"cosmos_rate":2.0},
+ "demeter":{"name":"幽冥丰饶","focus":"health","attack_rate":0.02,"defense_rate":0.055,"health_rate":0.085,"speed_rate":0.0,"cosmos_rate":1.0},
+ "hestia":{"name":"幽冥圣焰","focus":"health","attack_rate":0.025,"defense_rate":0.075,"health_rate":0.075,"speed_rate":0.0,"cosmos_rate":1.0},
+ "hermes":{"name":"暗影疾行","focus":"mobility","attack_rate":0.065,"defense_rate":0.015,"health_rate":0.025,"speed_rate":0.055,"cosmos_rate":0.0},
+ "hephaestus":{"name":"黑曜神锻","focus":"defense","attack_rate":0.04,"defense_rate":0.085,"health_rate":0.065,"speed_rate":0.0,"cosmos_rate":1.0},
+ "aphrodite":{"name":"暗影魅惑","focus":"control","attack_rate":0.05,"defense_rate":0.04,"health_rate":0.04,"speed_rate":0.025,"cosmos_rate":2.0}
+}
 const PARTS := ["head","chest","arms","waist","legs"]
 const PART_NAMES := {"head":"头盔","chest":"胸甲","arms":"护腕","waist":"腰甲","legs":"腿甲"}
 var damage_ticks := 0
@@ -173,6 +207,10 @@ func get_part_durability(part: String) -> int:
     var durability: Dictionary = _ensure_data().get("durability", {})
     return clampi(int(durability.get(part, 100)), 0, 100)
 
+func get_dark_class_passive(class_id: String = "") -> Dictionary:
+ var selected_class := class_id if not class_id.is_empty() else str(RPGState.profile.get("class_id", "pegasus"))
+ return DARK_CLASS_PASSIVES.get(selected_class, {}).duplicate(true)
+
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_data()
  var stage_id := str(data.get("current_stage","bronze"))
@@ -197,7 +235,26 @@ func get_bonus_stats() -> Dictionary:
   health_bonus += float(class_data.get("hp", 0.0)) * 0.04 * condition * awaken
   dark_cosmos_bonus = 12.0 * condition * awaken
   dark_speed_bonus = 0.08 * condition * awaken
- return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0}
+  # Each of the 32 professions receives a distinct Dark Cloth specialization.
+  var class_passive := get_dark_class_passive()
+  attack_bonus += float(class_data.get("attack", 0.0)) * float(class_passive.get("attack_rate", 0.0)) * condition * awaken
+  defense_bonus += float(class_data.get("defense", 0.0)) * float(class_passive.get("defense_rate", 0.0)) * condition * awaken
+  health_bonus += float(class_data.get("hp", 0.0)) * float(class_passive.get("health_rate", 0.0)) * condition * awaken
+  dark_speed_bonus += float(class_passive.get("speed_rate", 0.0)) * condition * awaken
+  dark_cosmos_bonus += float(class_passive.get("cosmos_rate", 0.0)) * condition * awaken
+  # The five armor pieces form a real set: three intact pieces grant Cosmos,
+  # while all five intact pieces grant a small defensive/offensive set bonus.
+  var intact_parts := 0
+  for part in PARTS:
+   if int(durability.get(part, 100)) > 0:
+    intact_parts += 1
+  if intact_parts >= 3:
+   dark_cosmos_bonus += 8.0 * condition * awaken
+  if intact_parts == PARTS.size():
+   attack_bonus += float(base["attack"]) * 0.05 * condition * awaken
+   defense_bonus += float(base["defense"]) * 0.05 * condition * awaken
+   health_bonus += float(base["hp"]) * 0.05 * condition * awaken
+ return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0,"dark_class_passive":get_dark_class_passive(),"dark_set_tier":(2 if stage_id == "dark_cloth" and intact_parts == PARTS.size() else (1 if stage_id == "dark_cloth" and intact_parts >= 3 else 0))}
 func _commit(previous: Dictionary) -> bool:
  if RPGState.save_slot(RPGState.active_slot):
   RPGState.state_changed.emit()
