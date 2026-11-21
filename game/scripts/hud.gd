@@ -147,6 +147,7 @@ func _ready() -> void:
     _button(root, "每日首领", Vector2(118, 154), Vector2(230, 214), func(): _open_daily_boss(root), Color(0.42, 0.16, 0.12))
     _button(root, "角色", Vector2(22, 224), Vector2(112, 284), func(): _open_character(root), Color(0.18, 0.25, 0.48))
     _button(root, "伙伴图鉴", Vector2(118, 224), Vector2(230, 284), func(): _open_collection(root), Color(0.28, 0.18, 0.45))
+    _button(root, "黑暗军团挑战", Vector2(236, 224), Vector2(390, 284), func(): game.call("start_dark_faction_trial"), Color(0.32, 0.08, 0.18))
     flight_button = _button(root, "天翼飞行", Vector2(-520, -190), Vector2(-410, -126), func(): _call_player("toggle_tenkishi_flight"), Color(0.08, 0.38, 0.52))
     flight_up_button = _button(root, "上升", Vector2(-520, -260), Vector2(-410, -196), func(): _call_player("tenkishi_flight_step", 1.0), Color(0.12, 0.42, 0.58))
     flight_down_button = _button(root, "俯冲", Vector2(-520, -330), Vector2(-410, -266), func(): _call_player("tenkishi_flight_step", -1.0), Color(0.12, 0.32, 0.48))
