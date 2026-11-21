@@ -4,7 +4,7 @@ from audit_unit_roster import audit_sources
 
 
 class UnitRosterAuditTests(unittest.TestCase):
-    def test_audit_reports_class_skill_and_enemy_gaps_without_count_inflation(self):
+    def test_audit_merges_base_and_advanced_skill_catalogs(self):
         class_data = '''const CLASS_DATA := {
  "pegasus": {"name":"天马座"},
  "dragon": {"name":"天龙座"},
@@ -17,6 +17,23 @@ class UnitRosterAuditTests(unittest.TestCase):
     "pegasus": {"abilities": [
         {"id":"p1"}, {"id":"p2"}
     ], "passive": {}},
+}
+const DIVINE_CLASS_SKILLS := {
+}
+const EXTENDED_DIVINE_CLASS_SKILLS := {
+}
+const HEAVENLY_CLASS_SKILLS := {
+}
+const ADVANCED_CLASS_SKILLS := {
+    "pegasus": [
+        {"id":"p3"}, {"id":"p4"}
+    ],
+}
+const DIVINE_ADVANCED_SKILLS := {
+}
+const EXTENDED_DIVINE_ADVANCED_SKILLS := {
+}
+const HEAVENLY_ADVANCED_SKILLS := {
 }'''
         enemies = '''const ARCHETYPES := {
     "guard": {"is_boss": false},
@@ -28,8 +45,8 @@ class UnitRosterAuditTests(unittest.TestCase):
         self.assertEqual(report["visual_profiles"], 2)
         self.assertEqual(report["class_skill_profiles"], 1)
         self.assertEqual(report["classes_missing_skill_profiles"], ["dragon"])
-        self.assertEqual(report["skill_counts_by_class"], {"pegasus": 2})
-        self.assertEqual(report["skill_deficits_by_class"], {"pegasus": 22})
+        self.assertEqual(report["skill_counts_by_class"]["pegasus"], 4)
+        self.assertEqual(report["skill_deficits_by_class"], {"pegasus": 20, "dragon": 24})
         self.assertEqual(report["enemy_archetypes"], 2)
         self.assertEqual(report["boss_archetypes"], 1)
         self.assertEqual(report["non_boss_archetypes"], 1)
@@ -44,6 +61,36 @@ class UnitRosterAuditTests(unittest.TestCase):
         )
         self.assertEqual(report["visual_profiles_missing"], ["pegasus"])
         self.assertEqual(report["orphan_visual_profiles"], ["dragon"])
+
+    def test_audit_counts_24_distinct_skills_across_all_skill_tables(self):
+        base = ", ".join('{"id":"skill_%d"}' % i for i in range(1, 7))
+        advanced = ", ".join('{"id":"advanced_%d"}' % i for i in range(1, 19))
+        skill_source = f'''const CLASS_SKILLS := {{
+    "pegasus": {{"abilities": [{base}], "passive": {{}}}},
+}}
+const DIVINE_CLASS_SKILLS := {{
+}}
+const EXTENDED_DIVINE_CLASS_SKILLS := {{
+}}
+const HEAVENLY_CLASS_SKILLS := {{
+}}
+const ADVANCED_CLASS_SKILLS := {{
+    "pegasus": [{advanced}],
+}}
+const DIVINE_ADVANCED_SKILLS := {{
+}}
+const EXTENDED_DIVINE_ADVANCED_SKILLS := {{
+}}
+const HEAVENLY_ADVANCED_SKILLS := {{
+}}'''
+        report = audit_sources(
+            'const CLASS_DATA := {\n "pegasus": {"name":"天马座"},\n}',
+            'const PROFILES := {\n    "pegasus": {"crest":"wing"},\n}',
+            skill_source,
+            'const ARCHETYPES := {\n    "guard": {"is_boss": false},\n}',
+        )
+        self.assertEqual(report["skill_counts_by_class"]["pegasus"], 24)
+        self.assertEqual(report["skill_deficits_by_class"], {})
 
 
 if __name__ == "__main__":
