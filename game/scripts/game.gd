@@ -356,16 +356,16 @@ func _spawn_encounter_wave(wave: Dictionary) -> void:
         show_notice("第 %d/%d 波：敌人 %d 名" % [int(wave.get("wave_number", 1)), int(wave.get("wave_total", 1)), total_spawned])
 
 func start_dark_faction_trial() -> void:
-	if active_world_chapter_id != "galaxy_wars":
-		show_notice("黑暗军团挑战目前仅在银河战争篇开放")
-		return
-	if not enemies.is_empty() or EncounterDirector.active:
-		show_notice("请先完成当前战斗，再开启黑暗军团挑战")
-		return
-	var dark_waves := EncounterDirector.get_dark_faction_trial_waves()
-	if EncounterDirector.start("dark_faction_trial", dark_waves):
-		_spawn_encounter_wave(EncounterDirector.get_current_wave())
-		show_notice("黑暗军团挑战开始：斥候、精英与黑暗统领正在集结")
+    if active_world_chapter_id != "galaxy_wars":
+        show_notice("黑暗军团挑战目前仅在银河战争篇开放")
+        return
+    if not enemies.is_empty() or EncounterDirector.active:
+        show_notice("请先完成当前战斗，再开启黑暗军团挑战")
+        return
+    var dark_waves := EncounterDirector.get_dark_faction_trial_waves()
+    if EncounterDirector.start("dark_faction_trial", dark_waves):
+        _spawn_encounter_wave(EncounterDirector.get_current_wave())
+        show_notice("黑暗军团挑战开始：斥候、精英与黑暗统领正在集结")
 
 func start_daily_boss_challenge() -> void:
     var daily_state: Dictionary = DailyBossManager.get_state()
