@@ -944,6 +944,32 @@ func _build_armor_visuals() -> void:
         crest.rotation.x = -0.18
     elif crest_id == "crescent":
         crest.rotation.z = PI * 0.5
+
+    # Secondary heraldic pieces make the 32 class crests readable at gameplay distance.
+    match crest_id:
+        "trident":
+            var prong_mesh := PrismMesh.new()
+            prong_mesh.size = Vector3(0.075, 0.24, 0.08)
+            for prong_side in [-1.0, 1.0]:
+                var prong := _add_armor_piece(prong_mesh, Vector3(prong_side * 0.105, 2.18, -0.025), Vector3.ONE, accent.lightened(0.16), stage_metallic, "head")
+                prong.rotation.z = -prong_side * 0.24
+        "ice":
+            var ice_fin_mesh := PrismMesh.new()
+            ice_fin_mesh.size = Vector3(0.10, 0.26, 0.075)
+            for ice_side in [-1.0, 1.0]:
+                var ice_fin := _add_armor_piece(ice_fin_mesh, Vector3(ice_side * 0.15, 2.08, 0.015), Vector3.ONE, accent.lightened(0.22), stage_metallic, "head")
+                ice_fin.rotation.z = -ice_side * 0.38
+        "flame":
+            var flame_tip_mesh := PrismMesh.new()
+            flame_tip_mesh.size = Vector3(0.10, 0.30, 0.08)
+            for flame_side in [-1.0, 1.0]:
+                var flame_tip := _add_armor_piece(flame_tip_mesh, Vector3(flame_side * 0.13, 2.13, 0.015), Vector3(0.72, 1.0, 1.0), accent.lightened(0.12), stage_metallic, "head")
+                flame_tip.rotation.z = -flame_side * 0.32
+        "halo", "dream", "aegis", "rune", "clock", "lyre":
+            var crest_gem_mesh := SphereMesh.new()
+            crest_gem_mesh.radius = 0.055
+            crest_gem_mesh.height = 0.10
+            _add_armor_piece(crest_gem_mesh, Vector3(0.0, 2.12, -0.16), Vector3.ONE, accent.lightened(0.24), 1.0, "head")
     var helmet_cap := SphereMesh.new()
     helmet_cap.radius = 0.245
     helmet_cap.height = 0.20
