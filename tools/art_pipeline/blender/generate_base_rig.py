@@ -289,7 +289,7 @@ def build_body(rig):
         # spherical shoulder joint and blends into the upper-arm silhouette.
         parts.append(add_weighted_pauldron(
             side + "ShoulderMesh", (x(0.315), -0.012, 1.465),
-            0.105, 0.105, 0.115, side + "Shoulder", CLOTH, rig, sign))
+            0.145, 0.070, 0.078, side + "Shoulder", CLOTH, rig, sign))
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
@@ -416,7 +416,7 @@ def build_armor(rig):
         # Winged pauldron with a sharp outer point and layered lower edge.
         parts.append(add_weighted_pauldron(
             "Armor_" + side + "_Shoulder", (sign * 0.335, -0.055, 1.49),
-            0.145, 0.115, 0.125, side + "Shoulder", GOLD, rig, sign))
+            0.170, 0.078, 0.088, side + "Shoulder", GOLD, rig, sign))
         # Forearm bracer and shin guard use tapered, faceted armor profiles.
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Forearm", (sign * 0.49, -0.075, 1.105),
@@ -1110,7 +1110,7 @@ def build_profession_models(shard_index=0, shard_count=1):
             ornaments.append(add_weighted_pauldron(
                 class_id + "_" + side + "_Signature_Pauldron",
                 (sign * (0.34 * shoulder_factor), -0.105, 1.48),
-                0.105 * shoulder_factor, 0.095 * shoulder_factor, 0.095,
+                0.142 * shoulder_factor, 0.072 * shoulder_factor, 0.078,
                 side + "Shoulder", profession_mat, rig, sign
             ))
         # Every profession receives a unique crest; winged archetypes receive
