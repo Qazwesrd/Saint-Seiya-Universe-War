@@ -1367,6 +1367,14 @@ func attack() -> void:
     game.call("damage_nearby_combat", damages, attack_reach, 150.0 if tenkishi_flight_active else 125.0, push_forces[basic_combo_step - 1] + float(aerial_profile.get("knockback_bonus", 0.0)), lift_forces[basic_combo_step - 1], 0.18 if basic_combo_step < 3 else float(skill_data.get("stagger", 0.55)) * 0.6)
     game.call("show_notice", str(basic_names[basic_combo_step - 1]) + "！")
     _register_custom_combo_input("basic_attack_%d" % basic_combo_step)
+func _play_platinum_awakened_feedback() -> void:
+    var armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+    if not bool(armor_bonus.get("platinum_awakened", false)) or not is_instance_valid(game):
+        return
+    var effect_position := global_position + Vector3.UP * 0.9
+    game.call("spawn_effect", effect_position, Color(0.86, 0.94, 1.0), 3.8, "star", 0.58)
+    game.call("spawn_effect", effect_position + Vector3.UP * 0.18, Color(1.0, 0.78, 0.38), 2.5, "halo", 0.48)
+
 func skill() -> void:
     if skill_cd > 0.0:
         game.call("show_notice", "职业技能冷却中")
@@ -1393,6 +1401,7 @@ func skill() -> void:
     game.call("damage_nearby_combat", 18.0 + attack_power * damage_multiplier, skill_reach, float(skill_data.get("cone", 150.0)), float(skill_data.get("knockback", 3.5)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("launch", 1.2)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 0.55)))
     game.call("apply_class_skill_effect", class_id, skill_reach)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.0) + Vector3.UP, skill_color, 2.8)
+    _play_platinum_awakened_feedback()
     game.call("show_notice", str(skill_data.get("name", "职业技能")) + "！")
     _register_custom_combo_input(class_id + "_skill_1")
 func combo_skill() -> void:
@@ -1418,6 +1427,7 @@ func combo_skill() -> void:
     _flash(Color(1.0, 0.9, 0.55))
     game.call("damage_nearby_combat", damage, combo_range, 180.0, float(skill_data.get("combo_knockback", 9.0)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("combo_launch", 3.8)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 0.85)) * 1.2)
     game.call("spawn_effect", global_position + (-global_transform.basis.z * 3.5) + Vector3.UP, skill_color, 4.0)
+    _play_platinum_awakened_feedback()
     game.call("show_notice", str(skill_data.get("combo", "职业连招")) + "！")
 func cosmos_burst() -> void:
     if burst_cd > 0.0 or cosmos < 35.0:
@@ -1437,6 +1447,7 @@ func cosmos_burst() -> void:
         return
     game.call("damage_nearby_combat", burst_damage, burst_range, 360.0, float(skill_data.get("burst_knockback", 12.0)) + float(aerial_profile.get("knockback_bonus", 0.0)), float(skill_data.get("burst_launch", 4.5)) + float(aerial_profile.get("launch_bonus", 0.0)), float(skill_data.get("stagger", 1.0)))
     game.call("spawn_effect", global_position + Vector3.UP, Color(1.0, 0.42, 0.12), 4.0)
+    _play_platinum_awakened_feedback()
     game.call("show_notice", str(skill_data.get("burst_name", "小宇宙爆发")) + "！")
 func dodge() -> void:
     if dodge_time > 0.0: return
@@ -1724,6 +1735,7 @@ func cast_ability(ability_id: String) -> bool:
         effect_position = global_position + Vector3.UP * 1.15 + (-global_transform.basis.z * 1.4)
     var impact_scale := clampf(float(visual_profile.get("impact_scale", 1.0)), 0.5, 1.5)
     game.call("spawn_skill_effect", effect_position, visual_profile)
+    _play_platinum_awakened_feedback()
     if bool(visual_profile.get("is_ultimate", false)) and bool(SettingsManager.get_value("controls", "vibration", true)):
         Input.vibrate_handheld(90, 0.65)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
