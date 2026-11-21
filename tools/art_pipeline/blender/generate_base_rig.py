@@ -497,6 +497,54 @@ COMBO_STYLE_POSES = {
     "grace": (0.76, -0.92, 0.55, -0.35, 1.06, -0.12),
 }
 
+def make_signature_idle_pose(rig, profession_id):
+    """Create a distinct, looping character-specific presentation stance."""
+    style = PROFESSION_COMBO_STYLES.get(profession_id, "rush")
+    arm, forearm, torso, hips, support, leg = COMBO_STYLE_POSES[style]
+    seed = sum((index + 1) * ord(char) for index, char in enumerate(profession_id))
+    variation = 1.0 + ((seed % 13) - 6) * 0.018
+    primary = "Right" if seed % 2 == 0 else "Left"
+    secondary = "Left" if primary == "Right" else "Right"
+    mirror = 1.0 if primary == "Right" else -1.0
+
+    # Each character receives a recognizable silhouette: forward drive,
+    # guarded defense, elegant control, aerial balance or imposing authority.
+    pose = {
+        primary + "UpperArm": (-0.34 - abs(arm) * 0.10, 0.0, 0.16 * mirror * variation),
+        primary + "Forearm": (-0.42 + forearm * 0.10, 0.0, -0.04 * mirror),
+        secondary + "UpperArm": (-0.24 - abs(support) * 0.08, 0.0, -0.14 * mirror),
+        secondary + "Forearm": (-0.30, 0.0, 0.03 * mirror),
+        "Chest": (torso * 0.10, 0.0, hips * 0.10 * variation),
+        "Spine": (0.0, 0.0, torso * 0.035),
+        "Hips": (0.0, 0.0, hips * 0.10 * variation),
+        primary + "Thigh": (-0.08 - abs(leg) * 0.06, 0.0, 0.0),
+        secondary + "Thigh": (0.05 + abs(leg) * 0.035, 0.0, 0.0),
+        "Head": (-0.025 * (1 if style == "reaper" else -1), 0.0, 0.045 * mirror),
+    }
+
+    action_name = profession_id + "_signature_idle"
+    action = bpy.data.actions.new(name=action_name)
+    if rig.animation_data is None:
+        rig.animation_data_create()
+    rig.animation_data.action = action
+    scene = bpy.context.scene
+    neutral = {bone.name: (0.0, 0.0, 0.0) for bone in rig.pose.bones}
+    scene.frame_set(1)
+    key_pose(rig, 1, neutral)
+    key_pose(rig, 18, pose)
+    key_pose(rig, 48, pose)
+    key_pose(rig, 72, pose)
+    scene.frame_start, scene.frame_end = 18, 72
+    track = rig.animation_data.nla_tracks.new()
+    track.name = action_name
+    strip = track.strips.new(action_name, 18, action)
+    strip.name = action_name
+    strip.repeat = 0.0
+    strip.blend_type = "REPLACE"
+    rig.animation_data.action = None
+    scene.frame_set(1)
+
+
 def make_profession_combo_animations(rig, profession_id):
     """Author three genuinely different skeletal combo clips for one profession."""
     import hashlib
@@ -1200,15 +1248,16 @@ def build_profession_models(shard_index=0, shard_count=1):
                     (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
                     side + "Shoulder", enamel, rig, 16, 10))
         make_animation_library(rig, class_id)
+        make_signature_idle_pose(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
         destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
-        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3))
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
         validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
                       require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips)
         animation_dest = output_root / class_id / "animations/animation_library.glb"
         export_glb(animation_dest, [rig])
-        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3))
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
         validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
               "combo_clips=" + ",".join(required_profession_clips),

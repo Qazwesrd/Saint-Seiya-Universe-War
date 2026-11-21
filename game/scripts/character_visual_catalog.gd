@@ -27,7 +27,7 @@ const PROFILES := {
     "apollo": {"accent": Color(1.0, 0.76, 0.22), "crest": "sun", "ornament": "solar_wings", "shoulder_scale": Vector3(1.5, 1.25, 1.0), "wing_span": 1.8, "glow": 0.42, "metallic": 0.94, "silhouette": "solar"},
     "abel": {"accent": Color(1.0, 0.46, 0.20), "crest": "sun", "ornament": "solar_wings", "shoulder_scale": Vector3(1.45, 1.2, 1.0), "wing_span": 1.65, "glow": 0.38, "metallic": 0.92, "silhouette": "solar"},
     "athena": {"accent": Color(0.96, 0.86, 0.52), "crest": "aegis", "ornament": "aegis", "shoulder_scale": Vector3(1.35, 1.1, 1.1), "wing_span": 1.1, "glow": 0.32, "metallic": 0.94, "silhouette": "guardian"},
-    "hades": {"accent": Color(0.68, 0.40, 0.88), "crest": "crown", "ornament": "soul_wings", "shoulder_scale": Vector3(1.55, 1.25, 1.1), "wing_span": 1.7, "glow": 0.30, "metallic": 0.9, "silhouette": "reaper"},
+    "hades": {"accent": Color(0.38, 0.20, 0.58), "crest": "crown", "ornament": "soul_wings", "shoulder_scale": Vector3(1.55, 1.25, 1.1), "wing_span": 1.7, "glow": 0.30, "metallic": 0.9, "silhouette": "reaper"},
     "poseidon": {"accent": Color(0.20, 0.82, 1.0), "crest": "trident", "ornament": "tidal_fins", "shoulder_scale": Vector3(1.5, 1.1, 1.2), "wing_span": 1.25, "glow": 0.28, "metallic": 0.96, "silhouette": "ocean"},
     "zeus": {"accent": Color(1.0, 0.92, 0.56), "crest": "bolt", "ornament": "storm_wings", "shoulder_scale": Vector3(1.6, 1.25, 1.1), "wing_span": 1.8, "glow": 0.45, "metallic": 0.96, "silhouette": "storm"},
     "artemis": {"accent": Color(0.72, 0.86, 1.0), "crest": "crescent", "ornament": "moon_wings", "shoulder_scale": Vector3(1.15, 1.05, 1.0), "wing_span": 1.35, "glow": 0.30, "metallic": 0.9, "silhouette": "lunar"},
@@ -54,8 +54,10 @@ const ARMOR_STAGE_PALETTES := {
     "silver": {"metal": Color(0.68, 0.76, 0.86), "trim": Color(0.9, 0.94, 1.0), "metallic": 0.88, "glow": 0.08},
     "gold": {"metal": Color(0.94, 0.68, 0.22), "trim": Color(1.0, 0.88, 0.48), "metallic": 0.94, "glow": 0.14},
     "sea_scale": {"metal": Color(0.12, 0.56, 0.74), "trim": Color(0.44, 0.88, 1.0), "metallic": 0.96, "glow": 0.16},
-    "surplice": {"metal": Color(0.30, 0.20, 0.42), "trim": Color(0.76, 0.48, 0.9), "metallic": 0.9, "glow": 0.18},
-    "dark_cloth": {"metal": Color(0.035, 0.025, 0.075), "trim": Color(0.42, 0.20, 0.62), "metallic": 0.95, "glow": 0.24},
+    # Surplices are consistently black-purple; violet is a restrained secondary material, never gold.
+    "surplice": {"metal": Color(0.045, 0.025, 0.085), "trim": Color(0.30, 0.16, 0.48), "metallic": 0.94, "glow": 0.12},
+    # Dark Cloth is a separate black/graphite/steel-blue family, not a purple Surplice.
+    "dark_cloth": {"metal": Color(0.025, 0.030, 0.050), "trim": Color(0.22, 0.28, 0.38), "metallic": 0.92, "glow": 0.06},
     "platinum": {"metal": Color(0.72, 0.78, 0.88), "trim": Color(0.96, 0.98, 1.0), "metallic": 1.0, "glow": 0.32},
     "god_cloth": {"metal": Color(0.88, 0.78, 0.48), "trim": Color(1.0, 0.94, 0.7), "metallic": 0.98, "glow": 0.28},
     "god_armor": {"metal": Color(0.72, 0.78, 0.98), "trim": Color(1.0, 0.9, 0.72), "metallic": 1.0, "glow": 0.36}
