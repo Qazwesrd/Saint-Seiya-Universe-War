@@ -9,6 +9,8 @@ var outer_halo: MeshInstance3D
 var afterimages: Array[MeshInstance3D] = []
 var streaks: Array[MeshInstance3D] = []
 var shards: Array[MeshInstance3D] = []
+var shard_origins: Array[Vector3] = []
+var shard_directions: Array[Vector3] = [Vector3(0.9, 0.45, 0.15), Vector3(-0.8, -0.25, 0.2), Vector3(0.15, 0.75, -0.8)]
 
 func _ready() -> void:
     fist = get_node_or_null("MainFistCore") as MeshInstance3D
@@ -24,6 +26,7 @@ func _ready() -> void:
         var shard := get_node_or_null("ImpactShard_%02d" % index) as MeshInstance3D
         if shard != null:
             shards.append(shard)
+            shard_origins.append(shard.position)
     _apply_phase(0.0)
 
 func _process(delta: float) -> void:
@@ -61,4 +64,4 @@ func _apply_phase(progress: float) -> void:
         var shard := shards[index]
         var burst := impact * (0.45 + float(index) * 0.16)
         shard.scale = Vector3.ONE * burst
-        shard.position += Vector3(0.0, 0.0, 0.0)
+        shard.position = shard_origins[index] + shard_directions[index] * impact * 0.72
