@@ -6,6 +6,7 @@ on:
       - "tools/art_pipeline/blender/**"
       - "game/scripts/enemy_database.gd"
       - "game/scripts/character_visual_catalog.gd"
+      - "game/scripts/skill_animation_catalog.gd"
       - "game/scripts/equipment_database.gd"
       - ".github/workflows/blender-art-pipeline.yml"
   pull_request:
@@ -45,7 +46,7 @@ jobs:
           test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
           test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 50
           test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 50
-      - name: Validate all 32 profession models and 17 animation clips
+      - name: Validate all 32 profession models and 27 animation clips
         shell: bash
         run: |
           set -euo pipefail
@@ -74,15 +75,19 @@ jobs:
               if not model.is_file() or not animation_library.is_file():
                   raise SystemExit(f"{class_id}: profession model or animation library is missing")
               combo_clips = [f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)]
-              check_glb(model, require_skin=True, clips=list(required_clips) + combo_clips)
-              check_glb(animation_library, clips=list(required_clips) + combo_clips, require_meshes=False)
-              for clip_name in combo_clips:
-                  clip = next(item for item in check_glb(animation_library, require_meshes=False)["animations"] if item.get("name") == clip_name)
+              skill_categories = ("melee", "projectile", "defense", "heal", "area", "mobility", "ultimate")
+              skill_clips = [f"{class_id}_skill_{category}" for category in skill_categories]
+              expected_clips = list(required_clips) + combo_clips + skill_clips
+              check_glb(model, require_skin=True, clips=expected_clips)
+              animation_data = check_glb(animation_library, clips=expected_clips, require_meshes=False)
+              animation_by_name = {item.get("name"): item for item in animation_data["animations"]}
+              for clip_name in combo_clips + skill_clips:
+                  clip = animation_by_name[clip_name]
                   if len(clip.get("channels", [])) < 8:
                       raise SystemExit(f"{class_id}: {clip_name} has too few skeletal tracks")
-              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(required_clips) + len(combo_clips)}")
+              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(expected_clips)}")
 
-          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips) + 3}")
+          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips) + 3 + len(skill_categories)}")
           PY
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4

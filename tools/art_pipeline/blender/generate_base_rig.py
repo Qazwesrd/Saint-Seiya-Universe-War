@@ -311,6 +311,68 @@ def make_profession_combo_animations(rig, profession_id):
         raise RuntimeError(f"{profession_id}: combo clips do not contain distinct keyframe data")
     return signatures
 
+def make_profession_skill_animations(rig, profession_id):
+    """Author seven profession-styled skeletal skill archetypes for runtime ability routing."""
+    style = PROFESSION_COMBO_STYLES.get(profession_id, "rush")
+    arm, forearm, torso, hips, support, leg = COMBO_STYLE_POSES[style]
+    seed = sum((index + 1) * ord(char) for index, char in enumerate(profession_id))
+    variation = 1.0 + ((seed % 11) - 5) * 0.009
+    archetypes = {
+        "melee": {
+            "windup": {"RightUpperArm": (-0.72, 0.0, -0.12), "RightForearm": (-0.42, 0.0, 0.0), "Chest": (-0.12, 0.0, 0.12)},
+            "impact": {"RightUpperArm": (arm * variation, 0.0, 0.12), "RightForearm": (forearm, 0.0, -0.08), "LeftUpperArm": (support, 0.0, 0.06), "Chest": (0.10, 0.0, torso), "Hips": (0.0, 0.0, hips)},
+        },
+        "projectile": {
+            "windup": {"RightUpperArm": (-1.35, 0.0, -0.18), "LeftUpperArm": (-0.95, 0.0, 0.18), "Chest": (-0.18, 0.0, 0.0)},
+            "impact": {"RightUpperArm": (-0.22 * variation, 0.0, -0.08), "RightForearm": (-1.18, 0.0, 0.0), "LeftUpperArm": (-0.42, 0.0, 0.08), "LeftForearm": (-0.92, 0.0, 0.0), "Chest": (0.12, 0.0, torso * 0.55)},
+        },
+        "defense": {
+            "windup": {"LeftUpperArm": (-0.65, 0.0, -0.22), "RightUpperArm": (-0.65, 0.0, 0.22), "Hips": (0.18, 0.0, 0.0)},
+            "impact": {"LeftUpperArm": (-1.25, 0.0, -0.28), "LeftForearm": (-0.82, 0.0, 0.0), "RightUpperArm": (-1.18, 0.0, 0.28), "RightForearm": (-0.78, 0.0, 0.0), "Chest": (0.18, 0.0, -0.08), "Hips": (0.24, 0.0, 0.0)},
+        },
+        "heal": {
+            "windup": {"LeftUpperArm": (-0.72, 0.0, -0.35), "RightUpperArm": (-0.72, 0.0, 0.35), "Head": (-0.12, 0.0, 0.0)},
+            "impact": {"LeftUpperArm": (-1.62, 0.0, -0.42), "LeftForearm": (-0.58, 0.0, 0.0), "RightUpperArm": (-1.62, 0.0, 0.42), "RightForearm": (-0.58, 0.0, 0.0), "Chest": (-0.18, 0.0, 0.0), "Head": (0.10, 0.0, 0.0)},
+        },
+        "area": {
+            "windup": {"LeftUpperArm": (-0.92, 0.0, -0.58), "RightUpperArm": (-0.92, 0.0, 0.58), "Chest": (-0.12, 0.0, 0.0)},
+            "impact": {"LeftUpperArm": (-1.62, 0.0, -0.82), "RightUpperArm": (-1.62, 0.0, 0.82), "LeftForearm": (-0.35, 0.0, 0.0), "RightForearm": (-0.35, 0.0, 0.0), "Chest": (0.12, 0.0, torso), "Hips": (0.0, 0.0, hips * 0.7)},
+        },
+        "mobility": {
+            "windup": {"RightUpperArm": (-0.42, 0.0, -0.18), "LeftUpperArm": (0.22, 0.0, 0.12), "RightThigh": (-0.42, 0.0, 0.0)},
+            "impact": {"RightUpperArm": (0.68 * variation, 0.0, -0.18), "LeftUpperArm": (-0.62, 0.0, 0.12), "RightThigh": (-leg * 1.35, 0.0, 0.0), "LeftThigh": (leg * 0.72, 0.0, 0.0), "Chest": (0.18, 0.0, torso * 0.6), "Hips": (0.0, 0.0, hips)},
+        },
+        "ultimate": {
+            "windup": {"LeftUpperArm": (-1.75, 0.0, -0.62), "RightUpperArm": (-1.75, 0.0, 0.62), "Chest": (-0.28, 0.0, 0.0), "Hips": (-0.16, 0.0, 0.0)},
+            "impact": {"LeftUpperArm": (-2.05, 0.0, -0.88), "RightUpperArm": (-2.05, 0.0, 0.88), "LeftForearm": (-0.72, 0.0, -0.18), "RightForearm": (-0.72, 0.0, 0.18), "Chest": (-0.18, 0.0, torso * 1.25), "Spine": (-0.10, 0.0, torso * 0.45), "Hips": (0.0, 0.0, hips * 0.8), "LeftThigh": (-leg * 0.55, 0.0, 0.0), "RightThigh": (-leg * 0.55, 0.0, 0.0)},
+        },
+    }
+    scene = bpy.context.scene
+    for category, poses in archetypes.items():
+        clip_name = f"{profession_id}_skill_{category}"
+        action = bpy.data.actions.new(name=clip_name)
+        if rig.animation_data is None:
+            rig.animation_data_create()
+        rig.animation_data.action = action
+        scene.frame_set(1)
+        neutral = {bone.name: (0.0, 0.0, 0.0) for bone in rig.pose.bones}
+        key_pose(rig, 1, neutral)
+        windup = {name: tuple(value * variation for value in rotation) for name, rotation in poses["windup"].items()}
+        impact = {name: tuple(value * variation for value in rotation) for name, rotation in poses["impact"].items()}
+        key_pose(rig, 6, windup)
+        key_pose(rig, 12, impact)
+        follow = {name: tuple(value * 0.42 for value in rotation) for name, rotation in impact.items()}
+        key_pose(rig, 18, follow)
+        key_pose(rig, 24, neutral)
+        scene.frame_start, scene.frame_end = 1, 24
+        track = rig.animation_data.nla_tracks.new()
+        track.name = clip_name
+        strip = track.strips.new(clip_name, 1, action)
+        strip.name = clip_name
+        rig.animation_data.action = None
+    scene.frame_set(1)
+
+
 def make_animation_library(rig, profession_id=""):
 
     scene = bpy.context.scene
@@ -390,6 +452,7 @@ def make_animation_library(rig, profession_id=""):
         rig.animation_data.action = None
     if profession_id:
         make_profession_combo_animations(rig, profession_id)
+        make_profession_skill_animations(rig, profession_id)
     scene.frame_set(1)
 def export_glb(path, objects):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -657,7 +720,8 @@ def build_profession_models():
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3))
         validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
-              "combo_clips=" + ",".join(required_profession_clips))
+              "combo_clips=" + ",".join(required_profession_clips),
+              "skill_archetypes=7")
 
 def build_equipment_models():
     """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""

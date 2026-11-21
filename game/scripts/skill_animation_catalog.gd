@@ -89,6 +89,7 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     return {
         "class_id": class_id,
         "ability_id": str(ability.get("id", "")),
+        "authored_clip": get_authored_clip_name(class_id, ability, effect),
         "ability_name": ability_name,
         "style": style,
         "motion": motion,
@@ -208,6 +209,27 @@ static func _resolve_motion(class_id: String, ability_type: String, action: Stri
     if class_id == "tenkishi":
         return "aerial_strike"
     return "strike"
+
+static func get_authored_clip_name(class_id: String, ability: Dictionary, profile: Dictionary = {}) -> String:
+    if not CLASS_STYLE.has(class_id) or ability.is_empty():
+        return ""
+    var ability_type := str(ability.get("type", "攻击"))
+    var ability_role := str(ability.get("role", ""))
+    var action := str(profile.get("action", "strike"))
+    var category := "melee"
+    if "奥义" in ability_type or "终结" in ability_type or "终结" in str(ability.get("name", "")):
+        category = "ultimate"
+    elif "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or action == "guard":
+        category = "defense"
+    elif "治疗" in ability_type or "复苏" in ability_type or "恢复" in ability_role:
+        category = "heal"
+    elif action in ["projectile", "homing_projectile"] or "远程" in ability_type or "音波" in ability_type or "次元" in ability_type or "弹射" in ability_type:
+        category = "projectile"
+    elif action in ["field", "trap", "summon"] or "范围" in ability_role or "领域" in ability_type or "震地" in ability_type or "控场" in ability_type or "灼烧" in ability_type or "召唤" in ability_type:
+        category = "area"
+    elif action in ["dash", "pursuit"] or "突进" in ability_type or "冲锋" in ability_type or "机动" in ability_type or "突袭" in ability_type or "闪避" in ability_type:
+        category = "mobility"
+    return "%s_skill_%s" % [class_id, category]
 
 static func validate_profile(profile: Dictionary) -> bool:
     var startup := float(profile.get("startup", -1.0))

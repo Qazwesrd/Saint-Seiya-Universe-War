@@ -1633,7 +1633,11 @@ func cast_ability(ability_id: String) -> bool:
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var visual_color: Color = visual_profile.get("color", class_data.get("color", Color(0.3, 0.72, 1.0)))
     _play_skill_pose(animation_profile)
-    _play_authored_action_animation("skill_cast", 0.06)
+    var authored_skill_clip := str(animation_profile.get("authored_clip", ""))
+    if not authored_skill_clip.is_empty() and is_instance_valid(authored_animation_player) and authored_animation_player.has_animation(authored_skill_clip):
+        _play_authored_action_animation(authored_skill_clip, 0.06)
+    else:
+        _play_authored_action_animation("skill_cast", 0.06)
     var feedback_duration := clampf(float(animation_profile.get("startup", 0.2)) + float(animation_profile.get("active", 0.2)) * 0.55, 0.32, 0.9)
     _play_combat_feedback(visual_color, feedback_duration)
     CombatSessionManager.record_skill_cast()
