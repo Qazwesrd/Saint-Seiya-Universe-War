@@ -680,7 +680,7 @@ func _run_tests() -> void:
 	boss_visual_test.archetype_id = "hades_emperor"
 	enemy_visual_test_root.add_child(boss_visual_test)
 	assert(bool(boss_visual_test.is_boss) and str(boss_visual_test.display_name) == "冥王哈迪斯", "Hades boss archetype initializes its combat identity")
-	assert(boss_visual_test.get_child_count() >= 10, "boss enemy builds armor, crown, aura and combat telegraph visuals")
+	assert(is_instance_valid(boss_visual_test.enemy_visual_root) and boss_visual_test.enemy_visual_root.get_child_count() >= 10 and is_instance_valid(boss_visual_test.telegraph_mesh), "boss enemy builds armor, crown, aura and combat telegraph visuals")
 	assert(boss_visual_test.enemy_arm_nodes.size() == 2 and boss_visual_test.enemy_leg_nodes.size() == 2, "boss enemy has animated arm and leg meshes")
 	enemy_visual_test_root.queue_free()
 	var campaign_order_ids: Dictionary = {}
