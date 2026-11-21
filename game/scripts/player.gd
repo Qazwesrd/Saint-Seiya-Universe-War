@@ -1666,7 +1666,9 @@ func cast_ability(ability_id: String) -> bool:
     elif vfx_anchor == "upper_body":
         effect_position = global_position + Vector3.UP * 1.15 + (-global_transform.basis.z * 1.4)
     var impact_scale := clampf(float(visual_profile.get("impact_scale", 1.0)), 0.5, 1.5)
-    game.call("spawn_effect", effect_position, visual_color, clampf(2.2 * impact_scale, 1.2, 3.3), str(visual_profile.get("shape", "star")), float(visual_profile.get("glow", 0.4)))
+    game.call("spawn_skill_effect", effect_position, visual_profile)
+    if bool(visual_profile.get("is_ultimate", false)) and bool(SettingsManager.get_value("controls", "vibration", true)):
+        Input.vibrate_handheld(90, 0.65)
     game.call("show_notice", str(ability.get("name", "职业技能")) + "！")
     _register_custom_combo_input(ability_id)
     return true

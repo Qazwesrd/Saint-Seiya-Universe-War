@@ -507,6 +507,26 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
         if is_instance_valid(sun):
             sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
 
+func spawn_skill_effect(at: Vector3, visual_profile: Dictionary) -> void:
+    if visual_profile.is_empty() or not bool(SettingsManager.get_value("graphics", "effects", true)):
+        return
+    var effect_color: Color = visual_profile.get("color", Color(0.42, 0.66, 1.0))
+    var impact_scale := clampf(float(visual_profile.get("impact_scale", 1.0)), 0.5, 1.5)
+    var shape := str(visual_profile.get("shape", "star"))
+    var glow := clampf(float(visual_profile.get("glow", 0.4)), 0.0, 0.6)
+    var layers := clampi(int(visual_profile.get("effect_layers", 1)), 1, 3)
+    var signature := int(visual_profile.get("signature", 0))
+    spawn_effect(at, effect_color, clampf(2.2 * impact_scale, 1.2, 3.8), shape, glow)
+    if layers >= 2:
+        var secondary_shape := str(visual_profile.get("secondary_shape", "ring"))
+        var offset := Vector3(float((signature % 3) - 1) * 0.34, 0.08, float(((signature / 3) % 3) - 1) * 0.34)
+        spawn_effect(at + offset, effect_color.lightened(0.12), clampf(1.45 * impact_scale, 0.9, 2.4), secondary_shape, glow * 0.82)
+    if layers >= 3:
+        # Ultimate techniques receive a third, larger delayed-looking outer
+        # impact layer; low graphics quality still limits each effect's shards.
+        spawn_effect(at + Vector3.UP * 0.16, effect_color, clampf(2.85 * impact_scale, 1.8, 4.2), "halo", glow)
+
+
 func spawn_effect(at: Vector3, effect_color: Color, radius: float, effect_shape: String = "star", glow: float = 0.4) -> void:
     if not bool(SettingsManager.get_value("graphics", "effects", true)):
         return

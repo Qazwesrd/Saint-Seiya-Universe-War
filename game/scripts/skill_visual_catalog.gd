@@ -55,6 +55,20 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     result["glow"] = clampf(float(result.get("glow", 0.4)), 0.0, 0.6)
     result["impact_scale"] = clampf(float(result.get("impact_scale", 1.0)), 0.5, 1.5)
     result["lifetime"] = 0.24 if element in ["lightning", "wind"] else 0.42
+    var ability_id := str(ability.get("id", ""))
+    var signature := 0
+    for character_index in range(ability_id.length()):
+        signature = (signature * 33 + ability_id.unicode_at(character_index)) % 9973
+    var ability_type := str(ability.get("type", ""))
+    var ability_name := str(ability.get("name", ""))
+    var is_ultimate := "奥义" in ability_type or "终结" in ability_type or "终结" in ability_name
+    result["signature"] = signature
+    result["rotation"] = float(signature % 360)
+    result["secondary_shape"] = ["ring", "pulse", "crescent", "star"][signature % 4]
+    result["effect_layers"] = 3 if is_ultimate else (2 if signature % 3 == 0 else 1)
+    result["is_ultimate"] = is_ultimate
+    result["impact_scale"] = clampf(float(result["impact_scale"]) * (1.22 if is_ultimate else 1.0), 0.5, 1.5)
+    result["glow"] = clampf(float(result["glow"]) + (0.08 if is_ultimate else 0.0), 0.0, 0.6)
     return result
 
 static func validate_catalog() -> Dictionary:
