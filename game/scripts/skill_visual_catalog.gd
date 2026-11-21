@@ -51,6 +51,14 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     if element == "cosmos":
         result["color"] = class_profile.get("accent", Color(0.42, 0.66, 1.0))
     result["element"] = element
+    # Authored signature scenes override the generic elemental profile for named finishers.
+    if ability_id == "pegasus_skill_6":
+        result["scene_path"] = "res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
+        result["shape"] = "meteor_afterimage_impact"
+        result["effect_layers"] = 3
+        result["lifetime"] = 0.58
+    else:
+        result["scene_path"] = "res://assets/vfx/%s/effect.tscn" % element
     result["shape"] = str(result.get("shape", "star"))
     result["glow"] = clampf(float(result.get("glow", 0.4)), 0.0, 0.6)
     result["impact_scale"] = clampf(float(result.get("impact_scale", 1.0)), 0.5, 1.5)
