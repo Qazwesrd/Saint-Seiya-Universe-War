@@ -18,7 +18,7 @@ def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
 def normalize_package_lookup_path(entry_path: str) -> str:
-    return str(entry_path).replace("/", "\\").replace("\\", "\\").lower()
+    return str(entry_path).replace("/", "\\").lower()
 
 
 def write_payload(output: Path, payload: dict[str, Any]) -> None:
