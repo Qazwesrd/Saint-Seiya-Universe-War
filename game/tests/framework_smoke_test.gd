@@ -169,6 +169,12 @@ func _run_tests() -> void:
 	RPGState.profile["armor_state"]["durability"]["chest"] = 0
 	assert(is_equal_approx(ArmorSystem.get_damage_reduction(), 0.064), "a broken armor piece reduces defensive mitigation proportionally")
 	assert(ArmorSystem.get_part_condition_tier("chest") == "broken", "individual armor parts expose their broken state")
+	RPGState.profile["armor_state"] = {"current_stage":"bronze","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100}}
+	var armor_hit_result: Dictionary = ArmorSystem.damage_part("head", 35)
+	assert(bool(armor_hit_result.get("changed", false)) and int(armor_hit_result.get("before", 0)) == 100 and int(armor_hit_result.get("after", 100)) == 65, "armor impact reports the exact damaged part and durability change")
+	assert(str(armor_hit_result.get("tier", "")) == "worn", "armor impact reports the resulting visual condition tier")
+	assert(ArmorSystem.get_part_durability("head") == 65, "targeted armor damage is committed to the selected part")
+	assert(ArmorSystem.damage_part("invalid_part", 10).is_empty(), "invalid armor part damage is safely rejected")
 	RPGState.profile["armor_state"] = saved_wear_state
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	assert(SkillAnimationCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback animation profiles")
