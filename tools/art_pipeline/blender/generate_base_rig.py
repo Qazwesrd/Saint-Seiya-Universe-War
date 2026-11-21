@@ -539,7 +539,6 @@ def make_signature_idle_pose(rig, profession_id):
     track.name = action_name
     strip = track.strips.new(action_name, 18, action)
     strip.name = action_name
-    strip.repeat = 0.0
     strip.blend_type = "REPLACE"
     rig.animation_data.action = None
     scene.frame_set(1)
