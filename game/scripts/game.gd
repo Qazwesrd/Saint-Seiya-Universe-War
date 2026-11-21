@@ -355,6 +355,18 @@ func _spawn_encounter_wave(wave: Dictionary) -> void:
     if total_spawned > 0:
         show_notice("第 %d/%d 波：敌人 %d 名" % [int(wave.get("wave_number", 1)), int(wave.get("wave_total", 1)), total_spawned])
 
+func start_dark_faction_trial() -> void:
+	if active_world_chapter_id != "galaxy_wars":
+		show_notice("黑暗军团挑战目前仅在银河战争篇开放")
+		return
+	if not enemies.is_empty() or EncounterDirector.active:
+		show_notice("请先完成当前战斗，再开启黑暗军团挑战")
+		return
+	var dark_waves := EncounterDirector.get_dark_faction_trial_waves()
+	if EncounterDirector.start("dark_faction_trial", dark_waves):
+		_spawn_encounter_wave(EncounterDirector.get_current_wave())
+		show_notice("黑暗军团挑战开始：斥候、精英与黑暗统领正在集结")
+
 func start_daily_boss_challenge() -> void:
     var daily_state: Dictionary = DailyBossManager.get_state()
     if not DailyBossManager.can_challenge():
@@ -541,6 +553,9 @@ func on_enemy_defeated(enemy: Node3D) -> void:
         SideQuestManager.record_event("boss_defeated" if defeated_boss else "enemy_defeated", {"chapter_id": active_world_chapter_id})
         if defeated_boss:
             SideQuestManager.record_event("dark_boss_defeated", {"chapter_id": active_world_chapter_id, "archetype_id": str(enemy.get("archetype_id"))})
+        var defeated_archetype_id := str(enemy.get("archetype_id"))
+        if defeated_archetype_id in ["dark_saint_scout", "dark_saint_raider", "dark_saint_elite", "dark_saint_captain"]:
+            SideQuestManager.record_event("dark_patrol_defeated", {"chapter_id": active_world_chapter_id, "archetype_id": defeated_archetype_id})
         _record_campaign_encounter_progress(enemy)
         if CampaignManager.can_complete_active_mission():
             var encounter_mission: Dictionary = CampaignManager.get_active_mission()
