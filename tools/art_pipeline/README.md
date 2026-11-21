@@ -95,3 +95,15 @@ blender --background --python tools/art_pipeline/blender/import_angelica_ski_jso
 ```
 
 该导入器会创建网格对象、UV、材质槽和顶点组（保留骨骼权重索引，供后续绑定使用）。当前是静态网格检查场景：尚未生成 BON 骨架、骨骼动作、材质贴图连接或完整 GLB；没有真实客户端样本前，也不能保证所有 SKI 版本都兼容。
+
+
+## 导出 BON 骨架与 STCK 动画数据
+
+从资源包中选择一个实际存在的 `.bon` 或 `.stck` 路径，可将骨骼层级、骨骼矩阵、挂点、动画轨道、关键帧和帧率导出为 JSON：
+
+```powershell
+py tools/art_pipeline/export_angelica_rig_json.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --entry "models\\characters\\pegasus.bon" --output "D:\\SeiyaInventory\\pegasus_bon.json"
+py tools/art_pipeline/export_angelica_rig_json.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --entry "models\\characters\\idle.stck" --output "D:\\SeiyaInventory\\pegasus_idle.json"
+```
+
+BON 旧版本中内嵌的动画也会随骨架 JSON 一起保存。当前阶段完成了数据导出接口，尚未完成矩阵坐标系校准、Blender Armature 自动重建和动作重定向；这些必须使用真实客户端样本逐个验证。
