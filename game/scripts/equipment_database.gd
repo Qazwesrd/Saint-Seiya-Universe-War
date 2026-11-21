@@ -51,6 +51,16 @@ const EQUIPMENT := {
  "surplice_general":{"name":"冥斗士通用冥衣","category":"冥衣 Surplice","faction":"冥界","source_work":"冥王篇","canon_status":"冥衣体系通用装备档案","rank":"冥界级","attack":18,"defense":17,"max_health":100,"unlock_level":40},
  "mariner_scale_general":{"name":"海斗士通用鳞衣","category":"鳞衣 Scale","faction":"海界","source_work":"海皇篇","canon_status":"鳞衣体系通用装备档案","rank":"海界级","attack":17,"defense":18,"max_health":105,"unlock_level":35},
  "god_robe_general":{"name":"神斗士通用神斗衣","category":"神斗衣 God Robe","faction":"北欧仙宫","source_work":"北欧篇","canon_status":"神斗衣体系通用装备档案","rank":"神斗级","attack":20,"defense":20,"max_health":120,"unlock_level":45},
+ "dark_pegasus_cloth":{"name":"暗黑天马座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"银河战争篇·暗黑圣斗士","canon_status":"原作暗黑天马座圣衣；本作数值与强化效果为游戏设定","rank":"暗黑青铜级","class_id":"pegasus","attack":16,"defense":10,"max_health":76,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"流星突袭：攻击属性强化"},
+ "dark_dragon_cloth":{"name":"暗黑天龙座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"银河战争篇·暗黑圣斗士","canon_status":"原作暗黑天龙座圣衣；本作数值与强化效果为游戏设定","rank":"暗黑青铜级","class_id":"dragon","attack":12,"defense":17,"max_health":102,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"暗黑龙盾：防御与生命强化"},
+ "dark_cygnus_cloth":{"name":"暗黑白鸟座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"银河战争篇·暗黑圣斗士","canon_status":"原作暗黑白鸟座圣衣；本作数值与强化效果为游戏设定","rank":"暗黑青铜级","class_id":"cygnus","attack":15,"defense":13,"max_health":88,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"黑冰共鸣：攻防均衡强化"},
+ "dark_andromeda_cloth":{"name":"暗黑仙女座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"银河战争篇·暗黑圣斗士","canon_status":"原作暗黑仙女座圣衣；本作数值与强化效果为游戏设定","rank":"暗黑青铜级","class_id":"andromeda","attack":15,"defense":12,"max_health":86,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"暗黑锁链：攻防均衡强化"},
+ "dark_phoenix_cloth":{"name":"暗黑凤凰座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"游戏原创扩展·暗黑凤凰试炼","canon_status":"游戏原创扩展装备，并非原作暗黑四天王正式成员装备","rank":"暗黑青铜级","class_id":"phoenix","attack":18,"defense":10,"max_health":82,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"黑炎重燃：攻击强化"},
+ "dark_sea_dragon_cloth":{"name":"暗黑海龙圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"游戏原创扩展·暗黑海龙试炼","canon_status":"游戏原创扩展装备；与海皇七将军海龙鳞衣区分","rank":"暗黑青铜级","class_id":"sea_dragon","attack":17,"defense":12,"max_health":90,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"深渊潮汐：攻击与生命强化"},
+ "dark_tenmou_cloth":{"name":"暗黑天猛座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"游戏原创扩展·暗黑天猛试炼","canon_status":"游戏原创扩展职业装备，不宣称为原作正式圣衣","rank":"暗黑青铜级","class_id":"tenmou","attack":14,"defense":15,"max_health":98,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"暗影壁垒：防御强化"},
+ "dark_lyra_cloth":{"name":"暗黑天琴座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"游戏原创扩展·暗黑天琴试炼","canon_status":"游戏原创扩展职业装备，不宣称为原作正式圣衣","rank":"暗黑青铜级","class_id":"lyra","attack":18,"defense":9,"max_health":78,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"幽冥音波：攻击强化"},
+ "dark_sea_swallow_cloth":{"name":"暗黑海燕座圣衣","category":"黑暗圣衣 Dark Cloth","faction":"黑暗圣斗士","source_work":"游戏原创扩展·暗黑海燕试炼","canon_status":"游戏原创扩展职业装备，不宣称为原作正式圣衣","rank":"暗黑青铜级","class_id":"sea_swallow","attack":15,"defense":11,"max_health":86,"unlock_level":12,"required_chapter":"galaxy_wars","special_effect":"暗流疾行：生命与攻防均衡强化"},
+ "platinum_cloth_archive":{"name":"白金圣衣·星辉制式","category":"白金圣衣 Platinum Cloth","faction":"星辉圣域","source_work":"游戏原创高阶圣衣体系","canon_status":"本作原创装备等级，不属于原作已确认的官方圣衣等级","rank":"白金级","attack":34,"defense":32,"max_health":220,"unlock_level":55,"required_chapter":"original_final","special_effect":"星辉共鸣：全面提升攻防与生命"} ,
 }
 
 func get_catalog() -> Array:
@@ -61,11 +71,24 @@ func get_catalog() -> Array:
         result.append(entry)
     return result
 
+func _meets_story_requirement(data: Dictionary) -> bool:
+    var required_chapter := str(data.get("required_chapter", ""))
+    if required_chapter.is_empty():
+        return true
+    for chapter in CampaignManager.get_chapter_overview():
+        if str(chapter.get("id", "")) == required_chapter:
+            return bool(chapter.get("completed", false))
+    return false
+
+func _matches_current_class(data: Dictionary) -> bool:
+    var required_class := str(data.get("class_id", ""))
+    return required_class.is_empty() or required_class == str(RPGState.profile.get("class_id", "pegasus"))
+
 func unlock_equipment(item_id: String) -> bool:
     if not EQUIPMENT.has(item_id):
         return false
     var data: Dictionary = EQUIPMENT[item_id]
-    if int(RPGState.profile.get("level", 1)) < int(data.get("unlock_level", 1)):
+    if int(RPGState.profile.get("level", 1)) < int(data.get("unlock_level", 1)) or not _meets_story_requirement(data) or not _matches_current_class(data):
         return false
     var previous: Dictionary = RPGState.profile.duplicate(true)
     var owned: Array = RPGState.profile.get("owned_relics", []).duplicate()
@@ -84,7 +107,7 @@ func equip_relic(item_id: String) -> bool:
     if not EQUIPMENT.has(item_id):
         return false
     var owned: Array = RPGState.profile.get("owned_relics", [])
-    if not owned.has(item_id) or int(RPGState.profile.get("level", 1)) < int(EQUIPMENT[item_id].get("unlock_level", 1)):
+    if not owned.has(item_id) or int(RPGState.profile.get("level", 1)) < int(EQUIPMENT[item_id].get("unlock_level", 1)) or not _meets_story_requirement(EQUIPMENT[item_id]) or not _matches_current_class(EQUIPMENT[item_id]):
         return false
     var previous: Dictionary = RPGState.profile.duplicate(true)
     RPGState.profile["equipped_relic"] = item_id
