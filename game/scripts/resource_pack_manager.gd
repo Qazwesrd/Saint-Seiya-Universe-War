@@ -16,6 +16,8 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(PACK_ROOT))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(STAGING_ROOT))
 	load_catalog()
+	# Autoload 在主场景资源加载前初始化；已安装的 PCK 在此处重新挂载。
+	mount_all_installed_packs()
 
 func load_catalog() -> void:
 	catalog = {}
@@ -110,6 +112,7 @@ func _validate_directory(folder: String, expected_id: String) -> Dictionary:
 		return {"valid": false, "message": "资源包 files 必须是非空数组"}
 	var failures: Array[String] = []
 	var seen: Dictionary = {}
+	var pck_count := 0
 	var actual_total := 0
 	for item in files:
 		if typeof(item) != TYPE_DICTIONARY:
@@ -120,6 +123,8 @@ func _validate_directory(folder: String, expected_id: String) -> Dictionary:
 			failures.append("非法或重复路径：" + relative)
 			continue
 		seen[relative] = true
+		if relative.to_lower().ends_with(".pck"):
+			pck_count += 1
 		var full_path := folder.path_join(relative)
 		if not FileAccess.file_exists(full_path):
 			failures.append("缺失：" + relative)
@@ -138,6 +143,8 @@ func _validate_directory(folder: String, expected_id: String) -> Dictionary:
 			failures.append("SHA-256格式无效：" + relative)
 		elif FileAccess.get_sha256(full_path).to_lower() != expected_hash.to_lower():
 			failures.append("哈希不符：" + relative)
+	if pck_count != 1:
+		failures.append("每个章节资源包必须且只能包含一个可挂载的 .pck 文件")
 	var declared_size := int(parsed.get("size_bytes", -1))
 	if declared_size != actual_total:
 		failures.append("资源包总大小不符")
@@ -195,30 +202,86 @@ func install_from_directory(source_path: String, pack_id: String) -> bool:
 		_remove_directory_if_exists(staging)
 		pack_install_finished.emit(pack_id, false, "切换新版本失败，已回滚")
 		return false
+	if not mount_pack(pack_id):
+		var failed_path := STAGING_ROOT.path_join(pack_id + ".mount_failed")
+		_remove_directory_if_exists(failed_path)
+		DirAccess.rename_absolute(ProjectSettings.globalize_path(final_path), ProjectSettings.globalize_path(failed_path))
+		if had_old:
+			DirAccess.rename_absolute(ProjectSettings.globalize_path(backup), ProjectSettings.globalize_path(final_path))
+		_remove_directory_if_exists(failed_path)
+		pack_install_finished.emit(pack_id, false, "资源包已下载，但 Godot 挂载失败；已恢复旧版本")
+		return false
 	_remove_directory_if_exists(backup)
-	pack_install_finished.emit(pack_id, true, "资源包安装完成")
+	pack_install_finished.emit(pack_id, true, "资源包已校验、安装并挂载")
 	EventBus.resource_pack_changed.emit(pack_id, "installed")
 	return true
 
 func mount_pack(pack_id: String) -> bool:
+	return _mount_pack_recursive(pack_id, {})
+
+func _mount_pack_recursive(pack_id: String, visiting: Dictionary) -> bool:
 	if mounted_packs.has(pack_id):
 		return true
+	if visiting.has(pack_id):
+		push_error("资源包依赖出现循环：" + pack_id)
+		return false
+	var info := get_pack_info(pack_id)
+	if info.is_empty() or not is_pack_installed(pack_id):
+		return false
+	visiting[pack_id] = true
 	var validation := validate_pack(pack_id)
 	if not bool(validation.get("valid", false)):
+		visiting.erase(pack_id)
 		return false
 	var manifest: Dictionary = validation.get("manifest", {})
-	var mounted := false
+	for dependency in manifest.get("dependencies", []):
+		if not _mount_pack_recursive(str(dependency), visiting):
+			visiting.erase(pack_id)
+			return false
+	var pck_path := ""
 	for item in manifest.get("files", []):
 		var relative := str(item.get("path", ""))
-		if relative.to_lower().ends_with(".pck") or relative.to_lower().ends_with(".zip"):
-			var path := PACK_ROOT.path_join(pack_id).path_join(relative)
-			if not ProjectSettings.load_resource_pack(path, true):
-				return false
-			mounted = true
-	if mounted:
-		mounted_packs[pack_id] = true
-		EventBus.resource_pack_changed.emit(pack_id, "mounted")
-	return mounted
+		if relative.to_lower().ends_with(".pck"):
+			pck_path = PACK_ROOT.path_join(pack_id).path_join(relative)
+			break
+	if pck_path.is_empty():
+		visiting.erase(pack_id)
+		return false
+	var absolute_pck_path := ProjectSettings.globalize_path(pck_path)
+	if not ProjectSettings.load_resource_pack(absolute_pck_path, true):
+		push_error("Godot 无法挂载资源包：" + pack_id)
+		visiting.erase(pack_id)
+		return false
+	mounted_packs[pack_id] = true
+	visiting.erase(pack_id)
+	EventBus.resource_pack_changed.emit(pack_id, "mounted")
+	return true
+
+func mount_all_installed_packs() -> Dictionary:
+	var mounted_count := 0
+	var failed: Array[String] = []
+	for pack_id_variant in catalog.get("packs", {}):
+		var pack_id := str(pack_id_variant)
+		var info := get_pack_info(pack_id)
+		if not bool(info.get("auto_download", false)) or not is_pack_installed(pack_id):
+			continue
+		if _mount_pack_recursive(pack_id, {}):
+			mounted_count += 1
+		else:
+			failed.append(pack_id)
+	return {"mounted_count": mounted_count, "failed": failed, "all_mounted": failed.is_empty()}
+
+func is_pack_mounted(pack_id: String) -> bool:
+	return mounted_packs.has(pack_id)
+
+func get_pack_mount_status(pack_id: String) -> Dictionary:
+	var status := get_pack_status(pack_id)
+	return {
+		"installed": bool(status.get("installed", false)),
+		"valid": bool(status.get("valid", false)),
+		"mounted": is_pack_mounted(pack_id),
+		"message": str(status.get("message", ""))
+	}
 
 func get_installed_size_bytes() -> int:
 	var total := 0
@@ -510,8 +573,17 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 		_remove_directory_if_exists(staging)
 		pack_install_finished.emit(pack_id, false, "安装切换失败，旧版本已回滚")
 		return false
+	if not mount_pack(pack_id):
+		var failed_path := STAGING_ROOT.path_join(pack_id + ".mount_failed")
+		_remove_directory_if_exists(failed_path)
+		DirAccess.rename_absolute(ProjectSettings.globalize_path(final_path), ProjectSettings.globalize_path(failed_path))
+		if had_old:
+			DirAccess.rename_absolute(ProjectSettings.globalize_path(backup), ProjectSettings.globalize_path(final_path))
+		_remove_directory_if_exists(failed_path)
+		pack_install_finished.emit(pack_id, false, "资源包已下载，但 Godot 挂载失败；已恢复旧版本")
+		return false
 	_remove_directory_if_exists(backup)
-	pack_install_finished.emit(pack_id, true, "资源包下载、校验和安装完成")
+	pack_install_finished.emit(pack_id, true, "资源包下载、校验、安装并挂载完成")
 	EventBus.resource_pack_changed.emit(pack_id, "installed")
 	return true
 

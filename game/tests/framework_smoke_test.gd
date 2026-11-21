@@ -36,6 +36,16 @@ func _run_tests() -> void:
 	RPGState.profile = growth_original_profile
 	assert(RPGState.save_slot(RPGState.active_slot), "restore original save after growth-system smoke tests")
 	assert(BossChapterCombatCatalog.validate_catalog(), "all seven campaign chapters have complete boss combat profiles")
+	var downloadable_chapter_count := 0
+	for resource_pack_id in ResourcePackManager.catalog.get("packs", {}):
+		var resource_pack_info := ResourcePackManager.get_pack_info(str(resource_pack_id))
+		if bool(resource_pack_info.get("auto_download", false)):
+			downloadable_chapter_count += 1
+	assert(downloadable_chapter_count == 7, "resource catalog includes all seven auto-download campaign packs")
+	var resource_pack_mount_status := ResourcePackManager.get_pack_mount_status("galaxy_wars")
+	assert(resource_pack_mount_status.has("installed") and resource_pack_mount_status.has("valid") and resource_pack_mount_status.has("mounted"), "resource pack exposes separate installed, validation and runtime mount states")
+	var resource_pack_mount_report: Dictionary = ResourcePackManager.mount_all_installed_packs()
+	assert(resource_pack_mount_report.has("mounted_count") and resource_pack_mount_report.has("failed"), "startup pack mount pass returns a structured report")
 	for dark_enemy_id in ["dark_phoenix_revenant", "dark_dragon_wraith", "dark_black_knight_champion"]:
 		assert(EnemyDatabase.has_archetype(dark_enemy_id), "Dark Saint encounter archetype exists: " + dark_enemy_id)
 		assert(bool(EnemyDatabase.get_archetype(dark_enemy_id).get("is_boss", false)), "Dark Saint encounter archetype is a boss: " + dark_enemy_id)

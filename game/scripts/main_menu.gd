@@ -136,8 +136,8 @@ func _all_story_packs_installed() -> bool:
 		if not bool(info.get("auto_download", false)):
 			continue
 		story_pack_count += 1
-		var status := ResourcePackManager.get_pack_status(str(pack_id))
-		if not bool(status.get("valid", false)):
+		var status := ResourcePackManager.get_pack_mount_status(str(pack_id))
+		if not bool(status.get("valid", false)) or not bool(status.get("mounted", false)):
 			return false
 	return story_pack_count > 0
 
