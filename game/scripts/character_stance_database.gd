@@ -1,5 +1,6 @@
 extends RefCounted
 class_name CharacterStanceDatabase
+const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
 ## Distinct procedural pose offsets for the fallback player mannequin.
 const ACTION_STATES := ["idle", "walk", "run", "attack", "hit", "death"]
 const CLASS_PROFILES := {
@@ -44,12 +45,36 @@ static func get_profile(class_id: String, faction_id: String = "sanctuary", is_s
  var result: Dictionary = FACTION_PROFILES.get(faction_id, FACTION_PROFILES["sanctuary"]).duplicate(true)
  if CLASS_PROFILES.has(class_id):
   result = CLASS_PROFILES[class_id].duplicate(true)
+ elif CharacterVisualCatalog.PROFILES.has(class_id):
+  result = _build_class_signature_profile(class_id)
  if is_supreme_deity:
   result = HONGJUN_PROFILE.duplicate(true)
   result["character_title"] = "鸿钧老祖"
  result["class_id"] = class_id
  result["faction_id"] = faction_id
  return result
+
+static func _build_class_signature_profile(class_id: String) -> Dictionary:
+ var class_ids: Array = CharacterVisualCatalog.PROFILES.keys()
+ var class_index := class_ids.find(class_id)
+ if class_index < 0:
+  class_index = 0
+ var left_arm := -0.16 - float((class_index * 3) % 9) * 0.055
+ var right_arm := -0.20 - float((class_index * 5 + 2) % 11) * 0.047
+ var left_forearm := left_arm * 0.72
+ var right_forearm := right_arm * 0.68
+ var leg_spread := float((class_index % 7) - 3) * 0.025
+ return {
+  "stance_id": class_id + "_signature",
+  "style": "signature_" + class_id,
+  "torso_pitch": float((class_index % 9) - 4) * 0.018,
+  "torso_roll": float((class_index % 5) - 2) * 0.022,
+  "arm_rest": [left_arm, right_arm],
+  "forearm_rest": [left_forearm, right_forearm],
+  "leg_rest": [leg_spread, -leg_spread],
+  "gait_scale": 0.72 + float((class_index * 7) % 8) * 0.075,
+  "idle_breath": 0.38 + float((class_index * 5) % 9) * 0.075
+ }
 
 static func get_supported_action_states() -> Array[String]:
  var result: Array[String] = []
@@ -69,4 +94,11 @@ static func validate_catalog() -> Dictionary:
  for faction_id in FACTION_PROFILES:
   if str(FACTION_PROFILES[faction_id].get("stance_id","")).is_empty():
    errors.append("%s has an empty faction stance id" % faction_id)
+ var stance_ids: Dictionary = {}
+ for class_id in CharacterVisualCatalog.PROFILES.keys():
+  var class_profile: Dictionary = get_profile(str(class_id), "sanctuary")
+  var stance_id := str(class_profile.get("stance_id", ""))
+  if stance_id.is_empty() or stance_ids.has(stance_id):
+   errors.append("%s has a missing or duplicate stance id" % class_id)
+  stance_ids[stance_id] = true
  return {"valid":errors.is_empty(),"errors":errors}
