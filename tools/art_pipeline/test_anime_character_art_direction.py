@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Regression checks for anime identity, unique presentation poses and armor palettes."""
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+VISUAL = ROOT / "game/scripts/character_visual_catalog.gd"
+GENERATOR = ROOT / "tools/art_pipeline/blender/generate_base_rig.py"
+WORKFLOW = ROOT / ".github/workflows/blender-art-pipeline.yml"
+DIRECTION = ROOT / "docs/ANIME_CHARACTER_ART_DIRECTION.md"
+
+
+def dictionary_ids(source: str, marker: str, indent: int) -> set[str]:
+    start = source.index(marker) + len(marker)
+    end = source.index("\n}", start)
+    body = source[start:end]
+    return set(re.findall(rf'^ {{{indent}}}"([^"]+)"\\s*:', body, re.M))
+
+
+class AnimeCharacterArtDirectionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.visual = VISUAL.read_text(encoding="utf-8")
+        cls.generator = GENERATOR.read_text(encoding="utf-8")
+        cls.workflow = WORKFLOW.read_text(encoding="utf-8")
+        cls.direction = DIRECTION.read_text(encoding="utf-8")
+
+    def test_every_playable_visual_profile_has_a_signature_pose_style(self):
+        profiles = dictionary_ids(self.visual, "const PROFILES := {", 4)
+        style_block = re.search(
+            r"PROFESSION_COMBO_STYLES = \\{(.*?)^\\}",
+            self.generator, re.S | re.M,
+        )
+        self.assertIsNotNone(style_block)
+        style_ids = set(re.findall(r'"([^"]+)"\\s*:', style_block.group(1)))
+        self.assertEqual(profiles, style_ids)
+
+    def test_surplice_and_dark_cloth_use_distinct_material_families(self):
+        self.assertIn('"surplice": {"metal": Color(0.045, 0.025, 0.085)', self.visual)
+        self.assertIn('"dark_cloth": {"metal": Color(0.025, 0.030, 0.050)', self.visual)
+        self.assertIn('"trim": Color(0.30, 0.16, 0.48)', self.visual)
+        self.assertIn('"trim": Color(0.22, 0.28, 0.38)', self.visual)
+        self.assertIn('is_surplice = ("surplice" in equipment_id', self.generator)
+        self.assertIn('is_dark_cloth = ("dark_cloth" in equipment_id', self.generator)
+        self.assertIn('Surplice_Black_Purple', self.generator)
+        self.assertIn('Dark_Cloth_Steel_Blue', self.generator)
+
+    def test_hades_character_uses_black_purple_armor_accent(self):
+        self.assertIn('"hades": {"accent": Color(0.38, 0.20, 0.58)', self.visual)
+        self.assertIn('(0.045, 0.025, 0.085) if class_id == "hades"', self.generator)
+
+    def test_each_profession_exports_a_full_body_signature_idle_clip(self):
+        self.assertIn("def make_signature_idle_pose(rig, profession_id):", self.generator)
+        self.assertIn('action_name = profession_id + "_signature_idle"', self.generator)
+        self.assertIn('make_signature_idle_pose(rig, class_id)', self.generator)
+        self.assertIn('f"{class_id}_signature_idle"', self.generator)
+        self.assertIn('"signature_idle"', self.workflow)
+        self.assertIn('len(signature_pose.get("channels", [])) < 10', self.workflow)
+
+    def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
+        self.assertIn("不得由随机职业色或通用装饰替代", self.direction)
+        self.assertIn("冥衣", self.direction)
+        self.assertIn("暗黑圣衣", self.direction)
+        self.assertIn("默认不带披风", self.direction)
+        self.assertIn("原创扩展", self.direction)
+
+
+if __name__ == "__main__":
+    unittest.main()
