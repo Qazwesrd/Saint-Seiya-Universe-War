@@ -610,6 +610,15 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", -1.0, true), 1.05), "Sea Dragon positional bonus is reduced against bosses")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", 0.8, false), 1.0), "Sea Dragon receives no positional bonus when striking the front")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("pegasus", 0.0, false), 1.0), "Other classes do not receive Sea Dragon positional bonus")
+	var clash_test_boss = preload("res://scripts/enemy.gd").new()
+	clash_test_boss.is_boss = true
+	clash_test_boss.max_health = 1000.0
+	clash_test_boss.state = 1
+	clash_test_boss._boss_heavy_attack = true
+	assert(clash_test_boss.is_ultimate_telegraph_active(), "boss heavy windup exposes an ultimate clash window")
+	assert(clash_test_boss.resolve_ultimate_clash(1000.0), "sufficient player power wins the boss ultimate clash")
+	assert(clash_test_boss.state == 2 and not clash_test_boss._boss_heavy_attack, "winning the clash interrupts the boss ultimate into recovery")
+	clash_test_boss.free()
 	var guard_test_boss = preload("res://scripts/enemy.gd").new()
 	guard_test_boss.is_boss = true
 	guard_test_boss.state = 3
