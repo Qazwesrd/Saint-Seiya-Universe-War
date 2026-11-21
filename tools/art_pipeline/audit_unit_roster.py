@@ -81,11 +81,35 @@ def _advanced_skill_ids(entry_body: str) -> set[str]:
     return set(re.findall(r'"id"\s*:\s*"([^"]+)"', entry_body))
 
 
+def _passive_catalog_report(armor_catalog: str, marker: str, class_ids: set[str]) -> dict:
+    entries = top_level_entries(armor_catalog, marker, 1)
+    names = {
+        class_id: re.search(r'"name"\\s*:\\s*"([^"]+)"', body).group(1)
+        for class_id, body in entries.items()
+        if re.search(r'"name"\\s*:\\s*"([^"]+)"', body)
+    }
+    missing = sorted(class_ids - set(entries))
+    orphaned = sorted(set(entries) - class_ids)
+    duplicate_names = sorted(
+        name for name in set(names.values()) if list(names.values()).count(name) > 1
+    )
+    malformed = sorted(set(entries) - set(names))
+    return {
+        "registered": len(entries),
+        "missing": missing,
+        "orphaned": orphaned,
+        "duplicate_names": duplicate_names,
+        "malformed": malformed,
+    }
+
+
 def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
-                  enemy_catalog: str) -> dict:
+                  enemy_catalog: str, armor_catalog: str = "") -> dict:
     classes = top_level_entries(class_data, "const CLASS_DATA := {", 1)
     visuals = top_level_entries(visual_catalog, "const PROFILES := {", 4)
     enemies = top_level_entries(enemy_catalog, "const ARCHETYPES := {", 4)
+    dark_passives = _passive_catalog_report(armor_catalog, "const DARK_CLASS_PASSIVES := {", set(classes)) if armor_catalog else {"registered": 0, "missing": sorted(classes), "orphaned": [], "duplicate_names": [], "malformed": []}
+    platinum_passives = _passive_catalog_report(armor_catalog, "const PLATINUM_CLASS_PASSIVES := {", set(classes)) if armor_catalog else {"registered": 0, "missing": sorted(classes), "orphaned": [], "duplicate_names": [], "malformed": []}
 
     base_profiles: dict[str, set[str]] = {}
     advanced_profiles: dict[str, set[str]] = {}
@@ -143,6 +167,8 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
         "orphan_visual_profiles": orphan_visuals,
         "class_skill_profiles": len(skill_profile_ids),
         "classes_missing_skill_profiles": missing_skill_profiles,
+        "dark_cloth_passives": dark_passives,
+        "platinum_cloth_passives": platinum_passives,
         "minimum_unique_skills_per_class": MIN_CLASS_SKILLS,
         "skill_counts_by_class": skill_counts,
         "skill_deficits_by_class": dict(sorted(deficits.items())),
@@ -157,6 +183,10 @@ def audit_sources(class_data: str, visual_catalog: str, skill_catalog: str,
             and not missing_visuals and not orphan_visuals
             and not missing_skill_profiles and not deficits
             and not duplicate_or_missing_skill_ids
+            and not dark_passives["missing"] and not dark_passives["orphaned"]
+            and not dark_passives["duplicate_names"] and not dark_passives["malformed"]
+            and not platinum_passives["missing"] and not platinum_passives["orphaned"]
+            and not platinum_passives["duplicate_names"] and not platinum_passives["malformed"]
         ) else "incomplete",
     }
 
@@ -168,6 +198,7 @@ def audit_repository(root: Path = ROOT) -> dict:
         read("game/scripts/character_visual_catalog.gd"),
         read("game/scripts/skill_system.gd"),
         read("game/scripts/enemy_database.gd"),
+        read("game/scripts/armor_system.gd"),
     )
 
 
@@ -202,6 +233,12 @@ def main() -> int:
             ))
         if report["visual_profiles_missing"] or report["orphan_visual_profiles"]:
             print("  visual catalog/class catalog mismatch detected")
+        for label, key in (("Dark Cloth", "dark_cloth_passives"), ("Platinum Cloth", "platinum_cloth_passives")):
+            catalog = report[key]
+            print(f"  {label} specializations: {catalog['registered']}/{report['playable_classes_registered']}")
+            for issue in ("missing", "orphaned", "duplicate_names", "malformed"):
+                if catalog[issue]:
+                    print(f"    {issue}: " + ", ".join(catalog[issue]))
     return 1 if args.strict and report["status"] != "complete" else 0
 
 
