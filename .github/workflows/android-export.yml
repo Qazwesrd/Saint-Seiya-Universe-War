@@ -12,7 +12,6 @@ on:
       - game/export_presets.cfg
       - game/project.godot
       - game/**
-      - .github/workflows/android-export.yml
 
 concurrency:
   group: android-apk-export-${{ github.ref }}
