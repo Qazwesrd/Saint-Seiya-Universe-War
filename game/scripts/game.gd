@@ -182,7 +182,6 @@ func interact_with_guide() -> void:
         if CampaignManager.can_complete_active_mission():
             var campaign_result: Dictionary = CampaignManager.complete_active_mission()
             if bool(campaign_result.get("success", false)):
-                completed_story_mission = campaign_mission
                 show_notice("剧情任务完成：" + str(campaign_mission.get("name", "")))
     if is_instance_valid(hud):
         hud.call("show_dialogue", dialogue)
