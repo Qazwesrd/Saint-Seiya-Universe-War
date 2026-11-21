@@ -69,6 +69,13 @@ jobs:
           if len(class_ids) != 32 or len(set(class_ids)) != 32:
               raise SystemExit(f"Expected 32 unique professions, found {len(class_ids)}")
 
+          import re
+          skill_source = Path("game/scripts/skill_system.gd").read_text(encoding="utf-8")
+          all_ability_ids = re.findall(r'"id"\s*:\s*"([^"]+)"', skill_source)
+          if len(all_ability_ids) != 768 or len(set(all_ability_ids)) != 768:
+              raise SystemExit(f"Expected 768 unique ability IDs, found {len(all_ability_ids)}")
+
+          audited_ability_total = 0
           for class_id in class_ids:
               model = root / class_id / "model/character.glb"
               animation_library = root / class_id / "animations/animation_library.glb"
@@ -77,17 +84,25 @@ jobs:
               combo_clips = [f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)]
               skill_categories = ("melee", "projectile", "defense", "heal", "area", "mobility", "ultimate")
               skill_clips = [f"{class_id}_skill_{category}" for category in skill_categories]
-              expected_clips = list(required_clips) + combo_clips + skill_clips
+              ability_clips = list(dict.fromkeys(
+                  ability_id for ability_id in all_ability_ids if ability_id.startswith(class_id + "_")
+              ))
+              if len(ability_clips) != 24:
+                  raise SystemExit(f"{class_id}: expected 24 skill-specific clips, found {len(ability_clips)}")
+              audited_ability_total += len(ability_clips)
+              expected_clips = list(required_clips) + combo_clips + skill_clips + ability_clips
               check_glb(model, require_skin=True, clips=expected_clips)
               animation_data = check_glb(animation_library, clips=expected_clips, require_meshes=False)
               animation_by_name = {item.get("name"): item for item in animation_data["animations"]}
-              for clip_name in combo_clips + skill_clips:
+              for clip_name in combo_clips + skill_clips + ability_clips:
                   clip = animation_by_name[clip_name]
                   if len(clip.get("channels", [])) < 8:
                       raise SystemExit(f"{class_id}: {clip_name} has too few skeletal tracks")
-              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(expected_clips)}")
+              print(f"PROFESSION_ANIMATION_VALIDATED {class_id} clips={len(expected_clips)} unique_skill_clips={len(ability_clips)}")
 
-          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} clips_per_asset={len(required_clips) + 3 + len(skill_categories)}")
+          if audited_ability_total != 768:
+              raise SystemExit(f"Expected 768 audited skill clips, found {audited_ability_total}")
+          print(f"PROFESSION_ANIMATION_AUDIT_PASS professions={len(class_ids)} unique_skill_clips={audited_ability_total} clips_per_asset={len(required_clips) + 3 + len(skill_categories) + 24}")
           PY
       - name: Upload generated GLB prototypes
         uses: actions/upload-artifact@v4

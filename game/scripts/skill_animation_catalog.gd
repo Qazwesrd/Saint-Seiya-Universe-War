@@ -229,7 +229,10 @@ static func get_authored_clip_name(class_id: String, ability: Dictionary, profil
         category = "area"
     elif action in ["dash", "pursuit"] or "突进" in ability_type or "冲锋" in ability_type or "机动" in ability_type or "突袭" in ability_type or "闪避" in ability_type:
         category = "mobility"
-    return "%s_skill_%s" % [class_id, category]
+    var ability_id := str(ability.get("id", ""))
+    if ability_id.is_empty() or not ability_id.begins_with(class_id + "_"):
+        return "%s_skill_%s" % [class_id, category]
+    return ability_id
 
 static func validate_profile(profile: Dictionary) -> bool:
     var startup := float(profile.get("startup", -1.0))

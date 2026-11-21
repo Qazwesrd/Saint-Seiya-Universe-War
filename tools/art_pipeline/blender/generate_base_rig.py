@@ -311,6 +311,21 @@ def make_profession_combo_animations(rig, profession_id):
         raise RuntimeError(f"{profession_id}: combo clips do not contain distinct keyframe data")
     return signatures
 
+def profession_ability_ids(profession_id):
+    """Read the exact 24 ability IDs per profession from the gameplay catalog."""
+    import re
+    source_path = ROOT / "game" / "scripts" / "skill_system.gd"
+    source = source_path.read_text(encoding="utf-8")
+    all_ids = re.findall(r'"id"\s*:\s*"([^"]+)"', source)
+    prefix = profession_id + "_"
+    ability_ids = list(dict.fromkeys(ability_id for ability_id in all_ids if ability_id.startswith(prefix)))
+    if len(ability_ids) != 24:
+        raise RuntimeError(
+            f"{profession_id}: expected 24 catalog abilities, found {len(ability_ids)}: {ability_ids}"
+        )
+    return ability_ids
+
+
 def make_profession_skill_animations(rig, profession_id):
     """Author seven profession-styled skeletal skill archetypes for runtime ability routing."""
     style = PROFESSION_COMBO_STYLES.get(profession_id, "rush")
@@ -362,6 +377,62 @@ def make_profession_skill_animations(rig, profession_id):
         key_pose(rig, 6, windup)
         key_pose(rig, 12, impact)
         follow = {name: tuple(value * 0.42 for value in rotation) for name, rotation in impact.items()}
+        key_pose(rig, 18, follow)
+        key_pose(rig, 24, neutral)
+        scene.frame_start, scene.frame_end = 1, 24
+        track = rig.animation_data.nla_tracks.new()
+        track.name = clip_name
+        strip = track.strips.new(clip_name, 1, action)
+        strip.name = clip_name
+        rig.animation_data.action = None
+    # Generate one separate skeletal action for every real ability ID in SkillSystem.
+    ability_ids = profession_ability_ids(profession_id)
+    category_names = tuple(archetypes.keys())
+    for ability_index, ability_id in enumerate(ability_ids):
+        category = category_names[ability_index % len(category_names)]
+        poses = archetypes[category]
+        ability_seed = sum((index + 1) * ord(char) for index, char in enumerate(ability_id))
+        ability_variation = 1.0 + ((ability_seed % 19) - 9) * 0.012
+        mirrored = -1.0 if ability_seed % 2 else 1.0
+        clip_name = ability_id
+        action = bpy.data.actions.new(name=clip_name)
+        if rig.animation_data is None:
+            rig.animation_data_create()
+        rig.animation_data.action = action
+        scene.frame_set(1)
+        neutral = {bone.name: (0.0, 0.0, 0.0) for bone in rig.pose.bones}
+        key_pose(rig, 1, neutral)
+        windup = {
+            name: tuple(value * variation * ability_variation for value in rotation)
+            for name, rotation in poses["windup"].items()
+        }
+        impact = {
+            name: tuple(value * variation * ability_variation for value in rotation)
+            for name, rotation in poses["impact"].items()
+        }
+        # ID-seeded asymmetry, torso torque and stance shifts make each clip's
+        # skeletal curves distinct instead of merely assigning different names.
+        windup["Chest"] = (
+            windup.get("Chest", (0.0, 0.0, 0.0))[0] - 0.035 * (ability_index % 4),
+            0.025 * mirrored,
+            0.045 * mirrored,
+        )
+        impact["Chest"] = (
+            impact.get("Chest", (0.0, 0.0, 0.0))[0] + 0.025 * (ability_index % 5),
+            0.035 * mirrored,
+            impact.get("Chest", (0.0, 0.0, 0.0))[2] + 0.055 * mirrored,
+        )
+        impact["Hips"] = (
+            impact.get("Hips", (0.0, 0.0, 0.0))[0] + 0.018 * (ability_index % 6),
+            0.0,
+            0.04 * mirrored,
+        )
+        key_pose(rig, 5, windup)
+        key_pose(rig, 11 + (ability_index % 3), impact)
+        follow = {
+            name: tuple(value * (0.30 + (ability_index % 4) * 0.045) for value in rotation)
+            for name, rotation in impact.items()
+        }
         key_pose(rig, 18, follow)
         key_pose(rig, 24, neutral)
         scene.frame_start, scene.frame_end = 1, 24
