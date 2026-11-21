@@ -1,4 +1,5 @@
 name: Blender Art Prototype Export
+# Rebuild assets after the Android packaging workflow fix.
 
 on:
   push:
