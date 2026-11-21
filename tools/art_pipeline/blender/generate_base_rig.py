@@ -770,7 +770,7 @@ def render_profession_turntable(profession_id, index):
     scene.render.filepath = str(preview_root / (profession_id + "_front.png"))
     scene.render.image_settings.compression = 15
     scene.view_settings.view_transform = "Standard"
-    scene.view_settings.look = "AgX - Medium High Contrast"
+    scene.view_settings.look = "Medium High Contrast"
 
     world = bpy.data.worlds.new("Preview_World_" + profession_id) if not bpy.data.worlds else bpy.data.worlds[0]
     scene.world = world
