@@ -55,6 +55,8 @@ const ARMOR_STAGE_PALETTES := {
     "gold": {"metal": Color(0.94, 0.68, 0.22), "trim": Color(1.0, 0.88, 0.48), "metallic": 0.94, "glow": 0.14},
     "sea_scale": {"metal": Color(0.12, 0.56, 0.74), "trim": Color(0.44, 0.88, 1.0), "metallic": 0.96, "glow": 0.16},
     "surplice": {"metal": Color(0.30, 0.20, 0.42), "trim": Color(0.76, 0.48, 0.9), "metallic": 0.9, "glow": 0.18},
+    "dark_cloth": {"metal": Color(0.035, 0.025, 0.075), "trim": Color(0.42, 0.20, 0.62), "metallic": 0.95, "glow": 0.24},
+    "platinum": {"metal": Color(0.72, 0.78, 0.88), "trim": Color(0.96, 0.98, 1.0), "metallic": 1.0, "glow": 0.32},
     "god_cloth": {"metal": Color(0.88, 0.78, 0.48), "trim": Color(1.0, 0.94, 0.7), "metallic": 0.98, "glow": 0.28},
     "god_armor": {"metal": Color(0.72, 0.78, 0.98), "trim": Color(1.0, 0.9, 0.72), "metallic": 1.0, "glow": 0.36}
 }
@@ -119,6 +121,16 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
     if equipment.is_empty():
         return {}
     var item_id := str(equipment.get("id", ""))
+    if item_id.begins_with("dark_"):
+        var dark_profile: Dictionary = get_profile(str(equipment.get("class_id", "")))
+        var class_accent: Color = dark_profile.get("accent", Color(0.72, 0.42, 0.92))
+        dark_profile["accent"] = class_accent.darkened(0.28).lerp(Color(0.28, 0.08, 0.42), 0.58)
+        dark_profile["ornament"] = "dark_aura"
+        dark_profile["glow"] = maxf(0.22, float(dark_profile.get("glow", 0.1)))
+        dark_profile["metallic"] = maxf(0.92, float(dark_profile.get("metallic", 0.82)))
+        return dark_profile
+    if item_id == "platinum_cloth_archive":
+        return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant", "crest": "star", "shoulder_scale": Vector3(1.42, 1.18, 1.08), "glow": 0.34, "metallic": 1.0, "silhouette": "celestial"}
     if EQUIPMENT_PROFILES.has(item_id):
         return EQUIPMENT_PROFILES[item_id].duplicate(true)
     var category := str(equipment.get("category", ""))
@@ -135,6 +147,10 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
             return {"accent": Color(0.18, 0.78, 1.0), "ornament": "tidal_fins"}
         "冥衣 Surplice":
             return {"accent": Color(0.62, 0.32, 0.78), "ornament": "soul_wings"}
+        "黑暗圣衣 Dark Cloth":
+            return {"accent": Color(0.42, 0.16, 0.62), "ornament": "dark_aura"}
+        "白金圣衣 Platinum Cloth":
+            return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant"}
         "天衣 Glory":
             return {"accent": Color(0.86, 0.94, 1.0), "ornament": "heaven_wings"}
         "神斗衣 God Robe":
