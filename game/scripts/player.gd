@@ -38,6 +38,8 @@ var armor_skirt_nodes: Array[MeshInstance3D] = []
 var armor_skirt_base_angles: Array[float] = []
 var armor_aura_node: MeshInstance3D
 var armor_gem_nodes: Array[MeshInstance3D] = []
+var armor_set_aura_nodes: Array[MeshInstance3D] = []
+var visual_armor_transform_key := ""
 var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
@@ -272,6 +274,11 @@ func _animate_visual_motion(delta: float) -> void:
         armor_aura_node.rotation.y += delta * (0.28 + movement_ratio * 0.42)
         var aura_pulse := 1.0 + sin(clock * 1.7) * 0.035
         armor_aura_node.scale = Vector3.ONE * aura_pulse
+    for set_aura_index in range(armor_set_aura_nodes.size()):
+        var set_aura := armor_set_aura_nodes[set_aura_index]
+        if is_instance_valid(set_aura):
+            set_aura.rotation.y += delta * (0.42 + float(set_aura_index) * 0.16)
+            set_aura.rotation.x = sin(clock * 0.55 + float(set_aura_index)) * 0.10
     var gem_pulse := 0.72 + (sin(clock * 2.6) * 0.5 + 0.5) * 0.38
     for gem in armor_gem_nodes:
         if not is_instance_valid(gem):
@@ -436,11 +443,52 @@ func _get_visual_armor_signature() -> String:
         "armor_state": RPGState.profile.get("armor_state", {})
     })
 
+func _get_armor_transform_key() -> String:
+    var armor_state: Dictionary = RPGState.profile.get("armor_state", {})
+    return JSON.stringify({
+        "class_id": RPGState.profile.get("class_id", "pegasus"),
+        "equipped_relic": RPGState.profile.get("equipped_relic", ""),
+        "equipment": RPGState.profile.get("equipment", {}),
+        "stage": armor_state.get("current_stage", "bronze"),
+        "awakened": armor_state.get("awakened", false)
+    })
+
 func _on_rpg_state_changed() -> void:
     if _get_visual_armor_signature() != visual_armor_signature:
+        var previous_transform_key := visual_armor_transform_key
         _build_armor_visuals()
         _load_authored_character_model(str(RPGState.profile.get("class_id", "pegasus")))
         _load_authored_armor_model()
+        if not previous_transform_key.is_empty() and previous_transform_key != visual_armor_transform_key:
+            _play_armor_transform_effect()
+
+func _play_armor_transform_effect() -> void:
+    if not is_instance_valid(visual_root):
+        return
+    var burst := MeshInstance3D.new()
+    burst.name = "ArmorTransformationBurst"
+    var ring_mesh := TorusMesh.new()
+    ring_mesh.inner_radius = 0.48
+    ring_mesh.outer_radius = 0.58
+    burst.mesh = ring_mesh
+    burst.position = Vector3(0.0, 1.05, 0.0)
+    burst.rotation.x = deg_to_rad(90.0)
+    burst.scale = Vector3(0.35, 0.35, 0.35)
+    var burst_material := StandardMaterial3D.new()
+    burst_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    burst_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    burst_material.albedo_color = Color(0.72, 0.88, 1.0, 0.82)
+    burst_material.emission_enabled = true
+    burst_material.emission = Color(0.42, 0.72, 1.0)
+    burst_material.emission_energy_multiplier = 2.4
+    burst.material_override = burst_material
+    visual_root.add_child(burst)
+    var transform_tween := create_tween()
+    transform_tween.set_parallel(true)
+    transform_tween.tween_property(burst, "scale", Vector3(2.8, 2.8, 2.8), 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+    transform_tween.tween_property(burst_material, "albedo_color:a", 0.0, 0.62)
+    transform_tween.tween_property(burst, "rotation:y", TAU, 0.62)
+    transform_tween.chain().tween_callback(burst.queue_free)
 
 func _get_armor_visual_part(piece_position: Vector3) -> String:
     var height := piece_position.y
@@ -517,6 +565,7 @@ func _build_armor_visuals() -> void:
     armor_skirt_base_angles.clear()
     armor_aura_node = null
     armor_gem_nodes.clear()
+    armor_set_aura_nodes.clear()
     armor_root = Node3D.new()
     armor_root.name = "ProceduralSaintArmor"
     visual_root.add_child(armor_root)
@@ -579,6 +628,7 @@ func _build_armor_visuals() -> void:
         "god_armor":
             stage_structure = 1.24
     visual_armor_signature = _get_visual_armor_signature()
+    visual_armor_transform_key = _get_armor_transform_key()
 
     if is_instance_valid(body_mat):
         body_mat.albedo_color = armor_base_color
@@ -925,6 +975,17 @@ func _build_armor_visuals() -> void:
 
     # Dark and Platinum tiers receive distinct silhouette pieces, not only palette swaps.
     if stage_id == "dark_cloth":
+        var dark_set_tier := int(ArmorSystem.get_bonus_stats().get("dark_set_tier", 0))
+        for set_ring_index in range(dark_set_tier):
+            var set_ring_mesh := TorusMesh.new()
+            set_ring_mesh.inner_radius = 0.62 + float(set_ring_index) * 0.12
+            set_ring_mesh.outer_radius = set_ring_mesh.inner_radius + 0.035
+            var set_ring := _add_armor_piece(set_ring_mesh, Vector3(0.0, 1.08 + float(set_ring_index) * 0.34, 0.34), Vector3(1.0, 1.0, 0.62), Color(0.34, 0.08, 0.52), 1.0)
+            set_ring.rotation.x = deg_to_rad(72.0 + float(set_ring_index) * 28.0)
+            var set_ring_material := set_ring.material_override as StandardMaterial3D
+            set_ring_material.emission_enabled = true
+            set_ring_material.emission = Color(0.30, 0.035, 0.58) * (0.34 if dark_set_tier == 2 else 0.18)
+            armor_set_aura_nodes.append(set_ring)
         var void_crescent_mesh := TorusMesh.new()
         void_crescent_mesh.inner_radius = 0.54
         void_crescent_mesh.outer_radius = 0.60
@@ -939,6 +1000,17 @@ func _build_armor_visuals() -> void:
             var void_blade := _add_armor_piece(void_blade_mesh, Vector3(blade_side * 0.62, 1.48, 0.28), Vector3(1.0, 1.0, 0.8), stage_metal_color.lightened(0.22), stage_metallic, "chest")
             void_blade.rotation.z = -blade_side * 0.42
     elif stage_id == "platinum":
+        if bool(stage_state.get("awakened", false)):
+            for orbit_index in range(2):
+                var orbit_mesh := TorusMesh.new()
+                orbit_mesh.inner_radius = 0.72 + float(orbit_index) * 0.12
+                orbit_mesh.outer_radius = orbit_mesh.inner_radius + 0.028
+                var orbit_ring := _add_armor_piece(orbit_mesh, Vector3(0.0, 1.52, 0.30), Vector3(1.0, 0.72, 1.0), Color(0.72, 0.88, 1.0), 1.0)
+                orbit_ring.rotation.x = deg_to_rad(58.0 + float(orbit_index) * 62.0)
+                var orbit_material := orbit_ring.material_override as StandardMaterial3D
+                orbit_material.emission_enabled = true
+                orbit_material.emission = Color(0.62, 0.82, 1.0) * 0.62
+                armor_set_aura_nodes.append(orbit_ring)
         var platinum_halo_mesh := TorusMesh.new()
         platinum_halo_mesh.inner_radius = 0.30
         platinum_halo_mesh.outer_radius = 0.36
