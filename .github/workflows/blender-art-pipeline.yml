@@ -28,7 +28,7 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgl1-mesa-dri libgbm1
+          sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libegl1 libgl1 libgl1-mesa-dri libgbm1
           blender --version
       - name: Generate and structurally validate GLB prototypes
         shell: bash
