@@ -14,8 +14,8 @@ def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
 def write_payload(output: Path, payload: dict[str, Any]) -> None:
-    write_payload(output, payload)
-
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 def track_payload(track: Any) -> dict[str, Any]:
     frame_ids = getattr(track, "key_frame_ids", None)
@@ -125,8 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"RIG_DATA_EXPORT_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_payload(output, payload)
     if kind == "bon":
         print(f"ANGELICA_BON_EXPORT_PASS bones={len(payload['bones'])} hooks={len(payload['hooks'])}")
     else:
