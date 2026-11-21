@@ -107,6 +107,26 @@ func _matches_current_class(data: Dictionary) -> bool:
     var required_class := str(data.get("class_id", ""))
     return required_class.is_empty() or required_class == str(RPGState.profile.get("class_id", "pegasus"))
 
+func _sync_armor_stage(item_id: String, equip_now: bool = false) -> void:
+    var category := str(EQUIPMENT.get(item_id, {}).get("category", ""))
+    var stage_id := ""
+    if category == "黑暗圣衣 Dark Cloth":
+        stage_id = "dark_cloth"
+    elif category == "白金圣衣 Platinum Cloth":
+        stage_id = "platinum"
+    if stage_id.is_empty():
+        return
+    var armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
+    if armor_state.is_empty():
+        armor_state = {"unlocked_stages": ["bronze"], "current_stage": "bronze", "durability": {"head": 100, "chest": 100, "arms": 100, "waist": 100, "legs": 100}, "levels": {}, "awakened": false}
+    var unlocked: Array = armor_state.get("unlocked_stages", []).duplicate()
+    if not unlocked.has(stage_id):
+        unlocked.append(stage_id)
+    armor_state["unlocked_stages"] = unlocked
+    if equip_now:
+        armor_state["current_stage"] = stage_id
+    RPGState.profile["armor_state"] = armor_state
+
 func unlock_equipment(item_id: String) -> bool:
     if not EQUIPMENT.has(item_id):
         return false
@@ -119,6 +139,7 @@ func unlock_equipment(item_id: String) -> bool:
         return false
     owned.append(item_id)
     RPGState.profile["owned_relics"] = owned
+    _sync_armor_stage(item_id)
     if not RPGState.save_slot(RPGState.active_slot):
         RPGState.profile = previous
         return false
@@ -134,6 +155,7 @@ func equip_relic(item_id: String) -> bool:
         return false
     var previous: Dictionary = RPGState.profile.duplicate(true)
     RPGState.profile["equipped_relic"] = item_id
+    _sync_armor_stage(item_id, true)
     if not RPGState.save_slot(RPGState.active_slot):
         RPGState.profile = previous
         return false
