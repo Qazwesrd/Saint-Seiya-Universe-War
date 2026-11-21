@@ -859,6 +859,17 @@ func _run_tests() -> void:
 	assert(float(platinum_palette.get("metallic", 0.0)) >= 0.98, "Platinum Cloth uses a high-metallic silver alloy finish")
 	assert(float(platinum_awakened_palette.get("glow", 0.0)) > float(platinum_palette.get("glow", 0.0)), "Platinum awakening intensifies its star halo palette")
 	assert(is_equal_approx(float(platinum_base_bonus.get("platinum_star_resonance", 0.0)), 1.12), "Platinum Cloth has its own star-radiance skill multiplier")
+	var platinum_passive_names: Dictionary = {}
+	for platinum_class_profile in SkillSystem.get_class_skill_catalog():
+		var platinum_class_id := str(platinum_class_profile.get("id", ""))
+		var platinum_passive: Dictionary = ArmorSystem.get_platinum_class_passive(platinum_class_id)
+		assert(not platinum_passive.is_empty(), "every profession has a dedicated Platinum Cloth passive: " + platinum_class_id)
+		var platinum_passive_name := str(platinum_passive.get("name", ""))
+		assert(not platinum_passive_name.is_empty() and not platinum_passive_names.has(platinum_passive_name), "Platinum Cloth passive names are unique across professions")
+		platinum_passive_names[platinum_passive_name] = true
+	assert(platinum_passive_names.size() == 32, "all 32 registered classes have individually named Platinum Cloth passives")
+	assert(str(platinum_base_bonus.get("platinum_class_passive", {}).get("name", "")) == ArmorSystem.get_platinum_class_passive("pegasus").get("name", ""), "equipped Platinum Cloth exposes the selected class specialization")
+	assert(float(platinum_base_bonus.get("speed", 0.0)) > 0.0, "Platinum Cloth class specialization can grant its distinct mobility bonus")
 	assert(float(platinum_base_bonus.get("max_cosmos", 0.0)) > 0.0, "Platinum Cloth grants star-radiance Cosmos capacity")
 	RPGState.profile["armor_state"]["awakened"] = true
 	var platinum_awakened_bonus: Dictionary = ArmorSystem.get_bonus_stats()
