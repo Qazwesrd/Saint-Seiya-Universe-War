@@ -386,13 +386,7 @@ func _animate_visual_motion(delta: float) -> void:
             leg_nodes[limb_index].rotation.x = lerp_angle(leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
 
 func _resolve_locomotion_action_state(planar_speed: float) -> String:
-    if not is_on_floor():
-        return "run" if planar_speed >= 5.0 else "walk"
-    if planar_speed >= 5.0:
-        return "run"
-    if planar_speed >= 0.35:
-        return "walk"
-    return "idle"
+    return CharacterStanceDatabase.resolve_locomotion_state(planar_speed)
 
 func _set_action_state(state_id: String, duration: float = 0.0) -> void:
     if not CharacterStanceDatabase.get_supported_action_states().has(state_id):
