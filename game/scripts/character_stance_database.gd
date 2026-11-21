@@ -94,6 +94,8 @@ static func can_transition_action_state(current_state: String, requested_state: 
 		return false
 	if requested_state == "death" or requested_state == "hit":
 		return true
+	if current_state == "hit":
+		return false
 	if current_state in ["attack", "hit"] and requested_state in ["idle", "walk", "run"]:
 		return false
 	return true
