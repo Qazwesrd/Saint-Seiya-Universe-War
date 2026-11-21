@@ -43,9 +43,10 @@ jobs:
           sys.path.insert(0, "tools/art_pipeline")
           from build_manifests import catalog_ids
 
+          pack_catalog = json.loads(Path("game/content/pack_catalog.json").read_text(encoding="utf-8"))
+          chapter_ids = [key for key, value in pack_catalog["packs"].items()
+                         if key != "core" and value.get("auto_download", False)]
           checks = [
-              ("environments", Path("game/scripts/chapter_database.gd"), "const CHAPTERS := {",
-               Path("game/assets/environments"), "environment.glb", 7),
               ("characters", Path("game/scripts/character_visual_catalog.gd"), "const PROFILES := {",
                Path("game/assets/characters"), "model/character.glb", 32),
               ("armors", Path("game/scripts/equipment_database.gd"), "const EQUIPMENT := {",
@@ -54,6 +55,13 @@ jobs:
                Path("game/assets/enemies"), "model/enemy.glb", 57),
           ]
           errors = []
+          environment_root = Path("game/assets/environments")
+          missing_chapters = [chapter_id for chapter_id in chapter_ids
+                              if not (environment_root / chapter_id / "environment.glb").is_file()]
+          environment_count = len(list(environment_root.glob("*/environment.glb")))
+          print(f"ART_BUNDLE_CHECK environments: catalog={len(chapter_ids)} expected=7 files={environment_count} missing={len(missing_chapters)}")
+          if len(chapter_ids) != 7 or environment_count != 7 or missing_chapters:
+              errors.append(f"environments: missing or extra chapter models; missing IDs={missing_chapters}")
           for label, catalog_path, marker, root, relative_model, expected_count in checks:
               ids = catalog_ids(catalog_path, marker)
               missing = [asset_id for asset_id in ids if not (root / asset_id / relative_model).is_file()]
