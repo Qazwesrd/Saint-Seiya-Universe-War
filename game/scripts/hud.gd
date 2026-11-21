@@ -85,6 +85,7 @@ func _ready() -> void:
     _button(root, "任务导航", Vector2(202, 294), Vector2(330, 350), func(): game.call("navigate_to_objective"), Color(0.12, 0.32, 0.42))
     _button(root, "传送", Vector2(22, 470), Vector2(140, 520), func(): game.call("use_teleport_point"), Color(0.08, 0.28, 0.48))
     _button(root, "世界地图", Vector2(-190, 150), Vector2(-22, 202), func(): _open_world_map(root), Color(0.12, 0.24, 0.48))
+    _button(root, "支线任务", Vector2(-190, 208), Vector2(-22, 260), func(): _open_side_quests(root), Color(0.32, 0.2, 0.42))
     var map := Panel.new()
     map.anchor_left = 1.0
     map.anchor_right = 1.0
@@ -869,6 +870,82 @@ func _open_world_map(root: Control) -> void:
     var close := Button.new()
     close.text = "关闭地图"
     close.custom_minimum_size = Vector2(180, 46)
+    close.pressed.connect(func(): popup.queue_free())
+    outer.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
+
+func _open_side_quests(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(570, 540)
+    var outer := VBoxContainer.new()
+    outer.add_theme_constant_override("separation", 10)
+    popup.add_child(outer)
+    var title := Label.new()
+    title.text = "支线与隐藏任务"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 26)
+    outer.add_child(title)
+    var subtitle := Label.new()
+    subtitle.text = "支线任务需要主动接取；隐藏任务会在探索发现地标时自动解锁。"
+    subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    outer.add_child(subtitle)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(540, 400)
+    outer.add_child(scroll)
+    var list := VBoxContainer.new()
+    list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    list.add_theme_constant_override("separation", 8)
+    scroll.add_child(list)
+    var quests: Array[Dictionary] = SideQuestManager.get_quest_overview()
+    if quests.is_empty():
+        var empty_label := Label.new()
+        empty_label.text = "当前已解锁区域暂无支线或已发现的隐藏任务。继续推进主线并探索地图。"
+        empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        list.add_child(empty_label)
+    for quest in quests:
+        var row := HBoxContainer.new()
+        row.add_theme_constant_override("separation", 8)
+        var info := VBoxContainer.new()
+        info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        var quest_title := Label.new()
+        quest_title.text = ("【隐藏】" if str(quest.get("kind", "")) == "hidden" else "【支线】") + str(quest.get("name", "任务"))
+        quest_title.add_theme_font_size_override("font_size", 18)
+        info.add_child(quest_title)
+        var progress := Label.new()
+        var current := int(quest.get("current", 0))
+        var target := int(quest.get("target", 1))
+        var status := str(quest.get("status", "available"))
+        var status_text := {"available":"可接取","in_progress":"进行中","completed":"已完成，可领奖","claimed":"奖励已领取"}.get(status, status)
+        progress.text = "%s  %d/%d  ·  奖励：经验 %d、星币 %d" % [status_text, current, target, int(quest.get("exp", 0)), int(quest.get("coins", 0))]
+        info.add_child(progress)
+        var description := Label.new()
+        description.text = str(quest.get("description", ""))
+        description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        info.add_child(description)
+        row.add_child(info)
+        var action := Button.new()
+        action.custom_minimum_size = Vector2(96, 48)
+        action.text = "接取" if status == "available" else ("领取" if status == "completed" else ("已领取" if status == "claimed" else "进行中"))
+        action.disabled = status not in ["available", "completed"]
+        var quest_id := str(quest.get("id", ""))
+        action.pressed.connect(func():
+            if status == "available":
+                SideQuestManager.accept_quest(quest_id)
+            elif status == "completed":
+                var reward: Dictionary = SideQuestManager.claim_reward(quest_id)
+                if bool(reward.get("success", false)):
+                    set_notice("支线奖励已领取：经验 %d、星币 %d" % [int(reward.get("exp", 0)), int(reward.get("coins", 0))])
+                else:
+                    set_notice(str(reward.get("reason", "领取失败")))
+            popup.queue_free()
+            _open_side_quests(root)
+        )
+        row.add_child(action)
+        list.add_child(row)
+    var close := Button.new()
+    close.text = "关闭"
+    close.custom_minimum_size = Vector2(180, 44)
     close.pressed.connect(func(): popup.queue_free())
     outer.add_child(close)
     root.add_child(popup)
