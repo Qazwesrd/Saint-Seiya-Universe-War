@@ -2,7 +2,7 @@ extends CharacterBody3D
 
 const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
 
-enum BrainState { CHASE, WINDUP, RECOVERY, STAGGER, DEAD }
+enum BrainState { CHASE, WINDUP, RECOVERY, GUARD, STAGGER, DEAD }
 
 var game: Variant
 var is_boss := false
@@ -51,6 +51,9 @@ var _boss_attack_count := 0
 var _boss_heavy_attack := false
 var _boss_combo_remaining := 0
 var _boss_combo_followup_active := false
+var _boss_guard_hits := 0
+var _boss_guard_cooldown := 0.0
+var _boss_counter_attack := false
 var _base_color := Color(0.72, 0.16, 0.22)
 var freeze_timer := 0.0
 var slow_timer := 0.0
@@ -568,6 +571,7 @@ func _physics_process(delta: float) -> void:
     weaken_timer = maxf(0.0, weaken_timer - delta)
     divine_mark_timer = maxf(0.0, divine_mark_timer - delta)
     boss_control_resist_timer = maxf(0.0, boss_control_resist_timer - delta)
+    _boss_guard_cooldown = maxf(0.0, _boss_guard_cooldown - delta)
     boss_control_pressure = maxf(0.0, boss_control_pressure - delta * 0.12)
     if divine_mark_timer <= 0.0:
         divine_mark = ""
@@ -614,7 +618,9 @@ func _physics_process(delta: float) -> void:
     match state:
         BrainState.CHASE:
             telegraph_mesh.visible = false
-            if distance <= attack_range and attack_cooldown <= 0.0:
+            if is_boss and distance <= attack_range * 1.35 and attack_cooldown <= 0.0 and _boss_guard_cooldown <= 0.0 and _boss_attack_count > 0 and _boss_attack_count % 4 == 3:
+                _begin_boss_guard()
+            elif distance <= attack_range and attack_cooldown <= 0.0:
                 _begin_attack()
             else:
                 var effective_speed := speed * (slow_factor if slow_timer > 0.0 else 1.0)
@@ -626,6 +632,20 @@ func _physics_process(delta: float) -> void:
             velocity.z = move_toward(velocity.z, 0.0, speed * 8.0 * delta)
             if state_timer <= 0.0:
                 _resolve_attack(target)
+        BrainState.GUARD:
+            telegraph_mesh.visible = true
+            velocity.x = move_toward(velocity.x, 0.0, speed * 10.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, speed * 10.0 * delta)
+            if state_timer <= 0.0:
+                _boss_counter_attack = _boss_guard_hits >= 2
+                _boss_guard_hits = 0
+                state = BrainState.WINDUP if _boss_counter_attack else BrainState.CHASE
+                state_timer = 0.34 if _boss_counter_attack else 0.0
+                telegraph_mesh.visible = _boss_counter_attack
+                if _boss_counter_attack:
+                    telegraph_mesh.scale = Vector3.ONE * 1.12
+                    if is_instance_valid(game):
+                        game.call("show_notice", display_name + "格挡成功，准备反击！向侧方闪避")
         BrainState.RECOVERY:
             telegraph_mesh.visible = false
             velocity.x = move_toward(velocity.x, 0.0, speed * 8.0 * delta)
@@ -730,6 +750,23 @@ func _apply_gravity(delta: float) -> void:
     else:
         velocity.y = minf(velocity.y, 0.0)
 
+func _begin_boss_guard() -> void:
+    state = BrainState.GUARD
+    state_timer = 0.72 if not _boss_enraged else 0.58
+    _boss_guard_hits = 0
+    _boss_counter_attack = false
+    _boss_guard_cooldown = 9.0 if not _boss_phase_two else 7.0
+    if is_instance_valid(telegraph_material):
+        telegraph_material.albedo_color = Color(0.18, 0.78, 1.0, 0.88)
+        telegraph_material.emission = Color(0.12, 0.62, 1.0) * 1.35
+    telegraph_mesh.scale = Vector3.ONE * 0.92
+    telegraph_mesh.visible = true
+    if is_instance_valid(game):
+        game.call("show_notice", display_name + "进入防御姿态！连续攻击可积累破防，但注意反击")
+
+func get_boss_guard_damage_multiplier() -> float:
+    return 0.42 if is_boss and state == BrainState.GUARD else 1.0
+
 func _begin_attack() -> void:
     state = BrainState.WINDUP
     _boss_heavy_attack = false
@@ -822,6 +859,8 @@ func _resolve_attack(target: Node3D) -> void:
     if current_distance <= attack_reach:
         var player_invulnerable := float(target.get("invulnerable")) > 0.0
         var damage_multiplier := boss_heavy_multiplier if _boss_heavy_attack else 1.0
+        if _boss_counter_attack:
+            damage_multiplier *= 1.28
         if _boss_combo_followup_active:
             damage_multiplier *= 0.72
         var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
@@ -841,6 +880,7 @@ func _resolve_attack(target: Node3D) -> void:
     state = BrainState.RECOVERY
     state_timer = (maxf(0.2, boss_recovery * 0.48) if _boss_combo_remaining > 0 else boss_recovery) if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
+    _boss_counter_attack = false
 
 func _drain_target_cosmos(target: Node, amount: float) -> void:
     if not is_instance_valid(target):
@@ -985,7 +1025,13 @@ func take_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) -> vo
     mark_multiplier *= get_divine_mark_damage_multiplier()
     var break_vulnerability := 1.35 if is_boss and boss_break_active else 1.0
     var weakpoint_multiplier := get_boss_weakpoint_multiplier(attacker_position)
-    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier * break_vulnerability * weakpoint_multiplier)
+    var guard_multiplier := get_boss_guard_damage_multiplier()
+    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier * break_vulnerability * weakpoint_multiplier * guard_multiplier)
+    if is_boss and state == BrainState.GUARD and amount > 0.0:
+        _boss_guard_hits += 1
+        boss_control_pressure += 0.18
+        if _boss_guard_hits >= 3:
+            _trigger_boss_break()
     health = maxf(0.0, health - applied_damage)
     var lifesteal_ratio := get_divine_mark_lifesteal_ratio()
     if lifesteal_ratio > 0.0 and is_instance_valid(game):
