@@ -62,8 +62,11 @@ def make_mesh_object(data: dict, collection: bpy.types.Collection,
                 )
 
     material_index = int(data.get("material_index", -1))
+    for material in materials:
+        mesh.materials.append(material)
     if 0 <= material_index < len(materials):
-        mesh.materials.append(materials[material_index])
+        for polygon in mesh.polygons:
+            polygon.material_index = material_index
 
     normals = data.get("normals", [])
     if len(normals) == len(vertices) * 3:
