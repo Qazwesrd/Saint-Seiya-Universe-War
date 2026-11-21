@@ -158,6 +158,18 @@ func _run_tests() -> void:
 	assert(float(damaged_armor_wear.get("roughness", 0.0)) > float(pristine_armor_wear.get("roughness", 1.0)), "damaged armor becomes rougher")
 	assert(bool(broken_armor_wear.get("cracked", false)), "critically damaged armor is marked cracked")
 	assert(float(broken_armor_wear.get("metallic_multiplier", 1.1)) < float(pristine_armor_wear.get("metallic_multiplier", 0.0)), "damaged armor loses metallic finish")
+	assert(str(pristine_armor_wear.get("condition_tier", "")) == "pristine", "intact armor is classified as pristine")
+	assert(str(ArmorSystem.get_visual_wear_profile(0.6).get("condition_tier", "")) == "worn", "moderately worn armor has its own condition tier")
+	assert(str(ArmorSystem.get_visual_wear_profile(0.4).get("condition_tier", "")) == "damaged", "damaged armor has its own condition tier")
+	assert(str(ArmorSystem.get_visual_wear_profile(0.1).get("condition_tier", "")) == "critical", "critically damaged armor has its own condition tier")
+	assert(str(ArmorSystem.get_visual_wear_profile(0.0).get("condition_tier", "")) == "broken", "zero durability armor is classified as broken")
+	var saved_wear_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
+	RPGState.profile["armor_state"] = {"current_stage":"bronze","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100}}
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction(), 0.08), "intact armor grants up to eight percent damage mitigation")
+	RPGState.profile["armor_state"]["durability"]["chest"] = 0
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction(), 0.064), "a broken armor piece reduces defensive mitigation proportionally")
+	assert(ArmorSystem.get_part_condition_tier("chest") == "broken", "individual armor parts expose their broken state")
+	RPGState.profile["armor_state"] = saved_wear_state
 	assert(SkillAnimationCatalog.validate_catalog(), "animation style catalog covers all 32 playable classes")
 	assert(SkillAnimationCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback animation profiles")
 	assert(SkillVisualCatalog.get_profile("unknown_class", {"id": "ghost_skill"}).is_empty(), "unknown classes cannot receive fallback visual profiles")
