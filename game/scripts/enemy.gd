@@ -284,12 +284,29 @@ func _update_authored_enemy_animation(delta: float, planar_speed: float) -> void
         return
     var animation_name := "walk" if planar_speed >= 0.25 else "idle"
     if state == BrainState.WINDUP:
-        animation_name = "skill_cast" if _boss_heavy_attack or _boss_phase_two else "basic_attack_1"
+        animation_name = _get_boss_attack_animation()
     elif state == BrainState.STAGGER:
         animation_name = "hit_heavy" if is_boss else "hit_light"
     elif state == BrainState.RECOVERY:
         animation_name = "idle"
     _play_authored_enemy_animation(animation_name)
+
+func _get_boss_attack_animation() -> String:
+    if not is_boss:
+        return "basic_attack_1"
+    if _boss_heavy_attack:
+        match boss_special:
+            "death_burst", "judge_combo", "judgment_combo":
+                return "basic_attack_2"
+            "dream_drain", "soul_leech", "void_drain", "rift_drain", "tidal_pull", "solar_flare", "lightning_followup", "gravity_crush":
+                return "skill_cast"
+            "wing_slam":
+                return "basic_attack_3"
+            _:
+                return "basic_attack_3"
+    if _boss_phase_two and boss_special in ["dream_drain", "void_drain", "solar_flare", "lightning_followup", "tidal_pull"]:
+        return "skill_cast"
+    return "basic_attack_1"
 
 func _add_enemy_visual(mesh: Mesh, local_position: Vector3, local_scale: Vector3, color: Color, metallic: float) -> MeshInstance3D:
     var part := MeshInstance3D.new()
@@ -569,7 +586,7 @@ func _begin_attack() -> void:
         var heavy_interval := maxi(1, boss_heavy_interval - (1 if _boss_phase_two else 0))
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
     state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
-    _play_authored_enemy_action("basic_attack_3" if _boss_heavy_attack else "basic_attack_1", 0.045)
+    _play_authored_enemy_action(_get_boss_attack_animation(), 0.045)
     var warning_color := _get_boss_telegraph_color()
     if is_instance_valid(telegraph_material):
         telegraph_material.albedo_color = warning_color
