@@ -1324,7 +1324,7 @@ func _open_character(root: Control) -> void:
     armor_actions.add_child(repair_button)
     var awaken_button := Button.new()
     awaken_button.text = "圣衣觉醒（满足条件时）"
-    awaken_button.disabled = bool(armor_state.get("awakened", false)) or not str(armor_state.get("current_stage", "bronze")) in ["gold", "god_cloth", "god_armor"]
+    awaken_button.disabled = bool(armor_state.get("awakened", false)) or not str(armor_state.get("current_stage", "bronze")) in ["gold", "dark_cloth", "platinum", "god_cloth", "god_armor"]
     awaken_button.pressed.connect(func():
         var ok := ArmorSystem.awaken_current()
         if ok:
@@ -1558,8 +1558,8 @@ func _open_gm(root: Control) -> void:
     box.add_child(armor_title)
     var armor_state: Dictionary = ArmorSystem.get_state()
     var stage_picker := OptionButton.new()
-    var stage_ids := ["bronze","silver","gold","sea_scale","surplice","god_cloth","god_armor"]
-    var stage_names := ["青铜圣衣","白银圣衣","黄金圣衣","海界鳞衣","冥衣","神圣衣","主神圣衣"]
+    var stage_ids := ["bronze","silver","gold","sea_scale","surplice","dark_cloth","platinum","god_cloth","god_armor"]
+    var stage_names := ["青铜圣衣","白银圣衣","黄金圣衣","海界鳞衣","冥衣","黑暗圣衣","白金圣衣","神圣衣","主神圣衣"]
     for i in range(stage_ids.size()):
         stage_picker.add_item(stage_names[i])
         stage_picker.set_item_metadata(i,stage_ids[i])
@@ -1605,7 +1605,7 @@ func _open_gm(root: Control) -> void:
         )
         box.add_child(part_button)
     var awaken_button := Button.new()
-    awaken_button.text = "圣衣觉醒（黄金/神圣/主神圣衣）"
+    awaken_button.text = "圣衣觉醒（黄金/黑暗/白金/神圣/主神圣衣）"
     awaken_button.pressed.connect(func():
         var ok: bool = GMManager.awaken_armor()
         game.call("refresh_player_stats")
