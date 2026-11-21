@@ -1022,8 +1022,8 @@ func _build_armor_visuals() -> void:
         platinum_star_mesh.size = Vector3(0.12, 0.26, 0.075)
         for star_side in [-1.0, 1.0]:
             for star_index in range(3):
-                var star_x := star_side * (0.30 + float(star_index) * 0.12)
-                var star_y := 1.12 + float(star_index) * 0.18
+                var star_x: float = star_side * (0.30 + float(star_index) * 0.12)
+                var star_y: float = 1.12 + float(star_index) * 0.18
                 var platinum_star := _add_armor_piece(platinum_star_mesh, Vector3(star_x, star_y, -0.49), Vector3.ONE, stage_trim_color, 1.0, "chest")
                 platinum_star.rotation.z = -star_side * (0.18 + float(star_index) * 0.16)
     var belt_gem_mesh := PrismMesh.new()
