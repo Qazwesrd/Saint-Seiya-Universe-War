@@ -431,7 +431,7 @@ func _run_tests() -> void:
 	var pck_resource_path := "res://" + "content/framework_pack_probe.txt"
 	var pck_path := source_dir.path_join("chapter_test.pck")
 	var pck_packer := PCKPacker.new()
-	assert(pck_packer.pack_start(ProjectSettings.globalize_path(pck_path)) == OK, "create real Godot PCK container")
+	assert(pck_packer.pck_start(ProjectSettings.globalize_path(pck_path)) == OK, "create real Godot PCK container")
 	assert(pck_packer.add_file(pck_resource_path, ProjectSettings.globalize_path(payload_path)) == OK, "add test resource to PCK")
 	assert(pck_packer.flush() == OK, "write complete Godot PCK")
 	var pck_reader := FileAccess.open(pck_path, FileAccess.READ)
