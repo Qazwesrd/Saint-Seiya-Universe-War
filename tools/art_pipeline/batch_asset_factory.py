@@ -22,25 +22,36 @@ GENERATOR = ROOT / "tools" / "art_pipeline" / "blender" / "generate_base_rig.py"
 BLENDER = os.environ.get("BLENDER_BIN", "blender")
 WORKERS = max(1, int(os.environ.get("ART_FACTORY_WORKERS", "3")))
 SHARDS = max(1, int(os.environ.get("ART_FACTORY_SHARDS", "1")))
+RETRIES = max(0, int(os.environ.get("ART_FACTORY_RETRIES", "2")))
 STAGES = ("characters", "armors", "enemies")
 
 
-def run_task(stage: str, shard: int, shard_count: int) -> tuple[str, int, float, str]:
+def run_task(stage: str, shard: int, shard_count: int) -> tuple[str, int, float, str, int]:
     log_dir = ROOT / "build" / "art_factory_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     suffix = f"{stage}-{shard + 1}-of-{shard_count}"
-    log_path = log_dir / f"{suffix}.log"
     command = [
         BLENDER, "--background", "--python", str(GENERATOR), "--",
         "--stage", stage, "--shard-index", str(shard), "--shard-count", str(shard_count),
     ]
     started = time.monotonic()
-    with log_path.open("w", encoding="utf-8") as log:
-        result = subprocess.run(
-            command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=False
-        )
+    result_code = 1
+    log_path = log_dir / f"{suffix}-attempt-{RETRIES + 1}.log"
+    attempts_used = 0
+    for attempt in range(1, RETRIES + 2):
+        attempts_used = attempt
+        log_path = log_dir / f"{suffix}-attempt-{attempt}.log"
+        with log_path.open("w", encoding="utf-8") as log:
+            result = subprocess.run(
+                command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=False
+            )
+        result_code = result.returncode
+        if result_code == 0:
+            break
+        if attempt <= RETRIES:
+            print(f"RETRY {stage} shard={shard + 1}/{shard_count} next_attempt={attempt + 1}", flush=True)
     elapsed = time.monotonic() - started
-    return stage, result.returncode, elapsed, str(log_path)
+    return stage, result_code, elapsed, str(log_path), attempts_used
 
 
 def main() -> int:
@@ -49,7 +60,7 @@ def main() -> int:
         return 2
     print("SAINT_SEIYA_ART_FACTORY")
     print(f"Blender: {BLENDER}")
-    print(f"Parallel workers: {WORKERS}; shards per category: {SHARDS}")
+    print(f"Parallel workers: {WORKERS}; shards per category: {SHARDS}; retries per batch: {RETRIES}")
     print("Phase 1/2: build shared rig, animation library, armor template and environments")
     foundation = subprocess.run(
         [BLENDER, "--background", "--python", str(GENERATOR), "--", "--stage", "foundation"],
@@ -65,9 +76,9 @@ def main() -> int:
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         futures = [pool.submit(run_task, *task) for task in tasks]
         for future in concurrent.futures.as_completed(futures):
-            stage, code, elapsed, log_path = future.result()
+            stage, code, elapsed, log_path, attempts = future.result()
             status = "PASS" if code == 0 else "FAIL"
-            print(f"{status} {stage} in {elapsed / 60:.1f} min; log={log_path}", flush=True)
+            print(f"{status} {stage} attempts={attempts} in {elapsed / 60:.1f} min; log={log_path}", flush=True)
             if code:
                 failures.append((stage, code, log_path))
     if failures:
