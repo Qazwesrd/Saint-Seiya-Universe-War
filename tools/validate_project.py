@@ -55,6 +55,7 @@ if preset_file.is_file():
     require('architectures/arm64-v8a=true' in preset, "Android 预设未启用 ARM64")
     require('export_filter="all_resources"' in preset, "Android APK 必须打包全部项目资源")
     require('exclude_filter=""' in preset, "Android APK 不允许排除正式资源")
+    require('permissions/internet=true' in preset, "Android 安装包必须声明联网权限以下载离线数据")
 
 # Core framework services must be registered as AutoLoads and present on disk.
 required_services = [
