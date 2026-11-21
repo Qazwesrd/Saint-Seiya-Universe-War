@@ -1073,30 +1073,37 @@ def build_enemy_models(shard_index=0, shard_count=1):
             0.28 + ((index * 37) % 60) / 100.0
         )
         shell = material("Enemy_" + enemy_id + "_Shell", base_color, 0.76 if is_boss else 0.48, 0.26)
-        body.data.materials.clear()
-        body.data.materials.append(shell)
+        # Recolor only the undersuit slot. Keep the authored skin, hair, eyes,
+        # and facial materials intact so enemy faces do not become monochrome.
+        for material_index, existing_material in enumerate(body.data.materials):
+            if existing_material == CLOTH:
+                body.data.materials[material_index] = shell
         crest = material("Enemy_" + enemy_id + "_Crest", (
             min(1.0, base_color[0] + 0.28),
             min(1.0, base_color[1] + 0.24),
             min(1.0, base_color[2] + 0.30)
         ), 0.9, 0.2)
-        shoulder = 0.38 if is_boss else 0.31
-        for side, sign in (("Left", 1), ("Right", -1)):
-            add_weighted_ellipsoid(
-                "Enemy_" + enemy_id + "_" + side + "_ShoulderGuard",
-                (sign * shoulder, -0.035, 1.48 * height),
-                (0.17 * width, 0.16, 0.14 * height),
-                side + "Shoulder", crest, rig, segments=12, rings=8
-            )
+        # Pope Saga has angular, individually modeled pauldrons and a
+        # ceremonial diadem; do not bury those shapes under generic spheres.
+        if enemy_id != "pope_saga":
+            shoulder = 0.38 if is_boss else 0.31
+            for side, sign in (("Left", 1), ("Right", -1)):
+                add_weighted_ellipsoid(
+                    "Enemy_" + enemy_id + "_" + side + "_ShoulderGuard",
+                    (sign * shoulder, -0.035, 1.48 * height),
+                    (0.17 * width, 0.16, 0.14 * height),
+                    side + "Shoulder", crest, rig, segments=12, rings=8
+                )
         # Every archetype has a signature head crest; boss archetypes get
         # additional horns, back fins or wings with valid skeleton weights.
-        add_weighted_ellipsoid(
-            "Enemy_" + enemy_id + "_Crest",
-            (0, -0.13, 1.98 * height),
-            (0.07 + (index % 4) * 0.018, 0.055, 0.15 if is_boss else 0.10),
-            "Head", crest, rig, segments=12, rings=8
-        )
-        if is_boss:
+        if enemy_id != "pope_saga":
+            add_weighted_ellipsoid(
+                "Enemy_" + enemy_id + "_Crest",
+                (0, -0.13, 1.98 * height),
+                (0.07 + (index % 4) * 0.018, 0.055, 0.15 if is_boss else 0.10),
+                "Head", crest, rig, segments=12, rings=8
+            )
+        if is_boss and enemy_id != "pope_saga":
             for side, sign in (("Left", 1), ("Right", -1)):
                 add_weighted_ellipsoid(
                     "Enemy_" + enemy_id + "_" + side + "_Boss_Horn",
