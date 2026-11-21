@@ -72,7 +72,7 @@ func _ready() -> void:
 	visual_root.add_child(marker)
 
 	var label := Label3D.new()
-	label.text = "！ 圣域训练引导员"
+	label.text = "！ " + FactionDatabase.get_tutorial_mentor_name()
 	label.position.y = 2.9
 	label.font_size = 36
 	label.outline_size = 8
