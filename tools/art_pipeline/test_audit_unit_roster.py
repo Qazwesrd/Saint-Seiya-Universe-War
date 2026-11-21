@@ -4,6 +4,46 @@ from audit_unit_roster import audit_sources
 
 
 class UnitRosterAuditTests(unittest.TestCase):
+    def test_audit_checks_dark_and_platinum_passive_coverage_and_unique_names(self):
+        armor = '''const DARK_CLASS_PASSIVES := {
+    "pegasus": {"name":"暗影流星"},
+    "dragon": {"name":"黑曜龙盾"},
+}
+const PLATINUM_CLASS_PASSIVES := {
+    "pegasus": {"name":"星辉流星"},
+    "dragon": {"name":"天穹龙壁"},
+}'''
+        report = audit_sources(
+            'const CLASS_DATA := {\n "pegasus": {"name":"天马座"},\n "dragon": {"name":"天龙座"},\n}',
+            'const PROFILES := {\n    "pegasus": {"crest":"wing"},\n    "dragon": {"crest":"horn"},\n}',
+            'const CLASS_SKILLS := {\n}\nconst DIVINE_CLASS_SKILLS := {\n}\nconst EXTENDED_DIVINE_CLASS_SKILLS := {\n}\nconst HEAVENLY_CLASS_SKILLS := {\n}\nconst ADVANCED_CLASS_SKILLS := {\n}\nconst DIVINE_ADVANCED_SKILLS := {\n}\nconst EXTENDED_DIVINE_ADVANCED_SKILLS := {\n}\nconst HEAVENLY_ADVANCED_SKILLS := {\n}',
+            'const ARCHETYPES := {\n    "guard": {"is_boss": false},\n}',
+            armor,
+        )
+        self.assertEqual(report["dark_cloth_passives"]["missing"], [])
+        self.assertEqual(report["platinum_cloth_passives"]["missing"], [])
+        self.assertEqual(report["dark_cloth_passives"]["registered"], 2)
+        self.assertEqual(report["platinum_cloth_passives"]["registered"], 2)
+
+    def test_audit_detects_duplicate_platinum_passive_names(self):
+        armor = '''const DARK_CLASS_PASSIVES := {
+    "pegasus": {"name":"暗影流星"},
+    "dragon": {"name":"黑曜龙盾"},
+}
+const PLATINUM_CLASS_PASSIVES := {
+    "pegasus": {"name":"星辉流星"},
+    "dragon": {"name":"星辉流星"},
+}'''
+        report = audit_sources(
+            'const CLASS_DATA := {\n "pegasus": {"name":"天马座"},\n "dragon": {"name":"天龙座"},\n}',
+            'const PROFILES := {\n    "pegasus": {"crest":"wing"},\n    "dragon": {"crest":"horn"},\n}',
+            'const CLASS_SKILLS := {\n}\nconst DIVINE_CLASS_SKILLS := {\n}\nconst EXTENDED_DIVINE_CLASS_SKILLS := {\n}\nconst HEAVENLY_CLASS_SKILLS := {\n}\nconst ADVANCED_CLASS_SKILLS := {\n}\nconst DIVINE_ADVANCED_SKILLS := {\n}\nconst EXTENDED_DIVINE_ADVANCED_SKILLS := {\n}\nconst HEAVENLY_ADVANCED_SKILLS := {\n}',
+            'const ARCHETYPES := {\n    "guard": {"is_boss": false},\n}',
+            armor,
+        )
+        self.assertEqual(report["platinum_cloth_passives"]["duplicate_names"], ["星辉流星"])
+        self.assertEqual(report["status"], "incomplete")
+
     def test_audit_merges_base_and_advanced_skill_catalogs(self):
         class_data = '''const CLASS_DATA := {
  "pegasus": {"name":"天马座"},
