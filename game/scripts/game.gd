@@ -518,10 +518,13 @@ func _start_faction_tutorial_encounter() -> void:
     var center := player.global_position + Vector3(0.0, 0.1, -7.0)
     var waves: Array[Dictionary] = []
     var encounter_id := "faction_trial_" + str(RPGState.profile.get("faction_id", "sanctuary"))
+    var faction_id := str(progress.get("faction_id", RPGState.profile.get("faction_id", "sanctuary")))
     if defeated_normal < FactionDatabase.TUTORIAL_NORMAL_TARGET:
-        waves = [{"spawns":[{"archetype_id":"arena_guard","count":FactionDatabase.TUTORIAL_NORMAL_TARGET-defeated_normal,"position":center}]}]
+        var guard_id := EnemyDatabase.get_tutorial_archetype_id(faction_id, false)
+        waves = [{"spawns":[{"archetype_id":guard_id,"count":FactionDatabase.TUTORIAL_NORMAL_TARGET-defeated_normal,"position":center}]}]
     elif not bool(progress.get("boss_defeated", false)):
-        waves = [{"spawns":[{"archetype_id":"arena_boss","count":1,"boss":true,"position":center}]}]
+        var boss_id := EnemyDatabase.get_tutorial_archetype_id(faction_id, true)
+        waves = [{"spawns":[{"archetype_id":boss_id,"count":1,"boss":true,"position":center}]}]
     if not waves.is_empty() and EncounterDirector.start(encounter_id, waves):
         _spawn_encounter_wave(EncounterDirector.get_current_wave())
         if defeated_normal < FactionDatabase.TUTORIAL_NORMAL_TARGET:
