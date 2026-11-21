@@ -217,7 +217,8 @@ static func get_visual_wear_profile(condition_ratio: float) -> Dictionary:
         "metallic_multiplier": lerpf(0.58, 1.0, condition),
         "roughness": lerpf(0.62, 0.22, condition),
         "tint": Color(0.22, 0.18, 0.16).lerp(Color.WHITE, condition),
-        "cracked": condition <= 0.35
+        "cracked": condition <= 0.35,
+        "condition_tier": "pristine" if condition >= 0.8 else ("worn" if condition >= 0.5 else ("damaged" if condition >= 0.25 else ("critical" if condition > 0.0 else "broken")))
     }
 
 func get_part_visual_wear_profile(part: String) -> Dictionary:
@@ -228,6 +229,16 @@ func get_part_durability(part: String) -> int:
         return 0
     var durability: Dictionary = _ensure_data().get("durability", {})
     return clampi(int(durability.get(part, 100)), 0, 100)
+
+func get_part_condition_tier(part: String) -> String:
+    if not (part in PARTS):
+        return "unknown"
+    return str(get_part_visual_wear_profile(part).get("condition_tier", "pristine"))
+
+func get_damage_reduction() -> float:
+    # A complete, intact armor set mitigates up to 8% incoming damage.
+    # Broken pieces progressively remove this protection without making combat trivial.
+    return clampf(get_condition_ratio() * 0.08, 0.0, 0.08)
 
 func get_dark_class_passive(class_id: String = "") -> Dictionary:
  var selected_class := class_id if not class_id.is_empty() else str(RPGState.profile.get("class_id", "pegasus"))
