@@ -126,7 +126,6 @@ def main() -> int:
         for obj in objects:
             obj.select_set(True)
         bpy.context.view_layer.objects.active = objects[0]
-        bpy.ops.view3d.camera_to_view_selected if False else None
 
     output.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(output))
