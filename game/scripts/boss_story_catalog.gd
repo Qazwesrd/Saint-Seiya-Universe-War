@@ -24,7 +24,7 @@ static func get_scene(chapter_id: String, boss_id: String, event_name: String, b
             lines = [{"speaker":boss_name,"text":"你的意志……确实配得上这场战斗。"},{"speaker":"旁白","text":"强敌倒下，战场逐渐恢复平静，前方的道路再次显现。"},{"speaker":"星矢","text":"我们继续前进。还有需要守护的人在等着我们。"}]
     return {"title":title,"event":event_name,"boss_id":boss_id,"lines":lines}
 static func get_battle_line(boss_id: String, event_name: String, boss_name: String = "强敌") -> Dictionary:
-    if not event_name in ["phase_two", "enrage", "special_attack"]:
+    if not event_name in ["phase_two", "enrage", "special_attack", "break"]:
         return {}
     var boss_lines: Dictionary = BOSS_BATTLE_LINES.get(boss_id, {})
     var line_text := str(boss_lines.get(event_name, ""))
@@ -33,6 +33,7 @@ static func get_battle_line(boss_id: String, event_name: String, boss_name: Stri
             "phase_two": line_text = "你已经见识过我的力量，现在才是真正的战斗！"
             "enrage": line_text = "逼我使出最后的力量，你将为此付出代价！"
             "special_attack": line_text = "接下我的必杀攻击！"
+            "break": line_text = "可恶……竟然突破了我的防御！但战斗还没有结束！"
     return {"speaker": boss_name, "text": line_text, "event": event_name, "boss_id": boss_id}
 
 

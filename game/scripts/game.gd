@@ -572,6 +572,9 @@ func play_boss_presentation(boss: Node3D, event_name: String) -> void:
     var effect_radius := 2.2
     var effect_shape := "halo"
     match event_name:
+        "break":
+            effect_radius = 2.8
+            effect_shape = "ring"
         "entrance":
             effect_radius = 3.0
             effect_shape = "ring"

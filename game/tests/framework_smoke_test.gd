@@ -378,6 +378,17 @@ func _run_tests() -> void:
 	assert(str(saga_battle_line.get("speaker", "")) == "教皇撒加" and str(saga_battle_line.get("text", "")).contains("银河星爆"), "major bosses have unique phase dialogue")
 	var generic_battle_line: Dictionary = BossStoryCatalog.get_battle_line("unknown_boss", "special_attack", "测试首领")
 	assert(not str(generic_battle_line.get("text", "")).is_empty(), "unlisted bosses receive safe fallback combat dialogue")
+	var break_battle_line: Dictionary = BossStoryCatalog.get_battle_line("pope_saga", "break", "教皇撒加")
+	assert(str(break_battle_line.get("speaker", "")) == "教皇撒加" and not str(break_battle_line.get("text", "")).is_empty(), "boss break events provide combat dialogue")
+	var break_test_enemy = preload("res://scripts/enemy.gd").new()
+	break_test_enemy.is_boss = true
+	break_test_enemy.archetype_id = "pope_saga"
+	break_test_enemy._register_boss_control(0.4)
+	break_test_enemy._register_boss_control(0.4)
+	break_test_enemy._register_boss_control(0.4)
+	assert(bool(break_test_enemy.boss_break_active), "repeated control pressure breaks boss poise")
+	assert(is_equal_approx(float(break_test_enemy.state_timer), 1.8), "boss break creates a readable vulnerability window")
+	break_test_enemy.free()
 	var campaign_catalog_audit: Dictionary = CampaignDatabase.validate_catalog()
 	assert(bool(campaign_catalog_audit.get("valid", false)) and int(campaign_catalog_audit.get("chapter_count", 0)) == 7 and int(campaign_catalog_audit.get("mission_count", 0)) == 55, "all seven campaign arcs and 55 missions pass catalog validation: " + str(campaign_catalog_audit.get("errors", [])))
 	var enemy_catalog_audit: Dictionary = EnemyDatabase.validate_archetypes()

@@ -68,6 +68,8 @@ var boss_control_resist_timer := 0.0
 var boss_control_resistance := 0.72
 var boss_presentation_hit_cooldown := 0.0
 var boss_dialogue_cooldown := 0.0
+var boss_break_meter := 0.0
+var boss_break_active := false
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -543,6 +545,15 @@ func _physics_process(delta: float) -> void:
                     _play_authored_enemy_action(_get_boss_attack_animation(), 0.035)
                     if is_instance_valid(game):
                         game.call("show_notice", display_name + "：连续追击！向侧方闪避")
+                elif boss_break_active:
+                    boss_break_active = false
+                    boss_break_meter = 0.0
+                    _boss_combo_followup_active = false
+                    state = BrainState.CHASE
+                    if is_instance_valid(body_material):
+                        body_material.albedo_color = _base_color
+                    if is_instance_valid(game):
+                        game.call("show_notice", display_name + "挣脱破防状态，重新投入战斗！")
                 else:
                     _boss_combo_followup_active = false
                     state = BrainState.CHASE
@@ -870,7 +881,8 @@ func take_damage(amount: float) -> void:
         return
     var mark_multiplier := 1.0 + divine_mark_power if divine_mark_timer > 0.0 else 1.0
     mark_multiplier *= get_divine_mark_damage_multiplier()
-    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier)
+    var break_vulnerability := 1.35 if is_boss and boss_break_active else 1.0
+    var applied_damage := minf(health, maxf(0.0, amount) * mark_multiplier * break_vulnerability)
     health = maxf(0.0, health - applied_damage)
     var lifesteal_ratio := get_divine_mark_lifesteal_ratio()
     if lifesteal_ratio > 0.0 and is_instance_valid(game):
@@ -883,7 +895,7 @@ func take_damage(amount: float) -> void:
         if game.has_method("spawn_damage_number"):
             game.call("spawn_damage_number", global_position + Vector3.UP * 2.0, applied_damage, is_boss)
 
-    if is_boss and not _boss_phase_two and health <= max_health * 0.5:
+    if is_boss and not boss_break_active and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
         # Cancel any pending attack telegraph so it cannot remain visible during
         # the phase-change lock or resolve immediately when the boss resumes.
@@ -910,7 +922,7 @@ func take_damage(amount: float) -> void:
             boss_dialogue_cooldown = 3.0
             game.call("show_notice", "Boss 进入第二阶段！攻击速度与伤害提升")
 
-    if is_boss and _boss_phase_two and not _boss_enraged and boss_phase_transition_timer <= 0.0 and health <= max_health * 0.25:
+    if is_boss and not boss_break_active and _boss_phase_two and not _boss_enraged and boss_phase_transition_timer <= 0.0 and health <= max_health * 0.25:
         _boss_enraged = true
         telegraph_mesh.visible = false
         telegraph_mesh.scale = Vector3.ONE
@@ -973,9 +985,36 @@ func take_damage(amount: float) -> void:
         game.call("play_boss_presentation", self, "hit")
 
 
+func _trigger_boss_break() -> void:
+    if not is_boss or boss_break_active or state == BrainState.DEAD:
+        return
+    boss_break_active = true
+    boss_break_meter = 1.0
+    _boss_combo_remaining = 0
+    _boss_combo_followup_active = false
+    _boss_heavy_attack = false
+    if is_instance_valid(telegraph_mesh):
+        telegraph_mesh.visible = false
+        telegraph_mesh.scale = Vector3.ONE
+    state = BrainState.RECOVERY
+    state_timer = 1.8
+    _play_authored_enemy_action("hit_heavy", 0.04)
+    if is_instance_valid(body_material):
+        body_material.albedo_color = Color(1.0, 0.86, 0.42)
+        body_material.emission = Color(0.95, 0.48, 0.08)
+    if is_instance_valid(game):
+        game.call("play_boss_presentation", self, "break")
+        game.call("show_boss_battle_line", self, "break")
+        game.call("show_notice", display_name + "防御被击破！短时间内受到的伤害提高35%！")
+
+
 func _register_boss_control(duration: float) -> float:
     if not is_boss:
         return 1.0
+    if not boss_break_active:
+        boss_break_meter = minf(1.0, boss_break_meter + 0.34)
+        if boss_break_meter >= 1.0:
+            _trigger_boss_break()
     if boss_control_resist_timer > 0.0:
         return 0.12
     boss_control_pressure = minf(1.0, boss_control_pressure + 0.22)
