@@ -368,7 +368,6 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 
 	var staging := STAGING_ROOT.path_join(pack_id)
 	var backup := STAGING_ROOT.path_join(pack_id + ".previous")
-	_remove_directory_if_exists(staging)
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(staging)) != OK:
 		pack_install_finished.emit(pack_id, false, "无法创建下载暂存目录")
 		return false
@@ -377,7 +376,6 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 	var manifest_url := cdn_base_url + pack_id + "/pack.json"
 	var manifest_result: Dictionary = await _download_resumable(manifest_url, manifest_path, manifest_size_bytes, manifest_sha256, pack_id, "pack.json")
 	if not bool(manifest_result.get("success", false)):
-		_remove_directory_if_exists(staging)
 		pack_install_finished.emit(pack_id, false, str(manifest_result.get("message", "下载资源清单失败")))
 		return false
 
@@ -427,11 +425,13 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 			_remove_directory_if_exists(staging)
 			pack_install_finished.emit(pack_id, false, "无法创建资源目录：" + relative_path)
 			return false
-		var download_url := cdn_base_url + pack_id + "/" + relative_path.uri_encode()
+		var encoded_segments: Array[String] = []
+		for segment in relative_path.split("/"):
+			encoded_segments.append(str(segment).uri_encode())
+		var download_url := cdn_base_url + pack_id + "/" + "/".join(encoded_segments)
 		var downloaded: Dictionary = await _download_resumable(download_url, destination, int(item.get("size_bytes", 0)), str(item.get("sha256", "")), pack_id, relative_path)
 		if not bool(downloaded.get("success", false)):
-			_remove_directory_if_exists(staging)
-			pack_install_finished.emit(pack_id, false, str(downloaded.get("message", "资源文件下载失败")))
+				pack_install_finished.emit(pack_id, false, str(downloaded.get("message", "资源文件下载失败")))
 			return false
 
 	var validation := _validate_directory(staging, pack_id)
@@ -464,6 +464,13 @@ func download_pack_from_cdn(pack_id: String, cdn_base_url: String, manifest_sha2
 	return true
 
 func _download_resumable(url: String, destination: String, expected_size: int, expected_sha256: String, pack_id: String, file_label: String) -> Dictionary:
+	if FileAccess.file_exists(destination):
+		var final_file := FileAccess.open(destination, FileAccess.READ)
+		if final_file != null:
+			var final_size := int(final_file.get_length())
+			final_file.close()
+			if final_size == expected_size and FileAccess.get_sha256(destination).to_lower() == expected_sha256.to_lower():
+				return {"success": true, "message": "文件已存在且校验通过"}
 	var partial_path := destination + ".part"
 	var existing_size := 0
 	if FileAccess.file_exists(partial_path):
@@ -501,6 +508,7 @@ func _download_resumable(url: String, destination: String, expected_size: int, e
 		pack_download_progress.emit(pack_id, existing_size, expected_size, file_label)
 
 	if FileAccess.get_sha256(partial_path).to_lower() != expected_sha256.to_lower():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(partial_path))
 		return {"success": false, "message": "SHA-256 校验失败：" + file_label}
 	if FileAccess.file_exists(destination):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(destination))
