@@ -147,6 +147,43 @@ func equip_stage(stage_id: String) -> bool:
  data["current_stage"] = stage_id
  RPGState.profile["armor_state"] = data
  return _commit(previous)
+func get_repair_quote(part: String = "") -> Dictionary:
+    if not part.is_empty() and not (part in PARTS):
+        return {}
+    var durability: Dictionary = _ensure_data().get("durability", {})
+    var missing := 0
+    if part.is_empty():
+        for armor_part in PARTS:
+            missing += 100 - clampi(int(durability.get(armor_part, 100)), 0, 100)
+    else:
+        missing = 100 - clampi(int(durability.get(part, 100)), 0, 100)
+    var cost := missing * 2
+    return {
+        "part": part,
+        "missing_durability": missing,
+        "currency_cost": cost,
+        "can_repair": missing > 0 and int(RPGState.profile.get("currency", 0)) >= cost
+    }
+
+func repair_part(part: String) -> Dictionary:
+    if not (part in PARTS):
+        return {}
+    var quote := get_repair_quote(part)
+    var cost := int(quote.get("currency_cost", 0))
+    if int(quote.get("missing_durability", 0)) <= 0 or not bool(quote.get("can_repair", false)):
+        return {"part": part, "repaired": false, "reason": "already_intact" if int(quote.get("missing_durability", 0)) <= 0 else "insufficient_currency", "currency_cost": cost}
+    var previous: Dictionary = RPGState.profile.duplicate(true)
+    var data := _ensure_data()
+    var durability: Dictionary = data.get("durability", {}).duplicate(true)
+    var before := clampi(int(durability.get(part, 100)), 0, 100)
+    durability[part] = 100
+    data["durability"] = durability
+    RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
+    RPGState.profile["armor_state"] = data
+    if not _commit(previous):
+        return {"part": part, "repaired": false, "reason": "save_failed", "currency_cost": cost}
+    return {"part": part, "repaired": true, "before": before, "after": 100, "currency_cost": cost}
+
 func repair_all() -> bool:
  var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
