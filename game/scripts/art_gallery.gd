@@ -228,7 +228,9 @@ func _show_item() -> void:
 		if ResourceLoader.exists(effect_path):
 			var effect_scene := load(effect_path) as PackedScene
 			if effect_scene != null:
-				preview_root.add_child(effect_scene.instantiate())
+				var effect_instance := effect_scene.instantiate() as Node3D
+				effect_instance.position.y = 1.15
+				preview_root.add_child(effect_instance)
 				status_label.text = "已加载项目中的真实技能特效场景：\\n%s\\n\\n可旋转检查特效构图。最终验收还需在角色战斗动作中检查时序、命中位置、粒子数量和移动端性能。" % effect_path
 				return
 		_build_effect_preview(item)
