@@ -82,7 +82,10 @@ def _advanced_skill_ids(entry_body: str) -> set[str]:
 
 
 def _passive_catalog_report(armor_catalog: str, marker: str, class_ids: set[str]) -> dict:
-    entries = top_level_entries(armor_catalog, marker, 1)
+    body = dictionary_body(armor_catalog, marker)
+    # Production GDScript catalogs use one-space root indentation; compact
+    # fixtures and older authored catalogs may use four spaces.
+    entries = top_level_entries_from_body(body, 1) or top_level_entries_from_body(body, 4)
     names = {
         class_id: re.search(r'"name"\s*:\s*"([^"]+)"', body).group(1)
         for class_id, body in entries.items()
