@@ -38,7 +38,9 @@ func get_world_profile(faction_id: String = "") -> Dictionary:
 	var resolved_id := faction_id
 	if resolved_id.is_empty():
 		resolved_id = str(RPGState.profile.get("faction_id", "sanctuary"))
-	return WORLD_PROFILES.get(resolved_id, WORLD_PROFILES["sanctuary"]).duplicate(true)
+	var result: Dictionary = WORLD_PROFILES.get(resolved_id, WORLD_PROFILES["sanctuary"]).duplicate(true)
+	result["faction_id"] = resolved_id
+	return result
 
 func get_tutorial_enemy_name() -> String:
 	var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
