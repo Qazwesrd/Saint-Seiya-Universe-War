@@ -51,14 +51,6 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     if element == "cosmos":
         result["color"] = class_profile.get("accent", Color(0.42, 0.66, 1.0))
     result["element"] = element
-    # Authored signature scenes override the generic elemental profile for named finishers.
-    if str(ability.get("id", "")) == "pegasus_skill_6":
-        result["scene_path"] = "res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
-        result["shape"] = "meteor_afterimage_impact"
-        result["effect_layers"] = 3
-        result["lifetime"] = 0.58
-    else:
-        result["scene_path"] = "res://assets/vfx/%s/effect.tscn" % element
     result["shape"] = str(result.get("shape", "star"))
     result["glow"] = clampf(float(result.get("glow", 0.4)), 0.0, 0.6)
     result["impact_scale"] = clampf(float(result.get("impact_scale", 1.0)), 0.5, 1.5)
@@ -77,6 +69,14 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
     result["is_ultimate"] = is_ultimate
     result["impact_scale"] = clampf(float(result["impact_scale"]) * (1.22 if is_ultimate else 1.0), 0.5, 1.5)
     result["glow"] = clampf(float(result["glow"]) + (0.08 if is_ultimate else 0.0), 0.0, 0.6)
+    # Apply authored scene overrides last so generic element tuning cannot erase them.
+    if ability_id == "pegasus_skill_6":
+        result["scene_path"] = "res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
+        result["shape"] = "meteor_afterimage_impact"
+        result["effect_layers"] = 3
+        result["lifetime"] = 0.58
+    else:
+        result["scene_path"] = "res://assets/vfx/%s/effect.tscn" % element
     return result
 
 static func validate_catalog() -> Dictionary:
