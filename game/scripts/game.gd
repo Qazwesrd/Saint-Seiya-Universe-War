@@ -562,7 +562,7 @@ func on_enemy_defeated(enemy: Node3D) -> void:
     var level_gains: int = RPGState.add_exp(exp_reward)
     RPGState.add_currency(coin_reward)
     var auto_pickup := bool(SettingsManager.get_value("controls", "auto_pickup", true))
-    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)), auto_pickup)
+    var drops: Array[Dictionary] = LootManager.roll_enemy_drops(defeated_boss, int(RPGState.profile.get("level", 1)), auto_pickup, str(enemy.get("archetype_id", "")))
     if not auto_pickup:
         for drop in drops:
             _spawn_loot_pickup(enemy.global_position, drop)
