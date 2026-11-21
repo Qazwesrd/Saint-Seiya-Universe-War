@@ -166,26 +166,26 @@ jobs:
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
 
-          # Godot Android exports project resources directly under APK assets/.
-          # A standalone .pck file is not required for this platform.
-          # Validate the actual configured startup scene and a checked-in bespoke skill scene.
-          # The former manifest path was never part of the repository and caused false failures.
-          grep -Fx "assets/scenes/main_menu.tscn" /tmp/apk-entries.txt
-          grep -Fx "assets/assets/vfx/pegasus/meteor_fist_finisher.tscn" /tmp/apk-entries.txt
-          grep -E '^assets/\.godot/imported/.*\.scn$' /tmp/apk-entries.txt > /tmp/imported-resource-entries.txt
-          imported_count="$(wc -l < /tmp/imported-resource-entries.txt | tr -d ' ')"
+          # Godot Android embeds the project PCK in the ARM64 engine shared library,
+          # rather than exposing each project resource as a separate APK ZIP entry.
+          # Verify the actual embedded PCK by checking resource paths in that library.
+          engine_lib="lib/arm64-v8a/libgodot_android.so"
+          grep -Fx "$engine_lib" /tmp/apk-entries.txt
+          unzip -p "$apk" "$engine_lib" > /tmp/libgodot_android.so
+          test -s /tmp/libgodot_android.so
+          grep -a -q 'res://scenes/main_menu.tscn' /tmp/libgodot_android.so
+          grep -a -q 'res://assets/vfx/pegasus/meteor_fist_finisher.tscn' /tmp/libgodot_android.so
+          imported_count="$(grep -a -o 'res://[^[:cntrl:]]*\.scn' /tmp/libgodot_android.so | wc -l | tr -d ' ')"
           if [ "$imported_count" -lt 1 ]; then
-            echo "No imported Godot scene resources were found in the APK."
-            grep -F "assets/" /tmp/apk-entries.txt | head -n 120 || true
+            echo "No embedded Godot scene resource paths were found in the ARM64 engine library."
             exit 1
           fi
 
-          asset_count="$(grep -E '^assets/' /tmp/apk-entries.txt | wc -l | tr -d ' ')"
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "EMBEDDED_ASSET_COUNT=$asset_count"
-          echo "IMPORTED_GODOT_RESOURCE_COUNT=$imported_count"
-          echo "APK_MAIN_SCENE=assets/scenes/main_menu.tscn"
-          echo "APK_SIGNATURE_SKILL_SCENE=assets/assets/vfx/pegasus/meteor_fist_finisher.tscn"
+          echo "EMBEDDED_ENGINE_LIBRARY=$engine_lib"
+          echo "EMBEDDED_GODOT_SCENE_PATH_COUNT=$imported_count"
+          echo "APK_MAIN_SCENE=res://scenes/main_menu.tscn"
+          echo "APK_SIGNATURE_SKILL_SCENE=res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
