@@ -38,6 +38,7 @@ jobs:
           blender --background --python tools/art_pipeline/blender/generate_base_rig.py 2>&1 | tee blender-export.log
           grep -q "ART_PROTOTYPE_EXPORT_PASS" blender-export.log
           python3 - <<'PY'
+          import json
           import sys
           from pathlib import Path
           sys.path.insert(0, "tools/art_pipeline")
