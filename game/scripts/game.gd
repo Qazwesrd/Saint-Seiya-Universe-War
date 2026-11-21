@@ -541,6 +541,16 @@ func _on_graphics_setting_changed(section: String, key: String, value: Variant) 
         if is_instance_valid(sun):
             sun.shadow_enabled = bool(SettingsManager.get_value("graphics", "shadows", true)) and str(SettingsManager.get_value("graphics", "quality", "medium")) != "low"
 
+func show_boss_battle_line(boss: Node3D, event_name: String) -> void:
+    if not is_instance_valid(boss) or not bool(boss.get("is_boss")) or not is_instance_valid(hud):
+        return
+    var boss_id := str(boss.get("archetype_id", ""))
+    var boss_name := str(boss.get("display_name", "强敌"))
+    var line: Dictionary = BossStoryCatalogScript.get_battle_line(boss_id, event_name, boss_name)
+    if not line.is_empty() and hud.has_method("show_boss_callout"):
+        hud.call("show_boss_callout", line)
+
+
 func play_boss_presentation(boss: Node3D, event_name: String) -> void:
     if not is_instance_valid(boss) or not bool(boss.get("is_boss")):
         return

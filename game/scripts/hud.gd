@@ -13,6 +13,10 @@ var story_speaker_label: Label
 var story_message_label: Label
 var story_continue_button: Button
 var story_was_paused := false
+var boss_callout_panel: Panel
+var boss_callout_speaker: Label
+var boss_callout_message: Label
+var boss_callout_timer := 0.0
 var hp_bar: ProgressBar
 var cosmos_bar: ProgressBar
 var skill_button: Button
@@ -601,6 +605,54 @@ func set_boss_status(hp: float, hp_max: float, boss_name: String = "训练 Boss"
         boss_label.add_theme_color_override("font_color", Color(1.0, 0.48, 0.32) if phase_two else Color(1.0, 0.82, 0.48))
         boss_bar.max_value = hp_max
         boss_bar.value = clampf(hp, 0.0, hp_max)
+func show_boss_callout(data: Dictionary) -> void:
+    var root := get_child(0) as Control
+    if not is_instance_valid(root):
+        return
+    if is_instance_valid(boss_callout_panel):
+        boss_callout_panel.queue_free()
+    boss_callout_panel = Panel.new()
+    boss_callout_panel.anchor_left = 0.5
+    boss_callout_panel.anchor_right = 0.5
+    boss_callout_panel.anchor_top = 0.0
+    boss_callout_panel.anchor_bottom = 0.0
+    boss_callout_panel.offset_left = -330
+    boss_callout_panel.offset_right = 330
+    boss_callout_panel.offset_top = 92
+    boss_callout_panel.offset_bottom = 204
+    boss_callout_panel.z_index = 24
+    boss_callout_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    _style_panel(boss_callout_panel, Color(0.012, 0.018, 0.055, 0.94), Color(0.92, 0.58, 0.18))
+    root.add_child(boss_callout_panel)
+    var box := VBoxContainer.new()
+    box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    box.add_theme_constant_override("separation", 6)
+    boss_callout_panel.add_child(box)
+    boss_callout_speaker = Label.new()
+    boss_callout_speaker.text = str(data.get("speaker", "Boss"))
+    boss_callout_speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    boss_callout_speaker.add_theme_font_size_override("font_size", 20)
+    boss_callout_speaker.add_theme_color_override("font_color", Color(1.0, 0.78, 0.34))
+    box.add_child(boss_callout_speaker)
+    boss_callout_message = Label.new()
+    boss_callout_message.text = str(data.get("text", ""))
+    boss_callout_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    boss_callout_message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    boss_callout_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    boss_callout_message.add_theme_font_size_override("font_size", 19)
+    boss_callout_message.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    box.add_child(boss_callout_message)
+    boss_callout_timer = 3.2
+
+func _process(delta: float) -> void:
+    if boss_callout_timer > 0.0:
+        boss_callout_timer = maxf(0.0, boss_callout_timer - delta)
+        if boss_callout_timer <= 0.0 and is_instance_valid(boss_callout_panel):
+            boss_callout_panel.queue_free()
+            boss_callout_panel = null
+            boss_callout_speaker = null
+            boss_callout_message = null
+
 func set_notice(message: String) -> void:
     if is_instance_valid(notice_label): notice_label.text = message
 func _on_resize() -> void:

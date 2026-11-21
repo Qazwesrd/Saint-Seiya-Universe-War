@@ -67,6 +67,7 @@ var boss_control_pressure := 0.0
 var boss_control_resist_timer := 0.0
 var boss_control_resistance := 0.72
 var boss_presentation_hit_cooldown := 0.0
+var boss_dialogue_cooldown := 0.0
 
 func _ready() -> void:
     add_to_group("enemies")
@@ -460,6 +461,7 @@ func _physics_process(delta: float) -> void:
         return
 
     boss_presentation_hit_cooldown = maxf(0.0, boss_presentation_hit_cooldown - delta)
+    boss_dialogue_cooldown = maxf(0.0, boss_dialogue_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta * get_divine_mark_attack_rate_multiplier())
     state_timer = maxf(0.0, state_timer - delta)
     freeze_timer = maxf(0.0, freeze_timer - delta)
@@ -718,6 +720,10 @@ func _resolve_attack(target: Node3D) -> void:
                 target.call("apply_enemy_knockback", push.normalized(), 9.0 if _boss_heavy_attack else (7.0 if is_boss else 4.5))
         if is_boss and _boss_heavy_attack and not player_invulnerable:
             _apply_boss_attack_signature(target, outgoing_attack)
+            if boss_dialogue_cooldown <= 0.0 and is_instance_valid(game):
+                game.call("show_boss_battle_line", self, "special_attack")
+                game.call("play_boss_presentation", self, "ultimate" if _boss_enraged else "signature")
+                boss_dialogue_cooldown = 8.0
     attack_cooldown = attack_interval * (0.62 if _boss_enraged else (0.78 if _boss_phase_two else 1.0))
     state = BrainState.RECOVERY
     state_timer = (maxf(0.2, boss_recovery * 0.48) if _boss_combo_remaining > 0 else boss_recovery) if _boss_heavy_attack else (0.5 if is_boss else 0.34)
@@ -900,9 +906,11 @@ func take_damage(amount: float) -> void:
             game.call("spawn_effect", global_position + Vector3.UP * 1.5, Color(1.0, 0.16, 0.08), 2.1)
         if is_instance_valid(game):
             game.call("play_boss_presentation", self, "phase_two")
+            game.call("show_boss_battle_line", self, "phase_two")
+            boss_dialogue_cooldown = 3.0
             game.call("show_notice", "Boss 进入第二阶段！攻击速度与伤害提升")
 
-    if is_boss and _boss_phase_two and not _boss_enraged and health <= max_health * 0.25:
+    if is_boss and _boss_phase_two and not _boss_enraged and boss_phase_transition_timer <= 0.0 and health <= max_health * 0.25:
         _boss_enraged = true
         telegraph_mesh.visible = false
         telegraph_mesh.scale = Vector3.ONE
@@ -927,6 +935,8 @@ func take_damage(amount: float) -> void:
                 enrage_material.emission = _base_color.lightened(0.35) * 1.8
         if is_instance_valid(game):
             game.call("play_boss_presentation", self, "enrage")
+            game.call("show_boss_battle_line", self, "enrage")
+            boss_dialogue_cooldown = 3.0
             game.call("show_notice", "Boss 最终狂暴阶段！攻击节奏与破坏力大幅提升")
 
     if health <= 0.0:
