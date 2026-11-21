@@ -985,7 +985,12 @@ def build_equipment_models():
             require_independent_skinned_nodes=tuple(piece.name for piece in pieces),
         )
         if index == 0:
+            # Render the armor on the same rigged humanoid body used by the
+            # character pipeline. The mannequin is preview-only and is not
+            # included in the independently skinned armor GLB export above.
+            preview_body = build_body(rig)
             render_profession_turntable(equipment_id, index, "armors")
+            bpy.data.objects.remove(preview_body, do_unlink=True)
             preview_path = ROOT / "game" / "art_previews" / "armors" / (equipment_id + "_front.png")
             if not preview_path.is_file() or preview_path.stat().st_size < 128:
                 raise RuntimeError("Representative armor preview missing or too small: " + str(preview_path))
