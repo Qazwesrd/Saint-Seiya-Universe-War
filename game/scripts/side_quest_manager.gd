@@ -5,6 +5,13 @@ signal quests_changed
 const QUESTS := [
 	{"id":"side_galaxy_boss","chapter_id":"galaxy_wars","kind":"side","name":"竞技场强敌挑战","description":"在银河竞技场击败一名首领。","trigger":"boss_defeated","target":1,"exp":180,"coins":160},
 	{"id":"hidden_galaxy_stands","chapter_id":"galaxy_wars","kind":"hidden","name":"观战席的星之碎片","description":"探索观战席，寻找被遗落的星之碎片。","trigger":"landmark_discovered","landmark_id":"gw_stands","target":1,"exp":120,"coins":120},
+	{"id":"npc_galaxy_guide","chapter_id":"galaxy_wars","kind":"npc","name":"引导员的入门委托","description":"接取后再次与引导员交谈，确认训练记录。","trigger":"talk_to_guide","target":1,"exp":100,"coins":90},
+	{"id":"npc_sanctuary_report","chapter_id":"sanctuary_twelve_houses","kind":"npc","name":"圣域联络委托","description":"向圣域联络员报告十二宫的探索情况。","trigger":"talk_to_guide","target":1,"exp":180,"coins":150},
+	{"id":"npc_asgard_message","chapter_id":"asgard","kind":"npc","name":"仙宫传令委托","description":"向北欧传令员确认神斗士区域的情报。","trigger":"talk_to_guide","target":1,"exp":220,"coins":180},
+	{"id":"npc_poseidon_report","chapter_id":"poseidon","kind":"npc","name":"海界遗迹报告","description":"向海界联络员报告七大支柱的探索情况。","trigger":"talk_to_guide","target":1,"exp":260,"coins":220},
+	{"id":"npc_hades_intel","chapter_id":"hades","kind":"npc","name":"冥界情报委托","description":"向冥界记录员报告审判庭的发现。","trigger":"talk_to_guide","target":1,"exp":300,"coins":250},
+	{"id":"npc_heaven_observation","chapter_id":"heaven","kind":"npc","name":"天界观测报告","description":"向天界观察者确认神域试炼记录。","trigger":"talk_to_guide","target":1,"exp":360,"coins":300},
+	{"id":"npc_final_record","chapter_id":"original_final","kind":"npc","name":"宇宙记录者的最后请求","description":"与宇宙记录者交谈，提交终章探索记录。","trigger":"talk_to_guide","target":1,"exp":500,"coins":420},
 	{"id":"side_sanctuary_boss","chapter_id":"sanctuary_twelve_houses","kind":"side","name":"黄金宫殿的试炼","description":"在圣域十二宫击败一名首领。","trigger":"boss_defeated","target":1,"exp":360,"coins":300},
 	{"id":"hidden_sanctuary_aries","chapter_id":"sanctuary_twelve_houses","kind":"hidden","name":"白羊宫的修复笔记","description":"探索白羊宫，找到穆留下的圣衣修复笔记。","trigger":"landmark_discovered","landmark_id":"s12_aries","target":1,"exp":240,"coins":220},
 	{"id":"side_asgard_boss","chapter_id":"asgard","kind":"side","name":"神斗士的荣誉","description":"在北欧仙宫击败一名首领。","trigger":"boss_defeated","target":1,"exp":420,"coins":360},
@@ -67,7 +74,7 @@ func get_quest_overview() -> Array[Dictionary]:
 
 func accept_quest(quest_id: String) -> bool:
 	var quest := _get_quest(quest_id)
-	if quest.is_empty() or str(quest.get("kind", "")) != "side":
+	if quest.is_empty() or str(quest.get("kind", "")) not in ["side", "npc"]:
 		return false
 	if state["accepted"].has(quest_id) or state["claimed"].has(quest_id):
 		return false
