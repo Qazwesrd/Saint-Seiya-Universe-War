@@ -13,6 +13,17 @@ const WING_DATA := {
 	"divine_wing": {"name": "神域之翼", "description": "终章挑战中获得的神域羽翼", "attack": 12.0, "defense": 9.0, "health": 60.0, "cosmos": 32.0, "unlock_cost": 10000}
 }
 
+const SENSE_STAGES := {
+	"sight": {"name": "视觉突破", "description": "洞察敌人的动作轨迹。", "level_required": 1, "cosmos_required": 1, "cost": 200, "attack": 1.0, "critical_rate": 0.002},
+	"hearing": {"name": "听觉突破", "description": "捕捉战场中的细微变化。", "level_required": 3, "cosmos_required": 2, "cost": 250, "defense": 1.0, "max_cosmos": 5.0},
+	"smell": {"name": "嗅觉突破", "description": "感知小宇宙气息与危险。", "level_required": 5, "cosmos_required": 3, "cost": 300, "max_health": 12.0, "cosmos_regen": 0.1},
+	"taste": {"name": "味觉突破", "description": "稳定生命与能量循环。", "level_required": 7, "cosmos_required": 4, "cost": 350, "max_health": 18.0, "defense": 1.0},
+	"touch": {"name": "触觉突破", "description": "强化身体对冲击的感知。", "level_required": 9, "cosmos_required": 5, "cost": 400, "defense": 2.0, "max_health": 20.0},
+	"sixth_sense": {"name": "第六感觉醒", "description": "感知超越五感的小宇宙流动。", "level_required": 20, "cosmos_required": 10, "cost": 900, "attack": 4.0, "critical_rate": 0.008, "max_cosmos": 15.0},
+	"seventh_sense": {"name": "第七感觉醒", "description": "在极限战斗中燃烧小宇宙。", "level_required": 40, "cosmos_required": 15, "cost": 2200, "attack": 8.0, "defense": 5.0, "cosmos_regen": 0.3},
+	"eighth_sense": {"name": "第八感觉醒", "description": "触及生死界限的高阶境界。", "level_required": 60, "cosmos_required": 20, "cost": 5000, "attack": 12.0, "defense": 8.0, "max_health": 80.0, "max_cosmos": 30.0}
+}
+
 const COSMOS_NODES := {
 	"star_attack": {"name": "星辉攻击", "attribute": "attack", "value": 2.0, "max_rank": 5, "level_required": 1, "cost": 120},
 	"star_guard": {"name": "星辰守护", "attribute": "defense", "value": 2.0, "max_rank": 5, "level_required": 2, "cost": 120},
@@ -40,8 +51,10 @@ func _ensure_profile_data() -> void:
 		RPGState.profile["cosmos_star_nodes"] = {}
 	if not RPGState.profile.has("cosmos_node_points"):
 		RPGState.profile["cosmos_node_points"] = 0
+	if not RPGState.profile.has("cosmos_sense_stages"):
+		RPGState.profile["cosmos_sense_stages"] = []
 	if not RPGState.profile.has("growth_data_version"):
-		RPGState.profile["growth_data_version"] = 1
+		RPGState.profile["growth_data_version"] = 2
 
 func _save_change(previous: Dictionary) -> bool:
 	if not RPGState._commit_profile(previous):
@@ -155,6 +168,55 @@ func set_wing_visible(visible: bool) -> bool:
 	RPGState.profile["growth_wings"] = wings
 	return _save_change(previous)
 
+func get_sense_profile() -> Dictionary:
+	_ensure_profile_data()
+	var unlocked: Array = RPGState.profile.get("cosmos_sense_stages", [])
+	var character_level := int(RPGState.profile.get("level", 1))
+	var cosmos_level := int(RPGState.get_cosmos_profile().get("level", 1))
+	var stages: Array[Dictionary] = []
+	var bonuses := {"attack": 0.0, "defense": 0.0, "max_health": 0.0, "max_cosmos": 0.0, "cosmos_regen": 0.0, "critical_rate": 0.0}
+	for stage_id in SENSE_STAGES:
+		var definition: Dictionary = SENSE_STAGES[stage_id]
+		var is_unlocked := unlocked.has(stage_id)
+		var previous_unlocked := true
+		var stage_index := SENSE_STAGES.keys().find(stage_id)
+		if stage_index > 0:
+			for previous_index in range(stage_index):
+				if not unlocked.has(SENSE_STAGES.keys()[previous_index]):
+					previous_unlocked = false
+					break
+		var item: Dictionary = definition.duplicate(true)
+		item["id"] = stage_id
+		item["unlocked"] = is_unlocked
+		item["available"] = not is_unlocked and previous_unlocked and character_level >= int(definition.get("level_required", 1)) and cosmos_level >= int(definition.get("cosmos_required", 1))
+		stages.append(item)
+		if is_unlocked:
+			for attribute in bonuses:
+				bonuses[attribute] = float(bonuses[attribute]) + float(definition.get(attribute, 0.0))
+	return {"stages": stages, "unlocked": unlocked.duplicate(), "unlocked_count": unlocked.size(), "total_count": SENSE_STAGES.size(), "bonuses": bonuses}
+
+func breakthrough_sense(stage_id: String) -> bool:
+	_ensure_profile_data()
+	if not SENSE_STAGES.has(stage_id):
+		return false
+	var sense_profile: Dictionary = get_sense_profile()
+	var target: Dictionary = {}
+	for stage in sense_profile.get("stages", []):
+		if str(stage.get("id", "")) == stage_id:
+			target = stage
+			break
+	if target.is_empty() or not bool(target.get("available", false)):
+		return false
+	var cost := int(target.get("cost", 0))
+	if int(RPGState.profile.get("currency", 0)) < cost:
+		return false
+	var previous: Dictionary = RPGState.profile.duplicate(true)
+	var unlocked: Array = RPGState.profile.get("cosmos_sense_stages", []).duplicate()
+	unlocked.append(stage_id)
+	RPGState.profile["cosmos_sense_stages"] = unlocked
+	RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
+	return _save_change(previous)
+
 func get_cosmos_star_map() -> Dictionary:
 	_ensure_profile_data()
 	var allocated: Dictionary = RPGState.profile.get("cosmos_star_nodes", {})
@@ -215,12 +277,12 @@ func get_growth_stat_bonus() -> Dictionary:
 	var star_map: Dictionary = get_cosmos_star_map()
 	var nodes: Dictionary = star_map.get("bonuses", {})
 	return {
-		"attack": float(wings.get("attack_bonus", 0.0)) + float(nodes.get("attack", 0.0)),
-		"defense": float(wings.get("defense_bonus", 0.0)) + float(nodes.get("defense", 0.0)),
-		"max_health": float(wings.get("health_bonus", 0.0)) + float(nodes.get("max_health", 0.0)),
-		"max_cosmos": float(wings.get("cosmos_bonus", 0.0)) + float(nodes.get("max_cosmos", 0.0)),
-		"cosmos_regen": float(nodes.get("cosmos_regen", 0.0)),
-		"critical_rate": float(nodes.get("critical_rate", 0.0))
+		"attack": float(wings.get("attack_bonus", 0.0)) + float(nodes.get("attack", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("attack", 0.0)),
+		"defense": float(wings.get("defense_bonus", 0.0)) + float(nodes.get("defense", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("defense", 0.0)),
+		"max_health": float(wings.get("health_bonus", 0.0)) + float(nodes.get("max_health", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("max_health", 0.0)),
+		"max_cosmos": float(wings.get("cosmos_bonus", 0.0)) + float(nodes.get("max_cosmos", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("max_cosmos", 0.0)),
+		"cosmos_regen": float(nodes.get("cosmos_regen", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("cosmos_regen", 0.0)),
+		"critical_rate": float(nodes.get("critical_rate", 0.0)) + float(get_sense_profile().get("bonuses", {}).get("critical_rate", 0.0))
 	}
 
 func get_power_breakdown() -> Dictionary:
