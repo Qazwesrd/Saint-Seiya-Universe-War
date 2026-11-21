@@ -14,6 +14,10 @@ func _run_tests() -> void:
 	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
 	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
 	assert(WorldExplorationManager.get_regions().size() == 7, "world map exposes all seven campaign regions")
+	assert(SideQuestManager.QUESTS.size() == 14, "seven chapters each define a side quest and a hidden landmark quest")
+	var available_side_quests: Array[Dictionary] = SideQuestManager.get_quest_overview()
+	assert(available_side_quests.any(func(entry): return str(entry.get("id", "")) == "side_galaxy_boss"), "starting chapter exposes its optional side quest")
+	assert(not available_side_quests.any(func(entry): return str(entry.get("id", "")) == "hidden_galaxy_stands"), "undiscovered hidden quests remain concealed")
 	assert(bool(WorldExplorationManager.get_regions()[0].get("unlocked", false)), "Galaxy Wars starting region is unlocked for a new profile")
 	var chapter_profile_ids := {}
 	for boss_id in ["arena_boss", "gold_taurus", "god_warrior_siegfried", "poseidon_emperor", "hades_emperor", "zeus_trial", "primordial_void"]:
