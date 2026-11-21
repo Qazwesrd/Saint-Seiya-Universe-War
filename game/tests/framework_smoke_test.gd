@@ -746,14 +746,14 @@ func _run_tests() -> void:
 	awakened_dark_state["awakened"] = true
 	RPGState.profile["armor_state"] = awakened_dark_state
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.265), "awakened Dark Cloth raises skill resonance to fifteen percent")
-  RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","platinum"],"current_stage":"platinum","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
-  var platinum_base_bonus: Dictionary = ArmorSystem.get_bonus_stats()
-  assert(is_equal_approx(float(platinum_base_bonus.get("platinum_star_resonance", 0.0)), 1.12), "Platinum Cloth has its own star-radiance skill multiplier")
-  assert(float(platinum_base_bonus.get("max_cosmos", 0.0)) > 0.0, "Platinum Cloth grants star-radiance Cosmos capacity")
-  RPGState.profile["armor_state"]["awakened"] = true
-  var platinum_awakened_bonus: Dictionary = ArmorSystem.get_bonus_stats()
-  assert(is_equal_approx(float(platinum_awakened_bonus.get("platinum_star_resonance", 0.0)), 1.18), "Platinum awakening strengthens its own star-radiance multiplier")
-  assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.298), "Platinum awakening independently strengthens profession skill damage through star radiance")
+	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","platinum"],"current_stage":"platinum","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
+	var platinum_base_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+	assert(is_equal_approx(float(platinum_base_bonus.get("platinum_star_resonance", 0.0)), 1.12), "Platinum Cloth has its own star-radiance skill multiplier")
+	assert(float(platinum_base_bonus.get("max_cosmos", 0.0)) > 0.0, "Platinum Cloth grants star-radiance Cosmos capacity")
+	RPGState.profile["armor_state"]["awakened"] = true
+	var platinum_awakened_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+	assert(is_equal_approx(float(platinum_awakened_bonus.get("platinum_star_resonance", 0.0)), 1.18), "Platinum awakening strengthens its own star-radiance multiplier")
+	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.298), "Platinum awakening independently strengthens profession skill damage through star radiance")
 	RPGState.profile["armor_state"] = saved_armor_state
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.1), "removing Dark Cloth restores the class skill multiplier")
 	assert(is_equal_approx(SkillSystem.get_combo_damage_multiplier("pegasus"), 1.08), "Pegasus combo passive applies to combo finishers")
