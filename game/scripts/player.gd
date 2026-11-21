@@ -619,6 +619,41 @@ func _build_armor_wear_cracks() -> void:
                 crack.material_override = crack_material
                 armor_root.add_child(crack)
 
+func _play_armor_repair_feedback() -> void:
+    if not is_instance_valid(armor_root):
+        return
+    var repair_points := [
+        Vector3(0.0, 2.02, -0.20),
+        Vector3(0.0, 1.28, -0.43),
+        Vector3(0.48, 1.22, -0.16),
+        Vector3(0.0, 0.68, -0.30),
+        Vector3(0.20, 0.42, -0.25)
+    ]
+    for point_index in range(repair_points.size()):
+        var repair_ring := MeshInstance3D.new()
+        repair_ring.name = "ArmorRepairPulse_%d" % point_index
+        var ring_mesh := TorusMesh.new()
+        ring_mesh.inner_radius = 0.16
+        ring_mesh.outer_radius = 0.19
+        repair_ring.mesh = ring_mesh
+        repair_ring.position = repair_points[point_index]
+        repair_ring.rotation.x = deg_to_rad(90.0)
+        repair_ring.scale = Vector3(0.45, 0.45, 0.45)
+        var ring_material := StandardMaterial3D.new()
+        ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+        ring_material.albedo_color = Color(0.42, 1.0, 0.72, 0.92)
+        ring_material.emission_enabled = true
+        ring_material.emission = Color(0.22, 1.0, 0.58) * 0.85
+        repair_ring.material_override = ring_material
+        armor_root.add_child(repair_ring)
+        var pulse := create_tween()
+        pulse.set_parallel(true)
+        pulse.tween_property(repair_ring, "scale", Vector3(1.8, 1.8, 1.8), 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+        pulse.tween_property(ring_material, "albedo_color:a", 0.0, 0.62)
+        pulse.tween_property(ring_material, "emission_energy_multiplier", 0.0, 0.62)
+        pulse.chain().tween_callback(repair_ring.queue_free)
+
 func _build_armor_visuals() -> void:
     if not is_instance_valid(visual_root):
         return
@@ -1317,6 +1352,7 @@ func _build_armor_visuals() -> void:
     _build_armor_wear_cracks()
     if armor_was_repaired:
         _play_combat_feedback(Color(0.36, 1.0, 0.68), 0.34)
+        _play_armor_repair_feedback()
 
 
 func _load_authored_character_model(class_id: String) -> void:
