@@ -610,6 +610,13 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", -1.0, true), 1.05), "Sea Dragon positional bonus is reduced against bosses")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("sea_dragon", 0.8, false), 1.0), "Sea Dragon receives no positional bonus when striking the front")
 	assert(is_equal_approx(SkillSystem.get_position_damage_multiplier("pegasus", 0.0, false), 1.0), "Other classes do not receive Sea Dragon positional bonus")
+	var guard_test_boss = preload("res://scripts/enemy.gd").new()
+	guard_test_boss.is_boss = true
+	guard_test_boss.state = guard_test_boss.BrainState.GUARD
+	assert(is_equal_approx(guard_test_boss.get_boss_guard_damage_multiplier(), 0.42), "boss guard stance reduces incoming damage by 58 percent")
+	guard_test_boss.state = guard_test_boss.BrainState.CHASE
+	assert(is_equal_approx(guard_test_boss.get_boss_guard_damage_multiplier(), 1.0), "boss receives normal damage outside guard stance")
+	guard_test_boss.free()
 	var weakpoint_test_boss = preload("res://scripts/enemy.gd").new()
 	weakpoint_test_boss.is_boss = true
 	assert(is_equal_approx(weakpoint_test_boss.get_boss_weakpoint_multiplier(Vector3(0.0, 0.0, 3.0)), 1.22), "boss rear weakpoint grants 22% precision damage")
