@@ -653,6 +653,12 @@ func _build_armor_visuals() -> void:
     armor_visual_wear_profile = ArmorSystem.get_visual_wear_profile(ArmorSystem.get_condition_ratio())
     var stage_id := str(stage_state.get("current_stage", "bronze"))
     var stage_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(stage_id, bool(stage_state.get("awakened", false)))
+    var armor_part_profiles: Dictionary = CharacterVisualCatalog.get_class_armor_part_profiles(class_id, stage_id, bool(stage_state.get("awakened", false)))
+    var head_part_scale: Vector3 = armor_part_profiles.get("head", {}).get("scale", Vector3.ONE)
+    var chest_part_scale: Vector3 = armor_part_profiles.get("chest", {}).get("scale", Vector3.ONE)
+    var arm_part_scale: Vector3 = armor_part_profiles.get("arms", {}).get("scale", Vector3.ONE)
+    var waist_part_scale: Vector3 = armor_part_profiles.get("waist", {}).get("scale", Vector3.ONE)
+    var leg_part_scale: Vector3 = armor_part_profiles.get("legs", {}).get("scale", Vector3.ONE)
     var stage_metal_color: Color = stage_palette.get("metal", armor_base_color)
     var stage_trim_color: Color = stage_palette.get("trim", accent)
     var bright: Color = stage_metal_color.lightened(0.22).lerp(armor_base_color, 0.16)
@@ -707,7 +713,7 @@ func _build_armor_visuals() -> void:
 
     # Layered torso plates: chest, abdomen, collar and a raised central crest.
     var chest := BoxMesh.new()
-    chest.size = Vector3(0.72 * silhouette_width * stage_structure, 0.54 * silhouette_height, 0.20)
+    chest.size = Vector3(0.72 * silhouette_width * stage_structure, 0.54 * silhouette_height, 0.20) * chest_part_scale
     _add_armor_piece(chest, Vector3(0.0, 1.28, -0.32), Vector3.ONE, bright, stage_metallic, "chest")
     var abdomen := BoxMesh.new()
     abdomen.size = Vector3(0.56 * silhouette_width, 0.28 * silhouette_height, 0.18)
@@ -765,7 +771,7 @@ func _build_armor_visuals() -> void:
     shoulder_mesh.radius = 0.28
     shoulder_mesh.height = 0.42
     var shoulder_scale: Vector3 = relic_visual_profile.get("shoulder_scale", visual_profile.get("shoulder_scale", Vector3.ONE))
-    shoulder_scale = Vector3(shoulder_scale.x * silhouette_width * stage_structure, shoulder_scale.y * silhouette_height, shoulder_scale.z)
+    shoulder_scale = Vector3(shoulder_scale.x * silhouette_width * stage_structure, shoulder_scale.y * silhouette_height, shoulder_scale.z) * arm_part_scale
     _add_armor_piece(shoulder_mesh, Vector3(-0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
     _add_armor_piece(shoulder_mesh, Vector3(0.48 * silhouette_width, 1.55, 0.0), shoulder_scale, bright, stage_metallic, "arms")
     # Shoulder plates now use the class heraldry and armor tier, not one generic spike.
@@ -948,9 +954,9 @@ func _build_armor_visuals() -> void:
     var belt_mesh := TorusMesh.new()
     belt_mesh.inner_radius = 0.29
     belt_mesh.outer_radius = 0.36
-    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0), accent, stage_metallic, "waist")
+    _add_armor_piece(belt_mesh, Vector3(0.0, 0.72, 0.0), Vector3(1.0, 0.65, 1.0) * waist_part_scale, accent, stage_metallic, "waist")
     var waist_plate := BoxMesh.new()
-    waist_plate.size = Vector3(0.72 * silhouette_waist * stage_structure, 0.22, 0.16)
+    waist_plate.size = Vector3(0.72 * silhouette_waist * stage_structure, 0.22, 0.16) * waist_part_scale
     _add_armor_piece(waist_plate, Vector3(0.0, 0.61, -0.28), Vector3.ONE, bright, stage_metallic, "waist")
     var skirt_plate := PrismMesh.new()
     skirt_plate.size = Vector3(0.28 * silhouette_waist * stage_structure, 0.42 * silhouette_height, 0.16)
@@ -997,9 +1003,9 @@ func _build_armor_visuals() -> void:
             var waist_guard := _add_armor_piece(waist_side_mesh, Vector3(waist_side * 0.43 * silhouette_waist, 0.61, 0.0), Vector3.ONE, dark, stage_metallic, "waist")
             waist_guard.rotation.z = -waist_side * 0.12
     var thigh_mesh := PrismMesh.new()
-    thigh_mesh.size = Vector3(0.25 * silhouette_waist, 0.30 * silhouette_height, 0.17)
+    thigh_mesh.size = Vector3(0.25 * silhouette_waist, 0.30 * silhouette_height, 0.17) * leg_part_scale
     var shin_mesh := BoxMesh.new()
-    shin_mesh.size = Vector3(0.24 * stage_structure, 0.48 * silhouette_height, 0.18)
+    shin_mesh.size = Vector3(0.24 * stage_structure, 0.48 * silhouette_height, 0.18) * leg_part_scale
     for leg_side in [-1.0, 1.0]:
         var thigh_plate := _add_armor_piece(thigh_mesh, Vector3(leg_side * 0.22, 0.54, -0.17), Vector3.ONE, dark, stage_metallic, "legs")
         thigh_plate.rotation.z = -leg_side * 0.08
@@ -1087,9 +1093,9 @@ func _build_armor_visuals() -> void:
             crest_gem_mesh.height = 0.10
             _add_armor_piece(crest_gem_mesh, Vector3(0.0, 2.12, -0.16), Vector3.ONE, accent.lightened(0.24), 1.0, "head")
     var helmet_cap := SphereMesh.new()
-    helmet_cap.radius = 0.245
-    helmet_cap.height = 0.20
-    _add_armor_piece(helmet_cap, Vector3(0.0, 2.075, 0.015), Vector3(1.0, 0.62, 0.88), bright, stage_metallic, "head")
+    helmet_cap.radius = 0.245 * head_part_scale.x
+    helmet_cap.height = 0.20 * head_part_scale.y
+    _add_armor_piece(helmet_cap, Vector3(0.0, 2.075, 0.015), Vector3(1.0, 0.62, 0.88) * head_part_scale, bright, stage_metallic, "head")
     var helmet_brow := BoxMesh.new()
     helmet_brow.size = Vector3(0.54 * silhouette_width, 0.11, 0.12)
     _add_armor_piece(helmet_brow, Vector3(0.0, 2.02, -0.225), Vector3.ONE, stage_trim_color, stage_metallic, "head")
