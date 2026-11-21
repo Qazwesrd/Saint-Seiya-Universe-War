@@ -30,3 +30,27 @@ python3 tools/art_pipeline/build_manifests.py --check
 每种元素交付可复用特效场景、命中特效及低/中/高画质配置。特效只负责表现，伤害、碰撞和控制由游戏逻辑负责。优先共享材质，控制透明层、粒子数量和生命周期。
 
 **重要：** 目前生成的只是制作清单，不是正式3D模型。只有真实资源导入、检查并通过设备测试后，才能更新交付状态。
+
+
+## 原版客户端资产盘点（只读）
+
+如果已合法取得 Saint Seiya Online / Angelica 客户端，可先对客户端目录做只读盘点，再决定是否进行格式解析。此步骤不会运行客户端文件、解包或修改原始文件，也不会联网。
+
+在仓库根目录执行：
+
+```bash
+python3 tools/art_pipeline/inventory_angelica_client.py "/path/to/your/client" --output "/path/to/separate/inventory"
+```
+
+Windows PowerShell 示例：
+
+```powershell
+py tools/art_pipeline/inventory_angelica_client.py "D:\\Games\\SeiyaClient\\element" --output "D:\\SeiyaInventory"
+```
+
+输出：
+- `client_inventory.json`：完整清单、文件大小、文件头提示、SHA-256（默认开启）。
+- `client_inventory.csv`：便于 Excel 筛选的文件清单。
+- 重点统计 `.pck/.pkx/.ski/.smd/.bon/.stck/.ecm/.anm/.data` 等格式。
+
+如果客户端很大，可先加 `--no-hash` 快速盘点；正式留档时建议重新运行默认哈希模式。输出目录必须位于客户端目录之外。请不要把原版客户端、提取出的专有资源或哈希清单上传到公开仓库；先在本地检查并确认资源来源及授权。
