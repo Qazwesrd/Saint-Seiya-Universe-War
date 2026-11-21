@@ -844,6 +844,19 @@ func _run_tests() -> void:
 	var helmet_repair_result: Dictionary = ArmorSystem.repair_part("head")
 	assert(bool(helmet_repair_result.get("repaired", false)) and int(helmet_repair_result.get("after", 0)) == 100, "individual armor repair restores only the selected piece")
 	assert(int(RPGState.profile.get("currency", 0)) == 930 and ArmorSystem.get_part_durability("chest") == 100, "individual armor repair charges the quoted cost without damaging other pieces")
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction("head"), 0.08), "intact helmet applies its dedicated eight-percent hit-zone protection")
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction("chest"), 0.10), "intact chest plate applies its dedicated ten-percent hit-zone protection")
+	RPGState.profile["armor_state"]["durability"]["head"] = 50
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction("head"), 0.04), "helmet protection falls proportionally as its durability drops")
+	RPGState.profile["armor_state"]["durability"]["head"] = 0
+	assert(is_equal_approx(ArmorSystem.get_damage_reduction("head"), 0.0), "a broken helmet no longer protects the head hit zone")
+	RPGState.profile["armor_state"]["durability"]["head"] = 100
+	ArmorSystem.damage_ticks = 0
+	for wear_tick in range(4):
+		assert(not bool(ArmorSystem.damage_hit_part("head", 4).get("changed", false)), "targeted armor wear waits for the five-hit interval")
+	var targeted_wear: Dictionary = ArmorSystem.damage_hit_part("head", 4)
+	assert(bool(targeted_wear.get("changed", false)) and int(targeted_wear.get("after", 100)) == 96, "the fifth targeted hit wears the struck armor part rather than a random piece")
+	RPGState.profile["armor_state"]["durability"]["head"] = 100
 	RPGState.profile["currency"] = saved_armor_currency
 	RPGState.profile["armor_state"] = saved_armor_state.duplicate(true)
 	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","dark_cloth"],"current_stage":"dark_cloth","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
