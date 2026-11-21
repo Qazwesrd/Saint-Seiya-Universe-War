@@ -101,12 +101,15 @@ func _ready() -> void:
     visual_root = Node3D.new()
     visual_root.name = "PlayerVisualRoot"
     add_child(visual_root)
+    # The fallback torso is an anatomical ellipsoid, not a full-body capsule.
+    # This keeps missing art bundles from displaying the obvious blue capsule.
     var body := MeshInstance3D.new()
-    var mesh := CapsuleMesh.new()
-    mesh.radius = 0.4
-    mesh.height = 1.75
+    var mesh := SphereMesh.new()
+    mesh.radius = 0.5
+    mesh.height = 1.0
     body.mesh = mesh
-    body.position.y = 0.9
+    body.scale = Vector3(0.72, 1.0, 0.48)
+    body.position.y = 1.12
     body_mat = StandardMaterial3D.new()
     body_mat.albedo_color = Color(0.18, 0.52, 0.95)
     body_mat.metallic = 0.55
