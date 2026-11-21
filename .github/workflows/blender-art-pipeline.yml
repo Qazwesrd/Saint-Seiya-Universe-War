@@ -28,13 +28,15 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y blender python3-numpy
+          sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgl1-mesa-dri libgbm1
           blender --version
       - name: Generate and structurally validate GLB prototypes
         shell: bash
         run: |
           set -euo pipefail
           python3 tools/art_pipeline/build_manifests.py
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export EGL_PLATFORM=surfaceless
           blender --background --python tools/art_pipeline/blender/generate_base_rig.py 2>&1 | tee blender-export.log
           grep -q "ART_PROTOTYPE_EXPORT_PASS" blender-export.log
           python3 - <<'PY'
