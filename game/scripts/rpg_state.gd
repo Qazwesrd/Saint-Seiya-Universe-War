@@ -135,6 +135,12 @@ func get_combat_stats() -> Dictionary:
  var level: int = int(profile.get("level",1))
  var divine_tier := bool(cosmos_data.get("divine", false))
  var stats := {"max_health":float(base["hp"]+(level-1)*(30 if divine_tier else 8))+float(cosmos_data.get("health_bonus",0.0)),"attack":float(base["attack"]+(level-1)*(8 if divine_tier else 2))+float(cosmos_data.get("attack_bonus",0.0)),"defense":float(base["defense"]+(level-1)*(5 if divine_tier else 1))+float(cosmos_data.get("defense_bonus",0.0)),"speed":float(base["speed"]),"max_cosmos":float(cosmos_data.get("max_cosmos",100.0))}
+ if bool(profile.get("story_balanced", false)) and str(base.get("tier", "")) in ["神明", "天斗士"] and str(profile.get("power_mode", "story_balanced")) != "supreme":
+  stats["max_health"] = float(150 + (level - 1) * 8)
+  stats["attack"] = float(18 + (level - 1) * 2)
+  stats["defense"] = float(12 + (level - 1))
+  stats["speed"] = minf(float(base["speed"]), 18.0)
+  stats["max_cosmos"] = 180.0
  for slot in profile.get("equipment",{}):
   var item_id: String = str(profile["equipment"][slot])
   if ITEM_DATA.has(item_id):
