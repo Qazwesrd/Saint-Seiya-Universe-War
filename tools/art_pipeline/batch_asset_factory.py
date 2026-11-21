@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parallel, resumable coordinator for the Saint Seiya Blender asset factory.
+"""Parallel coordinator for the Saint Seiya Blender asset factory.
 
 Run from repository root:
   python3 tools/art_pipeline/batch_asset_factory.py
