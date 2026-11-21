@@ -73,6 +73,12 @@ def inspect_file(path: Path, root: Path, do_hash: bool) -> dict:
     return record
 
 
+def validate_paths(root: Path, output: Path) -> None:
+    """Reject output directories inside the client tree."""
+    if output == root or root in output.parents:
+        raise ValueError("--output must be outside the client directory; source files are read-only")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("client_dir", type=Path, help="Root of the local client folder (read-only)")
@@ -84,8 +90,10 @@ def main() -> int:
     output = args.output.expanduser().resolve()
     if not root.is_dir():
         parser.error(f"client_dir is not a directory: {root}")
-    if output == root or root in output.parents:
-        parser.error("--output must be outside the client directory; source files are read-only")
+    try:
+        validate_paths(root, output)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     records = []
     errors = []
