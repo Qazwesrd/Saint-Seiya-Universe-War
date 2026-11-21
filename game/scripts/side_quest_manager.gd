@@ -24,7 +24,8 @@ const QUESTS := [
 	{"id":"hidden_heaven_temple","chapter_id":"heaven","kind":"hidden","name":"神殿的星辉","description":"探索天空神殿，发现神域留下的星辉。","trigger":"landmark_discovered","landmark_id":"heaven_temple","target":1,"exp":420,"coins":380},
 	{"id":"side_final_boss","chapter_id":"original_final","kind":"side","name":"原初强敌挑战","description":"在宇宙终章击败一名首领。","trigger":"boss_defeated","target":1,"exp":900,"coins":760},
 	{"id":"hidden_final_primordial","chapter_id":"original_final","kind":"hidden","name":"原初虚空的记忆","description":"探索原初虚空，找回宇宙最初的记忆。","trigger":"landmark_discovered","landmark_id":"final_primordial","target":1,"exp":600,"coins":520},
-	{"id":"side_dark_knight_trial","chapter_id":"galaxy_wars","kind":"side","name":"暗黑圣衣：黑暗统领讨伐","description":"接取挑战，击败银河战争篇的黑暗圣斗士统领，证明自己能够驾驭黑暗圣衣。","trigger":"dark_boss_defeated","required_archetype_id":"dark_black_knight_champion","target":1,"exp":620,"coins":520}
+	{"id":"side_dark_knight_trial","chapter_id":"galaxy_wars","kind":"side","name":"暗黑圣衣：黑暗统领讨伐","description":"接取挑战，击败银河战争篇的黑暗圣斗士统领，证明自己能够驾驭黑暗圣衣。","trigger":"dark_boss_defeated","required_archetype_id":"dark_black_knight_champion","target":1,"exp":620,"coins":520},
+	{"id":"side_dark_patrol","chapter_id":"galaxy_wars","kind":"side","name":"黑暗军团：清剿巡逻队","description":"接取挑战，击败三名黑暗圣斗士巡逻兵，阻止他们集结军团。","trigger":"dark_patrol_defeated","target":3,"exp":420,"coins":360}
 ]
 const STATE_KEY := "side_quest_state"
 var state: Dictionary = {}
