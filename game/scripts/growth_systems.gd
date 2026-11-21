@@ -227,7 +227,6 @@ func get_power_breakdown() -> Dictionary:
 	var wings: Dictionary = get_wing_profile()
 	var star_map: Dictionary = get_cosmos_star_map()
 	var nodes: Dictionary = star_map.get("bonuses", {})
-	var growth_stats: Dictionary = get_growth_stat_bonus()
 	var class_power := float(RPGState.profile.get("level", 1)) * 18.0
 	var raw_attribute_power := float(stats.get("max_health", 0.0)) * 0.12 + float(stats.get("attack", 0.0)) * 5.0 + float(stats.get("defense", 0.0)) * 3.0 + float(stats.get("speed", 0.0)) * 2.0
 	var wing_attribute_power := float(wings.get("health_bonus", 0.0)) * 0.12 + float(wings.get("attack_bonus", 0.0)) * 5.0 + float(wings.get("defense_bonus", 0.0)) * 3.0
