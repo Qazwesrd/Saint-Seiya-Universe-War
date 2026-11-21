@@ -1145,6 +1145,59 @@ def build_profession_models(shard_index=0, shard_count=1):
                     (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
                     "Chest", profession_mat, rig, segments=12, rings=8
                 ))
+        if class_id == "pegasus":
+            # Dedicated Pegasus Bronze Cloth hero detailing for the first art review.
+            bronze = material("Pegasus_Bronze_Alloy", (0.62, 0.34, 0.16), 0.86, 0.24)
+            silver = material("Pegasus_Silver_Edges", (0.72, 0.79, 0.88), 0.9, 0.2)
+            enamel = material("Pegasus_Cobalt_Enamel", (0.035, 0.16, 0.42), 0.62, 0.2)
+            crimson = material("Pegasus_Crimson_Gem", (0.68, 0.035, 0.075), 0.58, 0.16)
+            ornaments.append(add_weighted_armor_plate(
+                "Pegasus_Bronze_Chest_Cuirass", (0, -0.172, 1.365),
+                [(-0.245, 0.17), (-0.16, 0.245), (0, 0.205), (0.16, 0.245),
+                 (0.245, 0.17), (0.19, -0.08), (0.075, -0.19), (0, -0.22),
+                 (-0.075, -0.19), (-0.19, -0.08)],
+                0.10, "Chest", bronze, rig, 0.022))
+            ornaments.append(add_weighted_armor_plate(
+                "Pegasus_Chest_Enamel_Inlay", (0, -0.235, 1.37),
+                [(-0.12, 0.10), (-0.065, 0.15), (0, 0.12), (0.065, 0.15),
+                 (0.12, 0.10), (0.075, -0.075), (0, -0.12), (-0.075, -0.075)],
+                0.026, "Chest", enamel, rig, 0.008))
+            ornaments.append(add_weighted_ellipsoid(
+                "Pegasus_Chest_Crimson_Cosmos_Gem", (0, -0.258, 1.39),
+                (0.042, 0.022, 0.052), "Chest", crimson, rig, 20, 12))
+            for side, sign in (("Left", 1), ("Right", -1)):
+                ornaments.append(add_weighted_pauldron(
+                    "Pegasus_" + side + "_Winged_Pauldron",
+                    (sign * 0.345, -0.09, 1.49), 0.19, 0.09, 0.095,
+                    side + "Shoulder", silver, rig, sign))
+                ornaments.append(add_weighted_armor_plate(
+                    "Pegasus_" + side + "_Bronze_Gauntlet",
+                    (sign * 0.49, -0.095, 1.105),
+                    [(-0.075, 0.16), (0.045, 0.18), (0.085, 0.07),
+                     (0.06, -0.14), (0, -0.19), (-0.07, -0.13), (-0.09, 0.04)],
+                    0.12, side + "Forearm", bronze, rig, 0.016))
+                ornaments.append(add_weighted_armor_plate(
+                    "Pegasus_" + side + "_Silver_Shin_Guard",
+                    (sign * 0.15, -0.092, 0.345),
+                    [(-0.09, 0.18), (0, 0.22), (0.09, 0.18),
+                     (0.075, 0.02), (0.05, -0.17), (0, -0.21),
+                     (-0.07, -0.15), (-0.085, 0.02)],
+                    0.13, side + "Shin", silver, rig, 0.016))
+                ornaments.append(add_weighted_armor_plate(
+                    "Pegasus_" + side + "_Helmet_Wing",
+                    (sign * 0.105, -0.105, 1.91),
+                    [(0, -0.045), (sign * 0.04, 0.015), (sign * 0.16, 0.17),
+                     (sign * 0.19, 0.22), (sign * 0.08, 0.19), (0, 0.09)],
+                    0.055, "Head", silver, rig, 0.01))
+            ornaments.append(add_weighted_armor_plate(
+                "Pegasus_Bronze_Waist_Tasset", (0, -0.16, 0.93),
+                [(-0.18, 0.10), (-0.12, 0.14), (0.12, 0.14), (0.18, 0.10),
+                 (0.13, -0.12), (0, -0.19), (-0.13, -0.12)],
+                0.075, "Hips", bronze, rig, 0.014))
+                ornaments.append(add_weighted_ellipsoid(
+                    "Pegasus_" + side + "_Pauldron_Enamel",
+                    (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
+                    side + "Shoulder", enamel, rig, 16, 10))
         make_animation_library(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
         destination = output_root / class_id / "model/character.glb"
