@@ -94,7 +94,7 @@ def create_rig():
     rig.data.display_type = "OCTAHEDRAL"
     return rig
 
-def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=16, rings=10):
+def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=32, rings=20):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, radius=1, location=location)
     obj = bpy.context.object
     obj.name = name
@@ -124,7 +124,7 @@ def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12
     bitangent = axis.cross(tangent).normalized()
     profiles = ((0.00, 0.72), (0.12, 0.91), (0.34, 1.00),
                 (0.62, 0.88), (0.86, 0.70), (1.00, 0.62))
-    sides = max(10, vertices)
+    sides = max(16, vertices)
     mesh_vertices = []
     for t, factor in profiles:
         center = a.lerp(b, t)
@@ -216,6 +216,16 @@ def join_meshes(objects, name, rig):
     for mod in list(merged.modifiers):
         if mod.type == "ARMATURE":
             merged.modifiers.remove(mod)
+    if name == "Humanoid_Base_Mesh":
+        # Smooth the evaluated anatomy before export. This refines the connected
+        # body forms without changing the shared skeleton or animation tracks.
+        surface = merged.modifiers.new("Anatomical_Surface_Refinement", "SUBSURF")
+        surface.subdivision_type = "CATMULL_CLARK"
+        surface.levels = 1
+        surface.render_levels = 1
+        surface.quality = 3
+        for polygon in merged.data.polygons:
+            polygon.use_smooth = True
     mod = merged.modifiers.new("Humanoid_Skin", "ARMATURE")
     mod.object = rig
     return merged
@@ -225,7 +235,7 @@ def build_body(rig):
     # Continuous tapered torso shell: a ring-loft replaces stacked oval
     # muscle pieces, giving the chest, waist and pelvis one coherent silhouette.
     def torso_shell(name, profiles, bone_name):
-        sides = 20
+        sides = 32
         verts = []
         faces = []
         for z, rx, ry in profiles:
