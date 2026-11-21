@@ -192,7 +192,11 @@ def build_body(rig):
     parts.append(add_weighted_ellipsoid("Nose_Tip", (0, -0.151, 1.772), (0.022, 0.019, 0.016), "Head", SKIN, rig, 12, 8))
     for side, sign in (("Left", 1), ("Right", -1)):
         x = lambda v: v * sign
-        parts.append(add_weighted_ellipsoid(side + "ShoulderMesh", (x(0.31), 0, 1.47), (0.14, 0.14, 0.14), side + "Shoulder", CLOTH, rig))
+        # Anatomical deltoid mass: broad across the shoulder, flattened in depth
+        # so the silhouette reads as a shoulder rather than a spherical joint.
+        parts.append(add_weighted_ellipsoid(
+            side + "ShoulderMesh", (x(0.315), 0, 1.465),
+            (0.145, 0.105, 0.115), side + "Shoulder", CLOTH, rig, 20, 12))
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
