@@ -37,15 +37,46 @@ jobs:
           python3 tools/art_pipeline/build_manifests.py
           blender --background --python tools/art_pipeline/blender/generate_base_rig.py 2>&1 | tee blender-export.log
           grep -q "ART_PROTOTYPE_EXPORT_PASS" blender-export.log
-          test -s game/assets/_source_templates/humanoid_base/humanoid_base.glb
-          test -s game/assets/_source_templates/humanoid_animation_library/animation_library.glb
-          test -s game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb
-          test "$(find game/assets/environments -name environment.glb -type f | wc -l)" -eq 7
-          test "$(find game/assets/characters -path "*/model/character.glb" -type f | wc -l)" -eq 32
-          test "$(find game/assets/characters -path "*/animations/animation_library.glb" -type f | wc -l)" -eq 32
-          test "$(find game/assets/armors -path "*/model/armor.glb" -type f | wc -l)" -eq 49
-          test "$(find game/assets/enemies -path "*/model/enemy.glb" -type f | wc -l)" -eq 57
-          test "$(grep -c "^ENEMY_MODEL_EXPORTED " blender-export.log)" -eq 57
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools/art_pipeline")
+          from build_manifests import catalog_ids
+
+          checks = [
+              ("environments", Path("game/scripts/chapter_database.gd"), "const CHAPTERS := {",
+               Path("game/assets/environments"), "environment.glb", 7),
+              ("characters", Path("game/scripts/character_visual_catalog.gd"), "const PROFILES := {",
+               Path("game/assets/characters"), "model/character.glb", 32),
+              ("armors", Path("game/scripts/equipment_database.gd"), "const EQUIPMENT := {",
+               Path("game/assets/armors"), "model/armor.glb", 49),
+              ("enemies", Path("game/scripts/enemy_database.gd"), "const ARCHETYPES := {",
+               Path("game/assets/enemies"), "model/enemy.glb", 57),
+          ]
+          errors = []
+          for label, catalog_path, marker, root, relative_model, expected_count in checks:
+              ids = catalog_ids(catalog_path, marker)
+              missing = [asset_id for asset_id in ids if not (root / asset_id / relative_model).is_file()]
+              actual = len(list(root.glob("*/" + relative_model)))
+              print(f"ART_BUNDLE_CHECK {label}: catalog={len(ids)} expected={expected_count} files={actual} missing={len(missing)}")
+              if len(ids) != expected_count:
+                  errors.append(f"{label}: catalog has {len(ids)}, expected {expected_count}")
+              if actual != expected_count or missing:
+                  errors.append(f"{label}: missing or extra model files; missing IDs={missing}")
+          exported_enemy_lines = sum(line.startswith("ENEMY_MODEL_EXPORTED ") for line in Path("blender-export.log").read_text(encoding="utf-8", errors="replace").splitlines())
+          print(f"ART_BUNDLE_CHECK enemy_export_log_lines={exported_enemy_lines}")
+          if exported_enemy_lines != 57:
+              errors.append(f"enemy export log has {exported_enemy_lines} entries, expected 57")
+          for path in (
+              "game/assets/_source_templates/humanoid_base/humanoid_base.glb",
+              "game/assets/_source_templates/humanoid_animation_library/animation_library.glb",
+              "game/assets/_source_templates/modular_armor_kit/modular_armor_kit.glb",
+          ):
+              if not Path(path).is_file() or Path(path).stat().st_size <= 32:
+                  errors.append(f"missing or invalid shared prototype: {path}")
+          if errors:
+              raise SystemExit("\\n".join(errors))
+          PY
       - name: Validate all 32 profession models and 27 animation clips
         shell: bash
         run: |
