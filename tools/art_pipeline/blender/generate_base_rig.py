@@ -409,7 +409,7 @@ def armor_piece(name, location, scale, bone_name, rig, mat=ARMOR_MAT):
     return add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=16, rings=10)
 
 
-def build_armor(rig):
+def build_armor(rig, primary_material=GOLD, secondary_material=ARMOR_MAT):
     """Build a nine-piece articulated armor set with forged silhouettes, not sphere placeholders."""
     parts = []
     # Helmet: raised crown, brow and pointed cheek silhouette; front faces -Y.
@@ -418,36 +418,36 @@ def build_armor(rig):
         [(-0.155, -0.10), (-0.145, 0.055), (-0.085, 0.16), (0, 0.205),
          (0.085, 0.16), (0.145, 0.055), (0.155, -0.10), (0.075, -0.17),
          (0.0, -0.12), (-0.075, -0.17)],
-        0.16, "Head", GOLD, rig, 0.018))
+        0.16, "Head", primary_material, rig, 0.018))
     # Chest cuirass: broad shoulders tapering to a pointed abdominal waist.
     parts.append(add_weighted_armor_plate(
         "Armor_Chest", (0, -0.155, 1.365),
         [(-0.285, 0.16), (-0.19, 0.255), (-0.07, 0.22), (0, 0.265),
          (0.07, 0.22), (0.19, 0.255), (0.285, 0.16), (0.22, -0.08),
          (0.105, -0.205), (0, -0.245), (-0.105, -0.205), (-0.22, -0.08)],
-        0.095, "Chest", GOLD, rig, 0.022))
+        0.095, "Chest", primary_material, rig, 0.022))
     for side, sign in (("Left", 1), ("Right", -1)):
         # Winged pauldron with a sharp outer point and layered lower edge.
         parts.append(add_weighted_pauldron(
             "Armor_" + side + "_Shoulder", (sign * 0.335, -0.055, 1.49),
-            0.170, 0.078, 0.088, side + "Shoulder", GOLD, rig, sign))
+            0.170, 0.078, 0.088, side + "Shoulder", primary_material, rig, sign))
         # Forearm bracer and shin guard use tapered, faceted armor profiles.
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Forearm", (sign * 0.49, -0.075, 1.105),
             [(-0.072, 0.17), (0.055, 0.145), (0.082, 0.07),
              (0.065, -0.145), (0, -0.19), (-0.07, -0.13), (-0.085, 0.06)],
-            0.105, side + "Forearm", ARMOR_MAT, rig, 0.014))
+            0.105, side + "Forearm", secondary_material, rig, 0.014))
         parts.append(add_weighted_armor_plate(
             "Armor_" + side + "_Leg", (sign * 0.15, -0.075, 0.345),
             [(-0.095, 0.19), (0, 0.225), (0.095, 0.19), (0.082, 0.045),
              (0.055, -0.17), (0, -0.215), (-0.07, -0.15), (-0.09, 0.025)],
-            0.12, side + "Shin", ARMOR_MAT, rig, 0.016))
+            0.12, side + "Shin", secondary_material, rig, 0.016))
     # Waist fauld: segmented-looking pointed skirt profile.
     parts.append(add_weighted_armor_plate(
         "Armor_Waist", (0, -0.14, 0.945),
         [(-0.245, 0.095), (-0.18, 0.14), (0.18, 0.14), (0.245, 0.095),
          (0.205, -0.035), (0.12, -0.12), (0, -0.17), (-0.12, -0.12), (-0.205, -0.035)],
-        0.11, "Hips", GOLD, rig, 0.018))
+        0.11, "Hips", primary_material, rig, 0.018))
     return parts
 def key_pose(rig, frame, values):
     for bone_name, rotation in values.items():
@@ -1160,11 +1160,15 @@ def build_profession_models(shard_index=0, shard_count=1):
         body.scale = (width, 1.0 + (index % 3) * 0.045, height)
         # Preserve the skin, hair, eye and undersuit material slots authored by build_body.
         # Profession colors are applied to signature armor ornaments below, not flattened over the face.
-        profession_mat = material("Profession_" + class_id, (
-            0.25 + ((index * 37) % 65) / 100.0,
-            0.22 + ((index * 19) % 60) / 100.0,
-            0.30 + ((index * 29) % 60) / 100.0
-        ), 0.38 + (index % 5) * 0.1, 0.34)
+        profession_color = (
+            (0.045, 0.025, 0.085) if class_id == "hades" else
+            (0.25 + ((index * 37) % 65) / 100.0,
+             0.22 + ((index * 19) % 60) / 100.0,
+             0.30 + ((index * 29) % 60) / 100.0)
+        )
+        profession_mat = material("Profession_" + class_id, profession_color,
+                                  0.90 if class_id == "hades" else 0.38 + (index % 5) * 0.1,
+                                  0.20 if class_id == "hades" else 0.34)
         ornaments = []
         shoulder_factor = 0.78 + (index % 6) * 0.045
         for side, sign in (("Left", 1), ("Right", -1)):
@@ -1281,7 +1285,17 @@ def build_equipment_models(shard_index=0, shard_count=1):
         # Armor uses the exact same humanoid skeleton and baseline motion clips
         # as the profession model, allowing the runtime armor rig to animate in sync.
         make_animation_library(rig)
-        pieces = build_armor(rig)
+        is_surplice = ("surplice" in equipment_id or equipment_id in ("hades_divine_garment", "hades_divine_relic"))
+        is_dark_cloth = ("dark_cloth" in equipment_id or equipment_id.startswith("dark_"))
+        if is_surplice:
+            armor_primary = material("Surplice_Black_Purple", (0.045, 0.025, 0.085), 0.94, 0.18)
+            armor_secondary = material("Surplice_Deep_Violet", (0.18, 0.085, 0.30), 0.90, 0.20)
+        elif is_dark_cloth:
+            armor_primary = material("Dark_Cloth_Graphite", (0.025, 0.030, 0.050), 0.92, 0.16)
+            armor_secondary = material("Dark_Cloth_Steel_Blue", (0.12, 0.17, 0.25), 0.90, 0.18)
+        else:
+            armor_primary, armor_secondary = GOLD, ARMOR_MAT
+        pieces = build_armor(rig, armor_primary, armor_secondary)
         variation = 0.88 + (index % 7) * 0.045
         accent_mat = material("Armor_" + equipment_id + "_Accent", (
             0.36 + ((index * 31) % 55) / 100.0,
@@ -1291,7 +1305,9 @@ def build_equipment_models(shard_index=0, shard_count=1):
         for part_index, piece in enumerate(pieces):
             factor = variation + (part_index % 3) * 0.035
             piece.scale = (factor, 0.92 + (index % 4) * 0.035, factor)
-            if part_index % 2 == index % 2:
+            # Preserve the explicit black-purple Surplice / graphite Dark Cloth
+            # palette; generic random accents are only for other equipment families.
+            if not is_surplice and not is_dark_cloth and part_index % 2 == index % 2:
                 piece.data.materials.clear()
                 piece.data.materials.append(accent_mat)
         destination = output_root / equipment_id / "model/armor.glb"
