@@ -291,16 +291,20 @@ func get_power_breakdown() -> Dictionary:
 	var wings: Dictionary = get_wing_profile()
 	var star_map: Dictionary = get_cosmos_star_map()
 	var nodes: Dictionary = star_map.get("bonuses", {})
+	var sense_profile: Dictionary = get_sense_profile()
+	var sense_bonuses: Dictionary = sense_profile.get("bonuses", {})
 	var class_power := float(RPGState.profile.get("level", 1)) * 18.0
 	var raw_attribute_power := float(stats.get("max_health", 0.0)) * 0.12 + float(stats.get("attack", 0.0)) * 5.0 + float(stats.get("defense", 0.0)) * 3.0 + float(stats.get("speed", 0.0)) * 2.0
 	var wing_attribute_power := float(wings.get("health_bonus", 0.0)) * 0.12 + float(wings.get("attack_bonus", 0.0)) * 5.0 + float(wings.get("defense_bonus", 0.0)) * 3.0
 	var star_attribute_power := float(nodes.get("max_health", 0.0)) * 0.12 + float(nodes.get("attack", 0.0)) * 5.0 + float(nodes.get("defense", 0.0)) * 3.0
 	var cosmos_attribute_power := float(cosmos.get("health_bonus", 0.0)) * 0.12 + float(cosmos.get("attack_bonus", 0.0)) * 5.0 + float(cosmos.get("defense_bonus", 0.0)) * 3.0
-	var attribute_power := maxf(0.0, raw_attribute_power - wing_attribute_power - star_attribute_power - cosmos_attribute_power)
+	var sense_attribute_power := float(sense_bonuses.get("max_health", 0.0)) * 0.12 + float(sense_bonuses.get("attack", 0.0)) * 5.0 + float(sense_bonuses.get("defense", 0.0)) * 3.0
+	var attribute_power := maxf(0.0, raw_attribute_power - wing_attribute_power - star_attribute_power - cosmos_attribute_power - sense_attribute_power)
 	var cosmos_power := float(cosmos.get("level", 1)) * 22.0 + cosmos_attribute_power
 	var wing_power := float(wings.get("rank", 0)) * 85.0 + float(wings.get("level", 0)) * 12.0 + wing_attribute_power
 	var star_power := float(star_map.get("used_points", 0)) * 45.0 + star_attribute_power
-	var total := int(round(class_power + attribute_power + cosmos_power + wing_power + star_power))
+	var sense_power := float(sense_profile.get("unlocked_count", 0)) * 90.0 + sense_attribute_power
+	var total := int(round(class_power + attribute_power + cosmos_power + wing_power + star_power + sense_power))
 	return {
 		"total": total,
 		"breakdown": {
@@ -308,10 +312,12 @@ func get_power_breakdown() -> Dictionary:
 			"基础属性与装备": int(round(attribute_power)),
 			"小宇宙境界": int(round(cosmos_power)),
 			"翅膀成长": int(round(wing_power)),
-			"小宇宙星盘": int(round(star_power))
+			"小宇宙星盘": int(round(star_power)),
+			"感官觉醒": int(round(sense_power))
 		},
 		"stats": stats,
 		"cosmos": cosmos,
 		"wings": wings,
-		"star_map": star_map
+		"star_map": star_map,
+		"senses": sense_profile
 	}
