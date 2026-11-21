@@ -35,7 +35,9 @@ jobs:
       - name: Test art asset validation rules
         run: python3 -m unittest discover -s tools/art_pipeline -p "test_*.py" -v
       - name: Check art and chapter packaging Python syntax
-        run: python3 -m py_compile tools/art_pipeline/blender/generate_base_rig.py tools/art_pipeline/build_chapter_manifests.py
+        run: python3 -m py_compile tools/art_pipeline/blender/generate_base_rig.py tools/art_pipeline/build_chapter_manifests.py tools/art_pipeline/prompt_engine.py
+      - name: Test offline prompt engine catalogs and local-only workflow
+        run: python3 tools/art_pipeline/prompt_engine.py --self-test
       - name: Validate project structure and resource references
         run: python3 tools/validate_project.py
 

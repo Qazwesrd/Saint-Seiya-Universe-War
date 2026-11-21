@@ -110,6 +110,9 @@ def parse_entries(source: str, marker: str, indent: int) -> dict[str, str]:
     if marker_at < 0:
         raise ValueError(f"Missing GDScript catalog marker: {marker}")
     body = source[marker_at + len(marker):]
+    closing = re.search(r"^\\}", body, re.M)
+    if closing:
+        body = body[:closing.start()]
     pattern = re.compile(rf"^{r' ' * indent}\"([A-Za-z0-9_]+)\"\s*:\s*\{{", re.M)
     matches = list(pattern.finditer(body))
     entries: dict[str, str] = {}
