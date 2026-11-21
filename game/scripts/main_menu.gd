@@ -368,8 +368,9 @@ func _on_creation_class_selected(index: int) -> void:
 		return
 	var option: Dictionary = character_class_picker.get_item_metadata(index)
 	if str(option.get("preset_id", "")) == "hongjun":
-		character_name_input.text = "鸿钧老祖"
-	else:
+		if character_name_input.text.is_empty() or character_name_input.text == "星之战士":
+			character_name_input.text = "鸿钧老祖"
+	elif character_name_input.text == "鸿钧老祖":
 		character_name_input.text = "星之战士"
 
 func _open_character_creation(slot: int) -> void:
