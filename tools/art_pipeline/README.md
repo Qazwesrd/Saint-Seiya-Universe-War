@@ -54,3 +54,22 @@ py tools/art_pipeline/inventory_angelica_client.py "D:\\Games\\SeiyaClient\\elem
 - 重点统计 `.pck/.pkx/.ski/.smd/.bon/.stck/.ecm/.anm/.data` 等格式。
 
 如果客户端很大，可先加 `--no-hash` 快速盘点；正式留档时建议重新运行默认哈希模式。输出目录必须位于客户端目录之外。请不要把原版客户端、提取出的专有资源或哈希清单上传到公开仓库；先在本地检查并确认资源来源及授权。
+
+
+## PCK / PKX 资源包目录（只读）
+
+仓库使用 MIT 许可证的 AutoAngel Python 库作为可选解析依赖，不复制其源代码。AutoAngel 支持 Angelica PCK/PKX、ECM、SMD、BON、SKI、STCK 和 GFX 等格式。安装：
+
+```powershell
+py -m pip install autoangel
+```
+
+对本地合法取得的资源包建立目录：
+
+```powershell
+py tools/art_pipeline/inventory_angelica_pck.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --output "D:\\SeiyaInventory\\models"
+```
+
+若没有分卷文件，可省略 `--pkx`。如果有多个 PKX 分卷，可重复指定 `--pkx`。工具只调用 AutoAngel 的 `read_pck` 和 `file_list` 读取索引，不调用提取或保存接口；报告写到独立目录。输出 JSON/CSV 可用于统计 SKI、BON、SMD、STCK、ECM、GFX 和纹理文件。
+
+注意：AutoAngel 的 MIT 许可证允许按其许可证条件使用；本项目仅将其作为用户本机的可选依赖，不把客户端文件或提取资源提交到公开仓库。首次接入具体游戏客户端仍需用真实样本验证版本和配置是否匹配。
