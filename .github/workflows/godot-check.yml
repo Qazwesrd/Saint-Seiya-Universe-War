@@ -52,19 +52,30 @@ jobs:
             echo "Godot script parse/import errors detected"
             exit 1
           fi
-      - name: Validate chapter PCK builder script and argument handling
+      - name: Build and mount a real chapter PCK
         shell: sh
         run: |
+          set -eu
+          probe="game/assets/environments/galaxy_wars/ci_pck_probe.json"
+          output="/tmp/galaxy_wars_ci_probe.pck"
+          mkdir -p "$(dirname "$probe")"
+          trap 'rm -f "$probe" "$output"' EXIT
+          printf '%s' '{"probe":"chapter pck builder verified"}' > "$probe"
+
           set +e
-          godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter invalid --output /tmp/invalid.pck > /tmp/pck-builder.log 2>&1
-          status=$?
+          godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter invalid --output /tmp/invalid.pck > /tmp/pck-invalid.log 2>&1
+          invalid_status=$?
           set -e
-          cat /tmp/pck-builder.log
-          if [ "$status" -eq 0 ]; then
+          cat /tmp/pck-invalid.log
+          if [ "$invalid_status" -eq 0 ]; then
             echo "PCK builder unexpectedly accepted an invalid chapter ID"
             exit 1
           fi
-          grep -q "Missing or unsupported --chapter" /tmp/pck-builder.log
+          grep -q "Missing or unsupported --chapter" /tmp/pck-invalid.log
+
+          godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter galaxy_wars --output "$output"
+          test -s "$output"
+          godot --headless --path game --script res://tools/verify_chapter_pck.gd -- --pck "$output"
       - name: Launch main scene headlessly
         shell: sh
         run: |
