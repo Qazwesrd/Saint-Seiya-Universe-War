@@ -86,6 +86,7 @@ func _ready() -> void:
     _button(root, "传送", Vector2(22, 470), Vector2(140, 520), func(): game.call("use_teleport_point"), Color(0.08, 0.28, 0.48))
     _button(root, "世界地图", Vector2(-190, 150), Vector2(-22, 202), func(): _open_world_map(root), Color(0.12, 0.24, 0.48))
     _button(root, "支线任务", Vector2(-190, 208), Vector2(-22, 260), func(): _open_side_quests(root), Color(0.32, 0.2, 0.42))
+    _button(root, "剧情日志", Vector2(-190, 266), Vector2(-22, 318), func(): _open_story_journal(root), Color(0.34, 0.26, 0.12))
     var map := Panel.new()
     map.anchor_left = 1.0
     map.anchor_right = 1.0
@@ -870,6 +871,70 @@ func _open_world_map(root: Control) -> void:
     var close := Button.new()
     close.text = "关闭地图"
     close.custom_minimum_size = Vector2(180, 46)
+    close.pressed.connect(func(): popup.queue_free())
+    outer.add_child(close)
+    root.add_child(popup)
+    popup.popup_centered()
+
+func _open_story_journal(root: Control) -> void:
+    var popup := PopupPanel.new()
+    popup.size = Vector2(650, 570)
+    var outer := VBoxContainer.new()
+    outer.add_theme_constant_override("separation", 8)
+    popup.add_child(outer)
+    var title := Label.new()
+    title.text = "七大篇章 · 主线剧情日志"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 26)
+    outer.add_child(title)
+    var summary := Label.new()
+    var chapter_overview: Array = CampaignManager.get_chapter_overview()
+    var completed_total := 0
+    var mission_total := 0
+    for chapter_state in chapter_overview:
+        completed_total += int(chapter_state.get("completed_missions", 0))
+        mission_total += int(chapter_state.get("total_missions", 0))
+    summary.text = "主线进度：%d / %d 项任务完成" % [completed_total, mission_total]
+    summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    outer.add_child(summary)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(620, 450)
+    outer.add_child(scroll)
+    var list := VBoxContainer.new()
+    list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    list.add_theme_constant_override("separation", 6)
+    scroll.add_child(list)
+    var campaign_progress: Dictionary = CampaignManager.progress
+    var active_mission_id := str(campaign_progress.get("active_mission", ""))
+    var completed_missions: Array = campaign_progress.get("completed_missions", [])
+    for chapter_state in chapter_overview:
+        var chapter_id := str(chapter_state.get("id", ""))
+        var chapter := CampaignDatabase.get_chapter(chapter_id)
+        var chapter_title := Label.new()
+        var chapter_status := "已完成" if bool(chapter_state.get("completed", false)) else ("已解锁" if bool(chapter_state.get("unlocked", false)) else "尚未解锁")
+        chapter_title.text = "%s  ·  %s  ·  %d/%d" % [str(chapter_state.get("name", "篇章")), chapter_status, int(chapter_state.get("completed_missions", 0)), int(chapter_state.get("total_missions", 0))]
+        chapter_title.add_theme_font_size_override("font_size", 19)
+        list.add_child(chapter_title)
+        if not bool(chapter_state.get("unlocked", false)):
+            continue
+        for mission in chapter.get("missions", []):
+            var mission_id := str(mission.get("id", ""))
+            var mission_status := "已完成" if completed_missions.has(mission_id) else ("当前任务" if mission_id == active_mission_id else "待推进")
+            var mission_line := Label.new()
+            mission_line.text = ("✓ " if mission_status == "已完成" else ("▶ " if mission_status == "当前任务" else "· ")) + str(mission.get("name", "剧情任务")) + "  [" + mission_status + "]"
+            mission_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+            mission_line.add_theme_font_size_override("font_size", 15)
+            list.add_child(mission_line)
+            if mission_id == active_mission_id:
+                var mission_state: Dictionary = CampaignManager.get_mission_progress(mission_id)
+                for objective in mission_state.get("objectives", []):
+                    var objective_line := Label.new()
+                    objective_line.text = "    - %s  %d/%d" % [str(objective.get("text", "")), int(objective.get("current", 0)), int(objective.get("target", 1))]
+                    objective_line.add_theme_font_size_override("font_size", 14)
+                    list.add_child(objective_line)
+    var close := Button.new()
+    close.text = "关闭日志"
+    close.custom_minimum_size = Vector2(180, 44)
     close.pressed.connect(func(): popup.queue_free())
     outer.add_child(close)
     root.add_child(popup)
