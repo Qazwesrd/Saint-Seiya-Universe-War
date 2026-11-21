@@ -922,6 +922,38 @@ func _build_armor_visuals() -> void:
     var chest_gem := _add_armor_piece(chest_gem_mesh, Vector3(0.0, 1.31, -0.505), Vector3.ONE, stage_trim_color.lightened(0.18), 0.98, "chest")
     chest_gem.rotation.z = PI
     armor_gem_nodes.append(chest_gem)
+
+    # Dark and Platinum tiers receive distinct silhouette pieces, not only palette swaps.
+    if stage_id == "dark_cloth":
+        var void_crescent_mesh := TorusMesh.new()
+        void_crescent_mesh.inner_radius = 0.54
+        void_crescent_mesh.outer_radius = 0.60
+        var void_crescent := _add_armor_piece(void_crescent_mesh, Vector3(0.0, 1.52, 0.34), Vector3(1.0, 1.0, 0.72), stage_trim_color, 1.0, "chest")
+        void_crescent.rotation.x = deg_to_rad(72.0)
+        var void_material := void_crescent.material_override as StandardMaterial3D
+        void_material.emission_enabled = true
+        void_material.emission = stage_trim_color * (0.28 if bool(stage_state.get("awakened", false)) else 0.14)
+        var void_blade_mesh := PrismMesh.new()
+        void_blade_mesh.size = Vector3(0.16, 0.62, 0.13)
+        for blade_side in [-1.0, 1.0]:
+            var void_blade := _add_armor_piece(void_blade_mesh, Vector3(blade_side * 0.62, 1.48, 0.28), Vector3(1.0, 1.0, 0.8), stage_metal_color.lightened(0.22), stage_metallic, "chest")
+            void_blade.rotation.z = -blade_side * 0.42
+    elif stage_id == "platinum":
+        var platinum_halo_mesh := TorusMesh.new()
+        platinum_halo_mesh.inner_radius = 0.30
+        platinum_halo_mesh.outer_radius = 0.36
+        var platinum_halo := _add_armor_piece(platinum_halo_mesh, Vector3(0.0, 2.22, 0.02), Vector3(1.0, 1.0, 0.72), stage_trim_color, 1.0, "head")
+        var platinum_halo_material := platinum_halo.material_override as StandardMaterial3D
+        platinum_halo_material.emission_enabled = true
+        platinum_halo_material.emission = stage_trim_color * (0.42 if bool(stage_state.get("awakened", false)) else 0.22)
+        var platinum_star_mesh := PrismMesh.new()
+        platinum_star_mesh.size = Vector3(0.12, 0.26, 0.075)
+        for star_side in [-1.0, 1.0]:
+            for star_index in range(3):
+                var star_x := star_side * (0.30 + float(star_index) * 0.12)
+                var star_y := 1.12 + float(star_index) * 0.18
+                var platinum_star := _add_armor_piece(platinum_star_mesh, Vector3(star_x, star_y, -0.49), Vector3.ONE, stage_trim_color, 1.0, "chest")
+                platinum_star.rotation.z = -star_side * (0.18 + float(star_index) * 0.16)
     var belt_gem_mesh := PrismMesh.new()
     belt_gem_mesh.size = Vector3(0.13, 0.16, 0.06)
     var belt_gem := _add_armor_piece(belt_gem_mesh, Vector3(0.0, 0.72, -0.39), Vector3.ONE, accent.lightened(0.2), 0.96, "waist")
