@@ -145,21 +145,29 @@ jobs:
 
       - name: Verify the offline game data is embedded in the APK
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
+          set -eu
+          apk="build/android/Saint-Seiya-Universe-War-debug.apk"
+          test -s "$apk"
+          command -v jar
+          entries="$(jar tf "$apk" | grep -E '(^|/)main\\.pck
 
-          apk = Path("build/android/Saint-Seiya-Universe-War-debug.apk")
-          with ZipFile(apk) as archive:
-              entries = [item for item in archive.infolist() if item.filename.endswith("/main.pck") or item.filename == "assets/main.pck"]
-              if len(entries) != 1:
-                  raise SystemExit(f"Expected exactly one embedded Godot main.pck, found {len(entries)}")
-              pck = entries[0]
-              print(f"APK_BYTES={apk.stat().st_size}")
-              print(f"EMBEDDED_MAIN_PCK={pck.filename}")
-              print(f"EMBEDDED_RESOURCE_BYTES={pck.file_size}")
-          PY
-          sha256sum build/android/Saint-Seiya-Universe-War-debug.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saint-Seiya-Universe-War-Android-ARM64-debug
+          path: build/android/Saint-Seiya-Universe-War-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+ || true)"
+          count="$(printf '%s\\n' "$entries" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one embedded Godot main.pck, found $count"
+            printf '%s\\n' "$entries"
+            exit 1
+          fi
+          echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
+          echo "EMBEDDED_MAIN_PCK=$entries"
+          sha256sum "$apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
