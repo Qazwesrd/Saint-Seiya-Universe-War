@@ -1933,14 +1933,11 @@ func _open_growth_panel(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(wing_upgrade)
-    var visibility := Button.new()
-    visibility.text = "隐藏翅膀外观" if bool(wing_profile.get("visible", true)) else "显示翅膀外观"
-    visibility.pressed.connect(func():
-        GrowthSystems.set_wing_visible(not bool(wing_profile.get("visible", true)))
-        set_notice("翅膀显示设置已更新")
-        popup.queue_free()
-    )
-    box.add_child(visibility)
+    var wing_visual_note := Label.new()
+    wing_visual_note.text = "说明：本阶段已接入翅膀解锁、数值成长与存档；独立3D翅膀模型、背部骨骼挂点和飞行动画仍待美术资源制作与接入。"
+    wing_visual_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    wing_visual_note.add_theme_color_override("font_color", Color(0.95, 0.76, 0.42))
+    box.add_child(wing_visual_note)
     for wing in GrowthSystems.get_wing_catalog():
         var wing_id := str(wing.get("id", ""))
         var owned: Array = wing_profile.get("owned", [])
