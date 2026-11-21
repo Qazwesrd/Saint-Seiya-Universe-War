@@ -161,3 +161,12 @@ py -m unittest discover -s tools/art_pipeline -p "test_angelica_ecm.py" -v
 验证器检查资源路径安全性、重复装备槽位、挂点名称、骨骼缩放数值、组合动作事件，并可在提供 BON 挂点名集合时检查父挂点是否存在。validate_ecm_graph() 可对多个 ECM JSON 检查子模型引用是否闭合及是否存在循环引用。单个 ECM 文件无法证明其引用的子模型一定存在；只有把同一资源包中相关 ECM 都导出后，图检查才可完成跨文件解析。
 
 **限制：** 目前是 ECM 元数据导出和结构校验，不是 Blender 装备挂接成品。挂点矩阵的坐标轴、父子模型局部变换、装备比例、child hook 语义和真实人物组合外观仍需原版客户端样本校准。当前没有原版客户端，因此不能宣称已验证天马圣衣或其他原版装备的正确挂接。
+
+
+校验一个或多个 ECM 导出文件，并可与对应 BON JSON 的挂点表对照：
+
+```powershell
+py tools/art_pipeline/validate_angelica_ecm_json.py "D:\\SeiyaInventory\\pegasus_ecm.json" --bon-json "D:\\SeiyaInventory\\pegasus_bon.json"
+```
+
+如果要强制所有子 ECM 都必须出现在本次输入列表中，再添加 `--require-all-children`。默认模式会报告未随本次一起导出的子模型引用数量，不会把资源包中未导出的文件误判为不存在。
