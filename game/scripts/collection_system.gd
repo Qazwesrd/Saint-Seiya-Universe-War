@@ -22,8 +22,15 @@ const ACHIEVEMENTS := {
 func _ensure_state() -> Dictionary:
  var data: Dictionary = RPGState.profile.get("collection_state",{})
  if data.is_empty():
-  data = {"companions":[],"pets":[],"mounts":[],"active_companion":"","active_pet":"","active_mount":"","enemy_defeats":0,"boss_defeats":0,"achievements":{},"claimed_achievements":[]}
+  data = {"companions":["training_mentor"],"pets":[],"mounts":[],"active_companion":"training_mentor","active_pet":"","active_mount":"","enemy_defeats":0,"boss_defeats":0,"achievements":{},"claimed_achievements":[],"companion_bond":{}}
   RPGState.profile["collection_state"] = data
+ if not data.has("companion_bond"):
+  data["companion_bond"] = {}
+ if data.get("companions", []).is_empty():
+  data["companions"] = ["training_mentor"]
+ if str(data.get("active_companion", "")) == "":
+  data["active_companion"] = "training_mentor"
+ RPGState.profile["collection_state"] = data
  return data
 func get_state() -> Dictionary:
  return _ensure_state().duplicate(true)
@@ -95,6 +102,48 @@ func record_enemy_defeat(is_boss: bool) -> void:
  data["achievements"] = achievements
  RPGState.profile["collection_state"] = data
  _save()
+func get_active_companion_bond() -> Dictionary:
+ var data: Dictionary = _ensure_state()
+ var companion_id := str(data.get("active_companion", ""))
+ if companion_id.is_empty() or not COMPANIONS.has(companion_id):
+  return {}
+ var bonds: Dictionary = data.get("companion_bond", {})
+ var bond: Dictionary = bonds.get(companion_id, {"level":1,"exp":0}).duplicate(true)
+ var level := clampi(int(bond.get("level", 1)), 1, 20)
+ var exp := maxi(0, int(bond.get("exp", 0)))
+ var next_exp := 100 + (level - 1) * 80
+ var perk := "初识伙伴" if level < 5 else ("默契共鸣" if level < 10 else ("星辉守护" if level < 15 else ("小宇宙链接" if level < 20 else "羁绊极意")))
+ return {"companion_id":companion_id,"name":str(COMPANIONS[companion_id].get("name", "伙伴")),"level":level,"exp":exp,"next_exp":next_exp,"perk":perk,"max_level":20}
+
+func record_companion_bond_xp(amount: int) -> Dictionary:
+ if amount <= 0:
+  return {"success":false,"reason":"经验值必须大于零"}
+ var data: Dictionary = _ensure_state()
+ var companion_id := str(data.get("active_companion", ""))
+ if companion_id.is_empty() or not COMPANIONS.has(companion_id):
+  return {"success":false,"reason":"当前没有出战伙伴"}
+ var bonds: Dictionary = data.get("companion_bond", {}).duplicate(true)
+ var bond: Dictionary = bonds.get(companion_id, {"level":1,"exp":0}).duplicate(true)
+ var old_level := clampi(int(bond.get("level", 1)), 1, 20)
+ var level := old_level
+ var exp := maxi(0, int(bond.get("exp", 0))) + amount
+ while level < 20:
+  var threshold := 100 + (level - 1) * 80
+  if exp < threshold:
+   break
+  exp -= threshold
+  level += 1
+ if level >= 20:
+  level = 20
+  exp = 0
+ bond["level"] = level
+ bond["exp"] = exp
+ bonds[companion_id] = bond
+ data["companion_bond"] = bonds
+ RPGState.profile["collection_state"] = data
+ _save()
+ return {"success":true,"companion_id":companion_id,"level":level,"previous_level":old_level,"levels_gained":level-old_level,"exp":exp,"next_exp":0 if level >= 20 else 100+(level-1)*80}
+
 func get_bonus_stats() -> Dictionary:
  var data := _ensure_state()
  var result := {"attack":0.0,"defense":0.0,"max_health":0.0,"max_cosmos":0.0,"speed":0.0}
@@ -105,6 +154,12 @@ func get_bonus_stats() -> Dictionary:
   result["attack"] += float(COMPANIONS[companion_id].get("bonus_attack",0))
   result["defense"] += float(COMPANIONS[companion_id].get("bonus_defense",0))
   result["max_cosmos"] += float(COMPANIONS[companion_id].get("bonus_cosmos",0))
+  var bond_data: Dictionary = get_active_companion_bond()
+  var bond_level := int(bond_data.get("level", 1))
+  result["attack"] += float(bond_level - 1) * 0.6
+  result["defense"] += float(bond_level - 1) * 0.4
+  result["max_health"] += float(bond_level - 1) * 3.0
+  result["max_cosmos"] += float(bond_level - 1) * 2.0
  if PETS.has(pet_id):
   result["max_health"] += float(PETS[pet_id].get("bonus_health",0))
   result["defense"] += float(PETS[pet_id].get("bonus_defense",0))
