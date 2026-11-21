@@ -1840,7 +1840,7 @@ func _open_growth_panel(root: Control) -> void:
     scroll.add_child(box)
 
     var title := Label.new()
-    title.text = "小宇宙 · 星盘 · 战力翅膀"
+    title.text = "小宇宙 · 感官觉醒 · 星盘 · 战力翅膀"
     title.add_theme_font_size_override("font_size", 25)
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     box.add_child(title)
@@ -1848,13 +1848,14 @@ func _open_growth_panel(root: Control) -> void:
     var power: Dictionary = GrowthSystems.get_power_breakdown()
     var breakdown: Dictionary = power.get("breakdown", {})
     var power_label := Label.new()
-    power_label.text = "综合战力：%d\n等级与职业：%d  基础属性与装备：%d\n小宇宙境界：%d  翅膀成长：%d  星盘：%d" % [
+    power_label.text = "综合战力：%d\n等级与职业：%d  基础属性与装备：%d\n小宇宙境界：%d  翅膀成长：%d  星盘：%d  感官觉醒：%d" % [
         int(power.get("total", 0)),
         int(breakdown.get("等级与职业", 0)),
         int(breakdown.get("基础属性与装备", 0)),
         int(breakdown.get("小宇宙境界", 0)),
         int(breakdown.get("翅膀成长", 0)),
-        int(breakdown.get("小宇宙星盘", 0))
+        int(breakdown.get("小宇宙星盘", 0)),
+        int(breakdown.get("感官觉醒", 0))
     ]
     power_label.add_theme_font_size_override("font_size", 17)
     box.add_child(power_label)
@@ -1876,6 +1877,38 @@ func _open_growth_panel(root: Control) -> void:
         popup.queue_free()
     )
     box.add_child(cosmos_upgrade)
+
+    var sense_profile: Dictionary = GrowthSystems.get_sense_profile()
+    var sense_title := Label.new()
+    sense_title.text = "五感 · 第六感 · 第七感 · 第八感（%d/%d）" % [
+        int(sense_profile.get("unlocked_count", 0)),
+        int(sense_profile.get("total_count", 8))
+    ]
+    sense_title.add_theme_font_size_override("font_size", 19)
+    box.add_child(sense_title)
+    var sense_hint := Label.new()
+    sense_hint.text = "觉醒需满足角色等级、小宇宙境界和前置阶段；属性与战力会即时生效。"
+    sense_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    box.add_child(sense_hint)
+    for stage in sense_profile.get("stages", []):
+        var stage_id := str(stage.get("id", ""))
+        var stage_button := Button.new()
+        var stage_state := "已觉醒" if bool(stage.get("unlocked", false)) else ("可突破" if bool(stage.get("available", false)) else "条件未满足")
+        stage_button.text = "%s · %s · 角色 Lv.%d / 小宇宙 Lv.%d · %d 星币" % [
+            str(stage.get("name", stage_id)),
+            stage_state,
+            int(stage.get("level_required", 1)),
+            int(stage.get("cosmos_required", 1)),
+            int(stage.get("cost", 0))
+        ]
+        stage_button.disabled = not bool(stage.get("available", false))
+        var selected_stage := stage_id
+        stage_button.pressed.connect(func():
+            var ok: bool = GrowthSystems.breakthrough_sense(selected_stage)
+            set_notice("感官境界突破成功" if ok else "突破失败：请检查等级、前置境界、小宇宙等级和星币")
+            popup.queue_free()
+        )
+        box.add_child(stage_button)
 
     var star_title := Label.new()
     star_title.text = "小宇宙星盘 · 已用 %d / %d 点，可用 %d 点" % [
