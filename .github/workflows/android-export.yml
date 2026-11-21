@@ -166,8 +166,6 @@ jobs:
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
 
-          # Godot Android packages project files into a PCK archive inside the APK;
-          # individual .tscn files are not standalone ZIP entries.
           engine_lib="lib/arm64-v8a/libgodot_android.so"
           grep -Fx "$engine_lib" /tmp/apk-entries.txt
           unzip -p "$apk" "$engine_lib" > /tmp/libgodot_android.so
@@ -175,21 +173,7 @@ jobs:
           library_bytes="$(wc -c < /tmp/libgodot_android.so | tr -d ' ')"
           test "$library_bytes" -gt 1000000
 
-          pck_names="$(grep -E '(^|/)[^/]+\\.pck
-
-          echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "APK_ENGINE_LIBRARY=$engine_lib"
-          echo "APK_ENGINE_LIBRARY_BYTES=$library_bytes"
-          sha256sum "$apk"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Saint-Seiya-Universe-War-Android-ARM64-debug
-          path: build/android/Saint-Seiya-Universe-War-debug.apk
-          if-no-files-found: error
-          retention-days: 14
- /tmp/apk-entries.txt || true)"
+          pck_names="$(grep -E '(^|/)[^/]+\.pck$' /tmp/apk-entries.txt || true)"
           test -n "$pck_names" || { echo "APK contains no Godot PCK resource archive"; exit 1; }
           echo "APK_PCK_ARCHIVES=$pck_names"
           : > /tmp/godot-resources.pck
@@ -204,7 +188,6 @@ jobs:
           }
           echo "APK_MAIN_SCENE=verified in PCK"
           echo "APK_SIGNATURE_SKILL_SCENE=verified in PCK"
-
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
           echo "APK_ENGINE_LIBRARY=$engine_lib"
           echo "APK_ENGINE_LIBRARY_BYTES=$library_bytes"
