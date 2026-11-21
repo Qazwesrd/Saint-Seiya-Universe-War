@@ -454,7 +454,7 @@ func _run_tests() -> void:
 	assert(ResourcePackManager.install_from_directory(source_dir, "galaxy_wars"), "real PCK staged install and runtime mount")
 	var installed_status: Dictionary = ResourcePackManager.get_pack_mount_status("galaxy_wars")
 	assert(bool(installed_status.get("installed", false)) and bool(installed_status.get("valid", false)) and bool(installed_status.get("mounted", false)), "real PCK reports installed, verified and mounted")
-	assert(ResourceLoader.exists(pck_resource_path), "mounted PCK exposes its resource through ResourceLoader")
+	assert(FileAccess.file_exists(pck_resource_path), "mounted PCK exposes its file through the virtual filesystem")
 	var mounted_probe := FileAccess.open(pck_resource_path, FileAccess.READ)
 	assert(mounted_probe != null and mounted_probe.get_as_text() == "offline package test", "read resource content from mounted PCK")
 	mounted_probe.close()
