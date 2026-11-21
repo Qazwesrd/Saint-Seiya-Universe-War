@@ -1,5 +1,4 @@
 import importlib.util
-import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -36,6 +35,20 @@ class AngelicaPckInventoryTests(unittest.TestCase):
         self.assertEqual(report["files"][0]["path"], "a/body.ski")
         self.assertEqual(report["extension_counts"][".ski"], 2)
         self.assertIn("Read-only", report["safety"])
+
+
+    def test_reads_real_entry_metadata_when_scan_api_is_available(self):
+        package = SimpleNamespace(
+            file_list=lambda: ["models/body.ski", "motions/idle.stck"],
+            scan_entries=lambda *, paths, on_chunk: on_chunk([
+                SimpleNamespace(path=paths[0], size=2048, compressed_size=1024, hash=123),
+                SimpleNamespace(path=paths[1], size=4096, compressed_size=2048, hash=456),
+            ]),
+        )
+        report = MODULE.build_report(Path("/tmp/models.pck"), [], package)
+        self.assertEqual(report["files"][0]["size_bytes"], 2048)
+        self.assertEqual(report["files"][1]["compressed_size_bytes"], 2048)
+        self.assertEqual(report["files"][1]["archive_hash"], 456)
 
     def test_accepts_string_entries_from_library(self):
         result = MODULE._normalize_entry("textures/bronze.dds")
