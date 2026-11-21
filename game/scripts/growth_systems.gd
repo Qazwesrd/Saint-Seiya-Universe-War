@@ -207,6 +207,19 @@ func reset_cosmos_star_map() -> bool:
 	RPGState.profile["cosmos_star_nodes"] = {}
 	return _save_change(previous)
 
+func get_growth_stat_bonus() -> Dictionary:
+	var wings: Dictionary = get_wing_profile()
+	var star_map: Dictionary = get_cosmos_star_map()
+	var nodes: Dictionary = star_map.get("bonuses", {})
+	return {
+		"attack": float(wings.get("attack_bonus", 0.0)) + float(nodes.get("attack", 0.0)),
+		"defense": float(wings.get("defense_bonus", 0.0)) + float(nodes.get("defense", 0.0)),
+		"max_health": float(wings.get("health_bonus", 0.0)) + float(nodes.get("max_health", 0.0)),
+		"max_cosmos": float(wings.get("cosmos_bonus", 0.0)) + float(nodes.get("max_cosmos", 0.0)),
+		"cosmos_regen": float(nodes.get("cosmos_regen", 0.0)),
+		"critical_rate": float(nodes.get("critical_rate", 0.0))
+	}
+
 func get_power_breakdown() -> Dictionary:
 	var stats: Dictionary = RPGState.get_combat_stats()
 	var cosmos: Dictionary = RPGState.get_cosmos_profile()
