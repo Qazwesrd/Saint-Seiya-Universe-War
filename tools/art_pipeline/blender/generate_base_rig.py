@@ -184,7 +184,9 @@ def add_weighted_armor_plate(name, center, outline, depth, bone_name, mat, rig, 
     count = len(outline)
     vertices = [(cx + x, cy - depth / 2, cz + z) for x, z in outline]
     vertices += [(cx + x, cy + depth / 2, cz + z) for x, z in outline]
-    faces = [tuple(range(count)), tuple(range(count, count * 2))]
+    # The silhouette is authored clockwise in X/Z. Reverse the front cap so its
+    # normal points toward the -Y preview camera; keep the rear cap facing +Y.
+    faces = [tuple(reversed(range(count))), tuple(range(count, count * 2))]
     for index in range(count):
         nxt = (index + 1) % count
         faces.append((index, nxt, nxt + count, index + count))
