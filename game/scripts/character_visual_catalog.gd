@@ -335,17 +335,6 @@ const COSTUME_APPEARANCES := {
     "royal": {"name":"王子礼服","accent":Color(0.78,0.62,0.30),"silhouette":"formal_royal","cape":false,"armor_overlay":false}
 }
 
-static func resolve_armor_attachment_anchor(part_id: String, side_x: float = 0.0, part_y: float = 99.0) -> String:
-    if part_id == "arms":
-        var limb_prefix := "forearms" if part_y < 0.98 else "arms"
-        return limb_prefix + ("_left" if side_x < 0.0 else "_right")
-    if part_id == "legs":
-        return "legs_left" if side_x < 0.0 else "legs_right"
-    if part_id in ["head", "chest", "waist"]:
-        return part_id
-    return ""
-
-
 static func get_faction_armor_profile(faction_id: String, class_id: String = "") -> Dictionary:
     var result: Dictionary = FACTION_ARMOR_FAMILIES.get(faction_id, FACTION_ARMOR_FAMILIES["sanctuary"]).duplicate(true)
     result["faction_id"] = faction_id if FACTION_ARMOR_FAMILIES.has(faction_id) else "sanctuary"
