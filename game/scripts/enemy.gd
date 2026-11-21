@@ -781,6 +781,75 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
                 slam_direction.y = 0.0
                 if slam_direction.length_squared() > 0.001:
                     target.call("apply_enemy_knockback", slam_direction.normalized(), 12.0)
+        "six_beasts":
+            var beast_pattern := _boss_attack_count % 3
+            if beast_pattern == 0:
+                if target.has_method("receive_damage"):
+                    target.call("receive_damage", base_damage * 0.22, global_position)
+                if is_instance_valid(game):
+                    game.call("show_notice", display_name + "：六圣兽·猛虎突袭")
+            elif beast_pattern == 1:
+                _drain_target_cosmos(target, 14.0)
+                if is_instance_valid(game):
+                    game.call("show_notice", display_name + "：六圣兽·巨蛇缠绕，小宇宙受压制")
+            else:
+                if target.has_method("apply_enemy_knockback"):
+                    var beast_push := target.global_position - global_position
+                    beast_push.y = 0.0
+                    if beast_push.length_squared() > 0.001:
+                        target.call("apply_enemy_knockback", beast_push.normalized(), 13.0)
+                if is_instance_valid(game):
+                    game.call("show_notice", display_name + "：六圣兽·飞鹰俯冲")
+        "mirror_feint":
+            _drain_target_cosmos(target, 10.0)
+            health = minf(max_health, health + base_damage * 0.12)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动镜像幻术：汲取小宇宙并恢复体力")
+        "sonic_wave":
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.2, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "释放音波冲击，形成追加伤害")
+        "frostfire":
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.18, global_position)
+            _drain_target_cosmos(target, 8.0)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动冰火交错的双重打击")
+        "crystal_seal":
+            _drain_target_cosmos(target, 18.0)
+            if target.has_method("apply_enemy_knockback"):
+                var seal_push := global_position - target.global_position
+                seal_push.y = 0.0
+                if seal_push.length_squared() > 0.001:
+                    target.call("apply_enemy_knockback", seal_push.normalized(), 6.0)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动紫水晶封印：压制小宇宙")
+        "sleeping_field":
+            _drain_target_cosmos(target, 16.0)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "展开睡眠领域：小宇宙持续受压")
+        "death_mark":
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.28, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "施加死亡印记，触发追加伤害")
+        "storm_chain":
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.24, global_position)
+            if target.has_method("apply_enemy_knockback"):
+                var storm_push := target.global_position - global_position
+                storm_push.y = 0.0
+                if storm_push.length_squared() > 0.001:
+                    target.call("apply_enemy_knockback", storm_push.normalized(), 10.0)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "召唤连锁雷霆")
+        "cosmic_collapse":
+            _drain_target_cosmos(target, 22.0)
+            if target.has_method("receive_damage"):
+                target.call("receive_damage", base_damage * 0.3, global_position)
+            if is_instance_valid(game):
+                game.call("show_notice", display_name + "发动宇宙坍缩：吞噬小宇宙并造成重创")
         _:
             return
 
