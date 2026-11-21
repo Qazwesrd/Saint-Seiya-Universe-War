@@ -25,8 +25,8 @@ class AngelicaRigJsonTests(unittest.TestCase):
             output = Path(directory) / "nested" / "rig.json"
             MODULE.write_payload(output, {"ok": True})
             raw = output.read_bytes()
-            self.assertTrue(raw.endswith(b"\\n"))
-            self.assertFalse(raw.endswith(b"\\\\n"))
+            self.assertTrue(raw.endswith(b"\n"))
+            self.assertFalse(raw.endswith(b"\\n"))
             self.assertEqual(json.loads(raw.decode("utf-8")), {"ok": True})
 
     def test_serializes_bon_bones_hooks_and_embedded_animation(self):
