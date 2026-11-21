@@ -30,8 +30,9 @@ def matrix_from_angelica(values: list[float]) -> Matrix:
     if len(values) != 16 or not all(math.isfinite(float(value)) for value in values):
         raise ValueError("BON matrix must contain 16 finite values")
     rows = [values[index:index + 4] for index in range(0, 16, 4)]
-    # Angelica stores the Direct3D row-vector matrix as 16 sequential floats.
-    # Transpose into Blender's column-vector convention; verify axes with real data.
+    # AutoAngel exposes BON matrices as column-major 4x4 float arrays.
+    # Rebuild the Blender row representation by transposing the sequential rows.
+    # Axis direction and bind-pose correctness still require a real client sample.
     return Matrix(rows).transposed()
 
 
