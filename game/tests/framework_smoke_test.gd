@@ -11,6 +11,14 @@ func _ready() -> void:
 
 func _run_tests() -> void:
 	var growth_original_profile: Dictionary = RPGState.profile.duplicate(true)
+	assert(FactionDatabase.validate_catalog(), "all playable classes are assigned to selectable faction starts and Hongjun is selectable")
+	assert(FactionDatabase.get_factions().size() == 12, "twelve faction starts are registered")
+	var hongmeng_options: Array = FactionDatabase.get_class_options("hongmeng")
+	var hongjun_selectable := false
+	for hongmeng_option in hongmeng_options:
+		if str(hongmeng_option.get("preset_id", "")) == "hongjun":
+			hongjun_selectable = true
+	assert(hongjun_selectable, "Hongjun is directly selectable from character creation")
 	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
 	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
 	RPGState.profile["currency"] = 50000
