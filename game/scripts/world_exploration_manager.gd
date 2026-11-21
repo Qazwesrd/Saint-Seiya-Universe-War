@@ -130,10 +130,13 @@ func _restore(snapshot: Dictionary) -> void:
 	active_region_id = str(snapshot.get("active_region_id", "galaxy_wars"))
 	visited_regions = snapshot.get("visited_regions", ["galaxy_wars"]).duplicate()
 	discovered_landmarks = snapshot.get("discovered_landmarks", []).duplicate()
+	RPGState.profile[PROFILE_KEY] = _snapshot()
 
 func _persist() -> bool:
+	var previous_profile: Dictionary = RPGState.profile.get(PROFILE_KEY, {}).duplicate(true)
 	RPGState.profile[PROFILE_KEY] = _snapshot()
 	if not RPGState.save_slot(RPGState.active_slot):
+		RPGState.profile[PROFILE_KEY] = previous_profile
 		SystemHealthManager.report_error("save", "世界地图进度保存失败", "slot=%d" % RPGState.active_slot)
 		return false
 	world_map_changed.emit()
