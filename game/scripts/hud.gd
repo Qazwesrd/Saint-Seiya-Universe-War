@@ -974,7 +974,9 @@ func _open_side_quests(root: Control) -> void:
         var info := VBoxContainer.new()
         info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         var quest_title := Label.new()
-        quest_title.text = ("【隐藏】" if str(quest.get("kind", "")) == "hidden" else "【支线】") + str(quest.get("name", "任务"))
+        var quest_kind := str(quest.get("kind", ""))
+        var quest_kind_label := "【隐藏】" if quest_kind == "hidden" else ("【NPC委托】" if quest_kind == "npc" else "【支线】")
+        quest_title.text = quest_kind_label + str(quest.get("name", "任务"))
         quest_title.add_theme_font_size_override("font_size", 18)
         info.add_child(quest_title)
         var progress := Label.new()
