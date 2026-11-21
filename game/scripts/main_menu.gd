@@ -13,11 +13,16 @@ var character_name_input: LineEdit
 var character_class_picker: OptionButton
 var creation_notice: Label
 var pending_creation_slot := 0
+var download_button: Button
+var download_in_progress := false
 
 func _ready() -> void:
 	_build_interface()
 	_apply_menu_theme()
 	_update_status()
+	ResourcePackManager.pack_download_progress.connect(_on_pack_download_progress)
+	if not str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
+		_download_game_data()
 
 func _build_interface() -> void:
 	var background := ColorRect.new()
@@ -50,6 +55,16 @@ func _build_interface() -> void:
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	layout.add_child(status_label)
+
+	download_button = Button.new()
+	download_button.text = "下载 / 修复完整离线数据"
+	download_button.custom_minimum_size = Vector2(0, 50)
+	download_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	download_button.pressed.connect(_download_game_data)
+	layout.add_child(download_button)
+	if str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
+		download_button.disabled = true
+		download_button.tooltip_text = "等待配置国内 HTTPS 下载服务器"
 
 	_add_button(layout, "开始新游戏 / 新建存档", _on_new_game_pressed)
 	_add_button(layout, "继续游戏 / 存档管理", _on_continue_pressed)
@@ -513,3 +528,26 @@ func _on_fps_selected(index: int, option: OptionButton) -> void:
 
 func _on_master_volume_changed(value: float) -> void:
 	SettingsManager.set_value("audio", "master", value)
+
+func _on_pack_download_progress(pack_id: String, downloaded_bytes: int, total_bytes: int, current_file: String) -> void:
+	if status_label == null:
+		return
+	var percent := 100.0 if total_bytes <= 0 else float(downloaded_bytes) * 100.0 / float(total_bytes)
+	status_label.text = "正在下载 %s：%s  %.1f%%" % [str(ResourcePackManager.get_pack_info(pack_id).get("name", pack_id)), current_file, percent]
+
+func _download_game_data() -> void:
+	if download_in_progress:
+		return
+	if str(ResourcePackManager.catalog.get("cdn_base_url", "")).is_empty():
+		status_label.text = "国内下载服务器尚未配置；当前不能开始完整数据下载。"
+		return
+	download_in_progress = true
+	download_button.disabled = true
+	status_label.text = "正在检查并下载完整游戏数据，请保持网络连接……"
+	var success: bool = await ResourcePackManager.download_all_missing_packs()
+	download_in_progress = false
+	download_button.disabled = false
+	if success:
+		status_label.text = "完整离线数据已校验。现在可以断网游玩。"
+	else:
+		status_label.text = "数据下载未完成；已保留可续传文件，请点击“下载 / 修复完整离线数据”重试。"
