@@ -84,9 +84,9 @@ def _advanced_skill_ids(entry_body: str) -> set[str]:
 def _passive_catalog_report(armor_catalog: str, marker: str, class_ids: set[str]) -> dict:
     entries = top_level_entries(armor_catalog, marker, 1)
     names = {
-        class_id: re.search(r'"name"\\s*:\\s*"([^"]+)"', body).group(1)
+        class_id: re.search(r'"name"\s*:\s*"([^"]+)"', body).group(1)
         for class_id, body in entries.items()
-        if re.search(r'"name"\\s*:\\s*"([^"]+)"', body)
+        if re.search(r'"name"\s*:\s*"([^"]+)"', body)
     }
     missing = sorted(class_ids - set(entries))
     orphaned = sorted(set(entries) - class_ids)
