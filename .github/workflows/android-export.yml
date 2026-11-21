@@ -12,6 +12,7 @@ on:
       - game/export_presets.cfg
       - game/project.godot
       - game/**
+      - .github/workflows/android-export.yml
 
 concurrency:
   group: android-apk-export-${{ github.ref }}
@@ -166,29 +167,39 @@ jobs:
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
 
-          # Godot 4.4's Android exporter writes each project resource to
-          # assets/<res:// path>. The PCK is not appended to libgodot_android.so.
-          # Verify the engine library and two real project resources in the APK.
+          # Godot Android packages project files into a PCK archive inside the APK;
+          # individual .tscn files are not standalone ZIP entries.
           engine_lib="lib/arm64-v8a/libgodot_android.so"
-          main_scene="assets/scenes/main_menu.tscn"
-          skill_scene="assets/assets/vfx/pegasus/meteor_fist_finisher.tscn"
           grep -Fx "$engine_lib" /tmp/apk-entries.txt
-          grep -Fx "$main_scene" /tmp/apk-entries.txt
-          grep -Fx "$skill_scene" /tmp/apk-entries.txt
-
           unzip -p "$apk" "$engine_lib" > /tmp/libgodot_android.so
-          unzip -p "$apk" "$main_scene" > /tmp/main_menu.tscn
-          unzip -p "$apk" "$skill_scene" > /tmp/meteor_fist_finisher.tscn
           test -s /tmp/libgodot_android.so
-          test -s /tmp/main_menu.tscn
-          test -s /tmp/meteor_fist_finisher.tscn
           library_bytes="$(wc -c < /tmp/libgodot_android.so | tr -d ' ')"
           test "$library_bytes" -gt 1000000
 
+          python3 - "$apk" <<'PY'
+          import sys
+          import zipfile
+
+          apk = sys.argv[1]
+          required = (
+              b"res://scenes/main_menu.tscn",
+              b"res://assets/vfx/pegasus/meteor_fist_finisher.tscn",
+          )
+          with zipfile.ZipFile(apk) as archive:
+              pck_names = [name for name in archive.namelist() if name.lower().endswith(".pck")]
+              if not pck_names:
+                  raise SystemExit("APK contains no Godot PCK resource archive")
+              print("APK_PCK_ARCHIVES=" + ",".join(pck_names))
+              pck_data = b"".join(archive.read(name) for name in pck_names)
+              missing = [path.decode() for path in required if path not in pck_data]
+              if missing:
+                  raise SystemExit("Required project resources are missing from APK PCK: " + ", ".join(missing))
+              print("APK_MAIN_SCENE=verified in PCK")
+              print("APK_SIGNATURE_SKILL_SCENE=verified in PCK")
+          PY
+
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
           echo "APK_ENGINE_LIBRARY=$engine_lib"
-          echo "APK_MAIN_SCENE=$main_scene"
-          echo "APK_SIGNATURE_SKILL_SCENE=$skill_scene"
           echo "APK_ENGINE_LIBRARY_BYTES=$library_bytes"
           sha256sum "$apk"
 
