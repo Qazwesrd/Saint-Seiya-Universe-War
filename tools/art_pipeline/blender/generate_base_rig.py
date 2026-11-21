@@ -196,6 +196,21 @@ def build_body(rig):
         parts.append(add_weighted_limb(side + "UpperArmMesh", (x(0.34), 0, 1.45), (x(0.48), 0, 1.22), 0.075, side + "UpperArm", SKIN, rig))
         parts.append(add_weighted_limb(side + "ForearmMesh", (x(0.48), 0, 1.22), (x(0.50), 0, 0.98), 0.062, side + "Forearm", SKIN, rig))
         parts.append(add_weighted_ellipsoid(side + "HandMesh", (x(0.50), -0.01, 0.92), (0.065, 0.045, 0.09), side + "Hand", SKIN, rig))
+        # Individually modeled fingers and thumb give close-up combat poses a
+        # readable hand silhouette instead of a mitten-shaped ellipsoid.
+        for finger_index, offset in enumerate((-0.038, -0.013, 0.013, 0.038)):
+            length = (0.050, 0.062, 0.060, 0.048)[finger_index]
+            parts.append(add_weighted_ellipsoid(
+                side + "_Finger_" + str(finger_index + 1),
+                (x(0.50 + offset), -0.018, 0.865 - length * 0.36),
+                (0.012, 0.014, length), side + "Hand", SKIN, rig, 12, 8))
+            parts.append(add_weighted_ellipsoid(
+                side + "_FingerTip_" + str(finger_index + 1),
+                (x(0.50 + offset), -0.018, 0.865 - length * 0.82),
+                (0.011, 0.013, 0.015), side + "Hand", SKIN, rig, 10, 8))
+        parts.append(add_weighted_ellipsoid(
+            side + "_Thumb", (x(0.558), -0.025, 0.915),
+            (0.018, 0.018, 0.047), side + "Hand", SKIN, rig, 12, 8))
         parts.append(add_weighted_limb(side + "ThighMesh", (x(0.13), 0, 0.88), (x(0.15), 0, 0.49), 0.105, side + "Thigh", CLOTH, rig))
         parts.append(add_weighted_limb(side + "ShinMesh", (x(0.15), 0, 0.49), (x(0.15), 0, 0.12), 0.075, side + "Shin", CLOTH, rig))
         parts.append(add_weighted_ellipsoid(side + "FootMesh", (x(0.15), -0.10, 0.08), (0.075, 0.15, 0.065), side + "Foot", CLOTH, rig))
