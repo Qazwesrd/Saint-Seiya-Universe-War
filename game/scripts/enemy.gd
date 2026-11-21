@@ -46,6 +46,7 @@ var hit_flash_timer := 0.0
 var boss_phase_burst_timer := 0.0
 var boss_phase_transition_timer := 0.0
 var _boss_phase_two := false
+var _boss_enraged := false
 var _boss_attack_count := 0
 var _boss_heavy_attack := false
 var _boss_combo_remaining := 0
@@ -615,11 +616,11 @@ func _begin_attack() -> void:
     _boss_heavy_attack = false
     if is_boss:
         _boss_attack_count += 1
-        var heavy_interval := maxi(1, boss_heavy_interval - (1 if _boss_phase_two else 0))
+        var heavy_interval := maxi(1, boss_heavy_interval - (2 if _boss_enraged else (1 if _boss_phase_two else 0)))
         _boss_heavy_attack = _boss_attack_count % heavy_interval == 0
         _boss_combo_remaining = _get_boss_combo_followups() if _boss_heavy_attack else 0
         _boss_combo_followup_active = false
-    state_timer = (boss_windup if _boss_heavy_attack else boss_windup * 0.64) if is_boss else 0.48
+    state_timer = (boss_windup * (0.72 if _boss_enraged else 1.0) if _boss_heavy_attack else boss_windup * (0.52 if _boss_enraged else 0.64)) if is_boss else 0.48
     _play_authored_enemy_action(_get_boss_attack_animation(), 0.045)
     var warning_color := _get_boss_telegraph_color()
     if is_instance_valid(telegraph_material):
@@ -655,6 +656,8 @@ func _get_boss_telegraph_color() -> Color:
             color = Color(1.0, 0.34, 0.12, 0.82)
     if _boss_phase_two:
         color = color.lightened(0.16)
+    if _boss_enraged:
+        color = color.lightened(0.28)
     return color
 
 func _get_boss_attack_warning() -> String:
@@ -686,6 +689,8 @@ func _get_boss_attack_warning() -> String:
             warning = "审判连击即将发动！注意连续攻击"
     if _boss_phase_two:
         warning = "第二阶段·" + warning
+    if _boss_enraged:
+        warning = "狂暴阶段·" + warning
     return warning
 
 func _resolve_attack(target: Node3D) -> void:
@@ -707,7 +712,7 @@ func _resolve_attack(target: Node3D) -> void:
                 target.call("apply_enemy_knockback", push.normalized(), 9.0 if _boss_heavy_attack else (7.0 if is_boss else 4.5))
         if is_boss and _boss_heavy_attack and not player_invulnerable:
             _apply_boss_attack_signature(target, outgoing_attack)
-    attack_cooldown = attack_interval * (0.78 if _boss_phase_two else 1.0)
+    attack_cooldown = attack_interval * (0.62 if _boss_enraged else (0.78 if _boss_phase_two else 1.0))
     state = BrainState.RECOVERY
     state_timer = (maxf(0.2, boss_recovery * 0.48) if _boss_combo_remaining > 0 else boss_recovery) if _boss_heavy_attack else (0.5 if is_boss else 0.34)
     _boss_heavy_attack = false
@@ -820,6 +825,33 @@ func take_damage(amount: float) -> void:
             game.call("spawn_effect", global_position + Vector3.UP * 1.5, Color(1.0, 0.16, 0.08), 2.1)
         if is_instance_valid(game):
             game.call("show_notice", "Boss 进入第二阶段！攻击速度与伤害提升")
+
+    if is_boss and _boss_phase_two and not _boss_enraged and health <= max_health * 0.25:
+        _boss_enraged = true
+        telegraph_mesh.visible = false
+        telegraph_mesh.scale = Vector3.ONE
+        _boss_heavy_attack = false
+        _boss_combo_remaining = 0
+        _boss_combo_followup_active = false
+        state = BrainState.CHASE
+        state_timer = 0.0
+        _play_authored_enemy_action("phase_shift", 0.06)
+        boss_phase_transition_timer = maxf(0.9, authored_enemy_action_timer)
+        boss_phase_burst_timer = 1.8
+        speed *= 1.12
+        attack_damage *= 1.18
+        boss_heavy_multiplier *= 1.15
+        boss_recovery *= 0.82
+        if is_instance_valid(body_material):
+            body_material.albedo_color = _base_color.lightened(0.22)
+            body_material.emission = _base_color * 0.72
+        if is_instance_valid(boss_aura_ring):
+            var enrage_material := boss_aura_ring.material_override as StandardMaterial3D
+            if is_instance_valid(enrage_material):
+                enrage_material.emission = _base_color.lightened(0.35) * 1.8
+        if is_instance_valid(game):
+            game.call("spawn_effect", global_position + Vector3.UP * 1.8, _base_color.lightened(0.4), 2.8)
+            game.call("show_notice", "Boss 最终狂暴阶段！攻击节奏与破坏力大幅提升")
 
     if health <= 0.0:
         state = BrainState.DEAD
