@@ -44,7 +44,7 @@ jobs:
           export LIBGL_ALWAYS_SOFTWARE=1
           export EGL_PLATFORM=surfaceless
           export BLENDER_BIN=blender
-          export ART_FACTORY_WORKERS=3
+          export ART_FACTORY_WORKERS=2
           export ART_FACTORY_SHARDS=1
           python3 tools/art_pipeline/batch_asset_factory.py 2>&1 | tee blender-export.log
           grep -q "ART_FACTORY_BATCHES_PASS" blender-export.log
