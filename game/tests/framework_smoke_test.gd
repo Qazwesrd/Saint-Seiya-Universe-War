@@ -11,6 +11,10 @@ func _ready() -> void:
 
 func _run_tests() -> void:
 	assert(BossChapterCombatCatalog.validate_catalog(), "all seven campaign chapters have complete boss combat profiles")
+	const WorldExplorationCatalog = preload("res://scripts/world_exploration_catalog.gd")
+	assert(WorldExplorationCatalog.validate_catalog(), "world atlas contains seven unique regions with at least three landmarks each")
+	assert(WorldExplorationManager.get_regions().size() == 7, "world map exposes all seven campaign regions")
+	assert(bool(WorldExplorationManager.get_regions()[0].get("unlocked", false)), "Galaxy Wars starting region is unlocked for a new profile")
 	var chapter_profile_ids := {}
 	for boss_id in ["arena_boss", "gold_taurus", "god_warrior_siegfried", "poseidon_emperor", "hades_emperor", "zeus_trial", "primordial_void"]:
 		var chapter_profile: Dictionary = BossChapterCombatCatalog.get_profile(boss_id)
