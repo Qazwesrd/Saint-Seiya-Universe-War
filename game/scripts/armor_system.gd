@@ -167,12 +167,34 @@ func awaken_current() -> bool:
  if not ["gold", "dark_cloth", "platinum", "god_cloth", "god_armor"].has(stage) or bool(data.get("awakened", false)):
   return false
  var cost := 3500 if stage == "dark_cloth" else (9000 if stage == "platinum" else (5000 if stage == "gold" else 12000))
- if int(RPGState.profile.get("currency", 0)) < cost:
+ var material_id := "dark_cosmos_fragment" if stage == "dark_cloth" else ("platinum_star_shard" if stage == "platinum" else "")
+ var material_cost := 5 if stage in ["dark_cloth", "platinum"] else 0
+ var inventory: Dictionary = RPGState.profile.get("inventory", {}).duplicate(true)
+ if int(RPGState.profile.get("currency", 0)) < cost or (not material_id.is_empty() and int(inventory.get(material_id, 0)) < material_cost):
   return false
  RPGState.profile["currency"] = int(RPGState.profile.get("currency", 0)) - cost
+ if material_cost > 0:
+  inventory[material_id] = int(inventory.get(material_id, 0)) - material_cost
+  if int(inventory[material_id]) <= 0:
+   inventory.erase(material_id)
+  RPGState.profile["inventory"] = inventory
  data["awakened"] = true
+ data["awakening_stage"] = 1
  RPGState.profile["armor_state"] = data
  return _commit(previous)
+
+func get_awakening_requirements(stage_id: String = "") -> Dictionary:
+ var selected := stage_id if not stage_id.is_empty() else str(_ensure_data().get("current_stage", "bronze"))
+ if selected == "dark_cloth":
+  return {"currency":3500,"material_id":"dark_cosmos_fragment","material_count":5}
+ if selected == "platinum":
+  return {"currency":9000,"material_id":"platinum_star_shard","material_count":5}
+ if selected == "gold":
+  return {"currency":5000,"material_id":"","material_count":0}
+ if selected in ["god_cloth", "god_armor"]:
+  return {"currency":12000,"material_id":"","material_count":0}
+ return {}
+
 func get_part_condition(part: String) -> float:
     if not (part in PARTS):
         return 0.0
@@ -254,7 +276,16 @@ func get_bonus_stats() -> Dictionary:
    attack_bonus += float(base["attack"]) * 0.05 * condition * awaken
    defense_bonus += float(base["defense"]) * 0.05 * condition * awaken
    health_bonus += float(base["hp"]) * 0.05 * condition * awaken
- return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0,"dark_class_passive":get_dark_class_passive(),"dark_set_tier":(2 if stage_id == "dark_cloth" and intact_parts == PARTS.size() else (1 if stage_id == "dark_cloth" and intact_parts >= 3 else 0))}
+ var platinum_resonance := 1.0
+ var platinum_star_bonus := 0.0
+ if stage_id == "platinum":
+  var platinum_awakened := bool(data.get("awakened", false))
+  platinum_resonance = 1.18 if platinum_awakened else 1.12
+  platinum_star_bonus = (22.0 if platinum_awakened else 14.0) * condition
+  attack_bonus += float(base["attack"]) * (0.18 if platinum_awakened else 0.10) * condition
+  defense_bonus += float(base["defense"]) * (0.16 if platinum_awakened else 0.08) * condition
+  health_bonus += float(base["hp"]) * (0.15 if platinum_awakened else 0.08) * condition
+ return {"attack":attack_bonus,"defense":defense_bonus,"max_health":health_bonus,"max_cosmos":dark_cosmos_bonus + platinum_star_bonus,"speed":dark_speed_bonus,"dark_resonance":(1.15 if bool(data.get("awakened", false)) else 1.10) if stage_id == "dark_cloth" else 1.0,"platinum_star_resonance":platinum_resonance,"platinum_awakened":bool(data.get("awakened", false)) if stage_id == "platinum" else false,"dark_class_passive":get_dark_class_passive(),"dark_set_tier":(2 if stage_id == "dark_cloth" and intact_parts == PARTS.size() else (1 if stage_id == "dark_cloth" and intact_parts >= 3 else 0))}
 func _commit(previous: Dictionary) -> bool:
  if RPGState.save_slot(RPGState.active_slot):
   RPGState.state_changed.emit()
