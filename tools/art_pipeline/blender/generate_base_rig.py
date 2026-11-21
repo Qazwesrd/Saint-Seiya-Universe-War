@@ -753,7 +753,7 @@ def catalog_ids(gd_path, marker):
     return re.findall(r'^\s*"([^"]+)"\s*:\s*\{', match.group(1), re.M)
 
 def render_profession_turntable(profession_id, index):
-    """Render three evidence views from the exact generated in-project GLB scene."""
+    """Render one acceptance preview from the exact generated in-project character scene."""
     preview_root = ROOT / "game" / "art_previews" / "characters"
     preview_root.mkdir(parents=True, exist_ok=True)
     scene = bpy.context.scene
@@ -888,7 +888,7 @@ def build_profession_models():
               "skill_archetypes=7")
         if index == 0:
             render_profession_turntable(class_id, index)
-        print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front,side,back")
+        print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front")
 
 def build_equipment_models():
     """Export 49 independent nine-piece skinned armor kits (stylized prototypes)."""
