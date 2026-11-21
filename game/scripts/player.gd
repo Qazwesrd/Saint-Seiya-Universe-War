@@ -1,6 +1,7 @@
 extends CharacterBody3D
 const CombatTargeting = preload("res://scripts/combat_targeting.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
+const CharacterStanceDatabase = preload("res://scripts/character_stance_database.gd")
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 const SkillVisualCatalog = preload("res://scripts/skill_visual_catalog.gd")
 var game: Variant
@@ -28,6 +29,7 @@ var camera_node: Camera3D
 var camera_pitch := -9.0
 var camera_presentation_tween: Tween
 var visual_root: Node3D
+var character_stance_profile: Dictionary = {}
 var visual_pose_tween: Tween
 var upper_arm_nodes: Array[MeshInstance3D] = []
 var forearm_nodes: Array[MeshInstance3D] = []
@@ -192,6 +194,7 @@ func _ready() -> void:
     eye_band.material_override = eye_material
     visual_root.add_child(eye_band)
 
+    _refresh_character_stance_profile()
     _build_armor_visuals()
     _load_authored_character_model(str(RPGState.profile.get("class_id", "pegasus")))
     _load_authored_armor_model()
@@ -251,8 +254,10 @@ func _animate_visual_motion(delta: float) -> void:
             animation_name = "jump" if velocity.y > 0.5 else "fall"
         _play_authored_animation(animation_name)
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
+    var stance_gait_scale := float(character_stance_profile.get("gait_scale", 1.0))
+    var stance_breath_scale := float(character_stance_profile.get("idle_breath", 1.0))
     var clock := float(Time.get_ticks_msec()) * 0.012
-    var idle_breath := sin(clock * 0.72) * 0.012
+    var idle_breath := sin(clock * 0.72) * 0.012 * stance_breath_scale
     var bob := idle_breath + sin(clock) * 0.035 * movement_ratio
     if tenkishi_flight_active:
         bob += sin(clock * 0.72) * 0.045
@@ -293,8 +298,8 @@ func _animate_visual_motion(delta: float) -> void:
         if is_instance_valid(gem_material):
             gem_material.emission_energy_multiplier = gem_pulse
         gem.scale = Vector3.ONE * (0.96 + gem_pulse * 0.08)
-    var target_roll := -move_input.x * 0.10
-    var target_pitch := move_input.y * 0.055
+    var target_roll := -move_input.x * 0.10 + float(character_stance_profile.get("torso_roll", 0.0))
+    var target_pitch := move_input.y * 0.055 + float(character_stance_profile.get("torso_pitch", 0.0))
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
     visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
     combat_pose_timer = maxf(0.0, combat_pose_timer - delta)
@@ -302,10 +307,16 @@ func _animate_visual_motion(delta: float) -> void:
     var pose_weight := sin(clampf(pose_progress, 0.0, 1.0) * PI) * combat_pose_strength
     for limb_index in range(2):
         var side := -1.0 if limb_index == 0 else 1.0
-        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.42 * movement_ratio
-        var arm_target := gait
-        var forearm_target := -0.12 * movement_ratio
-        var leg_target := -gait * 0.9
+        var stance_arm_rest: Array = character_stance_profile.get("arm_rest", [0.0, 0.0])
+        var stance_forearm_rest: Array = character_stance_profile.get("forearm_rest", [0.0, 0.0])
+        var stance_leg_rest: Array = character_stance_profile.get("leg_rest", [0.0, 0.0])
+        var stance_arm_offset := float(stance_arm_rest[limb_index]) if stance_arm_rest.size() > limb_index else 0.0
+        var stance_forearm_offset := float(stance_forearm_rest[limb_index]) if stance_forearm_rest.size() > limb_index else 0.0
+        var stance_leg_offset := float(stance_leg_rest[limb_index]) if stance_leg_rest.size() > limb_index else 0.0
+        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.42 * movement_ratio * stance_gait_scale
+        var arm_target := gait + stance_arm_offset
+        var forearm_target := -0.12 * movement_ratio + stance_forearm_offset
+        var leg_target := -gait * 0.9 + stance_leg_offset
         if combat_pose_motion == "dash":
             arm_target = lerpf(arm_target, 0.52 if limb_index == 1 else 0.34, pose_weight)
             forearm_target = lerpf(forearm_target, -0.62, pose_weight)
@@ -504,6 +515,7 @@ func _get_armor_transform_key() -> String:
     })
 
 func _on_rpg_state_changed() -> void:
+    _refresh_character_stance_profile()
     if _get_visual_armor_signature() != visual_armor_signature:
         var previous_transform_key := visual_armor_transform_key
         _build_armor_visuals()
@@ -512,7 +524,13 @@ func _on_rpg_state_changed() -> void:
         if not previous_transform_key.is_empty() and previous_transform_key != visual_armor_transform_key:
             _play_armor_transform_effect()
 
-func _play_armor_transform_effect() -> void:
+func _refresh_character_stance_profile() -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+    var is_hongjun := bool(RPGState.profile.get("is_supreme_deity", false)) and str(RPGState.profile.get("character_name", "")) in ["鸿钧", "鸿钧老祖"]
+    character_stance_profile = CharacterStanceDatabase.get_profile(class_id, faction_id, is_hongjun)
+
+func _play_armor_transform_effect() -> void
     if not is_instance_valid(visual_root):
         return
     var burst := MeshInstance3D.new()
