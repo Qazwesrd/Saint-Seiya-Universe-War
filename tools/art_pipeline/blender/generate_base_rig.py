@@ -839,13 +839,13 @@ def build_profession_models():
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
         body.scale = (width, 1.0 + (index % 3) * 0.045, height)
-        body.data.materials.clear()
+        # Preserve the skin, hair, eye and undersuit material slots authored by build_body.
+        # Profession colors are applied to signature armor ornaments below, not flattened over the face.
         profession_mat = material("Profession_" + class_id, (
             0.25 + ((index * 37) % 65) / 100.0,
             0.22 + ((index * 19) % 60) / 100.0,
             0.30 + ((index * 29) % 60) / 100.0
         ), 0.38 + (index % 5) * 0.1, 0.34)
-        body.data.materials.append(profession_mat)
         ornaments = []
         shoulder_factor = 1.0 + (index % 6) * 0.12
         for side, sign in (("Left", 1), ("Right", -1)):
