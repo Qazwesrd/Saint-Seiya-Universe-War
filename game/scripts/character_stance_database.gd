@@ -76,6 +76,13 @@ static func _build_class_signature_profile(class_id: String) -> Dictionary:
   "idle_breath": 0.38 + float((class_index * 5) % 9) * 0.075
  }
 
+static func resolve_locomotion_state(planar_speed: float) -> String:
+ if planar_speed >= 5.0:
+  return "run"
+ if planar_speed >= 0.35:
+  return "walk"
+ return "idle"
+
 static func get_supported_action_states() -> Array[String]:
  var result: Array[String] = []
  for state_id in ACTION_STATES:
