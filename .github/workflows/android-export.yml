@@ -143,6 +143,24 @@ jobs:
           godot --headless --verbose --path game --export-debug "Android" ../build/android/Saint-Seiya-Universe-War-debug.apk
           test -s build/android/Saint-Seiya-Universe-War-debug.apk
 
+      - name: Verify the offline game data is embedded in the APK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          apk = Path("build/android/Saint-Seiya-Universe-War-debug.apk")
+          with ZipFile(apk) as archive:
+              entries = [item for item in archive.infolist() if item.filename.endswith("/main.pck") or item.filename == "assets/main.pck"]
+              if len(entries) != 1:
+                  raise SystemExit(f"Expected exactly one embedded Godot main.pck, found {len(entries)}")
+              pck = entries[0]
+              print(f"APK_BYTES={apk.stat().st_size}")
+              print(f"EMBEDDED_MAIN_PCK={pck.filename}")
+              print(f"EMBEDDED_RESOURCE_BYTES={pck.file_size}")
+          PY
+          sha256sum build/android/Saint-Seiya-Universe-War-debug.apk
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
