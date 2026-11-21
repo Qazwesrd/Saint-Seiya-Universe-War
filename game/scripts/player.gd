@@ -63,6 +63,7 @@ var authored_character_model: Node3D
 var authored_animation_player: AnimationPlayer
 var authored_animation_state := ""
 var authored_action_animation_timer := 0.0
+var authored_was_on_floor := true
 var authored_armor_model: Node3D
 var is_mounted := false
 var tenkishi_flight_active := false
@@ -1228,6 +1229,10 @@ func _physics_process(delta: float) -> void:
         var gravity_scale := 0.82 if class_id == "tenkishi" else 1.0
         velocity.y -= 22.0 * gravity_scale * delta
     move_and_slide()
+    var on_floor_after_move := is_on_floor()
+    if not authored_was_on_floor and on_floor_after_move:
+        _play_authored_action_animation("land", 0.05)
+    authored_was_on_floor = on_floor_after_move
     if direction.length() > 0.1:
         rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * 12.0)
     elif is_instance_valid(locked_target):
@@ -1369,6 +1374,7 @@ func dodge() -> void:
     if direction.length() < 0.1: direction = -global_transform.basis.z
     velocity = direction.normalized() * (15.0 if not heavenly_wings else 18.0)
     _play_attack_pose(0.7, "dash")
+    _play_authored_action_animation("dodge", 0.035)
     _play_combat_feedback(Color(0.28, 0.88, 1.0) if not heavenly_wings else Color(0.72, 0.94, 1.0), 0.42)
     game.call("show_notice", "闪避！短暂无敌" if not heavenly_wings else "光翼闪身！天衣短暂无敌")
     _register_custom_combo_input("dodge")
@@ -1414,6 +1420,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         combat_pose_duration = 0.26
         combat_pose_timer = combat_pose_duration
         combat_pose_strength = 0.9
+        _play_authored_action_animation("hit_heavy" if amount >= 25.0 else "hit_light", 0.04)
         _play_combat_feedback(Color(1.0, 0.18, 0.12), 0.28)
         if bool(SettingsManager.get_value("controls", "vibration", true)):
             Input.vibrate_handheld(45, 0.35)
@@ -1466,6 +1473,7 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
 
 func guard() -> void:
     apply_temporary_buff(0.0, 0.35, 1.2)
+    _play_authored_action_animation("block", 0.05)
     combat_pose_motion = "guard"
     combat_pose_duration = 0.42
     combat_pose_timer = combat_pose_duration
