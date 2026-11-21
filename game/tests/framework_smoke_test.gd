@@ -14,19 +14,24 @@ func _run_tests() -> void:
 	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
 	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
 	RPGState.profile["currency"] = 50000
-	RPGState.profile["level"] = 30
+	RPGState.profile["level"] = 60
 	var growth_class_id := str(RPGState.profile.get("class_id", "pegasus"))
 	var growth_cosmos_levels: Dictionary = RPGState.profile.get("cosmos_levels", {}).duplicate(true)
 	growth_cosmos_levels[growth_class_id] = 20
 	RPGState.profile["cosmos_levels"] = growth_cosmos_levels
 	RPGState.profile["cosmos_level"] = 20
 	assert(GrowthSystems.allocate_cosmos_node("star_attack"), "cosmos star node can be upgraded when points and currency are available")
+	for sense_stage_id in GrowthSystems.SENSE_STAGES.keys():
+		assert(GrowthSystems.breakthrough_sense(str(sense_stage_id)), "sense awakening stage unlocks in progression order: " + str(sense_stage_id))
+	assert(int(GrowthSystems.get_sense_profile().get("unlocked_count", 0)) == 8, "five senses, sixth, seventh and eighth senses are all persisted")
+	assert(float(GrowthSystems.get_growth_stat_bonus().get("critical_rate", 0.0)) > 0.0, "sense awakening contributes combat critical rate")
 	assert(float(GrowthSystems.get_growth_stat_bonus().get("attack", 0.0)) >= 2.0, "cosmos star node contributes to combat attack")
 	assert(GrowthSystems.unlock_wing("star_wing"), "first wing can be unlocked with offline game currency")
 	assert(str(GrowthSystems.get_wing_profile().get("equipped", "")) == "star_wing", "newly unlocked wing is equipped")
 	assert(GrowthSystems.upgrade_wing(), "equipped wing can be enhanced with offline currency")
 	assert(float(GrowthSystems.get_growth_stat_bonus().get("max_health", 0.0)) > 0.0, "wing growth profile returns valid combat bonuses")
 	assert(int(GrowthSystems.get_power_breakdown().get("total", 0)) > 0, "combat power is calculated from character progression")
+	assert(int(GrowthSystems.get_power_breakdown().get("breakdown", {}).get("感官觉醒", 0)) > 0, "sense awakening is represented in combat power breakdown")
 	assert(GrowthSystems.set_wing_visible(false) and not bool(GrowthSystems.get_wing_profile().get("visible", true)), "wing appearance visibility can be toggled")
 	RPGState.profile = growth_original_profile
 	assert(RPGState.save_slot(RPGState.active_slot), "restore original save after growth-system smoke tests")
