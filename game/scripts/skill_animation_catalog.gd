@@ -157,9 +157,9 @@ static func get_basic_combo_profile(class_id: String, combo_step: int) -> Dictio
     var step := clampi(combo_step, 1, 3)
     var motions: Array = BASIC_COMBO_MOTIONS[class_id]
     var motion := str(motions[step - 1])
-    var startup := [0.10, 0.13, 0.18][step - 1]
-    var active := [0.16, 0.19, 0.24][step - 1]
-    var recovery := [0.18, 0.22, 0.34][step - 1]
+    var startup: float = [0.10, 0.13, 0.18][step - 1]
+    var active: float = [0.16, 0.19, 0.24][step - 1]
+    var recovery: float = [0.18, 0.22, 0.34][step - 1]
     return {
         "class_id": class_id,
         "motion": motion,
