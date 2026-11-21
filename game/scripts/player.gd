@@ -629,15 +629,11 @@ func _create_armor_attachment_anchors() -> void:
 
 
 func _get_armor_attachment_anchor(part_id: String, side_x: float = 0.0, part_y: float = 99.0) -> Node3D:
-    var anchor_id := part_id
-    if part_id == "arms":
-        var limb_prefix := "forearms" if part_y < 0.98 else "arms"
-        anchor_id = limb_prefix + ("_left" if side_x < 0.0 else "_right")
-    elif part_id == "legs":
-        anchor_id = "legs_left" if side_x < 0.0 else "legs_right"
+    var anchor_id := CharacterVisualCatalog.resolve_armor_attachment_anchor(part_id, side_x, part_y)
+    if anchor_id.is_empty():
+        return null
     var anchor: Variant = armor_attachment_anchors.get(anchor_id)
     return anchor as Node3D if anchor is Node3D else null
-
 
 func _sync_armor_attachment_anchors(delta: float) -> void:
     for limb_index in range(2):
