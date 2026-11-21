@@ -29,7 +29,7 @@ def dictionary_body(source: str, marker: str) -> str:
     start = source.find(marker)
     if start < 0:
         raise ValueError(f"catalog marker not found: {marker}")
-    opening = source.find("{", start + len(marker))
+    opening = source.find("{", start + len(marker) - 1)
     if opening < 0:
         raise ValueError(f"catalog dictionary not opened: {marker}")
     depth = 0
