@@ -743,6 +743,10 @@ func _run_tests() -> void:
 	var saved_armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
 	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","dark_cloth"],"current_stage":"dark_cloth","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
 	var dark_armor_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+	var dark_palette: Dictionary = CharacterVisualCatalog.get_stage_palette("dark_cloth", false)
+	var dark_awakened_palette: Dictionary = CharacterVisualCatalog.get_stage_palette("dark_cloth", true)
+	assert(dark_palette.get("metal", Color.WHITE).get_luminance() < 0.08, "Dark Cloth keeps its near-black armor identity")
+	assert(float(dark_awakened_palette.get("glow", 0.0)) > float(dark_palette.get("glow", 0.0)), "Dark Cloth awakening intensifies its purple aura palette")
 	assert(is_equal_approx(float(dark_armor_bonus.get("dark_resonance", 1.0)), 1.10), "Dark Cloth grants a ten-percent skill resonance to every profession")
 	assert(int(dark_armor_bonus.get("dark_set_tier", 0)) == 2, "five intact Dark Cloth pieces activate the complete set bonus")
 	var dark_passive_names: Dictionary = {}
@@ -767,6 +771,10 @@ func _run_tests() -> void:
 	assert(is_equal_approx(SkillSystem.get_skill_damage_multiplier("phoenix"), 1.265), "awakened Dark Cloth raises skill resonance to fifteen percent")
 	RPGState.profile["armor_state"] = {"unlocked_stages":["bronze","platinum"],"current_stage":"platinum","durability":{"head":100,"chest":100,"arms":100,"waist":100,"legs":100},"levels":{},"awakened":false}
 	var platinum_base_bonus: Dictionary = ArmorSystem.get_bonus_stats()
+	var platinum_palette: Dictionary = CharacterVisualCatalog.get_stage_palette("platinum", false)
+	var platinum_awakened_palette: Dictionary = CharacterVisualCatalog.get_stage_palette("platinum", true)
+	assert(float(platinum_palette.get("metallic", 0.0)) >= 0.98, "Platinum Cloth uses a high-metallic silver alloy finish")
+	assert(float(platinum_awakened_palette.get("glow", 0.0)) > float(platinum_palette.get("glow", 0.0)), "Platinum awakening intensifies its star halo palette")
 	assert(is_equal_approx(float(platinum_base_bonus.get("platinum_star_resonance", 0.0)), 1.12), "Platinum Cloth has its own star-radiance skill multiplier")
 	assert(float(platinum_base_bonus.get("max_cosmos", 0.0)) > 0.0, "Platinum Cloth grants star-radiance Cosmos capacity")
 	RPGState.profile["armor_state"]["awakened"] = true
