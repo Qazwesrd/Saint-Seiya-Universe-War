@@ -62,6 +62,7 @@ var visual_armor_signature := ""
 var authored_character_model: Node3D
 var authored_animation_player: AnimationPlayer
 var authored_animation_state := ""
+var authored_action_animation_timer := 0.0
 var authored_armor_model: Node3D
 var is_mounted := false
 var tenkishi_flight_active := false
@@ -232,10 +233,12 @@ func _animate_visual_motion(delta: float) -> void:
             guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.18 + shield_ratio * 0.24)
             guard_shield_material.emission_energy_multiplier = 0.8 + shield_ratio * 1.8
     var planar_speed := Vector2(velocity.x, velocity.z).length()
-    var animation_name := "run" if planar_speed >= 5.0 else ("walk" if planar_speed >= 0.35 else "idle")
-    if not is_on_floor():
-        animation_name = "jump" if velocity.y > 0.5 else "fall"
-    _play_authored_animation(animation_name)
+    authored_action_animation_timer = maxf(0.0, authored_action_animation_timer - delta)
+    if authored_action_animation_timer <= 0.0:
+        var animation_name := "run" if planar_speed >= 5.0 else ("walk" if planar_speed >= 0.35 else "idle")
+        if not is_on_floor():
+            animation_name = "jump" if velocity.y > 0.5 else "fall"
+        _play_authored_animation(animation_name)
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
     var clock := float(Time.get_ticks_msec()) * 0.012
     var idle_breath := sin(clock * 0.72) * 0.012
@@ -1084,6 +1087,16 @@ func _play_authored_animation(animation_name: String, blend_time: float = 0.12) 
     authored_animation_state = animation_name
     authored_animation_player.play(animation_name, blend_time)
 
+func _play_authored_action_animation(animation_name: String, blend_time: float = 0.06) -> void:
+    if not is_instance_valid(authored_animation_player):
+        return
+    if not authored_animation_player.has_animation(animation_name):
+        return
+    var clip := authored_animation_player.get_animation(animation_name)
+    authored_action_animation_timer = clampf(clip.length, 0.2, 1.0)
+    authored_animation_state = ""
+    authored_animation_player.play(animation_name, blend_time)
+
 func _load_authored_armor_model() -> void:
     if is_instance_valid(authored_armor_model):
         authored_armor_model.queue_free()
@@ -1257,7 +1270,7 @@ func attack() -> void:
     var combo_motion := "strike" if basic_combo_step == 1 else ("aerial_strike" if basic_combo_step == 2 else "heavy")
     var combo_intensity := 0.82 if basic_combo_step == 1 else (1.0 if basic_combo_step == 2 else 1.28)
     _play_attack_pose(combo_intensity, combo_motion)
-    _play_authored_animation("basic_attack_%d" % basic_combo_step, 0.045)
+    _play_authored_action_animation("basic_attack_%d" % basic_combo_step, 0.045)
     var class_id := str(RPGState.profile.get("class_id", "pegasus"))
     var skill_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var attack_stat := float(RPGState.get_combat_stats().get("attack", 14.0))
@@ -1289,7 +1302,7 @@ func skill() -> void:
         return
     cosmos -= skill_cost
     _play_attack_pose(1.05)
-    _play_authored_animation("skill_cast", 0.06)
+    _play_authored_action_animation("skill_cast", 0.06)
     CombatSessionManager.record_skill_cast()
     skill_cd = float(skill_data.get("cooldown", 3.0))
     combo_window = 1.6
@@ -1554,6 +1567,7 @@ func _execute_custom_combo_finisher(preset: Dictionary) -> void:
     var color: Color = class_data.get("color", Color(0.35, 0.75, 1.0))
     CombatSessionManager.record_skill_cast(true)
     _play_attack_pose(1.42, "heavy")
+    _play_authored_action_animation("skill_cast", 0.05)
     _play_combat_feedback(Color(1.0, 0.82, 0.3), 0.68)
     _flash(Color(1.0, 0.88, 0.42))
     game.call("damage_nearby_combat", damage, reach, 180.0, float(class_data.get("combo_knockback", 7.0)), float(class_data.get("combo_launch", 2.8)), float(class_data.get("stagger", 0.7)))
@@ -1591,6 +1605,7 @@ func cast_ability(ability_id: String) -> bool:
     var class_data: Dictionary = SkillSystem.get_class_skill(class_id)
     var visual_color: Color = visual_profile.get("color", class_data.get("color", Color(0.3, 0.72, 1.0)))
     _play_skill_pose(animation_profile)
+    _play_authored_action_animation("skill_cast", 0.06)
     var feedback_duration := clampf(float(animation_profile.get("startup", 0.2)) + float(animation_profile.get("active", 0.2)) * 0.55, 0.32, 0.9)
     _play_combat_feedback(visual_color, feedback_duration)
     CombatSessionManager.record_skill_cast()
