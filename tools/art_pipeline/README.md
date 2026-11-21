@@ -73,3 +73,14 @@ py tools/art_pipeline/inventory_angelica_pck.py "D:\\Games\\SeiyaClient\\element
 若没有分卷文件，可省略 `--pkx`。如果有多个 PKX 分卷，可重复指定 `--pkx`。工具调用 AutoAngel 的 `read_pck`、`file_list` 和只读 `scan_entries` 读取索引与压缩数据元信息，不调用提取、构建或保存接口；报告写到独立目录。JSON/CSV 会记录资源路径、扩展名、原始大小、压缩大小和归档哈希，可用于筛选 SKI、BON、SMD、STCK、ECM、GFX 和纹理文件。
 
 注意：AutoAngel 的 MIT 许可证允许按其许可证条件使用；本项目仅将其作为用户本机的可选依赖，不把客户端文件或提取资源提交到公开仓库。首次接入具体游戏客户端仍需用真实样本验证版本和配置是否匹配。
+
+
+## 从 PCK 中导出 SKI 网格数据
+
+安装 AutoAngel 后，可将资源包内一个 SKI 文件转换为中立 JSON 网格数据，供 Blender 导入脚本使用。该步骤会提取选定 SKI 的顶点、法线、UV、三角形索引、材质、纹理引用和蒙皮权重；不会修改 PCK/PKX。
+
+```powershell
+py tools/art_pipeline/export_angelica_ski_json.py "D:\\Games\\SeiyaClient\\element\\models.pck" --pkx "D:\\Games\\SeiyaClient\\element\\models.pkx" --entry "models\\characters\\pegasus.ski" --output "D:\\SeiyaInventory\\pegasus_ski.json"
+```
+
+`--entry` 必须使用 PCK 清单中的实际路径。若 PCK 没有 PKX 分卷，可省略 `--pkx`。输出包含 SKI 版本、骨骼名称及每个网格的顶点和蒙皮数据；当前输出是网格交换数据，不是完整带骨骼动画的 GLB，也不代表已经完成原版角色重建。
