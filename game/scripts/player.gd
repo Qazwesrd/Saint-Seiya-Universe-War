@@ -389,7 +389,7 @@ func _resolve_locomotion_action_state(planar_speed: float) -> String:
     return CharacterStanceDatabase.resolve_locomotion_state(planar_speed)
 
 func _set_action_state(state_id: String, duration: float = 0.0) -> void:
-    if not CharacterStanceDatabase.get_supported_action_states().has(state_id):
+    if not CharacterStanceDatabase.can_transition_action_state(current_action_state, state_id, action_state_timer):
         return
     current_action_state = state_id
     action_state_timer = maxf(0.0, duration)
