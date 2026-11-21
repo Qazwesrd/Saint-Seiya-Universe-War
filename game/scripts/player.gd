@@ -282,7 +282,7 @@ func _animate_visual_motion(delta: float) -> void:
     var cloth_sway := sin(clock * 1.35) * (0.045 + movement_ratio * 0.09)
     if tenkishi_flight_active:
         cloth_sway *= 1.7
-    _sync_armor_attachment_anchors(delta)
+    _sync_armor_attachment_anchors()
     for skirt_index in range(armor_skirt_nodes.size()):
         var skirt_side := -1.0 if skirt_index % 2 == 0 else 1.0
         var skirt_base := armor_skirt_base_angles[skirt_index] if skirt_index < armor_skirt_base_angles.size() else 0.0
@@ -635,9 +635,8 @@ func _get_armor_attachment_anchor(part_id: String, side_x: float = 0.0, part_y: 
     var anchor: Variant = armor_attachment_anchors.get(anchor_id)
     return anchor as Node3D if anchor is Node3D else null
 
-func _sync_armor_attachment_anchors(delta: float) -> void:
+func _sync_armor_attachment_anchors() -> void:
     for limb_index in range(2):
-        var side_key := "left" if limb_index == 0 else "right"
         var arm_anchor := _get_armor_attachment_anchor("arms", -1.0 if limb_index == 0 else 1.0)
         if is_instance_valid(arm_anchor) and limb_index < upper_arm_nodes.size():
             arm_anchor.rotation = upper_arm_nodes[limb_index].rotation
