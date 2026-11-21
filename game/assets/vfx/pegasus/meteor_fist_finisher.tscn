@@ -1,0 +1,133 @@
+[gd_scene load_steps=10 format=3]
+
+[sub_resource type="StandardMaterial3D" id="CosmosCore"]
+shading_mode = 1
+transparency = 1
+albedo_color = Color(0.32, 0.78, 1, 0.78)
+emission_enabled = true
+emission = Color(0.18, 0.68, 1, 1)
+emission_energy_multiplier = 2.2
+metallic = 0.18
+roughness = 0.2
+
+[sub_resource type="StandardMaterial3D" id="AfterimageMaterial"]
+shading_mode = 1
+transparency = 1
+albedo_color = Color(0.18, 0.52, 1, 0.3)
+emission_enabled = true
+emission = Color(0.12, 0.42, 1, 0.9)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="StandardMaterial3D" id="ImpactMaterial"]
+shading_mode = 1
+transparency = 1
+albedo_color = Color(0.72, 0.94, 1, 0.9)
+emission_enabled = true
+emission = Color(0.62, 0.9, 1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="SphereMesh" id="FistCore"]
+radius = 0.24
+height = 0.48
+radial_segments = 16
+rings = 8
+
+[sub_resource type="SphereMesh" id="AfterimageCore"]
+radius = 0.19
+height = 0.38
+radial_segments = 12
+rings = 6
+
+[sub_resource type="TorusMesh" id="ShockRing"]
+inner_radius = 0.58
+outer_radius = 0.68
+rings = 32
+ring_segments = 12
+
+[sub_resource type="CylinderMesh" id="MeteorStreak"]
+top_radius = 0.025
+bottom_radius = 0.11
+height = 1.65
+radial_segments = 8
+
+[sub_resource type="PrismMesh" id="ImpactShard"]
+size = Vector3(0.16, 0.62, 0.12)
+
+[node name="PegasusMeteorFistFinisher" type="Node3D"]
+metadata/skill_id = "pegasus_skill_6"
+metadata/skill_name = "闪影流星拳"
+metadata/effect_role = "three-stage afterimage rush and impact burst"
+metadata/preview_only = false
+
+[node name="MainFistCore" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, 0)
+mesh = SubResource("FistCore")
+material_override = SubResource("CosmosCore")
+
+[node name="Afterimage_01" type="MeshInstance3D" parent="."]
+position = Vector3(-0.72, 0.08, -0.12)
+scale = Vector3(0.82, 0.82, 0.82)
+mesh = SubResource("AfterimageCore")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="Afterimage_02" type="MeshInstance3D" parent="."]
+position = Vector3(-1.28, 0.16, -0.24)
+scale = Vector3(0.66, 0.66, 0.66)
+mesh = SubResource("AfterimageCore")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="Afterimage_03" type="MeshInstance3D" parent="."]
+position = Vector3(-1.78, 0.22, -0.34)
+scale = Vector3(0.5, 0.5, 0.5)
+mesh = SubResource("AfterimageCore")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="ImpactHalo" type="MeshInstance3D" parent="."]
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("ShockRing")
+material_override = SubResource("ImpactMaterial")
+
+[node name="ImpactHaloOuter" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.08, 0)
+rotation = Vector3(1.5708, 0, 0)
+scale = Vector3(1.38, 1.38, 1.38)
+mesh = SubResource("ShockRing")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="MeteorStreak_01" type="MeshInstance3D" parent="."]
+position = Vector3(-0.48, 0.02, -0.12)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("MeteorStreak")
+material_override = SubResource("CosmosCore")
+
+[node name="MeteorStreak_02" type="MeshInstance3D" parent="."]
+position = Vector3(-0.98, 0.12, -0.2)
+rotation = Vector3(0, 0, 1.5708)
+scale = Vector3(0.72, 0.72, 0.72)
+mesh = SubResource("MeteorStreak")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="MeteorStreak_03" type="MeshInstance3D" parent="."]
+position = Vector3(-1.42, 0.2, -0.28)
+rotation = Vector3(0, 0, 1.5708)
+scale = Vector3(0.5, 0.5, 0.5)
+mesh = SubResource("MeteorStreak")
+material_override = SubResource("AfterimageMaterial")
+
+[node name="ImpactShard_01" type="MeshInstance3D" parent="."]
+position = Vector3(0.62, 0.12, 0.28)
+rotation = Vector3(0.2, 0.3, 0.62)
+mesh = SubResource("ImpactShard")
+material_override = SubResource("ImpactMaterial")
+
+[node name="ImpactShard_02" type="MeshInstance3D" parent="."]
+position = Vector3(-0.58, -0.08, 0.34)
+rotation = Vector3(-0.3, 0.8, -0.72)
+mesh = SubResource("ImpactShard")
+material_override = SubResource("ImpactMaterial")
+
+[node name="ImpactShard_03" type="MeshInstance3D" parent="."]
+position = Vector3(0.12, 0.2, -0.7)
+rotation = Vector3(0.8, -0.4, 1.2)
+mesh = SubResource("ImpactShard")
+material_override = SubResource("ImpactMaterial")
