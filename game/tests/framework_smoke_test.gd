@@ -844,6 +844,12 @@ func _run_tests() -> void:
 	var helmet_repair_result: Dictionary = ArmorSystem.repair_part("head")
 	assert(bool(helmet_repair_result.get("repaired", false)) and int(helmet_repair_result.get("after", 0)) == 100, "individual armor repair restores only the selected piece")
 	assert(int(RPGState.profile.get("currency", 0)) == 930 and ArmorSystem.get_part_durability("chest") == 100, "individual armor repair charges the quoted cost without damaging other pieces")
+	var player_script = preload("res://scripts/player.gd")
+	assert(player_script.get_armor_hit_zone_from_local_position(Vector3(0.0, 1.95, 0.0)) == "head", "high incoming attack is classified as a helmet hit")
+	assert(player_script.get_armor_hit_zone_from_local_position(Vector3(0.0, 0.35, 0.0)) == "legs", "low incoming attack is classified as a leg hit")
+	assert(player_script.get_armor_hit_zone_from_local_position(Vector3(0.72, 1.2, 0.0)) == "arms", "side incoming attack is classified as an arm hit")
+	assert(player_script.get_armor_hit_zone_from_local_position(Vector3(0.1, 0.78, 0.0)) == "waist", "mid-low incoming attack is classified as a waist hit")
+	assert(player_script.get_armor_hit_zone_from_local_position(Vector3(0.1, 1.2, 0.0)) == "chest", "center incoming attack is classified as a chest hit")
 	assert(is_equal_approx(ArmorSystem.get_damage_reduction("head"), 0.08), "intact helmet applies its dedicated eight-percent hit-zone protection")
 	assert(is_equal_approx(ArmorSystem.get_damage_reduction("chest"), 0.10), "intact chest plate applies its dedicated ten-percent hit-zone protection")
 	RPGState.profile["armor_state"]["durability"]["head"] = 50
