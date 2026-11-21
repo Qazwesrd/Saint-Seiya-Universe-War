@@ -116,6 +116,64 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
         "finisher": finisher
     }
 
+const BASIC_COMBO_MOTIONS := {
+    "pegasus": ["strike", "leap", "heavy"],
+    "dragon": ["shield_strike", "guard", "heavy"],
+    "cygnus": ["strike", "spin", "cast"],
+    "andromeda": ["chain", "chain", "spin"],
+    "phoenix": ["strike", "spin", "heavy"],
+    "sea_dragon": ["cast", "spin", "heavy"],
+    "tenmou": ["heavy", "axe", "throw"],
+    "lyra": ["instrument", "cast", "spin"],
+    "sea_swallow": ["dash", "strike", "spin"],
+    "tenkishi": ["aerial_strike", "leap", "heavy"],
+    "apollo": ["divine", "spin", "heavy"],
+    "abel": ["divine", "cast", "heavy"],
+    "athena": ["guard", "divine", "heavy"],
+    "hades": ["cast", "spin", "heavy"],
+    "poseidon": ["cast", "spin", "heavy"],
+    "zeus": ["strike", "dash", "heavy"],
+    "artemis": ["bow", "bow", "spin"],
+    "hypnos": ["cast", "spin", "divine"],
+    "thanatos": ["heavy", "throw", "spin"],
+    "odin": ["strike", "cast", "heavy"],
+    "ares": ["axe", "heavy", "throw"],
+    "eris": ["spin", "cast", "heavy"],
+    "lucifer": ["dash", "spin", "heavy"],
+    "saturn": ["cast", "spin", "heavy"],
+    "pallas": ["strike", "dash", "heavy"],
+    "chronos": ["cast", "spin", "divine"],
+    "hera": ["guard", "divine", "spin"],
+    "demeter": ["cast", "spin", "heavy"],
+    "hestia": ["strike", "cast", "heavy"],
+    "hermes": ["dash", "strike", "spin"],
+    "hephaestus": ["axe", "heavy", "throw"],
+    "aphrodite": ["strike", "cast", "spin"]
+}
+
+static func get_basic_combo_profile(class_id: String, combo_step: int) -> Dictionary:
+    if not BASIC_COMBO_MOTIONS.has(class_id):
+        return {}
+    var step := clampi(combo_step, 1, 3)
+    var motions: Array = BASIC_COMBO_MOTIONS[class_id]
+    var motion := str(motions[step - 1])
+    var startup := [0.10, 0.13, 0.18][step - 1]
+    var active := [0.16, 0.19, 0.24][step - 1]
+    var recovery := [0.18, 0.22, 0.34][step - 1]
+    return {
+        "class_id": class_id,
+        "motion": motion,
+        "startup": startup,
+        "active": active,
+        "recovery": recovery,
+        "total_duration": startup + active + recovery,
+        "combo_cancel_at": startup + active * 0.72,
+        "pose_scale": [1.04, 1.08, 1.14][step - 1],
+        "rotation_degrees": 300.0 if motion == "spin" else (8.0 if motion in ["dash", "leap"] else 0.0),
+        "combo_step": step,
+        "authored_clip": "%s_basic_attack_%d" % [class_id, step]
+    }
+
 static func _resolve_motion(class_id: String, ability_type: String, action: String, ability_name: String) -> String:
     var text_value := ability_type + " " + ability_name
     if "防御" in ability_type or "护盾" in ability_type or "守护" in ability_type or "格挡" in ability_type or action == "guard":
