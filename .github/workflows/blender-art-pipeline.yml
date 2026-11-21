@@ -142,7 +142,7 @@ jobs:
           if errors:
               raise SystemExit("\\n".join(errors))
           PY
-      - name: Validate all 32 profession models and 51 animation clips
+      - name: Validate all 32 profession models and 52 animation clips
         shell: bash
         run: |
           set -euo pipefail
@@ -158,7 +158,7 @@ jobs:
           class_ids = catalog_ids(Path("game/scripts/character_visual_catalog.gd"), "const PROFILES := {")
           required_clips = (
               "idle", "walk", "run", "jump", "fall", "land",
-              "basic_attack_1", "basic_attack_2", "basic_attack_3",
+              "basic_attack_1", "basic_attack_2", "basic_attack_3", "signature_idle",
               "skill_cast", "hit_light", "hit_heavy", "dodge", "block",
               "victory", "defeat", "phase_shift",
           )
@@ -197,6 +197,9 @@ jobs:
                   clip = animation_by_name[clip_name]
                   if len(clip.get("channels", [])) < 8:
                       raise SystemExit(f"{class_id}: {clip_name} has too few full-body combo tracks")
+              signature_pose = animation_by_name[f"{class_id}_signature_idle"]
+              if len(signature_pose.get("channels", [])) < 10:
+                  raise SystemExit(f"{class_id}: signature idle does not articulate a full-body stance")
               for clip_name in skill_clips + ability_clips:
                   clip = animation_by_name[clip_name]
                   if len(clip.get("channels", [])) < 5:
