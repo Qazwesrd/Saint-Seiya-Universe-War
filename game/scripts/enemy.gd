@@ -882,6 +882,11 @@ func _get_boss_attack_warning() -> String:
         warning = "狂暴阶段·" + warning
     return warning
 
+func _get_attack_contact_position(target: Node3D) -> Vector3:
+    # Enemy root nodes sit at ground level; pass an upper-body contact origin instead
+    # so the player's hit-zone classifier does not treat every melee strike as a leg hit.
+    return global_position + target.global_transform.basis.y * 1.15
+
 func _resolve_attack(target: Node3D) -> void:
     telegraph_mesh.visible = false
     telegraph_mesh.scale = Vector3.ONE
@@ -895,7 +900,7 @@ func _resolve_attack(target: Node3D) -> void:
         if _boss_combo_followup_active:
             damage_multiplier *= 0.72
         var outgoing_attack := attack_damage * damage_multiplier * (weaken_factor if weaken_timer > 0.0 else 1.0)
-        target.call("receive_damage", outgoing_attack, global_position)
+        target.call("receive_damage", outgoing_attack, _get_attack_contact_position(target))
         if not player_invulnerable and target.has_method("apply_enemy_knockback"):
             var push := target.global_position - global_position
             push.y = 0.0
@@ -946,7 +951,7 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
                 game.call("show_notice", display_name + "掀起潮汐，将目标拉向自身")
         "solar_flare":
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.16, global_position)
+                target.call("receive_damage", base_damage * 0.16, _get_attack_contact_position(target))
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "释放太阳神追加光爆")
         "lightning_followup":
@@ -964,7 +969,7 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
         "gravity_crush":
             _drain_target_cosmos(target, 6.0)
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.10, global_position)
+                target.call("receive_damage", base_damage * 0.10, _get_attack_contact_position(target))
         "judge_combo":
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动审判连击")
@@ -981,7 +986,7 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
             var beast_pattern := _boss_attack_count % 3
             if beast_pattern == 0:
                 if target.has_method("receive_damage"):
-                    target.call("receive_damage", base_damage * 0.22, global_position)
+                    target.call("receive_damage", base_damage * 0.22, _get_attack_contact_position(target))
                 if is_instance_valid(game):
                     game.call("show_notice", display_name + "：六圣兽·猛虎突袭")
             elif beast_pattern == 1:
@@ -1003,12 +1008,12 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
                 game.call("show_notice", display_name + "发动镜像幻术：汲取小宇宙并恢复体力")
         "sonic_wave":
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.2, global_position)
+                target.call("receive_damage", base_damage * 0.2, _get_attack_contact_position(target))
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "释放音波冲击，形成追加伤害")
         "frostfire":
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.18, global_position)
+                target.call("receive_damage", base_damage * 0.18, _get_attack_contact_position(target))
             _drain_target_cosmos(target, 8.0)
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动冰火交错的双重打击")
@@ -1027,12 +1032,12 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
                 game.call("show_notice", display_name + "展开睡眠领域：小宇宙持续受压")
         "death_mark":
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.28, global_position)
+                target.call("receive_damage", base_damage * 0.28, _get_attack_contact_position(target))
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "施加死亡印记，触发追加伤害")
         "storm_chain":
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.24, global_position)
+                target.call("receive_damage", base_damage * 0.24, _get_attack_contact_position(target))
             if target.has_method("apply_enemy_knockback"):
                 var storm_push := target.global_position - global_position
                 storm_push.y = 0.0
@@ -1043,7 +1048,7 @@ func _apply_boss_attack_signature(target: Node3D, base_damage: float) -> void:
         "cosmic_collapse":
             _drain_target_cosmos(target, 22.0)
             if target.has_method("receive_damage"):
-                target.call("receive_damage", base_damage * 0.3, global_position)
+                target.call("receive_damage", base_damage * 0.3, _get_attack_contact_position(target))
             if is_instance_valid(game):
                 game.call("show_notice", display_name + "发动宇宙坍缩：吞噬小宇宙并造成重创")
         _:
