@@ -165,6 +165,28 @@ def validate_skill_visual_catalog() -> list[str]:
             errors.append(f"{element}: impact_scale must be between 0.5 and 1.5")
     return errors
 
+def validate_release_metadata(data: dict) -> None:
+    """Require human approval and explicit provenance before an asset can be called release-ready."""
+    license_record = data.get("source_license")
+    if not isinstance(license_record, str) or not license_record.strip():
+        raise ValueError("source_license must contain an explicit license or original-authorship record")
+    normalized_license = license_record.strip().lower()
+    if normalized_license in {"pending_review", "unknown", "unverified", "none", "tbd"}:
+        raise ValueError("source_license is not approved for redistribution")
+
+    quality = data.get("quality_gate")
+    if not isinstance(quality, dict):
+        raise ValueError("quality_gate review record is missing")
+    if quality.get("approved_for_final_release") is not True:
+        raise ValueError("asset has not been approved for final release by visual review")
+    if quality.get("visual_review_required") is not False:
+        raise ValueError("visual review is still required")
+    if not isinstance(quality.get("reviewed_by"), str) or not quality["reviewed_by"].strip():
+        raise ValueError("quality_gate must record reviewed_by")
+    if not isinstance(quality.get("reviewed_at"), str) or not quality["reviewed_at"].strip():
+        raise ValueError("quality_gate must record reviewed_at")
+
+
 def validate_armor_manifest(data: dict, model: Path) -> None:
     parts = data.get("parts")
     if not isinstance(parts, dict) or set(parts) != set(ARMOR_PART_NODES):
@@ -254,6 +276,7 @@ def main() -> int:
                 raise ValueError("authored_asset must be true exactly when delivery_status is complete")
             if status != "complete":
                 continue
+            validate_release_metadata(data)
             base = manifest_path.parent
             kind = data["asset_kind"]
             if kind == "character":
