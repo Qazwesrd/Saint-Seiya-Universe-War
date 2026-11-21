@@ -37,6 +37,7 @@ var authored_enemy_model: Node3D
 var authored_enemy_animation_player: AnimationPlayer
 var authored_enemy_animation_state := ""
 var authored_enemy_action_timer := 0.0
+var authored_enemy_death_timer := 0.0
 var boss_aura_ring: MeshInstance3D
 var enemy_accent_nodes: Array[MeshInstance3D] = []
 var enemy_wing_nodes: Array[MeshInstance3D] = []
@@ -403,6 +404,9 @@ func is_targetable() -> bool:
 
 func _physics_process(delta: float) -> void:
     if state == BrainState.DEAD:
+        authored_enemy_death_timer = maxf(0.0, authored_enemy_death_timer - delta)
+        if authored_enemy_death_timer <= 0.0:
+            queue_free()
         return
     _animate_enemy_limbs(delta)
     _update_authored_enemy_animation(delta, Vector2(velocity.x, velocity.z).length())
@@ -677,6 +681,7 @@ func take_damage(amount: float) -> void:
 
     if is_boss and not _boss_phase_two and health <= max_health * 0.5:
         _boss_phase_two = true
+        _play_authored_enemy_action("phase_shift", 0.08)
         boss_phase_burst_timer = 1.35
         speed *= 1.25
         attack_damage *= 1.25
@@ -690,10 +695,14 @@ func take_damage(amount: float) -> void:
 
     if health <= 0.0:
         state = BrainState.DEAD
+        velocity = Vector3.ZERO
+        collision_layer = 0
+        collision_mask = 0
         telegraph_mesh.visible = false
+        _play_authored_enemy_action("defeat", 0.06)
+        authored_enemy_death_timer = maxf(0.7, authored_enemy_action_timer)
         if is_instance_valid(game):
             game.call("on_enemy_defeated", self)
-        queue_free()
         return
 
     var attacker: Node3D = game.get("player") if is_instance_valid(game) else null
