@@ -175,7 +175,7 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         "冥衣 Surplice":
             return {"accent": Color(0.62, 0.32, 0.78), "ornament": "soul_wings"}
         "黑暗圣衣 Dark Cloth":
-            return {"accent": Color(0.42, 0.16, 0.62), "ornament": "dark_aura"}
+            return {"metal": Color(0.025, 0.030, 0.050), "trim": Color(0.22, 0.28, 0.38), "accent": Color(0.38, 0.48, 0.62), "palette_family": "graphite_steel_blue", "armor_family": "dark_cloth", "ornament": "dark_aura", "cape": false}
         "白金圣衣 Platinum Cloth":
             return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant"}
         "天衣 Glory":
