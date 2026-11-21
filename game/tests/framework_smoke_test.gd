@@ -34,6 +34,7 @@ func _run_tests() -> void:
 	assert(CharacterStanceDatabase.resolve_locomotion_state(6.0) == "run", "fast movement resolves to run state")
 	assert(not CharacterStanceDatabase.can_transition_action_state("attack", "idle", 0.2), "idle cannot interrupt an active attack")
 	assert(not CharacterStanceDatabase.can_transition_action_state("hit", "walk", 0.1), "movement cannot interrupt an active hit reaction")
+	assert(not CharacterStanceDatabase.can_transition_action_state("hit", "attack", 0.1), "a new attack cannot cancel an active hit reaction")
 	assert(CharacterStanceDatabase.can_transition_action_state("attack", "hit", 0.2), "a hit reaction can interrupt an attack")
 	assert(not CharacterStanceDatabase.can_transition_action_state("death", "idle", 0.5), "death state cannot be interrupted before its recovery timer")
 	assert(CharacterStanceDatabase.can_transition_action_state("attack", "idle", 0.0), "locomotion resumes after the action timer expires")
