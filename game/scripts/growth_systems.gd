@@ -110,7 +110,8 @@ func equip_wing(wing_id: String) -> bool:
 	if not WING_DATA.has(wing_id):
 		return false
 	var wings: Dictionary = RPGState.profile.get("growth_wings", {}).duplicate(true)
-	if not (wings.get("owned", []) as Array).has(wing_id):
+	var owned: Array = wings.get("owned", [])
+	if not owned.has(wing_id):
 		return false
 	var previous: Dictionary = RPGState.profile.duplicate(true)
 	wings["equipped"] = wing_id
