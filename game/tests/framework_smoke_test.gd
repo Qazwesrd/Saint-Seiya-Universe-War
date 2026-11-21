@@ -10,6 +10,26 @@ func _ready() -> void:
 	call_deferred("_run_tests")
 
 func _run_tests() -> void:
+	var growth_original_profile: Dictionary = RPGState.profile.duplicate(true)
+	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
+	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
+	RPGState.profile["currency"] = 50000
+	RPGState.profile["level"] = 30
+	var growth_class_id := str(RPGState.profile.get("class_id", "pegasus"))
+	var growth_cosmos_levels: Dictionary = RPGState.profile.get("cosmos_levels", {}).duplicate(true)
+	growth_cosmos_levels[growth_class_id] = 20
+	RPGState.profile["cosmos_levels"] = growth_cosmos_levels
+	RPGState.profile["cosmos_level"] = 20
+	assert(GrowthSystems.allocate_cosmos_node("star_attack"), "cosmos star node can be upgraded when points and currency are available")
+	assert(float(GrowthSystems.get_growth_stat_bonus().get("attack", 0.0)) >= 2.0, "cosmos star node contributes to combat attack")
+	assert(GrowthSystems.unlock_wing("star_wing"), "first wing can be unlocked with offline game currency")
+	assert(str(GrowthSystems.get_wing_profile().get("equipped", "")) == "star_wing", "newly unlocked wing is equipped")
+	assert(GrowthSystems.upgrade_wing(), "equipped wing can be enhanced with offline currency")
+	assert(float(GrowthSystems.get_growth_stat_bonus().get("health", 0.0)) >= 0.0, "wing growth profile returns valid combat bonuses")
+	assert(int(GrowthSystems.get_power_breakdown().get("total", 0)) > 0, "combat power is calculated from character progression")
+	assert(GrowthSystems.set_wing_visible(false) and not bool(GrowthSystems.get_wing_profile().get("visible", true)), "wing appearance visibility can be toggled")
+	RPGState.profile = growth_original_profile
+	assert(RPGState.save_slot(RPGState.active_slot), "restore original save after growth-system smoke tests")
 	assert(BossChapterCombatCatalog.validate_catalog(), "all seven campaign chapters have complete boss combat profiles")
 	for dark_enemy_id in ["dark_phoenix_revenant", "dark_dragon_wraith", "dark_black_knight_champion"]:
 		assert(EnemyDatabase.has_archetype(dark_enemy_id), "Dark Saint encounter archetype exists: " + dark_enemy_id)
