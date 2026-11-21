@@ -52,7 +52,7 @@ static func get_profile(class_id: String, ability: Dictionary) -> Dictionary:
         result["color"] = class_profile.get("accent", Color(0.42, 0.66, 1.0))
     result["element"] = element
     # Authored signature scenes override the generic elemental profile for named finishers.
-    if ability_id == "pegasus_skill_6":
+    if str(ability.get("id", "")) == "pegasus_skill_6":
         result["scene_path"] = "res://assets/vfx/pegasus/meteor_fist_finisher.tscn"
         result["shape"] = "meteor_afterimage_impact"
         result["effect_layers"] = 3
