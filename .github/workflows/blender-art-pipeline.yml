@@ -2,6 +2,7 @@ name: Blender Art Prototype Export
 # Rebuild assets after the Android packaging workflow fix.
 # Keep the repaired APK verifier and generated bundle on the same commit.
 # Re-run the asset export so the repaired Android workflow receives a matching bundle.
+# Refresh the exact-commit bundle after correcting appended-PCK verification.
 
 on:
   push:
