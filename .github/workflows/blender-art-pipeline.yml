@@ -10,6 +10,10 @@ on:
     paths:
       - "tools/art_pipeline/blender/**"
       - "tools/art_pipeline/batch_asset_factory.py"
+      - "tools/art_pipeline/build_manifests.py"
+      - "tools/art_pipeline/validate_authored_assets.py"
+      - "game/scripts/equipment_database.gd"
+      - "game/scripts/skill_system.gd"
       - "game/scripts/enemy_database.gd"
       - "game/scripts/character_visual_catalog.gd"
       - "game/scripts/skill_animation_catalog.gd"
@@ -19,6 +23,10 @@ on:
     paths:
       - "tools/art_pipeline/blender/**"
       - "tools/art_pipeline/batch_asset_factory.py"
+      - "tools/art_pipeline/build_manifests.py"
+      - "tools/art_pipeline/validate_authored_assets.py"
+      - "game/scripts/equipment_database.gd"
+      - "game/scripts/skill_system.gd"
       - ".github/workflows/blender-art-pipeline.yml"
   workflow_dispatch:
 
