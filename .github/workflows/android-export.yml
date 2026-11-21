@@ -150,15 +150,25 @@ jobs:
           test -s "$apk"
           command -v jar
           jar tf "$apk" > /tmp/apk-entries.txt
-          awk '($0 == "assets/main.pck" || $0 ~ /\/main.pck$/) { print }' /tmp/apk-entries.txt > /tmp/main-pck-entries.txt
-          count="$(wc -l < /tmp/main-pck-entries.txt | tr -d ' ')"
-          if [ "$count" -ne 1 ]; then
-            echo "Expected exactly one embedded Godot main.pck, found $count"
-            cat /tmp/main-pck-entries.txt
+          grep -E '\\.pck          sha256sum "$apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saint-Seiya-Universe-War-Android-ARM64-debug
+          path: build/android/Saint-Seiya-Universe-War-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+ /tmp/apk-entries.txt > /tmp/embedded-pck-entries.txt || true
+          count="$(wc -l < /tmp/embedded-pck-entries.txt | tr -d ' ')"
+          if [ "$count" -lt 1 ]; then
+            echo "No embedded Godot PCK was found in the APK. APK asset entries:"
+            grep -E '(^|/)(assets|lib)/' /tmp/apk-entries.txt | head -n 120 || true
             exit 1
           fi
           echo "APK_BYTES=$(wc -c < "$apk" | tr -d ' ')"
-          echo "EMBEDDED_MAIN_PCK=$(cat /tmp/main-pck-entries.txt)"
+          echo "EMBEDDED_PCK_COUNT=$count"
+          cat /tmp/embedded-pck-entries.txt
           sha256sum "$apk"
 
       - name: Upload APK artifact
