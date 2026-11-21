@@ -17,6 +17,10 @@ from typing import Any
 def normalize_entry_path(entry_path: str) -> str:
     return str(entry_path).replace("\\", "/").lstrip("/")
 
+def normalize_package_lookup_path(entry_path: str) -> str:
+    return str(entry_path).replace("/", "\\").replace("\\", "\\").lower()
+
+
 def write_payload(output: Path, payload: dict[str, Any]) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -107,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         package = autoangel.read_pck(str(pck_path), [str(path) for path in pkx_paths] or None)
-        raw = package.get_file(args.entry)
+        raw = package.get_file(normalize_package_lookup_path(args.entry))
         if raw is None:
             print(f"ENTRY_NOT_FOUND: {args.entry}", file=sys.stderr)
             return 1
