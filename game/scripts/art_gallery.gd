@@ -5,21 +5,21 @@ extends Control
 const ITEMS := {
 	"人物": [
 		{"id": "pegasus", "name": "天马座人物原型", "path": "assets/characters/pegasus/model/character.glb"},
-		{"id": "dragon", "name": "天龙座人物原型", "path": "res://assets/characters/dragon/model/character.glb"},
-		{"id": "cygnus", "name": "天鹅座人物原型", "path": "res://assets/characters/cygnus/model/character.glb"},
-		{"id": "phoenix", "name": "凤凰座人物原型", "path": "res://assets/characters/phoenix/model/character.glb"}
+		{"id": "dragon", "name": "天龙座人物原型", "path": "assets/characters/dragon/model/character.glb"},
+		{"id": "cygnus", "name": "天鹅座人物原型", "path": "assets/characters/cygnus/model/character.glb"},
+		{"id": "phoenix", "name": "凤凰座人物原型", "path": "assets/characters/phoenix/model/character.glb"}
 	],
 	"圣衣": [
-		{"id": "aries_gold_cloth", "name": "白羊座黄金圣衣", "path": "res://assets/armors/aries_gold_cloth/model/armor.glb"},
-		{"id": "taurus_gold_cloth", "name": "金牛座黄金圣衣", "path": "res://assets/armors/taurus_gold_cloth/model/armor.glb"},
-		{"id": "gemini_gold_cloth", "name": "双子座黄金圣衣", "path": "res://assets/armors/gemini_gold_cloth/model/armor.glb"},
-		{"id": "pegasus_bronze_cloth", "name": "天马座青铜圣衣", "path": "res://assets/armors/pegasus_bronze_cloth/model/armor.glb"}
+		{"id": "aries_gold_cloth", "name": "白羊座黄金圣衣", "path": "assets/armors/aries_gold_cloth/model/armor.glb"},
+		{"id": "taurus_gold_cloth", "name": "金牛座黄金圣衣", "path": "assets/armors/taurus_gold_cloth/model/armor.glb"},
+		{"id": "gemini_gold_cloth", "name": "双子座黄金圣衣", "path": "assets/armors/gemini_gold_cloth/model/armor.glb"},
+		{"id": "pegasus_bronze_cloth", "name": "天马座青铜圣衣", "path": "assets/armors/pegasus_bronze_cloth/model/armor.glb"}
 	],
 	"BOSS": [
-		{"id": "pope_saga", "name": "教皇撒加", "path": "res://assets/enemies/pope_saga/model/enemy.glb"},
-		{"id": "gold_taurus", "name": "金牛座阿鲁迪巴", "path": "res://assets/enemies/gold_taurus/model/enemy.glb"},
-		{"id": "god_warrior_thor", "name": "阿尔法星神斗士托尔", "path": "res://assets/enemies/god_warrior_thor/model/enemy.glb"},
-		{"id": "hades_emperor", "name": "冥王哈迪斯", "path": "res://assets/enemies/hades_emperor/model/enemy.glb"}
+		{"id": "pope_saga", "name": "教皇撒加", "path": "assets/enemies/pope_saga/model/enemy.glb"},
+		{"id": "gold_taurus", "name": "金牛座阿鲁迪巴", "path": "assets/enemies/gold_taurus/model/enemy.glb"},
+		{"id": "god_warrior_thor", "name": "阿尔法星神斗士托尔", "path": "assets/enemies/god_warrior_thor/model/enemy.glb"},
+		{"id": "hades_emperor", "name": "冥王哈迪斯", "path": "assets/enemies/hades_emperor/model/enemy.glb"}
 	],
 	"技能特效": [
 		{"id": "cosmos", "name": "小宇宙星辰", "element": "cosmos", "color": Color(0.35, 0.68, 1.0)},
