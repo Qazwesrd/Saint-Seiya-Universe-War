@@ -58,6 +58,8 @@
 
 每个资产需有唯一 ID、来源/授权记录、文件路径、版本、格式、材质/贴图引用、LOD、移动端预算和状态。角色/装备/场景/敌人资源需实际导入 Godot 并在游戏场景中显示。
 
+- 资产清单只有在 `source_license` 明确记录原创作者身份或可再分发许可证，并且 `quality_gate` 记录人工审核人、审核日期、`visual_review_required=false`、`approved_for_final_release=true` 时，才允许标记 `delivery_status=complete`。`pending_review`、`unknown`、`unverified` 等来源状态一律不能进入正式交付。
+
 - 角色模型：GLB/glTF，具备真实骨骼蒙皮和有效动画轨道；不能只有骨架或静态网格。
 - 圣衣：部件独立网格并绑定正确骨骼挂点；装备/卸下/损坏/修复在游戏中可见。
 - 场景：有可行走空间和碰撞，不是只有装饰物。
