@@ -16,6 +16,13 @@ func _run_tests() -> void:
 	assert(FactionDatabase.get_factions().size() == 12, "twelve faction starts are registered")
 	var stance_validation: Dictionary = CharacterStanceDatabase.validate_catalog()
 	assert(bool(stance_validation.get("valid", false)), "class stance catalog has complete procedural pose data")
+	var unique_stance_ids: Dictionary = {}
+	for stance_class_id in CharacterVisualCatalog.PROFILES.keys():
+		var class_stance: Dictionary = CharacterStanceDatabase.get_profile(str(stance_class_id), "sanctuary")
+		var class_stance_id := str(class_stance.get("stance_id", ""))
+		assert(not class_stance_id.is_empty() and not unique_stance_ids.has(class_stance_id), "each playable class has a unique stance id: " + str(stance_class_id))
+		unique_stance_ids[class_stance_id] = true
+	assert(unique_stance_ids.size() == CharacterVisualCatalog.PROFILES.size(), "every registered playable class has a dedicated stance identity")
 	var pegasus_stance: Dictionary = CharacterStanceDatabase.get_profile("pegasus", "sanctuary")
 	var dragon_stance: Dictionary = CharacterStanceDatabase.get_profile("dragon", "sanctuary")
 	var phoenix_stance: Dictionary = CharacterStanceDatabase.get_profile("phoenix", "sanctuary")
