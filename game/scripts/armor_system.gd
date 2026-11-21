@@ -131,18 +131,28 @@ func repair_all() -> bool:
  data["durability"] = durability
  RPGState.profile["armor_state"] = data
  return _commit(previous)
-func damage_random_part(amount: int = 8) -> void:
- damage_ticks += 1
- if damage_ticks % 5 != 0:
-  return
+func damage_part(part: String, amount: int = 8) -> Dictionary:
+ if not (part in PARTS):
+  return {}
  var previous: Dictionary = RPGState.profile.duplicate(true)
  var data := _ensure_data()
  var durability: Dictionary = data.get("durability", {}).duplicate(true)
- var part: String = PARTS[randi_range(0, PARTS.size() - 1)]
- durability[part] = maxi(0, int(durability.get(part, 100)) - maxi(1, amount))
+ var before := clampi(int(durability.get(part, 100)), 0, 100)
+ var after := maxi(0, before - maxi(1, amount))
+ if after == before:
+  return {"part": part, "before": before, "after": after, "changed": false}
+ durability[part] = after
  data["durability"] = durability
  RPGState.profile["armor_state"] = data
  _commit(previous)
+ return {"part": part, "before": before, "after": after, "changed": true, "tier": get_part_condition_tier(part)}
+
+func damage_random_part(amount: int = 8) -> Dictionary:
+ damage_ticks += 1
+ if damage_ticks % 5 != 0:
+  return {}
+ var part: String = PARTS[randi_range(0, PARTS.size() - 1)]
+ return damage_part(part, amount)
 func enhance_part(part: String) -> bool:
  if not (part in PARTS):
   return false
