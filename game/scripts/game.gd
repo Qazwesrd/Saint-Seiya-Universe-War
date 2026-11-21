@@ -131,25 +131,77 @@ func _build_faction_start_landmarks(profile: Dictionary) -> void:
     var root := Node3D.new()
     root.name = "FactionStartLandmarks"
     add_child(root)
+    var faction_id := str(profile.get("faction_id", "sanctuary"))
     var accent: Color = profile.get("accent_color", Color(0.25, 0.55, 0.9))
     var structure := str(profile.get("structure", "columns"))
-    for index in range(4):
+    var landmark_count := 4
+    var landmark_radius := 13.0
+    var landmark_height := 4.0
+    match faction_id:
+        "sanctuary":
+            landmark_count = 6
+            landmark_radius = 15.0
+        "dark_saints":
+            landmark_count = 5
+            landmark_radius = 11.5
+            landmark_height = 3.2
+        "sea":
+            landmark_count = 8
+            landmark_radius = 12.0
+            landmark_height = 5.0
+        "underworld":
+            landmark_count = 7
+            landmark_radius = 14.0
+            landmark_height = 4.8
+        "divine":
+            landmark_count = 4
+            landmark_radius = 17.0
+            landmark_height = 6.0
+        "asgard":
+            landmark_count = 9
+            landmark_radius = 16.0
+            landmark_height = 5.5
+        "steel":
+            landmark_count = 4
+            landmark_radius = 10.5
+            landmark_height = 3.0
+        "bluegrad":
+            landmark_count = 6
+            landmark_radius = 18.0
+            landmark_height = 5.8
+        "fallen":
+            landmark_count = 2
+            landmark_radius = 9.0
+            landmark_height = 6.0
+        "titans":
+            landmark_count = 5
+            landmark_radius = 19.0
+            landmark_height = 7.0
+        "giants":
+            landmark_count = 3
+            landmark_radius = 16.0
+            landmark_height = 8.0
+        "hongmeng":
+            landmark_count = 7
+            landmark_radius = 12.5
+            landmark_height = 5.2
+    for index in range(landmark_count):
         var landmark := MeshInstance3D.new()
         if structure in ["crystals", "orbs", "coral"]:
             var sphere := SphereMesh.new()
             sphere.radius = 0.9 if structure != "orbs" else 0.65
-            sphere.height = 2.4 if structure == "crystals" else 1.5
+            sphere.height = landmark_height * 0.6
             landmark.mesh = sphere
             landmark.scale = Vector3(0.72, 1.7, 0.72) if structure == "crystals" else Vector3.ONE
-        elif structure == "machines" or structure == "giants":
+        elif structure in ["machines", "giants"]:
             var block := BoxMesh.new()
-            block.size = Vector3(1.8, 4.2 if structure == "giants" else 3.0, 1.5)
+            block.size = Vector3(1.8, landmark_height, 1.5)
             landmark.mesh = block
         else:
             var pillar := CylinderMesh.new()
             pillar.top_radius = 0.38
             pillar.bottom_radius = 0.78
-            pillar.height = 4.0
+            pillar.height = landmark_height
             landmark.mesh = pillar
         var material := StandardMaterial3D.new()
         material.albedo_color = accent
@@ -158,9 +210,84 @@ func _build_faction_start_landmarks(profile: Dictionary) -> void:
         material.emission_enabled = true
         material.emission = accent * 0.22
         landmark.material_override = material
-        var angle := TAU * float(index) / 4.0
-        landmark.position = Vector3(cos(angle) * 13.0, 2.0, sin(angle) * 13.0 - 3.0)
+        var angle := TAU * float(index) / float(landmark_count)
+        landmark.position = Vector3(cos(angle) * landmark_radius, landmark_height * 0.5, sin(angle) * landmark_radius - 3.0)
         root.add_child(landmark)
+    var centerpiece := MeshInstance3D.new()
+    var centerpiece_mesh: Mesh
+    var centerpiece_scale := Vector3.ONE
+    match faction_id:
+        "sanctuary":
+            var sanctuary_gate := TorusMesh.new()
+            sanctuary_gate.inner_radius = 2.4
+            sanctuary_gate.outer_radius = 2.7
+            centerpiece_mesh = sanctuary_gate
+            centerpiece_scale = Vector3(1.0, 1.45, 0.55)
+        "dark_saints":
+            var dark_altar := PrismMesh.new()
+            dark_altar.size = Vector3(4.0, 5.0, 2.0)
+            centerpiece_mesh = dark_altar
+        "sea":
+            var sea_arch := TorusMesh.new()
+            sea_arch.inner_radius = 2.8
+            sea_arch.outer_radius = 3.05
+            centerpiece_mesh = sea_arch
+            centerpiece_scale = Vector3(1.8, 1.35, 0.55)
+        "underworld":
+            var underworld_gate := TorusMesh.new()
+            underworld_gate.inner_radius = 2.6
+            underworld_gate.outer_radius = 2.9
+            centerpiece_mesh = underworld_gate
+            centerpiece_scale = Vector3(1.0, 1.55, 0.5)
+        "divine":
+            var divine_halo := TorusMesh.new()
+            divine_halo.inner_radius = 3.0
+            divine_halo.outer_radius = 3.18
+            centerpiece_mesh = divine_halo
+            centerpiece_scale = Vector3(1.0, 1.0, 1.0)
+        "asgard":
+            var asgard_spire := PrismMesh.new()
+            asgard_spire.size = Vector3(3.0, 6.5, 2.6)
+            centerpiece_mesh = asgard_spire
+        "steel":
+            var steel_core := BoxMesh.new()
+            steel_core.size = Vector3(3.0, 3.6, 3.0)
+            centerpiece_mesh = steel_core
+        "bluegrad":
+            var bluegrad_crystal := PrismMesh.new()
+            bluegrad_crystal.size = Vector3(3.2, 6.0, 2.6)
+            centerpiece_mesh = bluegrad_crystal
+        "fallen":
+            var fallen_obelisk := PrismMesh.new()
+            fallen_obelisk.size = Vector3(2.8, 7.0, 1.6)
+            centerpiece_mesh = fallen_obelisk
+        "titans":
+            var titan_monolith := BoxMesh.new()
+            titan_monolith.size = Vector3(4.2, 7.2, 2.2)
+            centerpiece_mesh = titan_monolith
+        "giants":
+            var giant_totem := CylinderMesh.new()
+            giant_totem.top_radius = 1.0
+            giant_totem.bottom_radius = 1.8
+            giant_totem.height = 6.5
+            centerpiece_mesh = giant_totem
+        "hongmeng":
+            var hongmeng_orbit := TorusMesh.new()
+            hongmeng_orbit.inner_radius = 3.1
+            hongmeng_orbit.outer_radius = 3.22
+            centerpiece_mesh = hongmeng_orbit
+            centerpiece_scale = Vector3(1.0, 1.0, 0.72)
+    centerpiece.mesh = centerpiece_mesh
+    centerpiece.scale = centerpiece_scale
+    centerpiece.position = Vector3(0.0, 3.0, -5.0)
+    var centerpiece_material := StandardMaterial3D.new()
+    centerpiece_material.albedo_color = accent.lightened(0.18)
+    centerpiece_material.metallic = 0.58
+    centerpiece_material.roughness = 0.28
+    centerpiece_material.emission_enabled = true
+    centerpiece_material.emission = accent * 0.3
+    centerpiece.material_override = centerpiece_material
+    root.add_child(centerpiece)
     if structure == "wings":
         for side in [-1.0, 1.0]:
             var wing := MeshInstance3D.new()
