@@ -39,8 +39,10 @@ class AngelicaInventoryTests(unittest.TestCase):
             root.mkdir()
             output = root / "inventory"
             output.mkdir()
-            self.assertEqual(output, root / "inventory")
-            self.assertTrue(output == root or root in output.parents)
+            with self.assertRaisesRegex(ValueError, "outside the client directory"):
+                MODULE.validate_paths(root, output)
+            safe_output = Path(tmp) / "inventory"
+            MODULE.validate_paths(root, safe_output)
 
     def test_split_archive_and_animation_extensions_are_catalogued(self):
         for extension, expected in (
