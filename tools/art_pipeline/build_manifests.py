@@ -31,7 +31,7 @@ def manifest(kind: str, asset_id: str) -> dict:
             "model": {"path": "model/character.glb", "status": "not_created", "format": "glTF 2.0 binary"},
             "skeleton": {"path": "model/character_skeleton", "status": "not_created", "root_bone": "Root"},
             "animation_library": {"path": "animations/animation_library.glb", "status": "not_created",
-                "required_clips": ["idle", "walk", "run", "jump", "fall", "land", "basic_attack_1", "basic_attack_2", "basic_attack_3", "skill_cast", "hit_light", "hit_heavy", "dodge", "block", "victory", "defeat"]},
+                "required_clips": ["idle", "walk", "run", "jump", "fall", "land", "basic_attack_1", "basic_attack_2", "basic_attack_3", "skill_cast", "hit_light", "hit_heavy", "dodge", "block", "victory", "defeat", "phase_shift"]},
             "portrait": {"path": "portraits/portrait.png", "status": "not_created"},
             "attachment_points": ["Head", "Chest", "LeftShoulder", "RightShoulder", "LeftHand", "RightHand", "Waist", "LeftFoot", "RightFoot"]
         })
