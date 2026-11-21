@@ -64,3 +64,58 @@ Do not copy or package proprietary client/server source, extracted game assets, 
 The existing Blender pipeline creates stylized prototype meshes and modular armor templates. Its own generator describes its output as prototypes, not final profession-specific art. The visual catalogs and skill effect profiles are presentation metadata; they are not proof that every character, armor set, boss, or ability already has a finished unique production asset.
 
 The art pipeline must continue to validate actual exported GLB files, textures, rigs, animation clips, VFX scenes, Godot imports, and Android packaging. Catalog counts alone are not acceptance evidence.
+
+
+## Broader web search findings (2026-11-21)
+
+The following sources were found beyond the original RaGEZONE threads. They materially improve the asset-recovery route, but none by itself grants permission to redistribute proprietary game assets.
+
+### 6. Angelica / Saint Seiya Online extractor toolkit (public GitHub)
+Repository: https://github.com/diegochagas/games-extractor
+Angelica-specific documentation: https://github.com/diegochagas/games-extractor/blob/main/angelica/README.md
+
+This is the strongest practical discovery in this search. The public repository contains a Python extraction and review pipeline explicitly built for the Seiya Reborn Saint Seiya Online client (documented build 290, client path example C:\\Seiya\\element). It is not a game client or a model/texture asset dump: the repository README says client archives are not committed and generated dumps are written separately.
+
+The Angelica pipeline documents:
+- PCK v2.0.2 archive listing/extraction, split .pck + .pkx handling, zlib entries, and SSO-specific archive keys;
+- DDS/TGA/BMP/JPG texture conversion to PNG and image indexing/contact sheets;
+- LANG text, quest/NPC text, map and media indexing;
+- parsing .SKI meshes and .SMD descriptors to render character/NPC meshes in Blender;
+- linking NPC/monster IDs in elements.data and path.data to .ECM model containers;
+- player cloth assembly from sex-specific cloth sets, eight armor-piece SKI files, base head, pupils and class hair;
+- a gallery-organizing step for portraits, maps, loading screens, videos, music, voice lines, concept art and press images, where such files exist in the client dump.
+
+Important limitations stated by the toolkit itself: .BON skeletons and .STCK animations are not applied; renders are bind-pose/T-pose only; .ANM cutscenes are not played; task trees and some data files are only string-scraped. The toolkit's existence does not prove every model or animation can be recovered, nor that its outputs are licensed for redistribution. The repository currently has no declared license in its GitHub metadata; review its code and obtain permission before copying code into this project. It is suitable as a research candidate and a source of format knowledge, not an automatic production dependency.
+
+### 7. New Angelica model viewer research (RaGEZONE, 2026)
+URL: https://forum.ragezone.com/threads/pw-maybe-angelica-models-viewer-wip-showcase.1263235/
+
+A 2026 work-in-progress Rust + Bevy viewer reports support for PCK v2/v3 and split PKX archives, SKI versions 8/9/100/101, BON skeleton hierarchy/bind poses, STCK v1/v2 animations, ECM containers, DDS/TGA textures and Chinese GBK filenames. It reports GPU skinning, animation playback and browsing more than 50,000 entries. The author later says GLB export was added, while GLB import and project packaging were still planned; a public GitHub release was not linked in the visible thread. Treat it as a promising research lead, not a downloadable verified tool. Its stated format coverage could help recover real animation data missing from the Python extractor's current render path.
+
+### 8. Historical QuickBMS / ZenHAX format research
+URL: https://www.zenhax.com/viewtopic.php@t=8056.html
+Script reference: http://aluigi.org/bms/saint_seya_online_lang.bms
+
+A 2018 discussion records community extraction/repacking of many SSO files and identifies multiple distinct .data formats (including DIMT and LANG); the site administrator points to a QuickBMS script for lang_base.data. This is historical format research only. Validate against the exact client build before using any script, and do not assume it handles current PCK or every .data family.
+
+### 9. Additional client/server distribution leads (unverified third-party uploads)
+- MiR6 listing: https://www.mir6.com/pcgame/81218.html — advertises a 15.1 GB Linux server + PC client + GM tools package labelled “天琴端”, dated 2026-08-28, behind a paid site currency. The page itself warns of quest progression problems requiring GM commands and says the download is not guaranteed. Its setup guide contains unsafe practices (disabling the firewall, opening all ports, world-readable permissions, weak database credentials). Do not execute its setup instructions or run an included VM/server as-is.
+- MiR6 older listing: https://www.mir6.com/pcgame/31341.html — advertises a 22.7 GB Linux server/client/source package dated 2024-11-12 and claims added equipment, costumes, guardian stars and GM tooling. Contents, provenance, completeness and rights have not been verified.
+- Paijishu repost: https://t.paijishu.net/thread-66126-1-1.html — advertises a “天琴端” package and Baidu Pan link, but requires login and repeats an “internet collected / delete after 24 hours” disclaimer. No archive was downloaded or checked.
+- Xiaorong repost: https://www.xiaoronghuaijiu.com/forum.php?mod=viewthread&tid=8288 — advertises client/server plus GM tools, but requires forum currency and says resources were collected from the internet. No archive was downloaded or checked.
+- Reborn Gaming Network client page: https://seiya.reborngn.com/page.php?page=download — lists a roughly 9 GB Windows client behind an account login. This is a live private-server client distribution, not an offline server source or a redistribution license.
+
+These are leads only. Do not pay for any package or download/run unknown executables without the user's explicit approval. Prioritize archives from a verifiable original source, then record uploader, archive hashes, directory listing, executable inventory, client build and permission evidence. Do not use insecure setup recipes from repack sites.
+
+### 10. Community art references and model services
+- Cerberus_Rack's Saint Seiya Online gallery index: https://www.pharaonwebsite.com/users/cerberus_rack/fanarts/190-schemas-des-armures/529-saint-seiya-online/ — indexed fan art / cloth maps and character drawings; visual reference only, not game model files or reuse permission.
+- RaGEZONE model commission posts (2025) mention custom armor, weapon, shield and hairstyle modeling, but are service advertisements rather than freely licensed asset repositories.
+
+## Updated recommended acquisition workflow
+
+1. First acquire a legitimate copy of the matching SSO client build (Seiya Reborn build 290 is the build documented by the public extractor) and preserve the original archive read-only.
+2. Run PCK listing and file inventory before extraction; calculate SHA-256 for every archive and record the exact client build. Keep parsing in an isolated, non-networked workspace.
+3. Use the public extractor as a format-research candidate. Independently review its code and license status before copying or embedding it. Use its output initially for a private visual inventory only.
+4. In parallel, track down the 2026 Rust/Bevy Angelica viewer author's public release or request source access; it may be the better route for BON/STCK animation playback and GLB export.
+5. Compare the recovered inventory against our character, cloth, boss, NPC, map, VFX, animation and story catalogs. Mark each item as found, missing, damaged, build-mismatched, or rights-unclear.
+6. Keep extracted proprietary resources out of public Git and the distributable APK unless written permission or a suitable license explicitly permits redistribution. Publicly downloadable, paid, leaked, or forum-attached does not mean open-licensed.
