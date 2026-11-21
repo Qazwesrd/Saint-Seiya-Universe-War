@@ -927,7 +927,7 @@ def render_profession_turntable(profession_id, index, preview_category="characte
         bpy.data.worlds.remove(world)
 
 
-def build_profession_models():
+def build_profession_models(shard_index=0, shard_count=1):
     """Export one distinct rigged silhouette per playable profession (prototype quality)."""
     classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
     animation_source = ANIMATIONS / "animation_library.glb"
@@ -935,6 +935,8 @@ def build_profession_models():
         raise RuntimeError("shared animation library must be exported before profession models")
     output_root = ROOT / "game/assets/characters"
     for index, class_id in enumerate(classes):
+        if index % shard_count != shard_index:
+            continue
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
@@ -998,11 +1000,13 @@ def build_profession_models():
             print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front",
                   "bytes=" + str(preview_path.stat().st_size))
 
-def build_equipment_models():
+def build_equipment_models(shard_index=0, shard_count=1):
     """Export every catalogued independent nine-piece skinned armor kit (stylized prototypes)."""
     equipment_ids = catalog_ids(ROOT / "game/scripts/equipment_database.gd", "const EQUIPMENT := {")
     output_root = ROOT / "game/assets/armors"
     for index, equipment_id in enumerate(equipment_ids):
+        if index % shard_count != shard_index:
+            continue
         reset_scene()
         rig = create_rig()
         pieces = build_armor(rig)
@@ -1040,7 +1044,7 @@ def build_equipment_models():
         print("EQUIPMENT_MODEL_EXPORTED", equipment_id, destination.stat().st_size)
 
 
-def build_enemy_models():
+def build_enemy_models(shard_index=0, shard_count=1):
     """Export a skinned silhouette prototype for every enemy and boss archetype."""
     import re
     source_path = ROOT / "game/scripts/enemy_database.gd"
@@ -1048,6 +1052,8 @@ def build_enemy_models():
     enemy_ids = catalog_ids(source_path, "const ARCHETYPES := {")
     output_root = ROOT / "game/assets/enemies"
     for index, enemy_id in enumerate(enemy_ids):
+        if index % shard_count != shard_index:
+            continue
         block_match = re.search(r'"' + re.escape(enemy_id) + r'"' + r'\s*:\s*\{([^}]*)\}', source)
         if not block_match:
             raise RuntimeError("enemy archetype block missing: " + enemy_id)
@@ -1182,9 +1188,10 @@ def build_enemy_models():
                 raise RuntimeError("Pope Saga preview render missing or too small")
             print("BOSS_PREVIEW_RENDERED", preview_path, preview_path.stat().st_size)
         print("ENEMY_MODEL_EXPORTED", enemy_id, "boss=" + str(is_boss), "clips=" + str(len(REQUIRED_CLIPS)), destination.stat().st_size)
-    print("ENEMY_MODEL_TOTAL", len(enemy_ids))
+    print("ENEMY_MODEL_SHARD_TOTAL", sum(1 for index in range(len(enemy_ids)) if index % shard_count == shard_index), "of", len(enemy_ids))
 
-def main():
+def build_foundation_assets():
+    """Build shared skeleton, animation, armor template and chapter environments once."""
     OUT.mkdir(parents=True, exist_ok=True)
     reset_scene()
     rig = create_rig()
@@ -1217,18 +1224,34 @@ def main():
         require_skin=True,
         require_independent_skinned_nodes=tuple(obj.name for obj in armor_parts),
     )
-
     export_chapter_environments()
-    build_profession_models()
-    build_equipment_models()
-    build_enemy_models()
-    print("ART_PROTOTYPE_EXPORT_PASS")
-    print("Character rigged GLB:", character_model)
-    print("Separate animation library GLB:", animation_library)
-    print("Modular armor GLB:", armor_model)
-    print("Detachable armor mesh objects:", 9)
-    print("Animation actions:", len(REQUIRED_CLIPS))
-    print("Prototype geometry only; not final profession-specific art.")
+    print("ART_FOUNDATION_PASS")
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate and validate Saint Seiya art assets.")
+    parser.add_argument("--stage", choices=("all", "foundation", "characters", "armors", "enemies"), default="all")
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--shard-count", type=int, default=1)
+    args_list = __import__("sys").argv
+    args_list = args_list[args_list.index("--") + 1:] if "--" in args_list else []
+    args = parser.parse_args(args_list)
+    if args.shard_count < 1 or not 0 <= args.shard_index < args.shard_count:
+        raise SystemExit("Invalid shard index/count")
+
+    if args.stage in ("all", "foundation"):
+        build_foundation_assets()
+    if args.stage in ("all", "characters"):
+        build_profession_models(args.shard_index, args.shard_count)
+    if args.stage in ("all", "armors"):
+        build_equipment_models(args.shard_index, args.shard_count)
+    if args.stage in ("all", "enemies"):
+        build_enemy_models(args.shard_index, args.shard_count)
+    if args.stage == "all":
+        print("ART_PROTOTYPE_EXPORT_PASS")
+        print("Prototype geometry only; not final profession-specific art.")
+
 
 if __name__ == "__main__":
     main()
