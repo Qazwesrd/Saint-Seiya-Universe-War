@@ -46,7 +46,58 @@ def read_glb(path: Path) -> dict:
         raise ValueError("invalid GLB v2 structure")
     return json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \t\r\n\0"))
 
-def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None,
+
+def validate_mesh_geometry(doc: dict) -> None:
+    """Validate glTF primitive/accessor structure without claiming a visual review."""
+    meshes = doc.get("meshes", [])
+    accessors = doc.get("accessors", [])
+    materials = doc.get("materials", [])
+    validated = 0
+    for mesh_index, mesh in enumerate(meshes):
+        primitives = mesh.get("primitives", [])
+        if not primitives:
+            raise ValueError(f"mesh {mesh_index} has no primitives")
+        for primitive_index, primitive in enumerate(primitives):
+            prefix = f"mesh {mesh_index} primitive {primitive_index}"
+            attributes = primitive.get("attributes", {})
+            position_index = attributes.get("POSITION")
+            if not isinstance(position_index, int) or not 0 <= position_index < len(accessors):
+                raise ValueError(f"{prefix} has no valid POSITION accessor")
+            position = accessors[position_index]
+            vertex_count = position.get("count")
+            if position.get("type") != "VEC3" or not isinstance(vertex_count, int) or vertex_count < 3:
+                raise ValueError(f"{prefix} has invalid POSITION vertex data")
+            if "indices" in primitive:
+                index_index = primitive["indices"]
+                if not isinstance(index_index, int) or not 0 <= index_index < len(accessors):
+                    raise ValueError(f"{prefix} has an invalid indices accessor")
+                indices = accessors[index_index]
+                if (indices.get("type") != "SCALAR" or indices.get("componentType") not in (5121, 5123, 5125)
+                        or not isinstance(indices.get("count"), int) or indices["count"] < 3
+                        or indices["count"] % 3):
+                    raise ValueError(f"{prefix} indices do not describe complete triangles")
+                maximum = indices.get("max")
+                if isinstance(maximum, list) and maximum and maximum[0] >= vertex_count:
+                    raise ValueError(f"{prefix} index maximum exceeds POSITION vertex count")
+            elif vertex_count % 3:
+                raise ValueError(f"{prefix} non-indexed vertices do not form complete triangles")
+            if primitive.get("mode", 4) != 4:
+                raise ValueError(f"{prefix} is not TRIANGLES mode")
+            for semantic, accessor_index in attributes.items():
+                if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+                    raise ValueError(f"{prefix} has invalid {semantic} accessor")
+                if accessors[accessor_index].get("count") != vertex_count:
+                    raise ValueError(f"{prefix} {semantic} count differs from POSITION")
+            material_index = primitive.get("material")
+            if material_index is not None and (
+                not isinstance(material_index, int) or not 0 <= material_index < len(materials)
+            ):
+                raise ValueError(f"{prefix} references an invalid material")
+            validated += 1
+    if meshes and validated == 0:
+        raise ValueError("GLB has no validated mesh primitives")
+
+def check_glb(path: Path, require_skin: bool = False, require_geometry: bool = False, clips: list[str] | None = None,
               required_nodes: tuple[str, ...] = (), require_meshes: bool = True,
               compatible_joint_names: set[str] | None = None) -> dict:
     doc = read_glb(path)
@@ -204,7 +255,7 @@ def validate_armor_manifest(data: dict, model: Path) -> None:
         raise ValueError("armor parts must declare exactly the nine required detachable pieces")
     if any(parts[name] != "complete" for name in ARMOR_PART_NODES):
         raise ValueError("not all nine armor parts are marked complete")
-    doc = check_glb(model, require_skin=True, required_nodes=tuple(ARMOR_PART_NODES.values()))
+    doc = check_glb(model, require_skin=True, require_geometry=True, required_nodes=tuple(ARMOR_PART_NODES.values()))
     nodes = {str(item.get("name", "")): item for item in doc.get("nodes", [])}
     mesh_indices = []
     for part_name, node_name in ARMOR_PART_NODES.items():
