@@ -1331,6 +1331,88 @@ def render_profession_turntable(profession_id, index, preview_category="characte
         bpy.data.worlds.remove(world)
 
 
+
+def add_core_hero_armor_layers(rig, hero_id):
+    """Build individually weighted, layered Bronze Cloth plates for each core hero."""
+    profiles = {
+        "pegasus": {
+            "metal": (0.62, 0.34, 0.16), "inlay": (0.035, 0.16, 0.42),
+            "chest": [(-0.245,0.16),(-0.17,0.245),(0,0.21),(0.17,0.245),(0.245,0.16),(0.16,-0.12),(0,-0.23),(-0.16,-0.12)],
+            "motif": "Wing",
+        },
+        "dragon": {
+            "metal": (0.48, 0.58, 0.48), "inlay": (0.12, 0.43, 0.31),
+            "chest": [(-0.24,0.18),(-0.16,0.25),(-0.06,0.18),(0,0.12),(0.06,0.18),(0.16,0.25),(0.24,0.18),(0.18,-0.08),(0,-0.25),(-0.18,-0.08)],
+            "motif": "Scale",
+        },
+        "cygnus": {
+            "metal": (0.72, 0.88, 0.96), "inlay": (0.34, 0.78, 0.94),
+            "chest": [(-0.23,0.15),(-0.15,0.24),(0,0.29),(0.15,0.24),(0.23,0.15),(0.12,-0.10),(0,-0.24),(-0.12,-0.10)],
+            "motif": "Frost",
+        },
+        "andromeda": {
+            "metal": (0.78, 0.62, 0.72), "inlay": (0.78, 0.42, 0.58),
+            "chest": [(-0.24,0.17),(-0.14,0.24),(0,0.18),(0.14,0.24),(0.24,0.17),(0.17,-0.08),(0,-0.20),(-0.17,-0.08)],
+            "motif": "Chain",
+        },
+        "phoenix": {
+            "metal": (0.72, 0.25, 0.12), "inlay": (0.96, 0.52, 0.12),
+            "chest": [(-0.25,0.16),(-0.17,0.25),(-0.04,0.20),(0,0.31),(0.04,0.20),(0.17,0.25),(0.25,0.16),(0.15,-0.08),(0,-0.25),(-0.15,-0.08)],
+            "motif": "Flame",
+        },
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    metal = material("Core_" + hero_id + "_Layered_Armor", profile["metal"], 0.90, 0.19)
+    inlay = material("Core_" + hero_id + "_Armor_Inlay", profile["inlay"], 0.78, 0.17)
+    parts = []
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Chest_Base", (0,-0.178,1.365),
+        profile["chest"], 0.105, "Chest", metal, rig, 0.022))
+    # Raised center panel makes the cuirass a true two-layer assembly.
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Chest_" + profile["motif"] + "_Inlay",
+        (0,-0.244,1.37),
+        [(-0.105,0.105),(-0.065,0.155),(0,0.18),(0.065,0.155),(0.105,0.105),
+         (0.065,-0.065),(0,-0.13),(-0.065,-0.065)],
+        0.032, "Chest", inlay, rig, 0.009))
+    for side, sign in (("Left",1),("Right",-1)):
+        shoulder_outline = (
+            [(0,-0.06),(sign*0.055,0.025),(sign*0.16,0.15),(sign*0.205,0.12),
+             (sign*0.15,-0.07),(sign*0.045,-0.13)] if hero_id == "phoenix" else
+            [(-0.105,0.015),(-0.065,0.105),(0.045,0.14),(0.16,0.055),
+             (0.12,-0.095),(0,-0.13),(-0.09,-0.075)]
+        )
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Outer_Pauldron",
+            (sign*0.345,-0.145,1.49), shoulder_outline, 0.105,
+            side + "Shoulder", metal, rig, 0.018))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Pauldron_Ridge",
+            (sign*0.365,-0.207,1.505),
+            [(0,0.075),(sign*0.045,0.035),(sign*0.095,-0.065),(0,-0.105),(-sign*0.035,-0.035)],
+            0.028, side + "Shoulder", inlay, rig, 0.007))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Forearm_Bracer",
+            (sign*0.49,-0.115,1.105),
+            [(-0.07,0.16),(0.035,0.19),(0.09,0.08),(0.065,-0.13),
+             (0,-0.19),(-0.075,-0.12),(-0.09,0.045)],
+            0.12, side + "Forearm", metal, rig, 0.016))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Shin_Greave",
+            (sign*0.15,-0.112,0.35),
+            [(-0.09,0.18),(0,0.235),(0.09,0.18),(0.075,0.015),
+             (0.045,-0.17),(0,-0.22),(-0.07,-0.15),(-0.085,0.02)],
+            0.12, side + "Shin", metal, rig, 0.016))
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Waist_Faulds", (0,-0.155,0.935),
+        [(-0.22,0.10),(-0.16,0.15),(0,0.13),(0.16,0.15),(0.22,0.10),
+         (0.16,-0.07),(0,-0.19),(-0.16,-0.07)],
+        0.10, "Hips", metal, rig, 0.016))
+    return parts
+
+
 def build_profession_models(shard_index=0, shard_count=1):
     """Export one distinct rigged silhouette per playable profession (prototype quality)."""
     classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
@@ -1364,6 +1446,8 @@ def build_profession_models(shard_index=0, shard_count=1):
                                   0.90 if class_id == "hades" else 0.38 + (index % 5) * 0.1,
                                   0.20 if class_id == "hades" else 0.34)
         ornaments = []
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            ornaments.extend(add_core_hero_armor_layers(rig, class_id))
         shoulder_factor = 0.78 + (index % 6) * 0.045
         for side, sign in (("Left", 1), ("Right", -1)):
             ornaments.append(add_weighted_pauldron(
