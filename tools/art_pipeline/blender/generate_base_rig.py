@@ -1410,6 +1410,51 @@ def add_core_hero_armor_layers(rig, hero_id):
         [(-0.22,0.10),(-0.16,0.15),(0,0.13),(0.16,0.15),(0.22,0.10),
          (0.16,-0.07),(0,-0.19),(-0.16,-0.07)],
         0.10, "Hips", metal, rig, 0.016))
+    # Character-specific helmet crowns, cheek guards, knee cops and articulated boots.
+    helmet_shapes = {
+        "pegasus": [(-0.16,-0.04),(-0.13,0.09),(-0.06,0.17),(0,0.12),(0.06,0.17),(0.13,0.09),(0.16,-0.04),(0.07,-0.10),(0,-0.07),(-0.07,-0.10)],
+        "dragon": [(-0.16,-0.05),(-0.13,0.08),(-0.07,0.13),(0,0.19),(0.07,0.13),(0.13,0.08),(0.16,-0.05),(0.07,-0.13),(0,-0.16),(-0.07,-0.13)],
+        "cygnus": [(-0.15,-0.04),(-0.13,0.10),(-0.07,0.18),(0,0.23),(0.07,0.18),(0.13,0.10),(0.15,-0.04),(0.06,-0.12),(0,-0.09),(-0.06,-0.12)],
+        "andromeda": [(-0.15,-0.05),(-0.13,0.08),(-0.07,0.15),(0,0.12),(0.07,0.15),(0.13,0.08),(0.15,-0.05),(0.07,-0.13),(0,-0.17),(-0.07,-0.13)],
+        "phoenix": [(-0.16,-0.05),(-0.13,0.07),(-0.06,0.14),(0,0.27),(0.06,0.14),(0.13,0.07),(0.16,-0.05),(0.07,-0.12),(0,-0.18),(-0.07,-0.12)],
+    }
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Signature_Helm_Crown",
+        (0,-0.105,1.885), helmet_shapes[hero_id], 0.105, "Head", metal, rig, 0.014))
+    # Forehead crest motif: wing, dragon horn, frost spike, chain jewel or flame.
+    crest_tip = {
+        "pegasus": (0,-0.17,2.055), "dragon": (0,-0.16,2.075),
+        "cygnus": (0,-0.17,2.105), "andromeda": (0,-0.17,2.045),
+        "phoenix": (0,-0.17,2.145),
+    }[hero_id]
+    crest_base = (0,-0.17,1.91)
+    parts.append(add_weighted_limb(
+        hero_id.title() + "_Armor_Signature_Helm_Crest",
+        crest_base, crest_tip, 0.026, "Head", inlay, rig, 12))
+    for side, sign in (("Left",1),("Right",-1)):
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Helm_Cheek_Guard",
+            (sign*0.125,-0.095,1.765),
+            [(0,0.08),(sign*0.055,0.045),(sign*0.065,-0.105),(0,-0.16),(-sign*0.035,-0.07)],
+            0.065, "Head", metal, rig, 0.009))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Knee_Cop",
+            (sign*0.15,-0.115,0.535),
+            [(-0.085,0.07),(-0.045,0.145),(0.045,0.145),(0.09,0.06),
+             (0.055,-0.075),(0,-0.115),(-0.06,-0.075)],
+            0.105, side + "Shin", inlay, rig, 0.012))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Boot_Sabatons",
+            (sign*0.15,-0.155,0.105),
+            [(-0.105,0.055),(-0.07,0.105),(0.055,0.105),(0.12,0.045),
+             (0.15,-0.045),(0.07,-0.09),(-0.08,-0.09),(-0.14,-0.04)],
+            0.16, side + "Foot", metal, rig, 0.014))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Waist_Side_Tasset",
+            (sign*0.205,-0.165,0.86),
+            [(-0.07,0.10),(0.055,0.13),(0.12,0.035),(0.08,-0.14),
+             (0,-0.20),(-0.075,-0.11)],
+            0.075, "Hips", metal, rig, 0.012))
     return parts
 
 
