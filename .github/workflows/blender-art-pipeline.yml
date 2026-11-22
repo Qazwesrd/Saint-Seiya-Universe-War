@@ -269,3 +269,39 @@ jobs:
             game/assets/armors/*/manifest.json
           if-no-files-found: error
           retention-days: 14
+
+  godot-runtime-artifact-validation:
+    needs: export-prototype-assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Download generated GLB assets from this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: blender-art-prototypes-${{ github.sha }}
+          path: game
+      - name: Import generated GLB assets into Godot
+        shell: sh
+        run: |
+          set -eu
+          godot --headless --editor --path game --quit 2>&1 | tee /tmp/generated-art-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script|ERROR: Condition" /tmp/generated-art-import.log; then
+            echo "Generated art failed Godot import"
+            exit 1
+          fi
+      - name: Verify five core heroes animate on their imported skeletons
+        shell: sh
+        run: |
+          set -eu
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/generated-art-animation.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/generated-art-animation.log; then
+            echo "Generated character animation runtime validation reported engine errors"
+            exit 1
+          fi
+          grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=5" /tmp/generated-art-animation.log
