@@ -1664,12 +1664,12 @@ func _load_authored_character_model(class_id: String) -> void:
         instance.free()
         return
     var required_clips := ["idle", "walk", "run", "%s_basic_attack_1" % class_id]
-    var missing_clips: Array[String] = []
+    var invalid_clips: Array[String] = []
     for required_clip in required_clips:
-        if not imported_animation_player.has_animation(required_clip):
-            missing_clips.append(required_clip)
-    if not missing_clips.is_empty():
-        push_warning("Profession model is missing required animation clips " + ", ".join(missing_clips) + "; keeping procedural fallback: " + model_path)
+        if not _validate_authored_animation_clip(imported_animation_player, imported_skeleton, required_clip):
+            invalid_clips.append(required_clip)
+    if not invalid_clips.is_empty():
+        push_warning("Profession model has invalid or non-drivable animation clips " + ", ".join(invalid_clips) + "; keeping procedural fallback: " + model_path)
         instance.free()
         return
     authored_character_model = instance
@@ -1757,6 +1757,32 @@ func get_weapon_socket(socket_id: String) -> Node3D:
     var socket: Variant = weapon_socket_nodes.get(socket_id)
     return socket as Node3D if is_instance_valid(socket) else null
 
+
+func _validate_authored_animation_clip(player: AnimationPlayer, skeleton: Skeleton3D, clip_name: String) -> bool:
+    if not is_instance_valid(player) or not is_instance_valid(skeleton) or not player.has_animation(clip_name):
+        return false
+    var clip := player.get_animation(clip_name)
+    if not is_instance_valid(clip) or clip.length <= 0.0 or clip.get_track_count() <= 0:
+        return false
+    var animation_root := player.get_node_or_null(player.root_node)
+    if not is_instance_valid(animation_root):
+        return false
+    var has_skeleton_track := false
+    for track_index in range(clip.get_track_count()):
+        if clip.track_get_key_count(track_index) <= 0:
+            continue
+        var track_path := clip.track_get_path(track_index)
+        var node_path := NodePath(track_path.get_concatenated_names())
+        var target := animation_root.get_node_or_null(node_path)
+        if not is_instance_valid(target):
+            return false
+        if target == skeleton:
+            has_skeleton_track = true
+        for subname_index in range(track_path.get_subname_count()):
+            var subname := str(track_path.get_subname(subname_index))
+            if skeleton.find_bone(subname) >= 0:
+                has_skeleton_track = true
+    return has_skeleton_track
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
     if root is AnimationPlayer:
