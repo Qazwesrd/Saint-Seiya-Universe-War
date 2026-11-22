@@ -4,7 +4,7 @@ extends SceneTree
 ## godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter galaxy_wars --output /absolute/path/galaxy_wars.pck
 
 const CHAPTER_IDS := ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]
-const SOURCE_EXTENSIONS := ["tscn", "tres", "res", "glb", "gltf", "png", "webp", "jpg", "jpeg", "ogg", "wav", "mp3", "json", "gdshader", "shader", "material", "ttf", "otf"]
+const SOURCE_EXTENSIONS := ["tscn", "tres", "res", "gd", "glb", "gltf", "png", "webp", "jpg", "jpeg", "ogg", "wav", "mp3", "json", "gdshader", "shader", "material", "ttf", "otf"]
 const IGNORED_DIRS := [".godot", ".git", "__pycache__"]
 
 func _initialize() -> void:
