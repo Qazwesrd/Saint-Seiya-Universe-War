@@ -24,10 +24,10 @@ func _ready() -> void:
 func _configure_navigation_mesh() -> void:
 	var navigation_mesh := NavigationMesh.new()
 	navigation_mesh.set_vertices(PackedVector3Array([
-		Vector3(-55.0, 0.02, -37.0),
-		Vector3(55.0, 0.02, -37.0),
-		Vector3(55.0, 0.02, 37.0),
 		Vector3(-55.0, 0.02, 37.0),
+		Vector3(55.0, 0.02, 37.0),
+		Vector3(55.0, 0.02, -37.0),
+		Vector3(-55.0, 0.02, -37.0),
 	]))
 	navigation_mesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
 	navigation_mesh.agent_height = 1.8
