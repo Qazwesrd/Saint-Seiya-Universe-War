@@ -1071,12 +1071,32 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
             materials = document.get("materials", [])
             for primitive_index, primitive in enumerate(primitives):
                 attributes = primitive.get("attributes", {})
+                primitive_accessors = {}
                 for semantic in ("POSITION", "JOINTS_0", "WEIGHTS_0"):
                     accessor_index = attributes.get(semantic)
                     if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(document.get("accessors", [])):
                         raise RuntimeError(
                             f"Mesh node {node_index} primitive {primitive_index} has no valid {semantic} accessor: {path}"
                         )
+                    primitive_accessors[semantic] = document["accessors"][accessor_index]
+                position_accessor = primitive_accessors["POSITION"]
+                joints_accessor = primitive_accessors["JOINTS_0"]
+                weights_accessor = primitive_accessors["WEIGHTS_0"]
+                if position_accessor.get("type") != "VEC3":
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} POSITION is not VEC3: {path}")
+                if joints_accessor.get("type") != "VEC4" or weights_accessor.get("type") != "VEC4":
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} skin attributes are not VEC4: {path}")
+                vertex_count = position_accessor.get("count")
+                if not isinstance(vertex_count, int) or vertex_count <= 0:
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} has invalid vertex count: {path}")
+                if joints_accessor.get("count") != vertex_count or weights_accessor.get("count") != vertex_count:
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} skin attribute counts do not match POSITION: {path}")
+                if joints_accessor.get("componentType") not in (5121, 5123):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 has invalid component type: {path}")
+                if weights_accessor.get("componentType") not in (5121, 5123, 5126):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} WEIGHTS_0 has invalid component type: {path}")
+                if weights_accessor.get("componentType") in (5121, 5123) and not weights_accessor.get("normalized", False):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} integer WEIGHTS_0 is not normalized: {path}")
                 material_index = primitive.get("material")
                 if not isinstance(material_index, int) or not 0 <= material_index < len(materials):
                     raise RuntimeError(
