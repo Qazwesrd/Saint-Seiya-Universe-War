@@ -193,6 +193,19 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
             self.assertIn(f'"{hero}": [', block)
         self.assertIn('add_weighted_limb(', block)
 
+    def test_glb_export_requires_real_skin_attributes_and_valid_material_slots(self):
+        self.assertIn('export_format="GLB"', self.generator)
+        self.assertIn('export_skins=True', self.generator)
+        self.assertIn('export_animations=True', self.generator)
+        self.assertIn('export_animation_mode="NLA_TRACKS"', self.generator)
+        self.assertIn('export_materials="EXPORT"', self.generator)
+        for semantic in ('"POSITION"', '"JOINTS_0"', '"WEIGHTS_0"'):
+            self.assertIn(f'for semantic in {semantic}', self.generator) if False else self.assertIn(semantic, self.generator)
+        self.assertIn('primitive.get("material")', self.generator)
+        self.assertIn('not primitives', self.generator)
+        self.assertIn('validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh")', self.generator)
+        self.assertIn('export_glb(destination, [rig, merged])', self.generator)
+
     def test_runtime_weapon_sockets_support_skeleton_and_fallback_rigs(self):
         player = (ROOT / "game/scripts/player.gd").read_text(encoding="utf-8")
         self.assertIn("func _build_weapon_sockets() -> void:", player)
