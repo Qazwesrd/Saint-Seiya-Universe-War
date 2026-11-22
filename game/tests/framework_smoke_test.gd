@@ -225,9 +225,9 @@ func _run_tests() -> void:
 	assert(is_equal_approx(guard_test_player.absorb_divine_guard_damage(20.0), 12.0), "damage exceeding divine guard spills over to health")
 	assert(is_equal_approx(guard_test_player.divine_guard_shield, 0.0), "divine guard is depleted after absorbing its capacity")
 	var saved_transform_armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
-	var bronze_transform_key := guard_test_player._get_armor_transform_key()
+	var bronze_transform_key: String = str(guard_test_player._get_armor_transform_key())
 	RPGState.profile["armor_state"] = {"current_stage":"dark_cloth","awakened":false}
-	var dark_transform_key := guard_test_player._get_armor_transform_key()
+	var dark_transform_key: String = str(guard_test_player._get_armor_transform_key())
 	assert(bronze_transform_key != dark_transform_key, "changing armor tier triggers a distinct transformation identity")
 	RPGState.profile["armor_state"]["awakened"] = true
 	assert(dark_transform_key != guard_test_player._get_armor_transform_key(), "awakening a cloth triggers its own transformation identity")

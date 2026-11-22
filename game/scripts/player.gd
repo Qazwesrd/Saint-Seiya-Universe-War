@@ -401,47 +401,47 @@ func _set_action_state(state_id: String, duration: float = 0.0) -> void:
     _play_authored_animation(animation_name)
 
 func _play_armor_damage_feedback(damage_result: Dictionary) -> void:
- if not is_instance_valid(visual_root) or not bool(damage_result.get("changed", false)):
-  return
- var part_id := str(damage_result.get("part", "chest"))
- var part_position := Vector3(0.0, 1.25, -0.43)
- match part_id:
-  "head":
-   part_position = Vector3(0.0, 2.02, -0.20)
-  "arms":
-   part_position = Vector3(0.48, 1.22, -0.16)
-  "waist":
-   part_position = Vector3(0.0, 0.68, -0.30)
-  "legs":
-   part_position = Vector3(0.20, 0.42, -0.25)
- var part_broken := int(damage_result.get("after", 100)) <= 0
- _play_combat_feedback(Color(1.0, 0.30, 0.16) if part_broken else Color(1.0, 0.48, 0.22), 0.28 if part_broken else 0.22)
- var severity := clampf(float(damage_result.get("before", 100) - damage_result.get("after", 100)) / 18.0, 0.2, 1.0)
- var shard_count := 5 if part_broken else 3
- for shard_index in range(shard_count):
-  var shard := MeshInstance3D.new()
-  shard.name = "ArmorImpactShard"
-  var shard_mesh := PrismMesh.new()
-  shard_mesh.size = Vector3(0.035 + severity * 0.025, 0.07 + severity * 0.045, 0.025)
-  shard.mesh = shard_mesh
-  shard.position = part_position + Vector3((float(shard_index) - float(shard_count - 1) * 0.5) * 0.075, float(shard_index % 2) * 0.06, 0.0)
-  shard.rotation = Vector3(0.2 * float(shard_index), 0.0, -0.35 + float(shard_index) * 0.35)
-  var shard_material := StandardMaterial3D.new()
-  shard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-  shard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-  shard_material.albedo_color = armor_base_color.lightened(0.32)
-  shard_material.emission_enabled = true
-  shard_material.emission = armor_base_color.lightened(0.5) * 0.8
-  shard.material_override = shard_material
-  visual_root.add_child(shard)
-  var shard_tween := create_tween()
-  var scatter := Vector3((float(shard_index) - 1.0) * 0.24, 0.16 + float(shard_index % 2) * 0.10, -0.12)
-  shard_tween.set_parallel(true)
-  shard_tween.tween_property(shard, "position", shard.position + scatter, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-  shard_tween.tween_property(shard, "rotation", shard.rotation + Vector3(0.8, 0.6, 0.9), 0.32)
-  shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.32).set_delay(0.12)
-  shard_tween.tween_property(shard_material, "albedo_color:a", 0.0, 0.24).set_delay(0.08)
-  shard_tween.chain().tween_callback(shard.queue_free)
+    if not is_instance_valid(visual_root) or not bool(damage_result.get("changed", false)):
+        return
+    var part_id := str(damage_result.get("part", "chest"))
+    var part_position := Vector3(0.0, 1.25, -0.43)
+    match part_id:
+        "head":
+            part_position = Vector3(0.0, 2.02, -0.20)
+        "arms":
+            part_position = Vector3(0.48, 1.22, -0.16)
+        "waist":
+            part_position = Vector3(0.0, 0.68, -0.30)
+        "legs":
+            part_position = Vector3(0.20, 0.42, -0.25)
+    var part_broken := int(damage_result.get("after", 100)) <= 0
+    _play_combat_feedback(Color(1.0, 0.30, 0.16) if part_broken else Color(1.0, 0.48, 0.22), 0.28 if part_broken else 0.22)
+    var severity := clampf(float(damage_result.get("before", 100) - damage_result.get("after", 100)) / 18.0, 0.2, 1.0)
+    var shard_count := 5 if part_broken else 3
+    for shard_index in range(shard_count):
+        var shard := MeshInstance3D.new()
+        shard.name = "ArmorImpactShard"
+        var shard_mesh := PrismMesh.new()
+        shard_mesh.size = Vector3(0.035 + severity * 0.025, 0.07 + severity * 0.045, 0.025)
+        shard.mesh = shard_mesh
+        shard.position = part_position + Vector3((float(shard_index) - float(shard_count - 1) * 0.5) * 0.075, float(shard_index % 2) * 0.06, 0.0)
+        shard.rotation = Vector3(0.2 * float(shard_index), 0.0, -0.35 + float(shard_index) * 0.35)
+        var shard_material := StandardMaterial3D.new()
+        shard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        shard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+        shard_material.albedo_color = armor_base_color.lightened(0.32)
+        shard_material.emission_enabled = true
+        shard_material.emission = armor_base_color.lightened(0.5) * 0.8
+        shard.material_override = shard_material
+        visual_root.add_child(shard)
+        var shard_tween := create_tween()
+        var scatter := Vector3((float(shard_index) - 1.0) * 0.24, 0.16 + float(shard_index % 2) * 0.10, -0.12)
+        shard_tween.set_parallel(true)
+        shard_tween.tween_property(shard, "position", shard.position + scatter, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+        shard_tween.tween_property(shard, "rotation", shard.rotation + Vector3(0.8, 0.6, 0.9), 0.32)
+        shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.32).set_delay(0.12)
+        shard_tween.tween_property(shard_material, "albedo_color:a", 0.0, 0.24).set_delay(0.08)
+        shard_tween.chain().tween_callback(shard.queue_free)
 
 func _build_combat_feedback_visual() -> void:
     if not is_instance_valid(visual_root):
@@ -2261,15 +2261,15 @@ func _flash(color: Color) -> void:
     body_mat.albedo_color = color
 
 func toggle_mount() -> void:
- var state: Dictionary = CollectionSystem.get_state()
- var mount_id := str(state.get("active_mount",""))
- if mount_id == "":
-  game.call("show_notice","尚未拥有或装备坐骑，请先到伙伴图鉴查看")
-  return
- is_mounted = not is_mounted
- if is_instance_valid(mount_indicator):
-  mount_indicator.visible = is_mounted
- game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
+    var state: Dictionary = CollectionSystem.get_state()
+    var mount_id := str(state.get("active_mount",""))
+    if mount_id == "":
+        game.call("show_notice","尚未拥有或装备坐骑，请先到伙伴图鉴查看")
+        return
+    is_mounted = not is_mounted
+    if is_instance_valid(mount_indicator):
+        mount_indicator.visible = is_mounted
+    game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
 
 func apply_enemy_knockback(direction: Vector3, force: float) -> void:
     var flat_direction := direction
