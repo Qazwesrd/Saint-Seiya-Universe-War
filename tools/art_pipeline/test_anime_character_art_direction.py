@@ -100,6 +100,17 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('"Head"', self.generator)
         self.assertIn('"Chest"', self.generator)
 
+    def test_runtime_weapon_sockets_support_skeleton_and_fallback_rigs(self):
+        player = (ROOT / "game/scripts/player.gd").read_text(encoding="utf-8")
+        self.assertIn("func _build_weapon_sockets() -> void:", player)
+        self.assertIn("func _find_skeleton_recursive(root: Node) -> Skeleton3D:", player)
+        self.assertIn("BoneAttachment3D.new()", player)
+        self.assertIn('"shield_hand": {"bone": "LeftForearm"', player)
+        self.assertIn('"chain_anchor": {"bone": "RightForearm"', player)
+        self.assertIn('"aerial_core": {"bone": "Chest"', player)
+        self.assertIn("func get_weapon_socket(socket_id: String) -> Node3D:", player)
+        self.assertIn("_build_weapon_sockets()", player)
+
     def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
         self.assertIn("不得由随机职业色或通用装饰替代", self.direction)
         self.assertIn("冥衣", self.direction)
