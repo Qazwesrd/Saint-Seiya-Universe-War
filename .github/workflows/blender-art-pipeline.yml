@@ -66,13 +66,17 @@ jobs:
 
           preview_root = Path("game/art_previews/characters")
           expected_heroes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
-          previews = sorted(preview_root.glob("*_front.png"))
-          expected_paths = {preview_root / f"{hero}_front.png" for hero in expected_heroes}
-          actual_paths = set(previews)
+          expected_views = ("front", "side", "back")
+          expected_paths = {
+              preview_root / f"{hero}_{view}.png"
+              for hero in expected_heroes
+              for view in expected_views
+          }
+          actual_paths = set(preview_root.glob("*.png"))
           if actual_paths != expected_paths:
               missing = sorted(str(path) for path in expected_paths - actual_paths)
               extra = sorted(str(path) for path in actual_paths - expected_paths)
-              raise SystemExit(f"Core Bronze Saint previews mismatch; missing={missing}, extra={extra}")
+              raise SystemExit(f"Core Bronze Saint three-view previews mismatch; missing={missing}, extra={extra}")
           for preview in sorted(expected_paths):
               data = preview.read_bytes()
               if len(data) < 128 or data[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
@@ -81,6 +85,7 @@ jobs:
               if width != 960 or height != 960:
                   raise SystemExit(f"Unexpected preview dimensions for {preview}: {width}x{height}")
               print(f"CORE_BRONZE_SAINT_PREVIEW_VALIDATED {preview} {width}x{height} bytes={len(data)}")
+          print(f"CORE_BRONZE_SAINT_THREE_VIEW_SET_PASS heroes={len(expected_heroes)} views={len(expected_views)} total={len(expected_paths)}")
           armor_previews = list(Path("game/art_previews/armors").glob("*_front.png"))
           if len(armor_previews) != 1:
               raise SystemExit(f"Expected exactly one representative armor preview, found {len(armor_previews)}")
