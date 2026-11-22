@@ -125,5 +125,14 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn("原创扩展", self.direction)
 
 
+    def test_five_bronze_saints_concept_quality_baseline_is_enforced(self):
+        self.assertIn("五小强概念图质量基准", self.direction)
+        self.assertIn("必须达到或高于该概念图", self.direction)
+        for requirement in ("正面、侧面、背面", "魅族 21 Pro", "脸部/发型",
+                            "圣衣结构", "专属装备", "骨骼绑定", "移动端性能"):
+            self.assertIn(requirement, self.direction)
+        self.assertIn('"prototype_blockout"', self.direction)
+        self.assertIn('"approved_for_final_release"', self.direction)
+
 if __name__ == "__main__":
     unittest.main()
