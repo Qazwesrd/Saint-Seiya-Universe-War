@@ -136,6 +136,36 @@ class ArtValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not bound to a valid skin"):
                 check_glb(path, require_skin=True)
 
+    def test_animation_tracks_must_match_the_compatible_character_skeleton(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "animation_library.glb"
+            document = {
+                "asset": {"version": "2.0"},
+                "meshes": [{"name": "Body"}],
+                "skins": [{"joints": [0, 1]}],
+                "nodes": [
+                    {"name": "Chest"},
+                    {"name": "Head"},
+                    {"name": "Body", "mesh": 0, "skin": 0},
+                ],
+                "accessors": [{"count": 2}, {"count": 2}],
+                "animations": [{
+                    "name": "idle",
+                    "samplers": [{"input": 0, "output": 1}],
+                    "channels": [{"sampler": 0, "target": {"node": 1, "path": "rotation"}}],
+                }],
+            }
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            check_glb(path, clips=["idle"], require_meshes=False,
+                      compatible_joint_names={"Chest", "Head"})
+            with self.assertRaisesRegex(ValueError, "outside the compatible skeleton"):
+                check_glb(path, clips=["idle"], require_meshes=False,
+                          compatible_joint_names={"Chest"})
+
     def test_animation_rejects_out_of_range_target_node(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "animations.glb"
