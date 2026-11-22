@@ -1777,11 +1777,10 @@ func _validate_authored_animation_clip(player: AnimationPlayer, skeleton: Skelet
         if not is_instance_valid(target):
             return false
         if target == skeleton:
-            has_skeleton_track = true
-        for subname_index in range(track_path.get_subname_count()):
-            var subname := str(track_path.get_subname(subname_index))
-            if skeleton.find_bone(subname) >= 0:
-                has_skeleton_track = true
+            for subname_index in range(track_path.get_subname_count()):
+                var subname := str(track_path.get_subname(subname_index))
+                if skeleton.find_bone(subname) >= 0:
+                    has_skeleton_track = true
     return has_skeleton_track
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
