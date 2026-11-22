@@ -76,6 +76,7 @@ var authored_action_animation_timer := 0.0
 var training_down_timer := 0.0
 var authored_was_on_floor := true
 var authored_armor_model: Node3D
+var weapon_socket_nodes: Dictionary = {}
 var is_mounted := false
 var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
@@ -1625,6 +1626,8 @@ func _build_costume_visuals() -> void:
         costume_root.add_child(hem_piece)
 
 func _load_authored_character_model(class_id: String) -> void:
+    _clear_weapon_sockets()
+    _build_weapon_sockets()
     if is_instance_valid(authored_character_model):
         authored_character_model.queue_free()
         authored_character_model = null
@@ -1648,10 +1651,67 @@ func _load_authored_character_model(class_id: String) -> void:
     authored_character_model.position = Vector3.ZERO
     authored_character_model.scale = Vector3.ONE
     visual_root.add_child(authored_character_model)
+    _build_weapon_sockets()
     # Keep gameplay feedback nodes and modular armor; hide only the base mannequin meshes.
     for child in visual_root.get_children():
         if child is MeshInstance3D and child not in [combat_feedback_node, guard_shield_node, mount_indicator]:
             child.visible = false
+
+func _clear_weapon_sockets() -> void:
+    for socket in weapon_socket_nodes.values():
+        if is_instance_valid(socket):
+            socket.queue_free()
+    weapon_socket_nodes.clear()
+
+
+func _find_skeleton_recursive(root: Node) -> Skeleton3D:
+    if root is Skeleton3D:
+        return root as Skeleton3D
+    for child in root.get_children():
+        var found := _find_skeleton_recursive(child)
+        if is_instance_valid(found):
+            return found
+    return null
+
+
+func _build_weapon_sockets() -> void:
+    if not is_instance_valid(visual_root):
+        return
+    _clear_weapon_sockets()
+    var specs := {
+        "right_hand": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.92, -0.02)},
+        "left_hand": {"bone": "LeftHand", "fallback": Vector3(0.50, 0.92, -0.02)},
+        "shield_hand": {"bone": "LeftForearm", "fallback": Vector3(0.50, 1.10, -0.04)},
+        "chain_anchor": {"bone": "RightForearm", "fallback": Vector3(-0.50, 1.10, -0.04)},
+        "instrument_anchor": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.94, -0.08)},
+        "bow_hand": {"bone": "LeftHand", "fallback": Vector3(0.50, 0.94, -0.08)},
+        "aerial_core": {"bone": "Chest", "fallback": Vector3(0.0, 1.42, 0.0)},
+        "weapon_hand": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.92, -0.02)}
+    }
+    var skeleton := _find_skeleton_recursive(authored_character_model) if is_instance_valid(authored_character_model) else null
+    for socket_id in specs:
+        var spec: Dictionary = specs[socket_id]
+        var bone_name := str(spec.get("bone", ""))
+        var socket: Node3D
+        if is_instance_valid(skeleton) and skeleton.find_bone(bone_name) >= 0:
+            var attachment := BoneAttachment3D.new()
+            attachment.name = "WeaponSocket_" + str(socket_id)
+            attachment.bone_name = bone_name
+            skeleton.add_child(attachment)
+            socket = attachment
+        else:
+            socket = Node3D.new()
+            socket.name = "WeaponSocket_" + str(socket_id)
+            socket.position = spec.get("fallback", Vector3.ZERO)
+            visual_root.add_child(socket)
+        socket.set_meta("weapon_socket_id", str(socket_id))
+        weapon_socket_nodes[str(socket_id)] = socket
+
+
+func get_weapon_socket(socket_id: String) -> Node3D:
+    var socket: Variant = weapon_socket_nodes.get(socket_id)
+    return socket as Node3D if is_instance_valid(socket) else null
+
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
     if root is AnimationPlayer:
