@@ -1075,6 +1075,7 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     nodes = document.get("nodes", [])
     meshes = document.get("meshes", [])
     skins = document.get("skins", [])
+    geometry_totals = {"vertices": 0, "triangles": 0, "primitives": 0}
     if require_skin:
         if not skins:
             raise RuntimeError("Rigged character/armor GLB has no skin: " + str(path))
@@ -1122,11 +1123,61 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
                     raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} WEIGHTS_0 has invalid component type: {path}")
                 if weights_accessor.get("componentType") in (5121, 5123) and not weights_accessor.get("normalized", False):
                     raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} integer WEIGHTS_0 is not normalized: {path}")
+                # Every exported skinned primitive must contain actual triangle geometry.
+                # glTF defaults primitive mode to TRIANGLES (4).
+                primitive_mode = primitive.get("mode", 4)
+                if primitive_mode != 4:
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} is not TRIANGLES mode: {path}"
+                    )
+                indices_index = primitive.get("indices")
+                if indices_index is None:
+                    triangle_index_count = vertex_count
+                else:
+                    if (not isinstance(indices_index, int)
+                            or not 0 <= indices_index < len(document.get("accessors", []))):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has invalid indices accessor: {path}"
+                        )
+                    indices_accessor = document["accessors"][indices_index]
+                    if (indices_accessor.get("type") != "SCALAR"
+                            or indices_accessor.get("componentType") not in (5121, 5123, 5125)
+                            or not isinstance(indices_accessor.get("count"), int)):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has malformed triangle indices: {path}"
+                        )
+                    triangle_index_count = indices_accessor["count"]
+                if triangle_index_count < 3 or triangle_index_count % 3:
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} has no complete triangles: {path}"
+                    )
+                joint_max = joints_accessor.get("max")
+                if isinstance(joint_max, list) and joint_max:
+                    if any(not isinstance(value, (int, float)) or value >= len(joints) for value in joint_max):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 exceeds its skin joint table: {path}"
+                        )
+                elif joint_max is not None and (
+                        not isinstance(joint_max, (int, float)) or joint_max >= len(joints)):
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 exceeds its skin joint table: {path}"
+                    )
+                geometry_totals["vertices"] += vertex_count
+                geometry_totals["triangles"] += triangle_index_count // 3
+                geometry_totals["primitives"] += 1
                 material_index = primitive.get("material")
                 if not isinstance(material_index, int) or not 0 <= material_index < len(materials):
                     raise RuntimeError(
                         f"Mesh node {node_index} primitive {primitive_index} has an invalid material slot: {path}"
                     )
+    if require_skin:
+        if geometry_totals["primitives"] == 0 or geometry_totals["triangles"] == 0:
+            raise RuntimeError("Rigged GLB contains no validated triangle primitives: " + str(path))
+        print("SKINNED_GEOMETRY_PASS",
+              path.name,
+              "primitives=" + str(geometry_totals["primitives"]),
+              "vertices=" + str(geometry_totals["vertices"]),
+              "triangles=" + str(geometry_totals["triangles"]))
     if require_independent_skinned_nodes:
         by_name = {str(node.get("name", "")): node for node in nodes}
         mesh_indices = []
