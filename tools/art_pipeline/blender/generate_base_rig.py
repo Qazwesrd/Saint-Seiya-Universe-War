@@ -1125,9 +1125,12 @@ def render_profession_turntable(profession_id, index, preview_category="characte
     camera_data.type = "ORTHO"
     camera_data.ortho_scale = 2.65
     camera_data.lens = 55
-    # User-facing acceptance preview: one representative profession image only.
+    # Three orthographic views are required for human review: front, side and back.
+    # The character faces -Y; the side camera is placed on +X.
     views = (
         ("front", (0.0, -6.5, 2.0)),
+        ("side", (6.5, 0.0, 2.0)),
+        ("back", (0.0, 6.5, 2.0)),
     )
     for view_name, position in views:
         camera.location = position
@@ -1344,11 +1347,12 @@ def build_profession_models(shard_index=0, shard_count=1):
         # not approval as final canon-accurate character art.
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             render_profession_turntable(class_id, index)
-            preview_path = ROOT / "game" / "art_previews" / "characters" / (class_id + "_front.png")
-            if not preview_path.is_file() or preview_path.stat().st_size < 128:
-                raise RuntimeError("Core Bronze Saint preview missing or too small: " + str(preview_path))
-            print("CORE_BRONZE_SAINT_PREVIEW_RENDERED", class_id, "views=front",
-                  "bytes=" + str(preview_path.stat().st_size))
+            preview_root = ROOT / "game" / "art_previews" / "characters"
+            for view_name in ("front", "side", "back"):
+                preview_path = preview_root / (class_id + "_" + view_name + ".png")
+                if not preview_path.is_file() or preview_path.stat().st_size < 128:
+                    raise RuntimeError("Core Bronze Saint " + view_name + " preview missing or too small: " + str(preview_path))
+            print("CORE_BRONZE_SAINT_PREVIEW_RENDERED", class_id, "views=front,side,back")
 
 def build_equipment_models(shard_index=0, shard_count=1):
     """Export every catalogued independent nine-piece skinned armor kit (stylized prototypes)."""
