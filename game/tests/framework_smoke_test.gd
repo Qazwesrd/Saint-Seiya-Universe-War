@@ -1203,6 +1203,14 @@ func _run_tests() -> void:
 	assert(arena_nav_normal.y > 0.0, "Galaxy Wars navigation polygon winding faces upward for a walkable floor")
 	var arena_quest_trigger := galaxy_arena.get_node("QuestTrigger") as Area3D
 	assert(arena_quest_trigger.body_entered.is_connected(Callable(galaxy_arena, "_on_quest_trigger_body_entered")), "Galaxy Wars quest trigger is connected to its controller")
+	var triggered_arena_quest_ids: Array[StringName] = []
+	galaxy_arena.quest_triggered.connect(func(trigger_id: StringName, _actor: Node3D) -> void:
+		triggered_arena_quest_ids.append(trigger_id)
+	)
+	var arena_trigger_actor := CharacterBody3D.new()
+	arena_quest_trigger.emit_signal("body_entered", arena_trigger_actor)
+	assert(triggered_arena_quest_ids.has(&"tournament_guide_intro"), "entering the Galaxy Wars guide trigger emits the expected quest interaction event")
+	arena_trigger_actor.free()
 	galaxy_arena.queue_free()
 	await get_tree().process_frame
 
