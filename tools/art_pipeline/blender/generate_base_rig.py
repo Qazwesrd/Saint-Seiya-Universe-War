@@ -207,6 +207,41 @@ def add_core_hero_hair(rig, hero_id):
             created.append(lock)
     return created
 
+
+def add_core_hero_eyes(rig, hero_id):
+    """Layer a canon-inspired iris palette and eye glints onto each Bronze Saint."""
+    palettes = {
+        "pegasus": (0.12, 0.34, 0.72),
+        "dragon": (0.12, 0.48, 0.27),
+        "cygnus": (0.24, 0.66, 0.92),
+        "andromeda": (0.16, 0.62, 0.32),
+        "phoenix": (0.18, 0.24, 0.48),
+    }
+    iris_color = palettes.get(hero_id)
+    if iris_color is None:
+        return []
+    iris_mat = material("Core_Hero_Iris_" + hero_id, iris_color, 0.12, 0.2)
+    highlight_mat = material("Core_Hero_Eye_Highlight_" + hero_id,
+                             (0.96, 0.98, 1.0), 0.0, 0.12)
+    created = []
+    for side, sign in (("Left", 1), ("Right", -1)):
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Iris",
+            (sign * 0.052, -0.146, 1.815),
+            (0.014, 0.007, 0.015), "Head", iris_mat, rig, 16, 10,
+        ))
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Pupil",
+            (sign * 0.052, -0.152, 1.815),
+            (0.0055, 0.0035, 0.010), "Head", EYE_PUPIL, rig, 12, 8,
+        ))
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Eye_Glint",
+            (sign * 0.047, -0.155, 1.821),
+            (0.0035, 0.0025, 0.0035), "Head", highlight_mat, rig, 10, 8,
+        ))
+    return created
+
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
     """Build a tapered, faceted anatomical limb from a ring-loft mesh.
 
@@ -1278,6 +1313,7 @@ def build_profession_models(shard_index=0, shard_count=1):
         body = build_body(rig)
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             add_core_hero_hair(rig, class_id)
+            add_core_hero_eyes(rig, class_id)
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
