@@ -1118,12 +1118,32 @@ def render_profession_turntable(profession_id, index, preview_category="characte
     area_light("Preview_Fill", (-4.0, -2.0, 2.8), 520, (0.35, 0.58, 1.0), 3.5)
     area_light("Preview_Rim", (0.5, 3.0, 4.0), 1000, (1.0, 0.58, 0.25), 3.0)
 
+    # Fit the complete character silhouette before rendering. Fixed camera scales
+    # clipped broad shields and Phoenix wings in some professions' side/back views.
+    bpy.context.view_layer.update()
+    bounds = []
+    for obj in scene.objects:
+        if obj.type != "MESH":
+            continue
+        bounds.extend(obj.matrix_world @ Vector(corner) for corner in obj.bound_box)
+    if not bounds:
+        raise RuntimeError("Cannot frame empty profession preview: " + profession_id)
+    min_corner = Vector((min(point.x for point in bounds),
+                         min(point.y for point in bounds),
+                         min(point.z for point in bounds)))
+    max_corner = Vector((max(point.x for point in bounds),
+                         max(point.y for point in bounds),
+                         max(point.z for point in bounds)))
+    dimensions = max_corner - min_corner
+    preview_target = (min_corner + max_corner) * 0.5
+
     camera_data = bpy.data.cameras.new("Preview_Camera_" + profession_id)
     camera = bpy.data.objects.new("Preview_Camera_" + profession_id, camera_data)
     scene.collection.objects.link(camera)
     scene.camera = camera
     camera_data.type = "ORTHO"
-    camera_data.ortho_scale = 2.65
+    # Leave 14% breathing room around the widest silhouette in every view.
+    camera_data.ortho_scale = max(dimensions.x, dimensions.y, dimensions.z, 1.0) * 1.14
     camera_data.lens = 55
     # Three orthographic views are required for human review: front, side and back.
     # The character faces -Y; the side camera is placed on +X.
@@ -1134,7 +1154,7 @@ def render_profession_turntable(profession_id, index, preview_category="characte
     )
     for view_name, position in views:
         camera.location = position
-        camera.rotation_euler = (Vector((0, 0, 1.0)) - camera.location).to_track_quat("-Z", "Y").to_euler()
+        camera.rotation_euler = (preview_target - camera.location).to_track_quat("-Z", "Y").to_euler()
         scene.render.filepath = str(preview_root / (profession_id + "_" + view_name + ".png"))
         bpy.ops.render.render(write_still=True)
     # Keep preview-only studio objects out of subsequent GLB exports.
