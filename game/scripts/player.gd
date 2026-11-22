@@ -1644,9 +1644,37 @@ func _load_authored_character_model(class_id: String) -> void:
     if instance == null:
         push_warning("Profession model could not be instantiated; keeping procedural fallback: " + model_path)
         return
+    var imported_skeleton := _find_skeleton_recursive(instance)
+    if not is_instance_valid(imported_skeleton):
+        push_warning("Profession model has no imported Skeleton3D; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var imported_animation_player := _find_animation_player(instance)
+    if not is_instance_valid(imported_animation_player):
+        push_warning("Profession model has no AnimationPlayer; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var required_bones := ["Head", "Chest", "LeftForearm", "RightForearm", "LeftHand", "RightHand"]
+    var missing_bones: Array[String] = []
+    for required_bone in required_bones:
+        if imported_skeleton.find_bone(required_bone) < 0:
+            missing_bones.append(required_bone)
+    if not missing_bones.is_empty():
+        push_warning("Profession model is missing attachment bones " + ", ".join(missing_bones) + "; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var required_clips := ["idle", "walk", "run", "%s_basic_attack_1" % class_id]
+    var missing_clips: Array[String] = []
+    for required_clip in required_clips:
+        if not imported_animation_player.has_animation(required_clip):
+            missing_clips.append(required_clip)
+    if not missing_clips.is_empty():
+        push_warning("Profession model is missing required animation clips " + ", ".join(missing_clips) + "; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
     authored_character_model = instance
     authored_character_model.name = "AuthoredProfessionModel"
-    authored_animation_player = _find_animation_player(authored_character_model)
+    authored_animation_player = imported_animation_player
     authored_animation_state = ""
     authored_character_model.position = Vector3.ZERO
     authored_character_model.scale = Vector3.ONE
