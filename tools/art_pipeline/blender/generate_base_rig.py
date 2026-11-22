@@ -1123,7 +1123,7 @@ def render_profession_turntable(profession_id, index, preview_category="characte
     bpy.context.view_layer.update()
     bounds = []
     for obj in scene.objects:
-        if obj.type != "MESH":
+        if obj.type != "MESH" or obj.name == "Preview_Studio_Floor":
             continue
         bounds.extend(obj.matrix_world @ Vector(corner) for corner in obj.bound_box)
     if not bounds:
