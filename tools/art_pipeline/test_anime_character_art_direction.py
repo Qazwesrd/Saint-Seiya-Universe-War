@@ -174,6 +174,25 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('0.90, 0.19', profile_block.group(1))
         self.assertIn('0.78, 0.17', profile_block.group(1))
 
+
+    def test_core_hero_helmets_knee_armor_boots_and_side_tassets_are_skinned(self):
+        profile_block = re.search(
+            r"def add_core_hero_armor_layers\\(rig, hero_id\\):(.*?)^def build_profession_models",
+            self.generator, re.S | re.M,
+        )
+        self.assertIsNotNone(profile_block)
+        block = profile_block.group(1)
+        for suffix in ("_Armor_Signature_Helm_Crown", "_Armor_Signature_Helm_Crest",
+                       "_Armor_Knee_Cop", "_Armor_Boot_Sabatons", "_Armor_Waist_Side_Tasset",
+                       "_Armor_Helm_Cheek_Guard"):
+            self.assertIn(suffix, block)
+        for bone in ('"Head"', '"LeftShin"', '"RightShin"', '"LeftFoot"',
+                     '"RightFoot"', '"Hips"'):
+            self.assertIn(bone, block)
+        for hero in ("pegasus", "dragon", "cygnus", "andromeda", "phoenix"):
+            self.assertIn(f'"{hero}": [', block)
+        self.assertIn('add_weighted_limb(', block)
+
     def test_runtime_weapon_sockets_support_skeleton_and_fallback_rigs(self):
         player = (ROOT / "game/scripts/player.gd").read_text(encoding="utf-8")
         self.assertIn("func _build_weapon_sockets() -> void:", player)
