@@ -206,6 +206,19 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh")', self.generator)
         self.assertIn('export_glb(destination, [rig, merged])', self.generator)
 
+    def test_glb_skin_accessors_match_vertex_layout_and_valid_component_types(self):
+        for check in (
+            'position_accessor.get("type") != "VEC3"',
+            'joints_accessor.get("type") != "VEC4"',
+            'weights_accessor.get("type") != "VEC4"',
+            'joints_accessor.get("count") != vertex_count',
+            'weights_accessor.get("count") != vertex_count',
+            'joints_accessor.get("componentType") not in (5121, 5123)',
+            'weights_accessor.get("componentType") not in (5121, 5123, 5126)',
+            'not weights_accessor.get("normalized", False)',
+        ):
+            self.assertIn(check, self.generator)
+
     def test_runtime_weapon_sockets_support_skeleton_and_fallback_rigs(self):
         player = (ROOT / "game/scripts/player.gd").read_text(encoding="utf-8")
         self.assertIn("func _build_weapon_sockets() -> void:", player)
