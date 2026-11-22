@@ -100,6 +100,18 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('expected_views = ("front", "side", "back")', self.workflow)
         self.assertIn("CORE_BRONZE_SAINT_THREE_VIEW_SET_PASS", self.workflow)
 
+    def test_core_bronze_saints_have_individual_head_bone_weighted_hair_silhouettes(self):
+        self.assertIn("def add_core_hero_hair(rig, hero_id):", self.generator)
+        self.assertIn('"pegasus": {', self.generator)
+        self.assertIn('"dragon": {', self.generator)
+        self.assertIn('"cygnus": {', self.generator)
+        self.assertIn('"andromeda": {', self.generator)
+        self.assertIn('"phoenix": {', self.generator)
+        self.assertIn('strand.name = hero_id + "_Hair_Strand_"', self.generator)
+        self.assertIn('group = strand.vertex_groups.new(name="Head")', self.generator)
+        self.assertIn('add_core_hero_hair(rig, class_id)', self.generator)
+        self.assertIn('Long_Hair_Lock', self.generator)
+
     def test_core_bronze_saints_have_distinct_skinned_signature_equipment(self):
         required_parts = (
             "Dragon_Ancient_Shield",
