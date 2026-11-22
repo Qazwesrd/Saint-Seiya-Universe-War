@@ -152,6 +152,28 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('"Head"', self.generator)
         self.assertIn('"Chest"', self.generator)
 
+
+    def test_all_five_bronze_saints_receive_layered_skinned_armor_assemblies(self):
+        self.assertIn("def add_core_hero_armor_layers(rig, hero_id):", self.generator)
+        profile_block = re.search(
+            r"def add_core_hero_armor_layers\\(rig, hero_id\\):(.*?)^def build_profession_models",
+            self.generator, re.S | re.M,
+        )
+        self.assertIsNotNone(profile_block)
+        for hero in ("pegasus", "dragon", "cygnus", "andromeda", "phoenix"):
+            self.assertIn(f'"{hero}": {{', profile_block.group(1))
+            title = hero.title()
+            for suffix in ("_Armor_Chest_Base", "_Armor_Chest_", "_Armor_Outer_Pauldron",
+                           "_Armor_Pauldron_Ridge", "_Armor_Forearm_Bracer",
+                           "_Armor_Shin_Greave", "_Armor_Waist_Faulds"):
+                self.assertIn(suffix, profile_block.group(1))
+            self.assertIn(f'ornaments.extend(add_core_hero_armor_layers(rig, class_id))', self.generator)
+        for bone in ('"Chest"', '"LeftShoulder"', '"RightShoulder"',
+                     '"LeftForearm"', '"RightForearm"', '"LeftShin"', '"RightShin"', '"Hips"'):
+            self.assertIn(bone, profile_block.group(1))
+        self.assertIn('0.90, 0.19', profile_block.group(1))
+        self.assertIn('0.78, 0.17', profile_block.group(1))
+
     def test_runtime_weapon_sockets_support_skeleton_and_fallback_rigs(self):
         player = (ROOT / "game/scripts/player.gd").read_text(encoding="utf-8")
         self.assertIn("func _build_weapon_sockets() -> void:", player)
