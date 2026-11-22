@@ -47,13 +47,15 @@ def read_glb(path: Path) -> dict:
     return json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \t\r\n\0"))
 
 def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None,
-              required_nodes: tuple[str, ...] = (), require_meshes: bool = True) -> dict:
+              required_nodes: tuple[str, ...] = (), require_meshes: bool = True,
+              compatible_joint_names: set[str] | None = None) -> dict:
     doc = read_glb(path)
     if require_meshes and not doc.get("meshes"):
         raise ValueError("GLB has no meshes")
     nodes = doc.get("nodes", [])
     meshes = doc.get("meshes", [])
     skins = doc.get("skins", [])
+    skin_joint_names: set[str] = set()
     if require_skin:
         if not skins:
             raise ValueError("character GLB has no skin/skeleton")
@@ -68,6 +70,7 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
             if not isinstance(skin_index, int) or not 0 <= skin_index < len(skins):
                 raise ValueError(f"mesh node {node_index} is not bound to a valid skin")
             joints = skins[skin_index].get("joints", [])
+            skin_joint_names.update(str(nodes[joint].get("name", "")) for joint in joints if isinstance(joint, int) and 0 <= joint < len(nodes))
             if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
                 raise ValueError(f"mesh node {node_index} references a skin with invalid joints")
             skinned_mesh_count += 1
@@ -102,6 +105,14 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
                     raise ValueError(f"animation clip '{clip_name}' has an invalid sampler reference")
                 if target.get("path") not in ("translation", "rotation", "scale", "weights"):
                     raise ValueError(f"animation clip '{clip_name}' has an invalid track path")
+                target_name = str(nodes[node_index].get("name", ""))
+                allowed_joint_names = compatible_joint_names
+                if allowed_joint_names is None and require_skin:
+                    allowed_joint_names = skin_joint_names
+                if allowed_joint_names is not None and target.get("path") != "weights" and target_name not in allowed_joint_names:
+                    raise ValueError(
+                        f"animation clip '{clip_name}' targets node '{target_name}' outside the compatible skeleton"
+                    )
     if required_nodes:
         names = {str(item.get("name", "")) for item in doc.get("nodes", [])}
         names.update(str(item.get("name", "")) for item in doc.get("meshes", []))
