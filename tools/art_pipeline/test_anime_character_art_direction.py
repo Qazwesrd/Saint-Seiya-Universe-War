@@ -149,6 +149,8 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         )
         for part in required_parts:
             self.assertIn(part, self.generator)
+        # The base rig owns explicit left/right forearm bones; armor profiles
+        # bind to them through the side-loop mapping checked separately below.
         self.assertIn('"LeftForearm"', self.generator)
         self.assertIn('"RightForearm"', self.generator)
         self.assertIn('"Head"', self.generator)
