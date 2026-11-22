@@ -84,21 +84,21 @@ static func resolve_locomotion_state(planar_speed: float) -> String:
  return "idle"
 
 static func can_transition_action_state(current_state: String, requested_state: String, remaining_time: float) -> bool:
-	if not ACTION_STATES.has(requested_state):
-		return false
-	if current_state == requested_state:
-		return true
-	if remaining_time <= 0.0:
-		return true
-	if current_state == "death":
-		return false
-	if requested_state == "death" or requested_state == "hit":
-		return true
-	if current_state == "hit":
-		return false
-	if current_state in ["attack", "hit"] and requested_state in ["idle", "walk", "run"]:
-		return false
-	return true
+ if not ACTION_STATES.has(requested_state):
+  return false
+ if current_state == requested_state:
+  return true
+ if remaining_time <= 0.0:
+  return true
+ if current_state == "death":
+  return false
+ if requested_state == "death" or requested_state == "hit":
+  return true
+ if current_state == "hit":
+  return false
+ if current_state in ["attack", "hit"] and requested_state in ["idle", "walk", "run"]:
+  return false
+ return true
 
 static func get_supported_action_states() -> Array[String]:
  var result: Array[String] = []
