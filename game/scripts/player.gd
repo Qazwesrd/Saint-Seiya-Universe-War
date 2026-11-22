@@ -566,7 +566,7 @@ func _refresh_character_stance_profile() -> void:
     var is_hongjun := bool(RPGState.profile.get("is_supreme_deity", false))
     character_stance_profile = CharacterStanceDatabase.get_profile(class_id, faction_id, is_hongjun)
 
-func _play_armor_transform_effect() -> void
+func _play_armor_transform_effect() -> void:
     if not is_instance_valid(visual_root):
         return
     var burst := MeshInstance3D.new()
