@@ -1041,6 +1041,49 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     if version != 2 or declared_length != len(data) or chunk_type != 0x4E4F534A or 20 + chunk_length > len(data):
         raise RuntimeError("Invalid GLB v2 JSON chunk: " + str(path))
     document = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    bin_header = 20 + chunk_length
+    binary_chunk = b""
+    if bin_header + 8 <= len(data):
+        binary_length, binary_type = struct.unpack_from("<II", data, bin_header)
+        if binary_type == 0x004E4942 and bin_header + 8 + binary_length <= len(data):
+            binary_chunk = data[bin_header + 8:bin_header + 8 + binary_length]
+
+    def read_vec4_accessor(accessor_index, semantic, source_path):
+        accessors = document.get("accessors", [])
+        views = document.get("bufferViews", [])
+        if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+            raise RuntimeError(f"{semantic} accessor index is invalid: {source_path}")
+        accessor = accessors[accessor_index]
+        view_index = accessor.get("bufferView")
+        if not isinstance(view_index, int) or not 0 <= view_index < len(views):
+            raise RuntimeError(f"{semantic} accessor has no supported bufferView: {source_path}")
+        view = views[view_index]
+        if view.get("buffer", 0) != 0 or not binary_chunk or accessor.get("sparse"):
+            raise RuntimeError(f"{semantic} accessor uses unsupported GLB storage: {source_path}")
+        component_type = accessor.get("componentType")
+        formats = {5121: ("B", 1), 5123: ("H", 2), 5126: ("f", 4)}
+        if component_type not in formats or accessor.get("type") != "VEC4":
+            raise RuntimeError(f"{semantic} accessor has unsupported component layout: {source_path}")
+        code, component_size = formats[component_type]
+        packed_size = component_size * 4
+        stride = view.get("byteStride", packed_size)
+        if not isinstance(stride, int) or stride < packed_size:
+            raise RuntimeError(f"{semantic} accessor has invalid byteStride: {source_path}")
+        start = view.get("byteOffset", 0) + accessor.get("byteOffset", 0)
+        count = accessor.get("count")
+        if not isinstance(count, int) or count <= 0:
+            raise RuntimeError(f"{semantic} accessor has invalid count: {source_path}")
+        end = start + (count - 1) * stride + packed_size
+        if start < 0 or end > len(binary_chunk):
+            raise RuntimeError(f"{semantic} accessor exceeds GLB binary data: {source_path}")
+        values = []
+        for vertex_index in range(count):
+            raw = struct.unpack_from("<" + code * 4, binary_chunk, start + vertex_index * stride)
+            if component_type != 5126 and accessor.get("normalized", False):
+                maximum = 255 if component_type == 5121 else 65535
+                raw = tuple(value / maximum for value in raw)
+            values.append(raw)
+        return values
     materials = document.get("materials", [])
     material_names = {str(item.get("name", "")) for item in materials}
     missing_materials = sorted(set(required_materials) - material_names)
@@ -1151,17 +1194,33 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
                     raise RuntimeError(
                         f"Mesh node {node_index} primitive {primitive_index} has no complete triangles: {path}"
                     )
-                joint_max = joints_accessor.get("max")
-                if isinstance(joint_max, list) and joint_max:
-                    if any(not isinstance(value, (int, float)) or value >= len(joints) for value in joint_max):
-                        raise RuntimeError(
-                            f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 exceeds its skin joint table: {path}"
-                        )
-                elif joint_max is not None and (
-                        not isinstance(joint_max, (int, float)) or joint_max >= len(joints)):
+                joint_values = read_vec4_accessor(
+                    attributes["JOINTS_0"], "JOINTS_0", path
+                )
+                weight_values = read_vec4_accessor(
+                    attributes["WEIGHTS_0"], "WEIGHTS_0", path
+                )
+                if len(joint_values) != vertex_count or len(weight_values) != vertex_count:
                     raise RuntimeError(
-                        f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 exceeds its skin joint table: {path}"
+                        f"Mesh node {node_index} primitive {primitive_index} skin data count mismatch: {path}"
                     )
+                for vertex_index, (joint_row, weight_row) in enumerate(zip(joint_values, weight_values)):
+                    if any(not isinstance(value, (int, float)) or value < 0 or value >= len(joints)
+                           for value in joint_row):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"has a JOINTS_0 index outside its skin joint table: {path}"
+                        )
+                    if any(not math.isfinite(value) or value < 0 for value in weight_row):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"has a negative or non-finite skin weight: {path}"
+                        )
+                    if not math.isclose(sum(weight_row), 1.0, rel_tol=0.0, abs_tol=0.015):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"skin weights do not sum to 1.0: {path}"
+                        )
                 geometry_totals["vertices"] += vertex_count
                 geometry_totals["triangles"] += triangle_index_count // 3
                 geometry_totals["primitives"] += 1
