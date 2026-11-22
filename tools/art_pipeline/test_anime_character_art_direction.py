@@ -200,7 +200,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('export_animation_mode="NLA_TRACKS"', self.generator)
         self.assertIn('export_materials="EXPORT"', self.generator)
         for semantic in ('"POSITION"', '"JOINTS_0"', '"WEIGHTS_0"'):
-            self.assertIn(f'for semantic in {semantic}', self.generator) if False else self.assertIn(semantic, self.generator)
+            self.assertIn(semantic, self.generator)
         self.assertIn('primitive.get("material")', self.generator)
         self.assertIn('not primitives', self.generator)
         self.assertIn('validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh")', self.generator)
