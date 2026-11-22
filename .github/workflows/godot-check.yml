@@ -97,7 +97,7 @@ jobs:
           echo "PCK_DIAG chapter build: completed"
           test -s "$output"
           echo "PCK_DIAG mount verification: start"
-          timeout 120s godot --headless --path game res://tools/verify_chapter_pck.gd -- --pck "$output"
+          timeout 120s godot --headless --path game --script res://tools/verify_chapter_pck.gd -- --pck "$output"
           echo "PCK_DIAG mount verification: completed"
       - name: Launch main scene headlessly
         shell: sh
