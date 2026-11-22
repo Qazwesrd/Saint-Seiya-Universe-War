@@ -1227,6 +1227,7 @@ func _run_tests() -> void:
 	RPGState.profile["faction_tutorial_enabled"] = false
 	var game_scene_probe := Node3D.new()
 	game_scene_probe.set_script(load("res://scripts/game.gd"))
+	add_child(game_scene_probe)
 	assert(bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay selects the Galaxy Wars arena when Galaxy Wars is the active region")
 	WorldExplorationManager.active_region_id = "asgard"
 	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay does not reuse the Galaxy Wars arena in another chapter")
