@@ -7,6 +7,15 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	var available_count := 0
+	for hero_id in CORE_HEROES:
+		var candidate_path := "res://assets/characters/%s/model/character.glb" % hero_id
+		if ResourceLoader.exists(candidate_path):
+			available_count += 1
+	if available_count == 0:
+		print("CHARACTER_ANIMATION_RUNTIME_SKIP reason=core_hero_glb_assets_not_present_in_checkout")
+		quit(0)
+		return
 	var failures: Array[String] = []
 	for hero_id in CORE_HEROES:
 		var model_path := "res://assets/characters/%s/model/character.glb" % hero_id
