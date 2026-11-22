@@ -118,9 +118,9 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         palettes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
         for hero in palettes:
             self.assertIn(f'"{hero}": (', self.generator)
-            self.assertIn(hero + '" + side + "_Signature_Iris"', self.generator)
-            self.assertIn(hero + '" + side + "_Signature_Pupil"', self.generator)
-            self.assertIn(hero + '" + side + "_Eye_Glint"', self.generator)
+        self.assertIn('hero_id + "_" + side + "_Signature_Iris"', self.generator)
+        self.assertIn('hero_id + "_" + side + "_Signature_Pupil"', self.generator)
+        self.assertIn('hero_id + "_" + side + "_Eye_Glint"', self.generator)
         self.assertIn("add_core_hero_eyes(rig, class_id)", self.generator)
         self.assertIn('group = strand.vertex_groups.new(name="Head")', self.generator)
 
