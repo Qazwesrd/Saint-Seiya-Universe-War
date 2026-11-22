@@ -65,6 +65,15 @@ jobs:
             echo "Godot script parse/import errors detected"
             exit 1
           fi
+      - name: Verify imported core hero animation playback
+        shell: sh
+        run: |
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/character-animation-runtime.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/character-animation-runtime.log; then
+            echo "Character animation runtime validation reported engine errors"
+            exit 1
+          fi
+          grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=5" /tmp/character-animation-runtime.log
       - name: Build and mount a real chapter PCK
         shell: sh
         run: |
