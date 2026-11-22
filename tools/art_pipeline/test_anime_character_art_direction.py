@@ -112,6 +112,18 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('add_core_hero_hair(rig, class_id)', self.generator)
         self.assertIn('Long_Hair_Lock', self.generator)
 
+
+    def test_core_bronze_saints_have_individual_iris_palettes_and_eye_glints(self):
+        self.assertIn("def add_core_hero_eyes(rig, hero_id):", self.generator)
+        palettes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
+        for hero in palettes:
+            self.assertIn(f'"{hero}": (', self.generator)
+            self.assertIn(hero + '" + side + "_Signature_Iris"', self.generator)
+            self.assertIn(hero + '" + side + "_Signature_Pupil"', self.generator)
+            self.assertIn(hero + '" + side + "_Eye_Glint"', self.generator)
+        self.assertIn("add_core_hero_eyes(rig, class_id)", self.generator)
+        self.assertIn('group = strand.vertex_groups.new(name="Head")', self.generator)
+
     def test_core_bronze_saints_have_distinct_skinned_signature_equipment(self):
         required_parts = (
             "Dragon_Ancient_Shield",
