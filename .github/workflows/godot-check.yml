@@ -48,6 +48,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Diagnose player script parser failure
+        shell: sh
+        run: |
+          set +e
+          godot --headless --path game --check-only --script res://scripts/player.gd 2>&1 | tee /tmp/player-parse.log
+          status=${PIPESTATUS:-}
+          grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/player-parse.log || true
+          exit 0
       - name: Import and parse project
         shell: sh
         run: |
