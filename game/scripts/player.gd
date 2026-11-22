@@ -1702,8 +1702,18 @@ func _build_weapon_sockets() -> void:
         else:
             socket = Node3D.new()
             socket.name = "WeaponSocket_" + str(socket_id)
-            socket.position = spec.get("fallback", Vector3.ZERO)
-            visual_root.add_child(socket)
+            var forearm_index := -1
+            match str(socket_id):
+                "right_hand", "weapon_hand", "instrument_anchor", "chain_anchor":
+                    forearm_index = 0
+                "left_hand", "shield_hand", "bow_hand":
+                    forearm_index = 1
+            if forearm_index >= 0 and forearm_index < forearm_nodes.size() and is_instance_valid(forearm_nodes[forearm_index]):
+                forearm_nodes[forearm_index].add_child(socket)
+                socket.position = Vector3(0.0, -0.34, 0.0)
+            else:
+                visual_root.add_child(socket)
+                socket.position = spec.get("fallback", Vector3.ZERO)
         socket.set_meta("weapon_socket_id", str(socket_id))
         weapon_socket_nodes[str(socket_id)] = socket
 
