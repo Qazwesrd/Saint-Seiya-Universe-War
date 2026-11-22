@@ -1197,7 +1197,10 @@ func _run_tests() -> void:
 	assert(galaxy_arena.get_enemy_anchor_transform(&"opening_duel").origin.distance_to(Vector3(0.0, 0.1, -8.0)) < 0.01, "Galaxy Wars opening enemy anchor resolves")
 	var arena_navigation := galaxy_arena.get_node("NavigationRegion3D") as NavigationRegion3D
 	assert(arena_navigation != null and arena_navigation.navigation_mesh != null, "Galaxy Wars navigation region has a navigation mesh")
-	assert(arena_navigation.navigation_mesh.get_polygon_count() == 1 and arena_navigation.navigation_mesh.get_vertices().size() == 4, "Galaxy Wars navigation mesh exposes its traversable arena polygon")
+	var arena_nav_vertices: PackedVector3Array = arena_navigation.navigation_mesh.get_vertices()
+	assert(arena_navigation.navigation_mesh.get_polygon_count() == 1 and arena_nav_vertices.size() == 4, "Galaxy Wars navigation mesh exposes its traversable arena polygon")
+	var arena_nav_normal := (arena_nav_vertices[1] - arena_nav_vertices[0]).cross(arena_nav_vertices[2] - arena_nav_vertices[0])
+	assert(arena_nav_normal.y > 0.0, "Galaxy Wars navigation polygon winding faces upward for a walkable floor")
 	var arena_quest_trigger := galaxy_arena.get_node("QuestTrigger") as Area3D
 	assert(arena_quest_trigger.body_entered.is_connected(Callable(galaxy_arena, "_on_quest_trigger_body_entered")), "Galaxy Wars quest trigger is connected to its controller")
 	galaxy_arena.queue_free()
