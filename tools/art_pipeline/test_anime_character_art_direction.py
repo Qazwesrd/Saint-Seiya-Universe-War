@@ -124,6 +124,16 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn("add_core_hero_eyes(rig, class_id)", self.generator)
         self.assertIn('group = strand.vertex_groups.new(name="Head")', self.generator)
 
+
+    def test_core_bronze_saints_have_distinct_brow_and_cheek_face_profiles(self):
+        self.assertIn("def add_core_hero_face_identity(rig, hero_id):", self.generator)
+        for hero in ("pegasus", "dragon", "cygnus", "andromeda", "phoenix"):
+            self.assertIn(f'"{hero}": {{"brow":', self.generator)
+            self.assertIn(hero + '" + side + "_Signature_Brow"', self.generator)
+            self.assertIn(hero + '" + side + "_Cheek_Contour"', self.generator)
+        self.assertIn("brow.rotation_euler.y = profile[\"tilt\"] * sign", self.generator)
+        self.assertIn("add_core_hero_face_identity(rig, class_id)", self.generator)
+
     def test_core_bronze_saints_have_distinct_skinned_signature_equipment(self):
         required_parts = (
             "Dragon_Ancient_Shield",
