@@ -1627,11 +1627,11 @@ func _build_costume_visuals() -> void:
 
 func _load_authored_character_model(class_id: String) -> void:
     _clear_weapon_sockets()
-    _build_weapon_sockets()
     if is_instance_valid(authored_character_model):
         authored_character_model.queue_free()
         authored_character_model = null
     authored_animation_player = null
+    _build_weapon_sockets()
     authored_animation_state = ""
     var model_path := "res://assets/characters/%s/model/character.glb" % class_id
     if not ResourceLoader.exists(model_path):
