@@ -72,9 +72,11 @@ func _process(delta: float) -> void:
 func _should_use_galaxy_arena_scene() -> bool:
     if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
         return false
-    var mission: Dictionary = CampaignManager.get_active_mission()
-    var mission_chapter_id := str(CampaignDatabase.get_chapter_for_mission(str(mission.get("id", ""))).get("id", ""))
-    return mission_chapter_id == "galaxy_wars" or str(WorldExplorationManager.active_region_id) == "galaxy_wars"
+    var chapter_id := str(WorldExplorationManager.active_region_id)
+    if CampaignDatabase.get_chapter(chapter_id).is_empty():
+        var mission: Dictionary = CampaignManager.get_active_mission()
+        chapter_id = str(CampaignDatabase.get_chapter_for_mission(str(mission.get("id", ""))).get("id", ""))
+    return chapter_id == "galaxy_wars"
 
 func _build_world() -> void:
     if _should_use_galaxy_arena_scene():
