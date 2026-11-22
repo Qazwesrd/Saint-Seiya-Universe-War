@@ -192,5 +192,33 @@ class ArtValidatorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 safe_path(Path(directory), "../outside.glb")
 
+    def test_glb_rejects_skin_joint_indices_outside_node_table(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "character.glb"
+            write_glb(path, ["Body"])
+            document = json.loads(path.read_bytes()[20:].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+            document["skins"][0]["joints"] = [99]
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            with self.assertRaisesRegex(ValueError, "invalid joints"):
+                check_glb(path, require_skin=True)
+
+    def test_glb_rejects_skin_with_empty_joint_table(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "character.glb"
+            write_glb(path, ["Body"])
+            document = json.loads(path.read_bytes()[20:].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+            document["skins"][0]["joints"] = []
+            payload = json.dumps(document).encode("utf-8")
+            payload += b" " * ((4 - len(payload) % 4) % 4)
+            total = 12 + 8 + len(payload)
+            path.write_bytes(b"glTF" + struct.pack("<II", 2, total) +
+                             struct.pack("<II", len(payload), 0x4E4F534A) + payload)
+            with self.assertRaisesRegex(ValueError, "invalid joints"):
+                check_glb(path, require_skin=True)
+
 if __name__ == "__main__":
     unittest.main()
