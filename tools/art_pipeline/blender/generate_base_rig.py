@@ -1032,7 +1032,7 @@ def export_glb(path, objects):
         raise RuntimeError("GLB export missing or unexpectedly small: " + str(path))
 
 def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
-                 require_independent_skinned_nodes=()):
+                 require_independent_skinned_nodes=(), required_materials=()):
     data = path.read_bytes()
     if len(data) < 20 or data[:4] != b"glTF":
         raise RuntimeError("Invalid GLB header: " + str(path))
@@ -1041,6 +1041,10 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     if version != 2 or declared_length != len(data) or chunk_type != 0x4E4F534A or 20 + chunk_length > len(data):
         raise RuntimeError("Invalid GLB v2 JSON chunk: " + str(path))
     document = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    material_names = {str(item.get("name", "")) for item in document.get("materials", [])}
+    missing_materials = sorted(set(required_materials) - material_names)
+    if missing_materials:
+        raise RuntimeError("GLB is missing required hero identity materials: " + ", ".join(missing_materials))
     node_names = {str(node.get("name", "")) for node in document.get("nodes", [])}
     missing_nodes = sorted(set(required_nodes) - node_names)
     if missing_nodes:
@@ -1690,8 +1694,17 @@ def build_profession_models(shard_index=0, shard_count=1):
         destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
+        hero_materials = {
+            "pegasus": ("Pegasus_Bronze_Alloy", "Pegasus_Silver_Edges",
+                        "Pegasus_Cobalt_Enamel", "Pegasus_Crimson_Gem"),
+            "dragon": ("Dragon_Jade_Scale", "Dragon_Silver_Forging"),
+            "cygnus": ("Cygnus_Glacier_Crystal", "Cygnus_Frost_Silver"),
+            "andromeda": ("Andromeda_Rose_Chain", "Andromeda_Chain_Light"),
+            "phoenix": ("Phoenix_Flame_Ember", "Phoenix_Gold_Fire"),
+        }.get(class_id, ())
         validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
-                      require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips)
+                      require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips,
+                      required_materials=hero_materials)
         animation_dest = output_root / class_id / "animations/animation_library.glb"
         export_glb(animation_dest, [rig])
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
