@@ -82,6 +82,14 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
 
+    def test_profession_review_cameras_fit_full_character_silhouettes(self):
+        self.assertIn("bounds = []", self.generator)
+        self.assertIn("obj.matrix_world @ Vector(corner)", self.generator)
+        self.assertIn("preview_target = (min_corner + max_corner) * 0.5", self.generator)
+        self.assertIn("max(dimensions.x, dimensions.y, dimensions.z, 1.0) * 1.14", self.generator)
+        self.assertIn("(preview_target - camera.location).to_track_quat", self.generator)
+        self.assertIn("Cannot frame empty profession preview", self.generator)
+
     def test_all_five_bronze_saints_require_front_side_back_review_views(self):
         for view in ('("front", (0.0, -6.5, 2.0))',
                      '("side", (6.5, 0.0, 2.0))',
