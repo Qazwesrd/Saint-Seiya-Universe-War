@@ -220,5 +220,32 @@ class ArtValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "invalid joints"):
                 check_glb(path, require_skin=True)
 
+
+    def test_mesh_geometry_rejects_indices_outside_vertex_range(self):
+        from validate_authored_assets import validate_mesh_geometry
+        doc = {"accessors": [
+            {"type": "VEC3", "count": 3},
+            {"type": "SCALAR", "componentType": 5123, "count": 3, "max": [3]},
+        ], "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}]}
+        with self.assertRaisesRegex(ValueError, "exceeds POSITION"):
+            validate_mesh_geometry(doc)
+
+    def test_mesh_geometry_rejects_incomplete_triangles(self):
+        from validate_authored_assets import validate_mesh_geometry
+        doc = {"accessors": [
+            {"type": "VEC3", "count": 4},
+            {"type": "SCALAR", "componentType": 5123, "count": 4, "max": [3]},
+        ], "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}]}
+        with self.assertRaisesRegex(ValueError, "complete triangles"):
+            validate_mesh_geometry(doc)
+
+    def test_mesh_geometry_accepts_valid_indexed_triangle(self):
+        from validate_authored_assets import validate_mesh_geometry
+        doc = {"accessors": [
+            {"type": "VEC3", "count": 3},
+            {"type": "SCALAR", "componentType": 5123, "count": 3, "max": [2]},
+        ], "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}]}
+        validate_mesh_geometry(doc)
+
 if __name__ == "__main__":
     unittest.main()
