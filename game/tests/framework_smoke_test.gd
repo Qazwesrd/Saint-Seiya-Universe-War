@@ -1212,6 +1212,13 @@ func _run_tests() -> void:
 	RPGState.profile["faction_tutorial_enabled"] = false
 	var game_scene_probe := Node3D.new()
 	game_scene_probe.set_script(load("res://scripts/game.gd"))
+	assert(bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay selects the Galaxy Wars arena when Galaxy Wars is the active region")
+	WorldExplorationManager.active_region_id = "asgard"
+	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay does not reuse the Galaxy Wars arena in another chapter")
+	WorldExplorationManager.active_region_id = "galaxy_wars"
+	RPGState.profile["faction_tutorial_enabled"] = true
+	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "faction-specific tutorials keep their own starting world instead of loading the Galaxy Wars arena")
+	RPGState.profile["faction_tutorial_enabled"] = false
 	game_scene_probe.call("_build_world")
 	var integrated_arena := game_scene_probe.get("arena_world") as Node3D
 	assert(is_instance_valid(integrated_arena), "main gameplay world selects the authored Galaxy Wars arena for the Galaxy Wars region")
