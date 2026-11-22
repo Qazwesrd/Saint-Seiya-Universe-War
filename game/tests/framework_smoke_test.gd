@@ -1216,6 +1216,8 @@ func _run_tests() -> void:
 	var integrated_arena := game_scene_probe.get("arena_world") as Node3D
 	assert(is_instance_valid(integrated_arena), "main gameplay world selects the authored Galaxy Wars arena for the Galaxy Wars region")
 	assert(integrated_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "main gameplay world uses the authored arena player spawn")
+	assert(game_scene_probe.get_node_or_null("WorldRings") != null, "Galaxy Wars arena integration retains the shared world theme and terrain")
+	assert(not (integrated_arena.get_node("Ground/FloorMesh") as MeshInstance3D).visible and (integrated_arena.get_node("Ground/CollisionShape3D") as CollisionShape3D).disabled, "arena scene reuses shared terrain without duplicate floor collision or z-fighting")
 	game_scene_probe.free()
 	WorldExplorationManager.active_region_id = previous_arena_region
 	RPGState.profile["faction_tutorial_enabled"] = previous_faction_tutorial
