@@ -1187,5 +1187,21 @@ func _run_tests() -> void:
 	assert(not ComboPresetManager.save_preset("pegasus", "invalid_combo", "非法连招", ["not_unlocked"]), "reject unlearned skill in combo")
 	assert(RPGState.delete_slot(3), "clean up restored test character slot")
 	assert(not RPGState.has_slot(3), "test character cleanup removes active slot")
+	var galaxy_arena_scene := load("res://assets/environments/galaxy_wars/galaxy_arena_blockout.tscn") as PackedScene
+	assert(galaxy_arena_scene != null, "Galaxy Wars arena scene resource loads")
+	var galaxy_arena := galaxy_arena_scene.instantiate() as Node3D
+	assert(galaxy_arena != null, "Galaxy Wars arena scene instantiates")
+	add_child(galaxy_arena)
+	assert(galaxy_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "Galaxy Wars player spawn anchor resolves")
+	assert(galaxy_arena.get_npc_anchor_transform(&"tournament_guide").origin.distance_to(Vector3(0.0, 0.1, -18.0)) < 0.01, "Galaxy Wars NPC anchor resolves")
+	assert(galaxy_arena.get_enemy_anchor_transform(&"opening_duel").origin.distance_to(Vector3(0.0, 0.1, -8.0)) < 0.01, "Galaxy Wars opening enemy anchor resolves")
+	var arena_navigation := galaxy_arena.get_node("NavigationRegion3D") as NavigationRegion3D
+	assert(arena_navigation != null and arena_navigation.navigation_mesh != null, "Galaxy Wars navigation region has a navigation mesh")
+	assert(arena_navigation.navigation_mesh.get_polygon_count() == 1 and arena_navigation.navigation_mesh.get_vertices().size() == 4, "Galaxy Wars navigation mesh exposes its traversable arena polygon")
+	var arena_quest_trigger := galaxy_arena.get_node("QuestTrigger") as Area3D
+	assert(arena_quest_trigger.body_entered.is_connected(Callable(galaxy_arena, "_on_quest_trigger_body_entered")), "Galaxy Wars quest trigger is connected to its controller")
+	galaxy_arena.queue_free()
+	await get_tree().process_frame
+
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)
