@@ -1206,5 +1206,19 @@ func _run_tests() -> void:
 	galaxy_arena.queue_free()
 	await get_tree().process_frame
 
+	var previous_arena_region := WorldExplorationManager.active_region_id
+	var previous_faction_tutorial := bool(RPGState.profile.get("faction_tutorial_enabled", false))
+	WorldExplorationManager.active_region_id = "galaxy_wars"
+	RPGState.profile["faction_tutorial_enabled"] = false
+	var game_scene_probe := Node3D.new()
+	game_scene_probe.set_script(load("res://scripts/game.gd"))
+	game_scene_probe.call("_build_world")
+	var integrated_arena := game_scene_probe.get("arena_world") as Node3D
+	assert(is_instance_valid(integrated_arena), "main gameplay world selects the authored Galaxy Wars arena for the Galaxy Wars region")
+	assert(integrated_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "main gameplay world uses the authored arena player spawn")
+	game_scene_probe.free()
+	WorldExplorationManager.active_region_id = previous_arena_region
+	RPGState.profile["faction_tutorial_enabled"] = previous_faction_tutorial
+
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)
