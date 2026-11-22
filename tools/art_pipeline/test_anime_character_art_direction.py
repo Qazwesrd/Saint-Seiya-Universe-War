@@ -170,9 +170,12 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
                            "_Armor_Shin_Greave", "_Armor_Waist_Faulds"):
                 self.assertIn(suffix, profile_block.group(1))
             self.assertIn(f'ornaments.extend(add_core_hero_armor_layers(rig, class_id))', self.generator)
-        for bone in ('"Chest"', '"LeftShoulder"', '"RightShoulder"',
-                     '"LeftForearm"', '"RightForearm"', '"LeftShin"', '"RightShin"', '"Hips"'):
+        for bone in ('"Chest"', '"LeftForearm"', '"RightForearm"', '"Hips"'):
             self.assertIn(bone, profile_block.group(1))
+        # Side-specific bones are selected dynamically from the loop's side label.
+        self.assertIn('side + "Shoulder"', profile_block.group(1))
+        self.assertIn('side + "Forearm"', profile_block.group(1))
+        self.assertIn('side + "Shin"', profile_block.group(1))
         self.assertIn('0.90, 0.19', profile_block.group(1))
         self.assertIn('0.78, 0.17', profile_block.group(1))
 
@@ -188,9 +191,11 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
                        "_Armor_Knee_Cop", "_Armor_Boot_Sabatons", "_Armor_Waist_Side_Tasset",
                        "_Armor_Helm_Cheek_Guard"):
             self.assertIn(suffix, block)
-        for bone in ('"Head"', '"LeftShin"', '"RightShin"', '"LeftFoot"',
-                     '"RightFoot"', '"Hips"'):
+        for bone in ('"Head"', '"Hips"'):
             self.assertIn(bone, block)
+        # Left/right armor uses the same loop-driven bone mapping.
+        self.assertIn('side + "Shin"', block)
+        self.assertIn('side + "Foot"', block)
         for hero in ("pegasus", "dragon", "cygnus", "andromeda", "phoenix"):
             self.assertIn(f'"{hero}": [', block)
         self.assertIn('add_weighted_limb(', block)
@@ -214,7 +219,8 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('imported_skeleton.find_bone(required_bone) < 0', self.player)
         self.assertIn('var required_bones := ["Head", "Chest", "LeftForearm", "RightForearm", "LeftHand", "RightHand"]', self.player)
         self.assertIn('var required_clips := ["idle", "walk", "run", "%s_basic_attack_1" % class_id]', self.player)
-        self.assertIn('imported_animation_player.has_animation(required_clip)', self.player)
+        self.assertIn('_validate_authored_animation_clip(imported_animation_player, imported_skeleton, required_clip)', self.player)
+        self.assertIn('var invalid_clips: Array[String] = []', self.player)
         self.assertIn('instance.free()', self.player)
         self.assertIn('keeping procedural fallback:', self.player)
         self.assertIn('child.visible = false', self.player)
