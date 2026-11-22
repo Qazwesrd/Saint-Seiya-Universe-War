@@ -1065,6 +1065,23 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
             joints = skins[skin_index].get("joints", [])
             if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
                 raise RuntimeError(f"Mesh node {node_index} has invalid skin joints: {path}")
+            primitives = meshes[mesh_index].get("primitives", [])
+            if not primitives:
+                raise RuntimeError(f"Mesh node {node_index} has no glTF primitives: {path}")
+            materials = document.get("materials", [])
+            for primitive_index, primitive in enumerate(primitives):
+                attributes = primitive.get("attributes", {})
+                for semantic in ("POSITION", "JOINTS_0", "WEIGHTS_0"):
+                    accessor_index = attributes.get(semantic)
+                    if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(document.get("accessors", [])):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has no valid {semantic} accessor: {path}"
+                        )
+                material_index = primitive.get("material")
+                if not isinstance(material_index, int) or not 0 <= material_index < len(materials):
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} has an invalid material slot: {path}"
+                    )
     if require_independent_skinned_nodes:
         by_name = {str(node.get("name", "")): node for node in nodes}
         mesh_indices = []
