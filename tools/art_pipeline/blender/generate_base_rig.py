@@ -1041,10 +1041,31 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     if version != 2 or declared_length != len(data) or chunk_type != 0x4E4F534A or 20 + chunk_length > len(data):
         raise RuntimeError("Invalid GLB v2 JSON chunk: " + str(path))
     document = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
-    material_names = {str(item.get("name", "")) for item in document.get("materials", [])}
+    materials = document.get("materials", [])
+    material_names = {str(item.get("name", "")) for item in materials}
     missing_materials = sorted(set(required_materials) - material_names)
     if missing_materials:
         raise RuntimeError("GLB is missing required hero identity materials: " + ", ".join(missing_materials))
+    material_indices = {str(item.get("name", "")): index for index, item in enumerate(materials)}
+    used_material_indices = {
+        primitive.get("material")
+        for mesh in document.get("meshes", [])
+        for primitive in mesh.get("primitives", [])
+        if isinstance(primitive.get("material"), int)
+    }
+    unused_hero_materials = sorted(
+        name for name in required_materials
+        if material_indices[name] not in used_material_indices
+    )
+    if unused_hero_materials:
+        raise RuntimeError(
+            "GLB hero identity materials are present but not assigned to visible geometry: "
+            + ", ".join(unused_hero_materials)
+        )
+    if required_materials:
+        print("HERO_MATERIAL_ASSIGNMENTS_PASS",
+              path.parent.parent.name,
+              "materials=" + ",".join(sorted(required_materials)))
     node_names = {str(node.get("name", "")) for node in document.get("nodes", [])}
     missing_nodes = sorted(set(required_nodes) - node_names)
     if missing_nodes:
