@@ -86,7 +86,12 @@ func _build_world() -> void:
         active_world_chapter_id = "galaxy_wars"
         if arena_world.has_signal("quest_triggered"):
             arena_world.connect("quest_triggered", _on_galaxy_arena_quest_triggered)
-        return
+        var arena_ground := arena_world.get_node("Ground") as StaticBody3D
+        arena_ground.collision_layer = 0
+        (arena_ground.get_node("CollisionShape3D") as CollisionShape3D).disabled = true
+        (arena_ground.get_node("FloorMesh") as MeshInstance3D).visible = false
+        (arena_world.get_node("DirectionalLight3D") as DirectionalLight3D).visible = false
+        (arena_world.get_node("WorldEnvironment") as WorldEnvironment).environment = null
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
@@ -356,6 +361,8 @@ func travel_to_world_region(chapter_id: String) -> bool:
         return false
     player.call("cancel_auto_move")
     player.velocity = Vector3.ZERO
+    if is_instance_valid(arena_world):
+        arena_world.visible = chapter_id == "galaxy_wars"
     var region: Dictionary = travel_result.get("region", {})
     player.global_position = region.get("spawn_position", Vector3(0.0, 0.15, 7.0))
     active_world_chapter_id = ""
