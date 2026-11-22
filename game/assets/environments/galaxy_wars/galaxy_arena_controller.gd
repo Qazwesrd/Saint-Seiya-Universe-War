@@ -18,7 +18,25 @@ const ENEMY_ANCHOR_PATHS := {
 @onready var _quest_trigger: Area3D = $QuestTrigger
 
 func _ready() -> void:
+	_configure_navigation_mesh()
 	_quest_trigger.body_entered.connect(_on_quest_trigger_body_entered)
+
+func _configure_navigation_mesh() -> void:
+	var navigation_mesh := NavigationMesh.new()
+	navigation_mesh.set_vertices(PackedVector3Array([
+		Vector3(-55.0, 0.02, -37.0),
+		Vector3(55.0, 0.02, -37.0),
+		Vector3(55.0, 0.02, 37.0),
+		Vector3(-55.0, 0.02, 37.0),
+	]))
+	navigation_mesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
+	navigation_mesh.agent_height = 1.8
+	navigation_mesh.agent_radius = 0.45
+	navigation_mesh.agent_max_climb = 0.35
+	navigation_mesh.agent_max_slope = 42.0
+	navigation_mesh.cell_size = 0.25
+	navigation_mesh.cell_height = 0.2
+	$NavigationRegion3D.navigation_mesh = navigation_mesh
 
 func get_spawn_transform(spawn_id: StringName) -> Transform3D:
 	return _get_anchor_transform(SPAWN_PATHS, spawn_id)
