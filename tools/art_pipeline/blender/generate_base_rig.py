@@ -108,6 +108,105 @@ def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=
     obj.parent = rig
     return obj
 
+
+def add_core_hero_hair(rig, hero_id):
+    """Add a distinct, head-bone-weighted hair silhouette for each Bronze Saint prototype.
+
+    These authored silhouettes are an identity pass, not final sculpted hair assets.
+    """
+    profiles = {
+        "pegasus": {
+            "color": (0.34, 0.12, 0.055),
+            "spikes": [
+                ((-0.10, 0.02, 1.94), (-0.19, 0.10, 2.10)),
+                ((-0.04, 0.02, 1.98), (-0.07, 0.12, 2.17)),
+                ((0.03, 0.02, 1.98), (0.08, 0.12, 2.16)),
+                ((0.10, 0.02, 1.93), (0.20, 0.12, 2.08)),
+                ((-0.11, -0.08, 1.88), (-0.20, -0.17, 1.98)),
+                ((0.11, -0.08, 1.88), (0.20, -0.17, 1.98)),
+            ],
+        },
+        "dragon": {
+            "color": (0.035, 0.12, 0.075),
+            "spikes": [
+                ((-0.11, 0.03, 1.91), (-0.20, 0.18, 2.04)),
+                ((-0.05, 0.03, 1.98), (-0.09, 0.18, 2.14)),
+                ((0.02, 0.03, 1.99), (0.03, 0.19, 2.13)),
+                ((0.09, 0.03, 1.92), (0.18, 0.17, 2.04)),
+                ((-0.12, 0.00, 1.82), (-0.18, 0.16, 1.66)),
+                ((0.12, 0.00, 1.82), (0.18, 0.16, 1.66)),
+                ((-0.08, 0.06, 1.80), (-0.11, 0.18, 1.59)),
+                ((0.08, 0.06, 1.80), (0.11, 0.18, 1.59)),
+            ],
+        },
+        "cygnus": {
+            "color": (0.78, 0.58, 0.22),
+            "spikes": [
+                ((-0.10, 0.02, 1.94), (-0.18, 0.12, 2.08)),
+                ((-0.04, 0.02, 1.98), (-0.08, 0.13, 2.16)),
+                ((0.03, 0.02, 1.99), (0.04, 0.14, 2.17)),
+                ((0.10, 0.02, 1.93), (0.18, 0.13, 2.09)),
+                ((-0.10, -0.08, 1.88), (-0.19, -0.20, 1.91)),
+                ((0.10, -0.08, 1.88), (0.18, -0.19, 1.96)),
+            ],
+        },
+        "andromeda": {
+            "color": (0.08, 0.34, 0.19),
+            "spikes": [
+                ((-0.10, 0.03, 1.93), (-0.17, 0.15, 2.08)),
+                ((-0.04, 0.03, 1.98), (-0.06, 0.15, 2.15)),
+                ((0.04, 0.03, 1.98), (0.07, 0.15, 2.15)),
+                ((0.10, 0.03, 1.93), (0.18, 0.15, 2.08)),
+                ((-0.12, -0.02, 1.82), (-0.18, -0.02, 1.58)),
+                ((0.12, -0.02, 1.82), (0.18, -0.02, 1.58)),
+            ],
+        },
+        "phoenix": {
+            "color": (0.055, 0.045, 0.16),
+            "spikes": [
+                ((-0.11, 0.03, 1.93), (-0.23, 0.15, 2.06)),
+                ((-0.06, 0.03, 1.98), (-0.14, 0.16, 2.19)),
+                ((0.00, 0.03, 2.00), (0.00, 0.18, 2.22)),
+                ((0.06, 0.03, 1.98), (0.14, 0.16, 2.19)),
+                ((0.11, 0.03, 1.93), (0.23, 0.15, 2.06)),
+                ((-0.12, -0.06, 1.86), (-0.21, -0.16, 1.96)),
+                ((0.12, -0.06, 1.86), (0.21, -0.16, 1.96)),
+            ],
+        },
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    hair_mat = material("Core_Hero_Hair_" + hero_id, profile["color"], 0.02, 0.38)
+    created = []
+    for index, (base, tip) in enumerate(profile["spikes"], start=1):
+        direction = Vector(tip) - Vector(base)
+        bpy.ops.mesh.primitive_cone_add(
+            vertices=16, radius1=0.043, radius2=0.002,
+            depth=direction.length, location=(Vector(base) + Vector(tip)) * 0.5,
+        )
+        strand = bpy.context.object
+        strand.name = hero_id + "_Hair_Strand_" + str(index)
+        strand.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+        strand.data.materials.append(hair_mat)
+        group = strand.vertex_groups.new(name="Head")
+        group.add(list(range(len(strand.data.vertices))), 1.0, "REPLACE")
+        modifier = strand.modifiers.new("Head_Armature", "ARMATURE")
+        modifier.object = rig
+        strand.parent = rig
+        created.append(strand)
+    # Longer side locks distinguish the flowing silhouettes of Dragon and Andromeda.
+    if hero_id in ("dragon", "andromeda"):
+        for side, sign in (("Left", 1), ("Right", -1)):
+            lock = add_weighted_ellipsoid(
+                hero_id + "_" + side + "_Long_Hair_Lock",
+                (sign * 0.12, -0.015, 1.72),
+                (0.045, 0.055, 0.19 if hero_id == "andromeda" else 0.22),
+                "Head", hair_mat, rig, segments=20, rings=12,
+            )
+            created.append(lock)
+    return created
+
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
     """Build a tapered, faceted anatomical limb from a ring-loft mesh.
 
@@ -1177,6 +1276,8 @@ def build_profession_models(shard_index=0, shard_count=1):
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            add_core_hero_hair(rig, class_id)
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
