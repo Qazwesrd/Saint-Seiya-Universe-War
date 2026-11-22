@@ -12,6 +12,7 @@ on:
       - "tools/art_pipeline/batch_asset_factory.py"
       - "tools/art_pipeline/build_manifests.py"
       - "tools/art_pipeline/validate_authored_assets.py"
+      - "tools/art_pipeline/test_anime_character_art_direction.py"
       - "game/scripts/equipment_database.gd"
       - "game/scripts/skill_system.gd"
       - "game/scripts/enemy_database.gd"
@@ -48,6 +49,8 @@ jobs:
         run: |
           sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libgl1-mesa-dri libgbm1
           blender --version
+      - name: Run character art and animation regression tests
+        run: python3 tools/art_pipeline/test_anime_character_art_direction.py
       - name: Generate and structurally validate GLB prototypes
         shell: bash
         run: |
