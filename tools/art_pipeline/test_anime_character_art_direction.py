@@ -109,6 +109,8 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('"chain_anchor": {"bone": "RightForearm"', player)
         self.assertIn('"aerial_core": {"bone": "Chest"', player)
         self.assertIn("func get_weapon_socket(socket_id: String) -> Node3D:", player)
+        self.assertIn("func get_skill_weapon_socket(ability: Dictionary) -> Node3D:", player)
+        self.assertIn("SkillAnimationCatalog.get_profile(class_id, ability)", player)
         self.assertIn("_build_weapon_sockets()", player)
 
     def test_art_direction_requires_canon_fidelity_and_no_default_capes(self):
