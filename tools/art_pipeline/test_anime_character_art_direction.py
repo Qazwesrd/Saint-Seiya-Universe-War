@@ -170,7 +170,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
                            "_Armor_Shin_Greave", "_Armor_Waist_Faulds"):
                 self.assertIn(suffix, profile_block.group(1))
             self.assertIn(f'ornaments.extend(add_core_hero_armor_layers(rig, class_id))', self.generator)
-        for bone in ('"Chest"', '"LeftForearm"', '"RightForearm"', '"Hips"'):
+        for bone in ('"Chest"', '"Hips"'):
             self.assertIn(bone, profile_block.group(1))
         # Side-specific bones are selected dynamically from the loop's side label.
         self.assertIn('side + "Shoulder"', profile_block.group(1))
