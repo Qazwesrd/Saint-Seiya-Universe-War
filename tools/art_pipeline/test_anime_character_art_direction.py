@@ -84,6 +84,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
 
     def test_profession_review_cameras_fit_full_character_silhouettes(self):
         self.assertIn("bounds = []", self.generator)
+        self.assertIn('obj.type != "MESH" or obj.name == "Preview_Studio_Floor"', self.generator)
         self.assertIn("obj.matrix_world @ Vector(corner)", self.generator)
         self.assertIn("preview_target = (min_corner + max_corner) * 0.5", self.generator)
         self.assertIn("max(dimensions.x, dimensions.y, dimensions.z, 1.0) * 1.14", self.generator)
