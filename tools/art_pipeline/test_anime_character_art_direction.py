@@ -177,7 +177,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
 
     def test_core_hero_helmets_knee_armor_boots_and_side_tassets_are_skinned(self):
         profile_block = re.search(
-            r"def add_core_hero_armor_layers\\(rig, hero_id\\):(.*?)^def build_profession_models",
+            r"def add_core_hero_armor_layers\(rig, hero_id\):(.*?)^def build_profession_models",
             self.generator, re.S | re.M,
         )
         self.assertIsNotNone(profile_block)
