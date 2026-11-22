@@ -206,8 +206,18 @@ jobs:
                   raise SystemExit(f"{class_id}: expected 24 skill-specific clips, found {len(ability_clips)}")
               audited_ability_total += len(ability_clips)
               expected_clips = list(required_clips) + combo_clips + skill_clips + ability_clips
-              check_glb(model, require_skin=True, clips=expected_clips)
-              animation_data = check_glb(animation_library, clips=expected_clips, require_meshes=False)
+              model_data = check_glb(model, require_skin=True, clips=expected_clips)
+              model_joint_names = {
+                  str(model_data["nodes"][joint].get("name", ""))
+                  for skin in model_data.get("skins", [])
+                  for joint in skin.get("joints", [])
+              }
+              if not model_joint_names:
+                  raise SystemExit(f"{class_id}: character model has no named skin joints")
+              animation_data = check_glb(
+                  animation_library, clips=expected_clips, require_meshes=False,
+                  compatible_joint_names=model_joint_names,
+              )
               animation_by_name = {item.get("name"): item for item in animation_data["animations"]}
               # Combo attacks use a full-body chain (at least 8 animated bones).
               # Skill archetypes and individual abilities are intentionally more focused:
