@@ -12,6 +12,8 @@ const SkillVisualCatalogScript = preload("res://scripts/skill_visual_catalog.gd"
 const BossStoryCatalogScript = preload("res://scripts/boss_story_catalog.gd")
 const LootPickupScript = preload("res://scripts/loot_pickup.gd")
 const WorldThemeManagerScript = preload("res://scripts/world_theme_manager.gd")
+const GalaxyWarsArenaScene = preload("res://assets/environments/galaxy_wars/galaxy_arena_blockout.tscn")
+var arena_world: Node3D
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
@@ -32,7 +34,7 @@ func _ready() -> void:
     player.set_script(PlayerScript)
     player.set("game", self)
     var faction_world_profile: Dictionary = FactionDatabase.get_world_profile()
-    player.position = faction_world_profile.get("spawn_position", Vector3(0, 0.15, 7))
+    player.position = arena_world.call("get_spawn_transform", &"player").origin if is_instance_valid(arena_world) else faction_world_profile.get("spawn_position", Vector3(0, 0.15, 7))
     add_child(player)
     _spawn_followers()
     CollectionSystem.collection_changed.connect(_spawn_followers)
@@ -67,7 +69,22 @@ func _process(delta: float) -> void:
                 SideQuestManager.record_event("landmark_discovered", {"chapter_id": active_world_chapter_id, "landmark_id": landmark_id})
                 show_notice("发现新地标：" + str(landmark.get("name", "未知地点")))
 
+func _should_use_galaxy_arena_scene() -> bool:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
+        return false
+    var mission: Dictionary = CampaignManager.get_active_mission()
+    var mission_chapter_id := str(CampaignDatabase.get_chapter_for_mission(str(mission.get("id", ""))).get("id", ""))
+    return mission_chapter_id == "galaxy_wars" or str(WorldExplorationManager.active_region_id) == "galaxy_wars"
+
 func _build_world() -> void:
+    if _should_use_galaxy_arena_scene():
+        arena_world = GalaxyWarsArenaScene.instantiate()
+        arena_world.name = "GalaxyWarsArena"
+        add_child(arena_world)
+        active_world_chapter_id = "galaxy_wars"
+        if arena_world.has_signal("quest_triggered"):
+            arena_world.connect("quest_triggered", _on_galaxy_arena_quest_triggered)
+        return
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
@@ -348,8 +365,17 @@ func travel_to_world_region(chapter_id: String) -> bool:
 func _spawn_guide_npc() -> void:
     guide_npc = Node3D.new()
     guide_npc.set_script(GuideNpcScript)
-    guide_npc.position = player.global_position + Vector3(0, 0, 2)
+    if is_instance_valid(arena_world):
+        guide_npc.global_transform = arena_world.call("get_npc_anchor_transform", &"tournament_guide")
+    else:
+        guide_npc.position = player.global_position + Vector3(0, 0, 2)
     add_child(guide_npc)
+
+func _on_galaxy_arena_quest_triggered(trigger_id: StringName, actor: Node3D) -> void:
+    if actor != player:
+        return
+    if trigger_id == &"tournament_guide_intro":
+        show_notice("已抵达圣域训练引导员附近：靠近后点击交互按钮接取银河竞技场试炼。")
 
 func _spawn_hongmeng_guide_npc() -> void:
     hongmeng_guide_npc = Node3D.new()
@@ -596,6 +622,8 @@ func _spawn_encounter_wave(wave: Dictionary) -> void:
         var archetype_id := str(spawn.get("archetype_id", "arena_guard"))
         var is_boss := bool(spawn.get("boss", archetype_id == "arena_boss"))
         var position: Vector3 = spawn.get("position", Vector3(0, 0.1, -5))
+        if is_instance_valid(arena_world) and archetype_id == "arena_boss":
+            position = arena_world.call("get_enemy_anchor_transform", &"opening_duel").origin
         for index in range(count):
             var offset := Vector3(float(index % 3) * 1.5, 0.0, float(index / 3) * 1.5)
             _spawn_enemy(position + offset, is_boss, archetype_id)
