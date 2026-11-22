@@ -1189,7 +1189,7 @@ func _run_tests() -> void:
 	assert(not RPGState.has_slot(3), "test character cleanup removes active slot")
 	var galaxy_arena_scene := load("res://assets/environments/galaxy_wars/galaxy_arena_blockout.tscn") as PackedScene
 	assert(galaxy_arena_scene != null, "Galaxy Wars arena scene resource loads")
-	var galaxy_arena := galaxy_arena_scene.instantiate() as Node3D
+	var galaxy_arena = galaxy_arena_scene.instantiate()
 	assert(galaxy_arena != null, "Galaxy Wars arena scene instantiates")
 	add_child(galaxy_arena)
 	assert(galaxy_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "Galaxy Wars player spawn anchor resolves")
