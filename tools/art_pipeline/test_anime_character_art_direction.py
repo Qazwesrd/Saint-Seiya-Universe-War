@@ -82,6 +82,15 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_RENDERED", self.generator)
         self.assertIn("CORE_BRONZE_SAINT_PREVIEW_VALIDATED", self.workflow)
 
+    def test_all_five_bronze_saints_require_front_side_back_review_views(self):
+        for view in ('("front", (0.0, -6.5, 2.0))',
+                     '("side", (6.5, 0.0, 2.0))',
+                     '("back", (0.0, 6.5, 2.0))'):
+            self.assertIn(view, self.generator)
+        self.assertIn('for view_name in ("front", "side", "back")', self.generator)
+        self.assertIn('expected_views = ("front", "side", "back")', self.workflow)
+        self.assertIn("CORE_BRONZE_SAINT_THREE_VIEW_SET_PASS", self.workflow)
+
     def test_core_bronze_saints_have_distinct_skinned_signature_equipment(self):
         required_parts = (
             "Dragon_Ancient_Shield",
