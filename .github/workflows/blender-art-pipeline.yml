@@ -26,6 +26,7 @@ on:
       - "tools/art_pipeline/batch_asset_factory.py"
       - "tools/art_pipeline/build_manifests.py"
       - "tools/art_pipeline/validate_authored_assets.py"
+      - "tools/art_pipeline/test_anime_character_art_direction.py"
       - "game/scripts/equipment_database.gd"
       - "game/scripts/skill_system.gd"
       - ".github/workflows/blender-art-pipeline.yml"
