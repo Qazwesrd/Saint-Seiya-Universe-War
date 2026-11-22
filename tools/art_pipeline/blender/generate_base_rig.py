@@ -242,6 +242,39 @@ def add_core_hero_eyes(rig, hero_id):
         ))
     return created
 
+
+def add_core_hero_face_identity(rig, hero_id):
+    """Add subtle per-hero brow and cheek forms to the shared face blockout."""
+    profiles = {
+        "pegasus": {"brow": (0.040, 0.010, 0.010), "cheek": (0.043, 0.022, 0.031), "tilt": -0.10},
+        "dragon": {"brow": (0.042, 0.011, 0.009), "cheek": (0.050, 0.024, 0.036), "tilt": 0.02},
+        "cygnus": {"brow": (0.038, 0.009, 0.008), "cheek": (0.040, 0.020, 0.030), "tilt": 0.12},
+        "andromeda": {"brow": (0.036, 0.009, 0.008), "cheek": (0.046, 0.021, 0.034), "tilt": -0.04},
+        "phoenix": {"brow": (0.045, 0.012, 0.010), "cheek": (0.048, 0.023, 0.032), "tilt": 0.16},
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    created = []
+    brow_mat = material("Core_Hero_Brow_" + hero_id,
+                        (0.055, 0.038, 0.030), 0.0, 0.72)
+    cheek_mat = material("Core_Hero_Cheek_Shadow_" + hero_id,
+                         (0.39, 0.225, 0.17), 0.0, 0.82)
+    for side, sign in (("Left", 1), ("Right", -1)):
+        brow = add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Brow",
+            (sign * 0.053, -0.137, 1.851),
+            profile["brow"], "Head", brow_mat, rig, 16, 8,
+        )
+        brow.rotation_euler.y = profile["tilt"] * sign
+        created.append(brow)
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Cheek_Contour",
+            (sign * 0.091, -0.103, 1.765),
+            profile["cheek"], "Head", cheek_mat, rig, 16, 10,
+        ))
+    return created
+
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
     """Build a tapered, faceted anatomical limb from a ring-loft mesh.
 
@@ -1314,6 +1347,7 @@ def build_profession_models(shard_index=0, shard_count=1):
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             add_core_hero_hair(rig, class_id)
             add_core_hero_eyes(rig, class_id)
+            add_core_hero_face_identity(rig, class_id)
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
