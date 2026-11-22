@@ -12,6 +12,7 @@ GENERATOR = ROOT / "tools/art_pipeline/blender/generate_base_rig.py"
 WORKFLOW = ROOT / ".github/workflows/blender-art-pipeline.yml"
 DIRECTION = ROOT / "docs/ANIME_CHARACTER_ART_DIRECTION.md"
 MANIFEST_BUILDER = ROOT / "tools/art_pipeline/build_manifests.py"
+PLAYER = ROOT / "game/scripts/player.gd"
 
 
 def dictionary_ids(source: str, marker: str, indent: int) -> set[str]:
@@ -29,6 +30,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
         cls.direction = DIRECTION.read_text(encoding="utf-8")
         cls.manifest_builder = MANIFEST_BUILDER.read_text(encoding="utf-8")
+        cls.player = PLAYER.read_text(encoding="utf-8")
 
     def test_every_playable_visual_profile_has_a_signature_pose_style(self):
         profiles = dictionary_ids(self.visual, "const PROFILES := {", 4)
@@ -205,6 +207,17 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('not primitives', self.generator)
         self.assertIn('validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh")', self.generator)
         self.assertIn('export_glb(destination, [rig, merged])', self.generator)
+
+    def test_godot_only_replaces_fallback_after_validating_imported_character_rig(self):
+        self.assertIn('var imported_skeleton := _find_skeleton_recursive(instance)', self.player)
+        self.assertIn('var imported_animation_player := _find_animation_player(instance)', self.player)
+        self.assertIn('imported_skeleton.find_bone(required_bone) < 0', self.player)
+        self.assertIn('var required_bones := ["Head", "Chest", "LeftForearm", "RightForearm", "LeftHand", "RightHand"]', self.player)
+        self.assertIn('var required_clips := ["idle", "walk", "run", "%s_basic_attack_1" % class_id]', self.player)
+        self.assertIn('imported_animation_player.has_animation(required_clip)', self.player)
+        self.assertIn('instance.free()', self.player)
+        self.assertIn('keeping procedural fallback:', self.player)
+        self.assertIn('child.visible = false', self.player)
 
     def test_glb_skin_accessors_match_vertex_layout_and_valid_component_types(self):
         for check in (
