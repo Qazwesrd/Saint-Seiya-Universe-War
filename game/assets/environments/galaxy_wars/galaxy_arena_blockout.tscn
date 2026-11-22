@@ -1,0 +1,103 @@
+[gd_scene load_steps=8 format=3]
+
+[sub_resource type="StandardMaterial3D" id="ArenaFloorMaterial"]
+albedo_color = Color(0.075, 0.105, 0.17, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="ArenaTrimMaterial"]
+albedo_color = Color(0.42, 0.31, 0.16, 1)
+metallic = 0.35
+roughness = 0.58
+
+[sub_resource type="BoxShape3D" id="GroundCollision"]
+size = Vector3(120, 2, 84)
+
+[sub_resource type="BoxMesh" id="GroundMesh"]
+size = Vector3(120, 2, 84)
+
+[sub_resource type="BoxMesh" id="ColumnMesh"]
+size = Vector3(3, 12, 3)
+
+[sub_resource type="Environment" id="EnvironmentResource"]
+background_mode = 1
+background_color = Color(0.018, 0.027, 0.065, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.36, 0.43, 0.62, 1)
+ambient_light_energy = 0.65
+
+[sub_resource type="BoxShape3D" id="QuestTriggerShape"]
+size = Vector3(10, 4, 10)
+
+[node name="GalaxyWarsArenaBlockout" type="Node3D"]
+metadata/scene_status = "graybox_blockout_not_final_art"
+metadata/chapter_id = "galaxy_wars"
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -28, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+collision_layer = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("GroundCollision")
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("GroundMesh")
+surface_material_override/0 = SubResource("ArenaFloorMaterial")
+
+[node name="LandmarkColumns" type="Node3D" parent="."]
+
+[node name="ColumnNorthWest" type="MeshInstance3D" parent="LandmarkColumns"]
+position = Vector3(-34, 6, -24)
+mesh = SubResource("ColumnMesh")
+surface_material_override/0 = SubResource("ArenaTrimMaterial")
+
+[node name="ColumnNorthEast" type="MeshInstance3D" parent="LandmarkColumns"]
+position = Vector3(34, 6, -24)
+mesh = SubResource("ColumnMesh")
+surface_material_override/0 = SubResource("ArenaTrimMaterial")
+
+[node name="ColumnSouthWest" type="MeshInstance3D" parent="LandmarkColumns"]
+position = Vector3(-34, 6, 24)
+mesh = SubResource("ColumnMesh")
+surface_material_override/0 = SubResource("ArenaTrimMaterial")
+
+[node name="ColumnSouthEast" type="MeshInstance3D" parent="LandmarkColumns"]
+position = Vector3(34, 6, 24)
+mesh = SubResource("ColumnMesh")
+surface_material_override/0 = SubResource("ArenaTrimMaterial")
+
+[node name="SpawnPoints" type="Node3D" parent="."]
+
+[node name="PlayerSpawn" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(0, 0.1, 22)
+
+[node name="BronzeSaintsArrival" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(0, 0.1, 16)
+
+[node name="NpcAnchors" type="Node3D" parent="."]
+
+[node name="TournamentGuideAnchor" type="Marker3D" parent="NpcAnchors"]
+position = Vector3(0, 0.1, -18)
+
+[node name="EnemyAnchors" type="Node3D" parent="."]
+
+[node name="OpeningDuelEnemyAnchor" type="Marker3D" parent="EnemyAnchors"]
+position = Vector3(0, 0.1, -8)
+
+[node name="QuestTrigger" type="Area3D" parent="."]
+position = Vector3(0, 1, -18)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="QuestTrigger"]
+shape = SubResource("QuestTriggerShape")
+
+[node name="CameraReference" type="Marker3D" parent="."]
+position = Vector3(0, 8, 18)
+rotation_degrees = Vector3(-18, 0, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("EnvironmentResource")
