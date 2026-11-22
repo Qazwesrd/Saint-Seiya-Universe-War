@@ -156,7 +156,7 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
     def test_all_five_bronze_saints_receive_layered_skinned_armor_assemblies(self):
         self.assertIn("def add_core_hero_armor_layers(rig, hero_id):", self.generator)
         profile_block = re.search(
-            r"def add_core_hero_armor_layers\\(rig, hero_id\\):(.*?)^def build_profession_models",
+            r"def add_core_hero_armor_layers\(rig, hero_id\):(.*?)^def build_profession_models",
             self.generator, re.S | re.M,
         )
         self.assertIsNotNone(profile_block)
