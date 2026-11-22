@@ -1708,6 +1708,13 @@ func _build_weapon_sockets() -> void:
         weapon_socket_nodes[str(socket_id)] = socket
 
 
+func get_skill_weapon_socket(ability: Dictionary) -> Node3D:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var profile := SkillAnimationCatalog.get_profile(class_id, ability)
+    var socket_id := str(profile.get("weapon_socket", "right_hand"))
+    return get_weapon_socket(socket_id)
+
+
 func get_weapon_socket(socket_id: String) -> Node3D:
     var socket: Variant = weapon_socket_nodes.get(socket_id)
     return socket as Node3D if is_instance_valid(socket) else null
