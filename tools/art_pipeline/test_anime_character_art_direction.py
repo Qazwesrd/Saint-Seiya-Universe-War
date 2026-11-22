@@ -219,6 +219,16 @@ class AnimeCharacterArtDirectionTests(unittest.TestCase):
         self.assertIn('keeping procedural fallback:', self.player)
         self.assertIn('child.visible = false', self.player)
 
+    def test_animation_tracks_must_target_the_character_skeleton(self):
+        validator = (ROOT / "tools/art_pipeline/validate_authored_assets.py").read_text(encoding="utf-8")
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("compatible_joint_names: set[str] | None = None", validator)
+        self.assertIn("skin_joint_names.update", validator)
+        self.assertIn("targets node", validator)
+        self.assertIn("target_name not in allowed_joint_names", validator)
+        self.assertIn("model_joint_names = {", workflow)
+        self.assertIn("compatible_joint_names=model_joint_names", workflow)
+
     def test_glb_skin_accessors_match_vertex_layout_and_valid_component_types(self):
         for check in (
             'position_accessor.get("type") != "VEC3"',
