@@ -1235,7 +1235,7 @@ func _run_tests() -> void:
 	RPGState.profile["faction_tutorial_enabled"] = true
 	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "faction-specific tutorials keep their own starting world instead of loading the Galaxy Wars arena")
 	RPGState.profile["faction_tutorial_enabled"] = false
-	game_scene_probe.call("_build_world")
+	# Adding the probe to the SceneTree already ran game.gd::_ready(), which builds the world.
 	var integrated_arena := game_scene_probe.get("arena_world") as Node3D
 	assert(is_instance_valid(integrated_arena), "main gameplay world selects the authored Galaxy Wars arena for the Galaxy Wars region")
 	assert(integrated_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "main gameplay world uses the authored arena player spawn")
