@@ -1,0 +1,131 @@
+name: Core Hero - Pegasus First
+
+on:
+  push:
+    paths:
+      - "tools/art_pipeline/blender/generate_base_rig.py"
+      - ".github/workflows/core-hero-pegasus.yml"
+      - "docs/ART_QUALITY_STANDARD.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-hero-pegasus-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pegasus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libgl1-mesa-dri libgbm1
+          blender --version
+
+      - name: Prepare evidence directory
+        run: mkdir -p build-evidence
+
+      - name: Build shared character foundation
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          EGL_PLATFORM: surfaceless
+        run: |
+          set -o pipefail
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage foundation 2>&1 | tee build-evidence/foundation.log
+
+      - name: Export Pegasus only
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          EGL_PLATFORM: surfaceless
+        run: |
+          set -euo pipefail
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage characters --only-ids pegasus 2>&1 | tee build-evidence/pegasus-export.log
+          test -s game/assets/characters/pegasus/model/character.glb
+          test -s game/assets/characters/pegasus/animations/animation_library.glb
+          for view in front side back; do
+            test -s "game/art_previews/characters/pegasus_${view}.png"
+          done
+          {
+            echo "evidence_level=Blender model preview (not Godot, not Android device)"
+            echo "commit=${GITHUB_SHA}"
+            echo "runner=${RUNNER_OS}"
+            blender --version | head -n 1
+            echo "model_bytes=$(stat -c %s game/assets/characters/pegasus/model/character.glb)"
+            echo "animation_bytes=$(stat -c %s game/assets/characters/pegasus/animations/animation_library.glb)"
+            sha256sum game/assets/characters/pegasus/model/character.glb game/assets/characters/pegasus/animations/animation_library.glb game/art_previews/characters/pegasus_*.png
+          } | tee build-evidence/pegasus-evidence.txt
+          ls -lh game/assets/characters/pegasus/model/character.glb game/assets/characters/pegasus/animations/animation_library.glb game/art_previews/characters/pegasus_*.png
+
+      - name: Upload Pegasus model, previews and build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pegasus-character-first-${{ github.run_id }}
+          path: |
+            game/assets/characters/pegasus/model/character.glb
+            game/assets/characters/pegasus/animations/animation_library.glb
+            game/art_previews/characters/pegasus_*.png
+            build-evidence/*.log
+            build-evidence/*.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+  godot-import:
+    needs: pegasus
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Download Pegasus model bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: pegasus-character-first-${{ github.run_id }}
+          path: .
+
+      - name: Verify exported files exist
+        shell: sh
+        run: |
+          test -s game/assets/characters/pegasus/model/character.glb
+          test -s game/assets/characters/pegasus/animations/animation_library.glb
+          test -s game/art_previews/characters/pegasus_front.png
+          test -s game/art_previews/characters/pegasus_side.png
+          test -s game/art_previews/characters/pegasus_back.png
+
+      - name: Import GLB into Godot 4.4.1
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --editor --path game --quit 2>&1 | tee /tmp/pegasus-godot-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load|GLTF:.*(error|failed)" /tmp/pegasus-godot-import.log; then
+            echo "Pegasus GLB failed Godot import"
+            exit 1
+          fi
+
+      - name: Verify Pegasus skeleton and animation playback
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/pegasus-animation-runtime.log
+          grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=1 checked=pegasus" /tmp/pegasus-animation-runtime.log
+
+      - name: Upload Godot import and runtime logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pegasus-godot-validation-${{ github.run_id }}
+          path: |
+            /tmp/pegasus-godot-import.log
+            /tmp/pegasus-animation-runtime.log
+          if-no-files-found: warn
+          retention-days: 14

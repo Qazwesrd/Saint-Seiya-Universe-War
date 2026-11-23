@@ -126,7 +126,10 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
     if item_id.begins_with("dark_"):
         var dark_profile: Dictionary = get_profile(str(equipment.get("class_id", "")))
         var class_accent: Color = dark_profile.get("accent", Color(0.72, 0.42, 0.92))
-        dark_profile["accent"] = class_accent.darkened(0.28).lerp(Color(0.28, 0.08, 0.42), 0.58)
+        dark_profile["accent"] = Color(0.22, 0.28, 0.38).lerp(class_accent.darkened(0.55), 0.12)
+        dark_profile["metal"] = Color(0.025, 0.030, 0.050)
+        dark_profile["trim"] = Color(0.22, 0.28, 0.38)
+        dark_profile["palette_family"] = "graphite_steel_blue"
         # Keep the shared void treatment while retaining the class-specific design language
         # for armor builders, previews, and later authored model variants.
         dark_profile["class_accent"] = class_accent
@@ -134,6 +137,8 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         dark_profile["class_crest"] = str(dark_profile.get("crest", "star"))
         dark_profile["class_silhouette"] = str(dark_profile.get("silhouette", "balanced"))
         dark_profile["ornament"] = "dark_aura"
+        dark_profile["armor_family"] = "dark_cloth"
+        dark_profile["cape"] = false
         dark_profile["stage_variant"] = "dark_cloth"
         dark_profile["glow"] = maxf(0.22, float(dark_profile.get("glow", 0.1)))
         dark_profile["metallic"] = maxf(0.92, float(dark_profile.get("metallic", 0.82)))
@@ -170,7 +175,7 @@ static func get_equipment_profile(equipment: Dictionary) -> Dictionary:
         "冥衣 Surplice":
             return {"accent": Color(0.62, 0.32, 0.78), "ornament": "soul_wings"}
         "黑暗圣衣 Dark Cloth":
-            return {"accent": Color(0.42, 0.16, 0.62), "ornament": "dark_aura"}
+            return {"metal": Color(0.025, 0.030, 0.050), "trim": Color(0.22, 0.28, 0.38), "accent": Color(0.38, 0.48, 0.62), "palette_family": "graphite_steel_blue", "armor_family": "dark_cloth", "ornament": "dark_aura", "cape": false}
         "白金圣衣 Platinum Cloth":
             return {"accent": Color(0.9, 0.94, 1.0), "ornament": "radiant"}
         "天衣 Glory":
@@ -303,3 +308,62 @@ static func validate_catalog() -> Dictionary:
         if float(profile.get("glow", -1.0)) < 0.0 or float(profile.get("glow", 0.0)) > 0.6:
             errors.append("%s invalid glow" % class_id)
     return {"valid": errors.is_empty() and PROFILES.size() == 32, "class_count": PROFILES.size(), "errors": errors}
+
+
+# Faction armor families are separate from class silhouettes. These profiles feed
+# previews and procedural armor builders; final authored rigs remain a separate art task.
+const FACTION_ARMOR_FAMILIES := {
+    "sanctuary": {"family":"saint_cloth","name":"圣衣","stage":"bronze","metal":Color(0.66,0.38,0.22),"trim":Color(0.92,0.66,0.38),"accent":Color(0.98,0.82,0.42),"helmet":"saint_crest","chest":"anatomical_plate","shoulder":"saint_guard","waist":"tasset","legs":"greaves"},
+    "dark_saints": {"family":"dark_cloth","name":"暗黑圣衣","stage":"dark_cloth","metal":Color(0.025,0.030,0.050),"trim":Color(0.22,0.28,0.38),"accent":Color(0.38,0.48,0.62),"palette_family":"graphite_steel_blue","helmet":"razor_crest","chest":"angular_black_plate","shoulder":"spiked_guard","waist":"segmented_tasset","legs":"armored_greaves"},
+    "sea": {"family":"scale","name":"鳞衣","stage":"sea_scale","metal":Color(0.06,0.34,0.52),"trim":Color(0.22,0.82,1.0),"accent":Color(0.18,0.78,1.0),"palette_family":"ocean_teal","helmet":"fin_crest","chest":"overlapping_scales","shoulder":"fin_guard","waist":"fin_tasset","legs":"fin_greaves"},
+    "underworld": {"family":"surplice","name":"冥衣","stage":"surplice","metal":Color(0.045,0.025,0.085),"trim":Color(0.30,0.16,0.48),"accent":Color(0.48,0.22,0.68),"palette_family":"black_violet","helmet":"soul_crown","chest":"ribbed_soul_plate","shoulder":"bone_wing_guard","waist":"soul_tasset","legs":"spined_greaves"},
+    "divine": {"family":"god_cloth","name":"神圣衣","stage":"god_cloth","metal":Color(0.88,0.78,0.48),"trim":Color(1.0,0.94,0.7),"accent":Color(1.0,0.86,0.52),"palette_family":"radiant_gold","helmet":"divine_halo","chest":"radiant_plate","shoulder":"radiant_wing","waist":"divine_tasset","legs":"radiant_greaves"},
+    "asgard": {"family":"god_robe","name":"神斗衣","stage":"god_armor","metal":Color(0.34,0.48,0.62),"trim":Color(0.64,0.84,1.0),"accent":Color(0.48,0.82,1.0),"palette_family":"northern_ice_silver","helmet":"rune_helm","chest":"rune_plate","shoulder":"rune_guard","waist":"fur_tasset","legs":"rune_greaves"},
+    "steel": {"family":"steel_armor","name":"钢铁装甲","stage":"silver","metal":Color(0.24,0.32,0.40),"trim":Color(0.48,0.72,0.86),"accent":Color(0.45,0.72,0.86),"palette_family":"mechanical_steel","helmet":"sensor_visor","chest":"mechanical_core","shoulder":"mechanical_guard","waist":"utility_belt","legs":"servo_greaves"},
+    "bluegrad": {"family":"ice_armor","name":"蓝格拉德冰甲","stage":"silver","metal":Color(0.30,0.48,0.66),"trim":Color(0.70,0.90,1.0),"accent":Color(0.62,0.88,1.0),"palette_family":"glacier_blue","helmet":"ice_crown","chest":"frost_plate","shoulder":"crystal_guard","waist":"ice_tasset","legs":"frost_greaves"},
+    "fallen": {"family":"fallen_armor","name":"堕天装甲","stage":"god_armor","metal":Color(0.12,0.045,0.09),"trim":Color(0.72,0.22,0.42),"accent":Color(0.88,0.28,0.32),"palette_family":"fallen_crimson","helmet":"horned_helm","chest":"void_plate","shoulder":"fallen_wing_guard","waist":"void_tasset","legs":"talon_greaves"},
+    "titans": {"family":"chronotector","name":"泰坦刻衣","stage":"god_armor","metal":Color(0.24,0.18,0.38),"trim":Color(0.72,0.52,1.0),"accent":Color(0.82,0.68,1.0),"palette_family":"titan_violet","helmet":"time_crown","chest":"chronal_plate","shoulder":"ring_guard","waist":"time_tasset","legs":"chronal_greaves"},
+    "giants": {"family":"giant_plate","name":"巨人重甲","stage":"gold","metal":Color(0.36,0.26,0.18),"trim":Color(0.82,0.58,0.34),"accent":Color(0.72,0.48,0.28),"palette_family":"stone_bronze","helmet":"heavy_helm","chest":"heavy_plate","shoulder":"massive_guard","waist":"heavy_tasset","legs":"heavy_greaves"},
+    "hongmeng": {"family":"primordial_armor","name":"鸿蒙神甲","stage":"god_armor","metal":Color(0.16,0.10,0.32),"trim":Color(0.72,0.55,1.0),"accent":Color(0.88,0.78,1.0),"palette_family":"primordial_cosmic","helmet":"cosmic_crown","chest":"starfield_plate","shoulder":"cosmic_guard","waist":"orbit_tasset","legs":"cosmic_greaves"}
+}
+
+const COSTUME_APPEARANCES := {
+    "summer": {"name":"夏季时装","accent":Color(0.22,0.78,0.92),"silhouette":"light_casual","cape":false,"armor_overlay":false},
+    "christmas": {"name":"圣诞时装","accent":Color(0.82,0.18,0.22),"silhouette":"winter_casual","cape":false,"armor_overlay":false},
+    "school": {"name":"校园时装","accent":Color(0.24,0.32,0.58),"silhouette":"school_uniform","cape":false,"armor_overlay":false},
+    "casual": {"name":"休闲时装","accent":Color(0.38,0.48,0.58),"silhouette":"street_casual","cape":false,"armor_overlay":false},
+    "royal": {"name":"王子礼服","accent":Color(0.78,0.62,0.30),"silhouette":"formal_royal","cape":false,"armor_overlay":false}
+}
+
+static func get_faction_armor_profile(faction_id: String, class_id: String = "") -> Dictionary:
+    var result: Dictionary = FACTION_ARMOR_FAMILIES.get(faction_id, FACTION_ARMOR_FAMILIES["sanctuary"]).duplicate(true)
+    result["faction_id"] = faction_id if FACTION_ARMOR_FAMILIES.has(faction_id) else "sanctuary"
+    result["class_id"] = class_id
+    var identity := get_profile(class_id)
+    result["class_crest"] = str(identity.get("crest", "star"))
+    result["class_ornament"] = str(identity.get("ornament", "crest"))
+    result["class_silhouette"] = str(identity.get("silhouette", "balanced"))
+    result["shoulder_scale"] = identity.get("shoulder_scale", Vector3.ONE)
+    return result
+
+static func get_costume_profile(costume_id: String) -> Dictionary:
+    if costume_id.is_empty() or not COSTUME_APPEARANCES.has(costume_id):
+        return {}
+    var result: Dictionary = COSTUME_APPEARANCES[costume_id].duplicate(true)
+    result["costume_id"] = costume_id
+    result["cape"] = false
+    result["armor_overlay"] = false
+    return result
+
+static func validate_faction_armor_families() -> Dictionary:
+    var errors: Array[String] = []
+    for faction_id in FACTION_ARMOR_FAMILIES:
+        var profile: Dictionary = FACTION_ARMOR_FAMILIES[faction_id]
+        for key in ["family", "name", "metal", "trim", "accent", "helmet", "chest", "shoulder", "waist", "legs"]:
+            if not profile.has(key):
+                errors.append("%s missing %s" % [faction_id, key])
+    var surplice: Dictionary = FACTION_ARMOR_FAMILIES["underworld"]
+    var dark_cloth: Dictionary = FACTION_ARMOR_FAMILIES["dark_saints"]
+    if str(surplice.get("palette_family", "")) == str(dark_cloth.get("palette_family", "")):
+        errors.append("Surplice and Dark Cloth palettes must remain distinct")
+    return {"valid": errors.is_empty() and FACTION_ARMOR_FAMILIES.size() == 12, "faction_count": FACTION_ARMOR_FAMILIES.size(), "errors": errors}

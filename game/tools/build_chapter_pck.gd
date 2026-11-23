@@ -4,7 +4,7 @@ extends SceneTree
 ## godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter galaxy_wars --output /absolute/path/galaxy_wars.pck
 
 const CHAPTER_IDS := ["galaxy_wars", "sanctuary_twelve_houses", "asgard", "poseidon", "hades", "heaven", "original_final"]
-const SOURCE_EXTENSIONS := ["tscn", "tres", "res", "glb", "gltf", "png", "webp", "jpg", "jpeg", "ogg", "wav", "mp3", "json", "gdshader", "shader", "material", "ttf", "otf"]
+const SOURCE_EXTENSIONS := ["tscn", "tres", "res", "gd", "glb", "gltf", "png", "webp", "jpg", "jpeg", "ogg", "wav", "mp3", "json", "gdshader", "shader", "material", "ttf", "otf"]
 const IGNORED_DIRS := [".godot", ".git", "__pycache__"]
 
 func _initialize() -> void:
@@ -29,9 +29,11 @@ func _run() -> void:
 		quit(3)
 		return
 
+	print("PCK_DIAG collect: start chapter=%s root=%s" % [chapter_id, source_root])
 	var files: Array[String] = []
 	_collect_files(source_absolute, files)
 	files.sort()
+	print("PCK_DIAG collect: complete discovered_files=%d" % files.size())
 	var packer := PCKPacker.new()
 	var start_error := packer.pck_start(output_path)
 	if start_error != OK:
@@ -46,6 +48,7 @@ func _run() -> void:
 		if not SOURCE_EXTENSIONS.has(extension):
 			continue
 		var target_path := source_root.path_join(relative)
+		print("PCK_DIAG add: %d/%d %s" % [authored_count + 1, files.size(), target_path])
 		if not _add_file(packer, target_path, absolute_path, added):
 			quit(5)
 			return
@@ -77,7 +80,9 @@ func _run() -> void:
 		push_error("No runtime assets found. README files and source-only art files are not chapter content.")
 		quit(6)
 		return
+	print("PCK_DIAG flush: start authored_files=%d packed_entries=%d" % [authored_count, added.size()])
 	var flush_error := packer.flush(true)
+	print("PCK_DIAG flush: complete error=%d" % flush_error)
 	if flush_error != OK:
 		push_error("Cannot finalize chapter PCK: error %d" % flush_error)
 		quit(7)

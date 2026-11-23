@@ -46,14 +46,67 @@ def read_glb(path: Path) -> dict:
         raise ValueError("invalid GLB v2 structure")
     return json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \t\r\n\0"))
 
-def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = None,
-              required_nodes: tuple[str, ...] = (), require_meshes: bool = True) -> dict:
+
+def validate_mesh_geometry(doc: dict) -> None:
+    """Validate glTF primitive/accessor structure without claiming a visual review."""
+    meshes = doc.get("meshes", [])
+    accessors = doc.get("accessors", [])
+    materials = doc.get("materials", [])
+    validated = 0
+    for mesh_index, mesh in enumerate(meshes):
+        primitives = mesh.get("primitives", [])
+        if not primitives:
+            raise ValueError(f"mesh {mesh_index} has no primitives")
+        for primitive_index, primitive in enumerate(primitives):
+            prefix = f"mesh {mesh_index} primitive {primitive_index}"
+            attributes = primitive.get("attributes", {})
+            position_index = attributes.get("POSITION")
+            if not isinstance(position_index, int) or not 0 <= position_index < len(accessors):
+                raise ValueError(f"{prefix} has no valid POSITION accessor")
+            position = accessors[position_index]
+            vertex_count = position.get("count")
+            if position.get("type") != "VEC3" or not isinstance(vertex_count, int) or vertex_count < 3:
+                raise ValueError(f"{prefix} has invalid POSITION vertex data")
+            if "indices" in primitive:
+                index_index = primitive["indices"]
+                if not isinstance(index_index, int) or not 0 <= index_index < len(accessors):
+                    raise ValueError(f"{prefix} has an invalid indices accessor")
+                indices = accessors[index_index]
+                if (indices.get("type") != "SCALAR" or indices.get("componentType") not in (5121, 5123, 5125)
+                        or not isinstance(indices.get("count"), int) or indices["count"] < 3
+                        or indices["count"] % 3):
+                    raise ValueError(f"{prefix} indices do not describe complete triangles")
+                maximum = indices.get("max")
+                if isinstance(maximum, list) and maximum and maximum[0] >= vertex_count:
+                    raise ValueError(f"{prefix} index maximum exceeds POSITION vertex count")
+            elif vertex_count % 3:
+                raise ValueError(f"{prefix} non-indexed vertices do not form complete triangles")
+            if primitive.get("mode", 4) != 4:
+                raise ValueError(f"{prefix} is not TRIANGLES mode")
+            for semantic, accessor_index in attributes.items():
+                if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+                    raise ValueError(f"{prefix} has invalid {semantic} accessor")
+                if accessors[accessor_index].get("count") != vertex_count:
+                    raise ValueError(f"{prefix} {semantic} count differs from POSITION")
+            material_index = primitive.get("material")
+            if material_index is not None and (
+                not isinstance(material_index, int) or not 0 <= material_index < len(materials)
+            ):
+                raise ValueError(f"{prefix} references an invalid material")
+            validated += 1
+    if meshes and validated == 0:
+        raise ValueError("GLB has no validated mesh primitives")
+
+def check_glb(path: Path, require_skin: bool = False, require_geometry: bool = False, clips: list[str] | None = None,
+              required_nodes: tuple[str, ...] = (), require_meshes: bool = True,
+              compatible_joint_names: set[str] | None = None) -> dict:
     doc = read_glb(path)
     if require_meshes and not doc.get("meshes"):
         raise ValueError("GLB has no meshes")
     nodes = doc.get("nodes", [])
     meshes = doc.get("meshes", [])
     skins = doc.get("skins", [])
+    skin_joint_names: set[str] = set()
     if require_skin:
         if not skins:
             raise ValueError("character GLB has no skin/skeleton")
@@ -68,6 +121,7 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
             if not isinstance(skin_index, int) or not 0 <= skin_index < len(skins):
                 raise ValueError(f"mesh node {node_index} is not bound to a valid skin")
             joints = skins[skin_index].get("joints", [])
+            skin_joint_names.update(str(nodes[joint].get("name", "")) for joint in joints if isinstance(joint, int) and 0 <= joint < len(nodes))
             if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
                 raise ValueError(f"mesh node {node_index} references a skin with invalid joints")
             skinned_mesh_count += 1
@@ -102,6 +156,14 @@ def check_glb(path: Path, require_skin: bool = False, clips: list[str] | None = 
                     raise ValueError(f"animation clip '{clip_name}' has an invalid sampler reference")
                 if target.get("path") not in ("translation", "rotation", "scale", "weights"):
                     raise ValueError(f"animation clip '{clip_name}' has an invalid track path")
+                target_name = str(nodes[node_index].get("name", ""))
+                allowed_joint_names = compatible_joint_names
+                if allowed_joint_names is None and require_skin:
+                    allowed_joint_names = skin_joint_names
+                if allowed_joint_names is not None and target.get("path") != "weights" and target_name not in allowed_joint_names:
+                    raise ValueError(
+                        f"animation clip '{clip_name}' targets node '{target_name}' outside the compatible skeleton"
+                    )
     if required_nodes:
         names = {str(item.get("name", "")) for item in doc.get("nodes", [])}
         names.update(str(item.get("name", "")) for item in doc.get("meshes", []))
@@ -165,13 +227,35 @@ def validate_skill_visual_catalog() -> list[str]:
             errors.append(f"{element}: impact_scale must be between 0.5 and 1.5")
     return errors
 
+def validate_release_metadata(data: dict) -> None:
+    """Require human approval and explicit provenance before an asset can be called release-ready."""
+    license_record = data.get("source_license")
+    if not isinstance(license_record, str) or not license_record.strip():
+        raise ValueError("source_license must contain an explicit license or original-authorship record")
+    normalized_license = license_record.strip().lower()
+    if normalized_license in {"pending_review", "unknown", "unverified", "none", "tbd"}:
+        raise ValueError("source_license is not approved for redistribution")
+
+    quality = data.get("quality_gate")
+    if not isinstance(quality, dict):
+        raise ValueError("quality_gate review record is missing")
+    if quality.get("approved_for_final_release") is not True:
+        raise ValueError("asset has not been approved for final release by visual review")
+    if quality.get("visual_review_required") is not False:
+        raise ValueError("visual review is still required")
+    if not isinstance(quality.get("reviewed_by"), str) or not quality["reviewed_by"].strip():
+        raise ValueError("quality_gate must record reviewed_by")
+    if not isinstance(quality.get("reviewed_at"), str) or not quality["reviewed_at"].strip():
+        raise ValueError("quality_gate must record reviewed_at")
+
+
 def validate_armor_manifest(data: dict, model: Path) -> None:
     parts = data.get("parts")
     if not isinstance(parts, dict) or set(parts) != set(ARMOR_PART_NODES):
         raise ValueError("armor parts must declare exactly the nine required detachable pieces")
     if any(parts[name] != "complete" for name in ARMOR_PART_NODES):
         raise ValueError("not all nine armor parts are marked complete")
-    doc = check_glb(model, require_skin=True, required_nodes=tuple(ARMOR_PART_NODES.values()))
+    doc = check_glb(model, require_skin=True, require_geometry=True, required_nodes=tuple(ARMOR_PART_NODES.values()))
     nodes = {str(item.get("name", "")): item for item in doc.get("nodes", [])}
     mesh_indices = []
     for part_name, node_name in ARMOR_PART_NODES.items():
@@ -254,6 +338,7 @@ def main() -> int:
                 raise ValueError("authored_asset must be true exactly when delivery_status is complete")
             if status != "complete":
                 continue
+            validate_release_metadata(data)
             base = manifest_path.parent
             kind = data["asset_kind"]
             if kind == "character":

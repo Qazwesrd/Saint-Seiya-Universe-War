@@ -1,6 +1,7 @@
 extends Node
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
+const CharacterStanceDatabase = preload("res://scripts/character_stance_database.gd")
 const EnemyVisualCatalog = preload("res://scripts/enemy_visual_catalog.gd")
 const ArtAssetAudit = preload("res://scripts/art_asset_audit.gd")
 const BossChapterCombatCatalog = preload("res://scripts/boss_chapter_combat_catalog.gd")
@@ -11,6 +12,107 @@ func _ready() -> void:
 
 func _run_tests() -> void:
 	var growth_original_profile: Dictionary = RPGState.profile.duplicate(true)
+	assert(FactionDatabase.validate_catalog(), "all playable classes are assigned to selectable faction starts and Hongjun is selectable")
+	assert(FactionDatabase.get_factions().size() == 12, "twelve faction starts are registered")
+	var stance_validation: Dictionary = CharacterStanceDatabase.validate_catalog()
+	assert(bool(stance_validation.get("valid", false)), "class stance catalog has complete procedural pose data")
+	var unique_stance_ids: Dictionary = {}
+	for stance_class_id in CharacterVisualCatalog.PROFILES.keys():
+		var class_stance: Dictionary = CharacterStanceDatabase.get_profile(str(stance_class_id), "sanctuary")
+		var class_stance_id := str(class_stance.get("stance_id", ""))
+		assert(not class_stance_id.is_empty() and not unique_stance_ids.has(class_stance_id), "each playable class has a unique stance id: " + str(stance_class_id))
+		unique_stance_ids[class_stance_id] = true
+	assert(unique_stance_ids.size() == CharacterVisualCatalog.PROFILES.size(), "every registered playable class has a dedicated stance identity")
+	var pegasus_stance: Dictionary = CharacterStanceDatabase.get_profile("pegasus", "sanctuary")
+	var dragon_stance: Dictionary = CharacterStanceDatabase.get_profile("dragon", "sanctuary")
+	var phoenix_stance: Dictionary = CharacterStanceDatabase.get_profile("phoenix", "sanctuary")
+	assert(str(pegasus_stance.get("stance_id", "")) != str(dragon_stance.get("stance_id", "")) and str(dragon_stance.get("stance_id", "")) != str(phoenix_stance.get("stance_id", "")), "Pegasus, Dragon and Phoenix have distinct stance identities")
+	assert(pegasus_stance.get("arm_rest", []) != dragon_stance.get("arm_rest", []) and dragon_stance.get("arm_rest", []) != phoenix_stance.get("arm_rest", []), "core bronze heroes have distinct arm pose offsets")
+	assert(CharacterStanceDatabase.get_supported_action_states() == ["idle", "walk", "run", "attack", "hit", "death"], "stance catalog declares six core action states")
+	assert(CharacterStanceDatabase.resolve_locomotion_state(0.0) == "idle", "stationary player resolves to idle state")
+	assert(CharacterStanceDatabase.resolve_locomotion_state(1.2) == "walk", "normal movement resolves to walk state")
+	assert(CharacterStanceDatabase.resolve_locomotion_state(6.0) == "run", "fast movement resolves to run state")
+	assert(not CharacterStanceDatabase.can_transition_action_state("attack", "idle", 0.2), "idle cannot interrupt an active attack")
+	assert(not CharacterStanceDatabase.can_transition_action_state("hit", "walk", 0.1), "movement cannot interrupt an active hit reaction")
+	assert(not CharacterStanceDatabase.can_transition_action_state("hit", "attack", 0.1), "a new attack cannot cancel an active hit reaction")
+	assert(CharacterStanceDatabase.can_transition_action_state("attack", "hit", 0.2), "a hit reaction can interrupt an attack")
+	assert(not CharacterStanceDatabase.can_transition_action_state("death", "idle", 0.5), "death state cannot be interrupted before its recovery timer")
+	assert(CharacterStanceDatabase.can_transition_action_state("attack", "idle", 0.0), "locomotion resumes after the action timer expires")
+	assert(not CharacterStanceDatabase.can_transition_action_state("idle", "unknown_action", 0.0), "unsupported action states are rejected")
+	var hongjun_stance: Dictionary = CharacterStanceDatabase.get_profile("apollo", "hongmeng", true)
+	assert(str(hongjun_stance.get("stance_id", "")) == "hongjun_primordial" and str(hongjun_stance.get("character_title", "")) == "鸿钧老祖", "Hongjun has a distinct primordial celestial stance profile")
+	assert(bool(hongjun_stance.get("hover_idle", false)), "Hongjun stance records the planned floating idle presentation")
+	var appearance_profile_backup: Dictionary = RPGState.profile.duplicate(true)
+	var armor_family_validation: Dictionary = CharacterVisualCatalog.validate_faction_armor_families()
+	assert(bool(armor_family_validation.get("valid", false)), "all twelve factions have complete armor-family profiles")
+	var underworld_armor: Dictionary = CharacterVisualCatalog.get_faction_armor_profile("underworld", "hades")
+	var dark_saint_armor: Dictionary = CharacterVisualCatalog.get_faction_armor_profile("dark_saints", "pegasus")
+	assert(str(underworld_armor.get("family", "")) == "surplice" and str(underworld_armor.get("palette_family", "")) == "black_violet", "Underworld uses a black-violet Surplice identity")
+	assert(str(dark_saint_armor.get("family", "")) == "dark_cloth" and str(dark_saint_armor.get("palette_family", "")) == "graphite_steel_blue", "Dark Saints use graphite and steel-blue Dark Cloth, not purple Surplice")
+	assert(underworld_armor.get("metal", Color.BLACK) != dark_saint_armor.get("metal", Color.BLACK), "Surplice and Dark Cloth base metals are visually distinct")
+	var dark_cloth_item_profile: Dictionary = CharacterVisualCatalog.get_equipment_profile({"id":"dark_cloth_catalog_item","category":"黑暗圣衣 Dark Cloth"})
+	var surplice_item_profile: Dictionary = CharacterVisualCatalog.get_equipment_profile({"id":"surplice_catalog_item","category":"冥衣 Surplice"})
+	assert(str(dark_cloth_item_profile.get("palette_family", "")) == "graphite_steel_blue", "Dark Cloth equipment category resolves to graphite steel-blue palette")
+	assert(dark_cloth_item_profile.get("accent", Color.BLACK) != surplice_item_profile.get("accent", Color.BLACK), "equipment category lookup cannot accidentally recolor Dark Cloth purple")
+
+	assert(str(CharacterVisualCatalog.get_faction_armor_profile("sea").get("chest", "")) == "overlapping_scales", "Sea faction armor uses layered scale construction")
+	assert(str(CharacterVisualCatalog.get_faction_armor_profile("asgard").get("family", "")) == "god_robe", "Asgard faction armor uses the God Robe family")
+	assert(str(CharacterVisualCatalog.get_faction_armor_profile("steel").get("family", "")) == "steel_armor", "Steel faction armor uses a mechanical armor family")
+	var school_costume: Dictionary = CharacterVisualCatalog.get_costume_profile("school")
+	assert(not school_costume.is_empty() and not bool(school_costume.get("cape", true)) and not bool(school_costume.get("armor_overlay", true)), "costumes are standalone clothing and never add a cape or armor overlay")
+	assert(RPGState.equip_costume("school"), "school costume can be equipped independently of armor")
+	assert(str(RPGState.get_appearance_state().get("equipped_costume", "")) == "school", "equipped costume is stored in its own appearance slot")
+	assert(RPGState.equip_costume(""), "costume appearance can be independently unequipped")
+	RPGState.profile = appearance_profile_backup
+	assert(RPGState.save_slot(RPGState.active_slot), "restore character appearance state after costume smoke tests")
+
+	for faction_entry in FactionDatabase.get_factions():
+		var tutorial_faction_id := str(faction_entry.get("id", ""))
+		var tutorial_guard_id := EnemyDatabase.get_tutorial_archetype_id(tutorial_faction_id, false)
+		var tutorial_boss_id := EnemyDatabase.get_tutorial_archetype_id(tutorial_faction_id, true)
+		assert(EnemyDatabase.has_archetype(tutorial_guard_id), "faction has its own tutorial guard archetype: " + tutorial_faction_id)
+		assert(EnemyDatabase.has_archetype(tutorial_boss_id), "faction has its own tutorial boss archetype: " + tutorial_faction_id)
+		var tutorial_guard_data: Dictionary = EnemyDatabase.get_archetype(tutorial_guard_id)
+		var tutorial_boss_data: Dictionary = EnemyDatabase.get_archetype(tutorial_boss_id)
+		assert(not bool(tutorial_guard_data.get("is_boss", true)) and bool(tutorial_boss_data.get("is_boss", false)), "faction guard and boss roles are distinct: " + tutorial_faction_id)
+		assert(str(tutorial_guard_data.get("name", "")) != str(EnemyDatabase.get_archetype("arena_guard").get("name", "")), "faction guard has a distinct identity: " + tutorial_faction_id)
+		assert(str(tutorial_boss_data.get("name", "")) != str(EnemyDatabase.get_archetype("arena_boss").get("name", "")), "faction boss has a distinct identity: " + tutorial_faction_id)
+
+	for faction in FactionDatabase.get_factions():
+		var faction_id := str(faction.get("id", ""))
+		assert(str(FactionDatabase.get_world_profile(faction_id).get("faction_id", "")) == faction_id, "world profile retains its faction identity: " + faction_id)
+	assert(FactionDatabase.get_world_profile("hongmeng").get("structure", "") == "orbs", "Hongmeng starting region has a distinct environment profile")
+	assert(FactionDatabase.get_world_profile("underworld").get("accent_color", Color.BLACK) != FactionDatabase.get_world_profile("sea").get("accent_color", Color.BLACK), "underworld and sea starter zones have distinct visual palettes")
+	var hongmeng_options: Array = FactionDatabase.get_class_options("hongmeng")
+	var hongjun_selectable := false
+	for hongmeng_option in hongmeng_options:
+		if str(hongmeng_option.get("preset_id", "")) == "hongjun":
+			hongjun_selectable = true
+	assert(hongjun_selectable, "Hongjun is directly selectable from character creation")
+	var original_onboarding_profile: Dictionary = RPGState.profile.duplicate(true)
+	var hongjun_test_profile: Dictionary = original_onboarding_profile.duplicate(true)
+	FactionDatabase.initialize_character_profile(hongjun_test_profile, "hongmeng", "hongjun")
+	RPGState.profile = hongjun_test_profile
+	assert(bool(RPGState.profile.get("is_supreme_deity", false)), "Hongjun profile is marked as the game's supreme deity")
+	assert(str(RPGState.profile.get("spawn_region", "")) == "zixiao_palace", "Hongjun starts in the Zixiao Palace region")
+	assert(FactionDatabase.can_interact_with_mentor("sanctuary"), "Hongjun tutorial accepts the Sanctuary entry")
+	assert(FactionDatabase.can_interact_with_mentor("hongmeng"), "Hongjun tutorial accepts the Hongmeng entry")
+	assert(not FactionDatabase.can_interact_with_mentor("underworld"), "Hongjun tutorial does not accept unrelated faction entries")
+	assert(CampaignManager.get_active_mission().is_empty(), "anime campaign missions stay locked below level 10 for new faction characters")
+	RPGState.profile["level"] = 10
+	assert(not CampaignManager.get_active_mission().is_empty(), "anime campaign missions become available at level 10")
+	RPGState.profile = original_onboarding_profile
+	var balanced_test_profile: Dictionary = original_onboarding_profile.duplicate(true)
+	balanced_test_profile["class_id"] = "apollo"
+	balanced_test_profile["level"] = 1
+	balanced_test_profile["story_balanced"] = true
+	balanced_test_profile["power_mode"] = "story_balanced"
+	balanced_test_profile["equipment"] = {}
+	RPGState.profile = balanced_test_profile
+	var balanced_divine_stats: Dictionary = RPGState.get_combat_stats()
+	assert(float(balanced_divine_stats.get("max_health", 9999.0)) <= 300.0, "level-one selectable divine characters use story-balanced health")
+	assert(float(balanced_divine_stats.get("attack", 9999.0)) <= 60.0, "level-one selectable divine characters use story-balanced attack")
+	RPGState.profile = original_onboarding_profile
 	assert(GrowthSystems.get_wing_catalog().size() == 8, "eight offline wing appearances are catalogued")
 	assert(GrowthSystems.get_cosmos_star_map().get("nodes", []).size() == 6, "cosmos star map exposes six upgrade nodes")
 	RPGState.profile["currency"] = 50000
@@ -123,9 +225,9 @@ func _run_tests() -> void:
 	assert(is_equal_approx(guard_test_player.absorb_divine_guard_damage(20.0), 12.0), "damage exceeding divine guard spills over to health")
 	assert(is_equal_approx(guard_test_player.divine_guard_shield, 0.0), "divine guard is depleted after absorbing its capacity")
 	var saved_transform_armor_state: Dictionary = RPGState.profile.get("armor_state", {}).duplicate(true)
-	var bronze_transform_key := guard_test_player._get_armor_transform_key()
+	var bronze_transform_key: String = str(guard_test_player._get_armor_transform_key())
 	RPGState.profile["armor_state"] = {"current_stage":"dark_cloth","awakened":false}
-	var dark_transform_key := guard_test_player._get_armor_transform_key()
+	var dark_transform_key: String = str(guard_test_player._get_armor_transform_key())
 	assert(bronze_transform_key != dark_transform_key, "changing armor tier triggers a distinct transformation identity")
 	RPGState.profile["armor_state"]["awakened"] = true
 	assert(dark_transform_key != guard_test_player._get_armor_transform_key(), "awakening a cloth triggers its own transformation identity")
@@ -1009,7 +1111,14 @@ func _run_tests() -> void:
 	assert(str(RPGState.profile.get("class_id", "")) == "dragon" and str(RPGState.profile.get("character_name", "")) == "星之战士", "starter class selection preserves character name")
 	var character_menu_test = preload("res://scripts/main_menu.gd").new()
 	add_child(character_menu_test)
-	assert(character_menu_test.character_class_picker.item_count == 9, "new character wizard offers exactly nine starter professions")
+	character_menu_test._open_character_creation(1)
+	var selected_faction_id := str(character_menu_test.character_faction_picker.get_item_metadata(character_menu_test.character_faction_picker.selected))
+	var expected_faction_options: Array = FactionDatabase.get_class_options(selected_faction_id)
+	assert(character_menu_test.character_class_picker.item_count == expected_faction_options.size() and not expected_faction_options.is_empty(), "new character wizard populates professions for the selected faction")
+	character_menu_test.character_faction_picker.select(2)
+	character_menu_test._on_creation_faction_selected(2)
+	var alternate_faction_id := str(character_menu_test.character_faction_picker.get_item_metadata(2))
+	assert(character_menu_test.character_class_picker.item_count == FactionDatabase.get_class_options(alternate_faction_id).size(), "changing faction refreshes the available starter professions")
 	character_menu_test.queue_free()
 	assert(QuestManager.status == "not_started", "quest state isolated on new slot")
 	assert(str(CampaignManager.progress.get("active_mission", "")) == first_mission_id, "campaign defaults on new slot")
@@ -1085,5 +1194,56 @@ func _run_tests() -> void:
 	assert(not ComboPresetManager.save_preset("pegasus", "invalid_combo", "非法连招", ["not_unlocked"]), "reject unlearned skill in combo")
 	assert(RPGState.delete_slot(3), "clean up restored test character slot")
 	assert(not RPGState.has_slot(3), "test character cleanup removes active slot")
+	var galaxy_arena_scene := load("res://assets/environments/galaxy_wars/galaxy_arena_blockout.tscn") as PackedScene
+	assert(galaxy_arena_scene != null, "Galaxy Wars arena scene resource loads")
+	var galaxy_arena = galaxy_arena_scene.instantiate()
+	assert(galaxy_arena != null, "Galaxy Wars arena scene instantiates")
+	add_child(galaxy_arena)
+	assert(galaxy_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "Galaxy Wars player spawn anchor resolves")
+	assert(galaxy_arena.get_npc_anchor_transform(&"tournament_guide").origin.distance_to(Vector3(0.0, 0.1, -18.0)) < 0.01, "Galaxy Wars NPC anchor resolves")
+	assert(galaxy_arena.get_enemy_anchor_transform(&"opening_duel").origin.distance_to(Vector3(0.0, 0.1, -8.0)) < 0.01, "Galaxy Wars opening enemy anchor resolves")
+	var arena_navigation := galaxy_arena.get_node("NavigationRegion3D") as NavigationRegion3D
+	assert(arena_navigation != null and arena_navigation.navigation_mesh != null, "Galaxy Wars navigation region has a navigation mesh")
+	var arena_nav_vertices: PackedVector3Array = arena_navigation.navigation_mesh.get_vertices()
+	assert(arena_navigation.navigation_mesh.get_polygon_count() == 1 and arena_nav_vertices.size() == 4, "Galaxy Wars navigation mesh exposes its traversable arena polygon")
+	var arena_nav_normal := (arena_nav_vertices[1] - arena_nav_vertices[0]).cross(arena_nav_vertices[2] - arena_nav_vertices[0])
+	assert(arena_nav_normal.y > 0.0, "Galaxy Wars navigation polygon winding faces upward for a walkable floor")
+	var arena_quest_trigger := galaxy_arena.get_node("QuestTrigger") as Area3D
+	assert(arena_quest_trigger.body_entered.is_connected(Callable(galaxy_arena, "_on_quest_trigger_body_entered")), "Galaxy Wars quest trigger is connected to its controller")
+	var triggered_arena_quest_ids: Array[StringName] = []
+	galaxy_arena.quest_triggered.connect(func(trigger_id: StringName, _actor: Node3D) -> void:
+		triggered_arena_quest_ids.append(trigger_id)
+	)
+	var arena_trigger_actor := CharacterBody3D.new()
+	arena_quest_trigger.emit_signal("body_entered", arena_trigger_actor)
+	assert(triggered_arena_quest_ids.has(&"tournament_guide_intro"), "entering the Galaxy Wars guide trigger emits the expected quest interaction event")
+	arena_trigger_actor.free()
+	galaxy_arena.queue_free()
+	await get_tree().process_frame
+
+	var previous_arena_region := WorldExplorationManager.active_region_id
+	var previous_faction_tutorial := bool(RPGState.profile.get("faction_tutorial_enabled", false))
+	WorldExplorationManager.active_region_id = "galaxy_wars"
+	RPGState.profile["faction_tutorial_enabled"] = false
+	var game_scene_probe := Node3D.new()
+	game_scene_probe.set_script(load("res://scripts/game.gd"))
+	add_child(game_scene_probe)
+	assert(bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay selects the Galaxy Wars arena when Galaxy Wars is the active region")
+	WorldExplorationManager.active_region_id = "asgard"
+	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "main gameplay does not reuse the Galaxy Wars arena in another chapter")
+	WorldExplorationManager.active_region_id = "galaxy_wars"
+	RPGState.profile["faction_tutorial_enabled"] = true
+	assert(not bool(game_scene_probe.call("_should_use_galaxy_arena_scene")), "faction-specific tutorials keep their own starting world instead of loading the Galaxy Wars arena")
+	RPGState.profile["faction_tutorial_enabled"] = false
+	# Adding the probe to the SceneTree already ran game.gd::_ready(), which builds the world.
+	var integrated_arena := game_scene_probe.get("arena_world") as Node3D
+	assert(is_instance_valid(integrated_arena), "main gameplay world selects the authored Galaxy Wars arena for the Galaxy Wars region")
+	assert(integrated_arena.get_spawn_transform(&"player").origin.distance_to(Vector3(0.0, 0.1, 22.0)) < 0.01, "main gameplay world uses the authored arena player spawn")
+	assert(game_scene_probe.get_node_or_null("WorldRings") != null, "Galaxy Wars arena integration retains the shared world theme and terrain")
+	assert(not (integrated_arena.get_node("Ground/FloorMesh") as MeshInstance3D).visible and (integrated_arena.get_node("Ground/CollisionShape3D") as CollisionShape3D).disabled, "arena scene reuses shared terrain without duplicate floor collision or z-fighting")
+	game_scene_probe.free()
+	WorldExplorationManager.active_region_id = previous_arena_region
+	RPGState.profile["faction_tutorial_enabled"] = previous_faction_tutorial
+
 	print("FRAMEWORK_SMOKE_TEST_PASS")
 	get_tree().quit(0)

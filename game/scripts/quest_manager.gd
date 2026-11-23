@@ -16,6 +16,11 @@ func _on_profile_slot_loaded(_slot: int) -> void:
     load_progress()
 
 func interact_with_guide() -> Dictionary:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        var entry_faction := str(RPGState.profile.get("faction_id", "sanctuary"))
+        if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
+            entry_faction = "sanctuary"
+        return FactionDatabase.interact_with_mentor(entry_faction)
     if status == "not_started":
         status = "active"
         if not _save_progress():
@@ -61,6 +66,9 @@ func interact_with_guide() -> Dictionary:
         return {"speaker": GUIDE_NAME, "text": "试炼记录已经保存。下一段圣域剧情将在后续章节开放。", "action": "completed"}
     return {"speaker": GUIDE_NAME, "text": "欢迎来到银河竞技场。", "action": "none"}
 func on_enemy_defeated(is_boss: bool) -> void:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        FactionDatabase.record_training_defeat(is_boss)
+        return
     if status != "active":
         return
     var previous_status := status
@@ -78,6 +86,8 @@ func on_enemy_defeated(is_boss: bool) -> void:
         boss_defeated = previous_boss
     quest_changed.emit()
 func get_tracker_text() -> String:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        return FactionDatabase.get_tutorial_tracker_text()
     if status == "not_started":
         return "主线：银河竞技场试炼\n目标：找到训练引导员并交谈"
     if status == "active":
@@ -91,6 +101,18 @@ func get_tracker_text() -> String:
     return "主线：银河竞技场试炼\n状态：已完成 · 下一段圣域任务：后续章节开放"
 
 func get_map_objective() -> String:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        var tutorial: Dictionary = RPGState.profile.get("faction_tutorial", {})
+        var tutorial_status := str(tutorial.get("status", ""))
+        if tutorial_status == "not_started":
+            return "阵营导师"
+        if tutorial_status == "active":
+            if int(tutorial.get("defeated_normal", 0)) >= FactionDatabase.TUTORIAL_NORMAL_TARGET:
+                return "训练首领"
+            return "训练对手"
+        if tutorial_status == "ready_to_return":
+            return "返回阵营导师"
+        return "达到10级"
     if status == "not_started" or status == "ready_to_return":
         return "返回引导员"
     if status == "active" and defeated_normal < 2:
@@ -157,3 +179,9 @@ func reset_progress() -> void:
         defeated_normal = previous_normal
         boss_defeated = previous_boss
     quest_changed.emit()
+
+
+func interact_with_hongmeng_guide() -> Dictionary:
+    if str(RPGState.profile.get("character_preset_id", "")) != "hongjun":
+        return {"speaker":"紫霄宫接引仙官","text":"只有鸿钧老祖角色可以从鸿蒙神域接取这条双入口任务。","action":"denied"}
+    return FactionDatabase.interact_with_mentor("hongmeng")

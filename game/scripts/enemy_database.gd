@@ -97,7 +97,53 @@ const ARCHETYPES := {
     "dark_black_knight_champion": {"boss_special":"void_drain","boss_windup":1.2,"boss_heavy_interval":2,"boss_heavy_multiplier":2.0,"boss_range_multiplier":1.9,"boss_recovery":0.9,"name":"黑暗圣斗士统领","is_boss":true,"health":1450.0,"speed":2.35,"attack_damage":48.0,"attack_range":3.8,"attack_interval":1.7,"exp_reward":520,"coin_reward":420,"drop_tier":"boss","color":Color(0.12,0.08,0.2)}
 }
 
+
+const FACTION_TUTORIAL_ENEMIES := {
+    "sanctuary": {"normal_name":"圣域青铜训练守卫","boss_name":"圣域白银试炼官","color":Color(0.22,0.48,0.86),"boss_color":Color(0.82,0.68,0.28),"boss_special":"gravity_crush"},
+    "dark_saints": {"normal_name":"死亡皇后岛暗黑斗士","boss_name":"暗黑凤凰统领","color":Color(0.16,0.17,0.22),"boss_color":Color(0.12,0.08,0.18),"boss_special":"death_burst"},
+    "sea": {"normal_name":"海界巡逻兵","boss_name":"海将军试炼官","color":Color(0.08,0.48,0.68),"boss_color":Color(0.08,0.32,0.78),"boss_special":"tidal_pull"},
+    "underworld": {"normal_name":"冥界骷髅斗士","boss_name":"冥界魔星守卫","color":Color(0.28,0.22,0.38),"boss_color":Color(0.38,0.12,0.58),"boss_special":"soul_leech"},
+    "divine": {"normal_name":"奥林匹斯神域侍卫","boss_name":"神域审判者","color":Color(0.68,0.58,0.32),"boss_color":Color(0.92,0.78,0.42),"boss_special":"solar_flare"},
+    "asgard": {"normal_name":"仙宫冰原神斗士","boss_name":"仙宫冰霜试炼者","color":Color(0.38,0.62,0.78),"boss_color":Color(0.48,0.78,0.96),"boss_special":"frostfire"},
+    "steel": {"normal_name":"钢铁基地训练机兵","boss_name":"钢铁重装机甲","color":Color(0.38,0.48,0.56),"boss_color":Color(0.28,0.62,0.78),"boss_special":"lightning_followup"},
+    "bluegrad": {"normal_name":"蓝格拉德冰原战士","boss_name":"冰原巨人","color":Color(0.42,0.72,0.9),"boss_color":Color(0.62,0.88,1.0),"boss_special":"rift_drain"},
+    "fallen": {"normal_name":"堕天领域黑翼卫士","boss_name":"堕天使审判官","color":Color(0.36,0.12,0.28),"boss_color":Color(0.62,0.12,0.38),"boss_special":"void_drain"},
+    "titans": {"normal_name":"泰坦神域石像先锋","boss_name":"泰坦神将","color":Color(0.52,0.38,0.22),"boss_color":Color(0.78,0.52,0.22),"boss_special":"gravity_crush"},
+    "giants": {"normal_name":"巨人领域重装先锋","boss_name":"巨人族统领","color":Color(0.48,0.32,0.2),"boss_color":Color(0.72,0.42,0.22),"boss_special":"wing_slam"},
+    "hongmeng": {"normal_name":"鸿蒙混沌幻影","boss_name":"鸿蒙法则守护者","color":Color(0.34,0.24,0.62),"boss_color":Color(0.68,0.48,0.96),"boss_special":"cosmic_collapse"}
+}
+
+func get_tutorial_archetype_id(faction_id: String, is_boss: bool) -> String:
+    if not FACTION_TUTORIAL_ENEMIES.has(faction_id):
+        faction_id = "sanctuary"
+    return "faction_%s_%s" % [faction_id, "boss" if is_boss else "guard"]
+
 func get_archetype(archetype_id: String) -> Dictionary:
+    if archetype_id.begins_with("faction_"):
+        var parts := archetype_id.split("_")
+        if parts.size() >= 3:
+            var kind := str(parts[parts.size() - 1])
+            var faction_id := "_".join(parts.slice(1, parts.size() - 1))
+            if FACTION_TUTORIAL_ENEMIES.has(faction_id) and kind in ["guard", "boss"]:
+                var faction_data: Dictionary = FACTION_TUTORIAL_ENEMIES[faction_id]
+                var is_faction_boss := kind == "boss"
+                var data: Dictionary = ARCHETYPES["arena_boss" if is_faction_boss else "arena_guard"].duplicate(true)
+                data["name"] = str(faction_data["boss_name" if is_faction_boss else "normal_name"])
+                data["color"] = faction_data["boss_color" if is_faction_boss else "color"]
+                data["is_boss"] = is_faction_boss
+                if is_faction_boss:
+                    data["boss_special"] = str(faction_data["boss_special"])
+                    data["health"] = 340.0
+                    data["attack_damage"] = 19.0
+                    data["exp_reward"] = 120
+                    data["coin_reward"] = 160
+                    data["drop_tier"] = "boss"
+                else:
+                    data["health"] = 78.0
+                    data["attack_damage"] = 8.0
+                    data["exp_reward"] = 38
+                    data["coin_reward"] = 48
+                return data
     return ARCHETYPES.get(archetype_id, ARCHETYPES["arena_guard"]).duplicate(true)
 
 func get_catalog() -> Array[Dictionary]:
@@ -140,4 +186,10 @@ func validate_archetypes() -> Dictionary:
     return {"valid": errors.is_empty(), "archetype_count": ARCHETYPES.size(), "errors": errors}
 
 func has_archetype(archetype_id: String) -> bool:
-    return ARCHETYPES.has(archetype_id)
+    if ARCHETYPES.has(archetype_id):
+        return true
+    if archetype_id.begins_with("faction_"):
+        for faction_id in FACTION_TUTORIAL_ENEMIES:
+            if archetype_id == get_tutorial_archetype_id(str(faction_id), false) or archetype_id == get_tutorial_archetype_id(str(faction_id), true):
+                return true
+    return false

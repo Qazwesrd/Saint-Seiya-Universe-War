@@ -12,12 +12,15 @@ const SkillVisualCatalogScript = preload("res://scripts/skill_visual_catalog.gd"
 const BossStoryCatalogScript = preload("res://scripts/boss_story_catalog.gd")
 const LootPickupScript = preload("res://scripts/loot_pickup.gd")
 const WorldThemeManagerScript = preload("res://scripts/world_theme_manager.gd")
+const GalaxyWarsArenaScene = preload("res://assets/environments/galaxy_wars/galaxy_arena_blockout.tscn")
+var arena_world: Node3D
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies: Array[Node3D] = []
 var world_theme_manager: Node3D
 var active_world_chapter_id := ""
 var guide_npc: Node3D
+var hongmeng_guide_npc: Node3D
 var teleport_point: Node3D
 var sanctuary_active := false
 var sanctuary_origin := Vector3(0, 0.15, 7)
@@ -30,12 +33,15 @@ func _ready() -> void:
     player = CharacterBody3D.new()
     player.set_script(PlayerScript)
     player.set("game", self)
-    player.position = Vector3(0, 0.15, 7)
+    var faction_world_profile: Dictionary = FactionDatabase.get_world_profile()
+    player.position = arena_world.call("get_spawn_transform", &"player").origin if is_instance_valid(arena_world) else faction_world_profile.get("spawn_position", Vector3(0, 0.15, 7))
     add_child(player)
     _spawn_followers()
     CollectionSystem.collection_changed.connect(_spawn_followers)
     _build_sanctuary()
     _spawn_guide_npc()
+    if str(RPGState.profile.get("character_preset_id", "")) == "hongjun":
+        _spawn_hongmeng_guide_npc()
     _spawn_teleport_point()
     hud = HUDScript.new()
     hud.set("game", self)
@@ -63,12 +69,35 @@ func _process(delta: float) -> void:
                 SideQuestManager.record_event("landmark_discovered", {"chapter_id": active_world_chapter_id, "landmark_id": landmark_id})
                 show_notice("发现新地标：" + str(landmark.get("name", "未知地点")))
 
+func _should_use_galaxy_arena_scene() -> bool:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
+        return false
+    var chapter_id := str(WorldExplorationManager.active_region_id)
+    if CampaignDatabase.get_chapter(chapter_id).is_empty():
+        var mission: Dictionary = CampaignManager.get_active_mission()
+        chapter_id = str(CampaignDatabase.get_chapter_for_mission(str(mission.get("id", ""))).get("id", ""))
+    return chapter_id == "galaxy_wars"
+
 func _build_world() -> void:
+    if _should_use_galaxy_arena_scene():
+        arena_world = GalaxyWarsArenaScene.instantiate()
+        arena_world.name = "GalaxyWarsArena"
+        add_child(arena_world)
+        active_world_chapter_id = "galaxy_wars"
+        if arena_world.has_signal("quest_triggered"):
+            arena_world.connect("quest_triggered", _on_galaxy_arena_quest_triggered)
+        var arena_ground := arena_world.get_node("Ground") as StaticBody3D
+        arena_ground.collision_layer = 0
+        (arena_ground.get_node("CollisionShape3D") as CollisionShape3D).disabled = true
+        (arena_ground.get_node("FloorMesh") as MeshInstance3D).visible = false
+        (arena_world.get_node("DirectionalLight3D") as DirectionalLight3D).visible = false
+        (arena_world.get_node("WorldEnvironment") as WorldEnvironment).environment = null
     var env_node := WorldEnvironment.new()
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.32, 0.38, 0.62)
+    var faction_world_profile: Dictionary = FactionDatabase.get_world_profile()
+    env.ambient_light_color = faction_world_profile.get("ambient_color", Color(0.32, 0.38, 0.62))
     env.ambient_light_energy = 0.7
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env_node.environment = env
@@ -85,7 +114,7 @@ func _build_world() -> void:
     plane.size = Vector2(70, 70)
     floor_mesh.mesh = plane
     var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.055, 0.075, 0.14)
+    mat.albedo_color = faction_world_profile.get("ground_color", Color(0.055, 0.075, 0.14))
     mat.metallic = 0.2
     floor_mesh.material_override = mat
     floor_body.add_child(floor_mesh)
@@ -107,9 +136,9 @@ func _build_world() -> void:
         ring.mesh = torus
         ring.position.y = 0.02
         var ring_mat := StandardMaterial3D.new()
-        ring_mat.albedo_color = Color(0.08, 0.28, 0.65)
+        ring_mat.albedo_color = faction_world_profile.get("accent_color", Color(0.08, 0.28, 0.65))
         ring_mat.emission_enabled = true
-        ring_mat.emission = Color(0.03, 0.12, 0.5)
+        ring_mat.emission = faction_world_profile.get("accent_color", Color(0.03, 0.12, 0.5)) * 0.55
         ring.material_override = ring_mat
         ring_root.add_child(ring)
     world_theme_manager = Node3D.new()
@@ -119,9 +148,188 @@ func _build_world() -> void:
     world_theme_manager.set("floor_material", mat)
     world_theme_manager.set("ring_root", ring_root)
     add_child(world_theme_manager)
+    _build_faction_start_landmarks(faction_world_profile)
     _apply_campaign_world_theme()
 
+func _build_faction_start_landmarks(profile: Dictionary) -> void:
+    var root := Node3D.new()
+    root.name = "FactionStartLandmarks"
+    add_child(root)
+    var faction_id := str(profile.get("faction_id", "sanctuary"))
+    var accent: Color = profile.get("accent_color", Color(0.25, 0.55, 0.9))
+    var structure := str(profile.get("structure", "columns"))
+    var landmark_count := 4
+    var landmark_radius := 13.0
+    var landmark_height := 4.0
+    match faction_id:
+        "sanctuary":
+            landmark_count = 6
+            landmark_radius = 15.0
+        "dark_saints":
+            landmark_count = 5
+            landmark_radius = 11.5
+            landmark_height = 3.2
+        "sea":
+            landmark_count = 8
+            landmark_radius = 12.0
+            landmark_height = 5.0
+        "underworld":
+            landmark_count = 7
+            landmark_radius = 14.0
+            landmark_height = 4.8
+        "divine":
+            landmark_count = 4
+            landmark_radius = 17.0
+            landmark_height = 6.0
+        "asgard":
+            landmark_count = 9
+            landmark_radius = 16.0
+            landmark_height = 5.5
+        "steel":
+            landmark_count = 4
+            landmark_radius = 10.5
+            landmark_height = 3.0
+        "bluegrad":
+            landmark_count = 6
+            landmark_radius = 18.0
+            landmark_height = 5.8
+        "fallen":
+            landmark_count = 2
+            landmark_radius = 9.0
+            landmark_height = 6.0
+        "titans":
+            landmark_count = 5
+            landmark_radius = 19.0
+            landmark_height = 7.0
+        "giants":
+            landmark_count = 3
+            landmark_radius = 16.0
+            landmark_height = 8.0
+        "hongmeng":
+            landmark_count = 7
+            landmark_radius = 12.5
+            landmark_height = 5.2
+    for index in range(landmark_count):
+        var landmark := MeshInstance3D.new()
+        if structure in ["crystals", "orbs", "coral"]:
+            var sphere := SphereMesh.new()
+            sphere.radius = 0.9 if structure != "orbs" else 0.65
+            sphere.height = landmark_height * 0.6
+            landmark.mesh = sphere
+            landmark.scale = Vector3(0.72, 1.7, 0.72) if structure == "crystals" else Vector3.ONE
+        elif structure in ["machines", "giants"]:
+            var block := BoxMesh.new()
+            block.size = Vector3(1.8, landmark_height, 1.5)
+            landmark.mesh = block
+        else:
+            var pillar := CylinderMesh.new()
+            pillar.top_radius = 0.38
+            pillar.bottom_radius = 0.78
+            pillar.height = landmark_height
+            landmark.mesh = pillar
+        var material := StandardMaterial3D.new()
+        material.albedo_color = accent
+        material.metallic = 0.42
+        material.roughness = 0.34
+        material.emission_enabled = true
+        material.emission = accent * 0.22
+        landmark.material_override = material
+        var angle := TAU * float(index) / float(landmark_count)
+        landmark.position = Vector3(cos(angle) * landmark_radius, landmark_height * 0.5, sin(angle) * landmark_radius - 3.0)
+        root.add_child(landmark)
+    var centerpiece := MeshInstance3D.new()
+    var centerpiece_mesh: Mesh
+    var centerpiece_scale := Vector3.ONE
+    match faction_id:
+        "sanctuary":
+            var sanctuary_gate := TorusMesh.new()
+            sanctuary_gate.inner_radius = 2.4
+            sanctuary_gate.outer_radius = 2.7
+            centerpiece_mesh = sanctuary_gate
+            centerpiece_scale = Vector3(1.0, 1.45, 0.55)
+        "dark_saints":
+            var dark_altar := PrismMesh.new()
+            dark_altar.size = Vector3(4.0, 5.0, 2.0)
+            centerpiece_mesh = dark_altar
+        "sea":
+            var sea_arch := TorusMesh.new()
+            sea_arch.inner_radius = 2.8
+            sea_arch.outer_radius = 3.05
+            centerpiece_mesh = sea_arch
+            centerpiece_scale = Vector3(1.8, 1.35, 0.55)
+        "underworld":
+            var underworld_gate := TorusMesh.new()
+            underworld_gate.inner_radius = 2.6
+            underworld_gate.outer_radius = 2.9
+            centerpiece_mesh = underworld_gate
+            centerpiece_scale = Vector3(1.0, 1.55, 0.5)
+        "divine":
+            var divine_halo := TorusMesh.new()
+            divine_halo.inner_radius = 3.0
+            divine_halo.outer_radius = 3.18
+            centerpiece_mesh = divine_halo
+            centerpiece_scale = Vector3(1.0, 1.0, 1.0)
+        "asgard":
+            var asgard_spire := PrismMesh.new()
+            asgard_spire.size = Vector3(3.0, 6.5, 2.6)
+            centerpiece_mesh = asgard_spire
+        "steel":
+            var steel_core := BoxMesh.new()
+            steel_core.size = Vector3(3.0, 3.6, 3.0)
+            centerpiece_mesh = steel_core
+        "bluegrad":
+            var bluegrad_crystal := PrismMesh.new()
+            bluegrad_crystal.size = Vector3(3.2, 6.0, 2.6)
+            centerpiece_mesh = bluegrad_crystal
+        "fallen":
+            var fallen_obelisk := PrismMesh.new()
+            fallen_obelisk.size = Vector3(2.8, 7.0, 1.6)
+            centerpiece_mesh = fallen_obelisk
+        "titans":
+            var titan_monolith := BoxMesh.new()
+            titan_monolith.size = Vector3(4.2, 7.2, 2.2)
+            centerpiece_mesh = titan_monolith
+        "giants":
+            var giant_totem := CylinderMesh.new()
+            giant_totem.top_radius = 1.0
+            giant_totem.bottom_radius = 1.8
+            giant_totem.height = 6.5
+            centerpiece_mesh = giant_totem
+        "hongmeng":
+            var hongmeng_orbit := TorusMesh.new()
+            hongmeng_orbit.inner_radius = 3.1
+            hongmeng_orbit.outer_radius = 3.22
+            centerpiece_mesh = hongmeng_orbit
+            centerpiece_scale = Vector3(1.0, 1.0, 0.72)
+    centerpiece.mesh = centerpiece_mesh
+    centerpiece.scale = centerpiece_scale
+    centerpiece.position = Vector3(0.0, 3.0, -5.0)
+    var centerpiece_material := StandardMaterial3D.new()
+    centerpiece_material.albedo_color = accent.lightened(0.18)
+    centerpiece_material.metallic = 0.58
+    centerpiece_material.roughness = 0.28
+    centerpiece_material.emission_enabled = true
+    centerpiece_material.emission = accent * 0.3
+    centerpiece.material_override = centerpiece_material
+    root.add_child(centerpiece)
+    if structure == "wings":
+        for side in [-1.0, 1.0]:
+            var wing := MeshInstance3D.new()
+            var wing_mesh := BoxMesh.new()
+            wing_mesh.size = Vector3(0.55, 4.8, 1.2)
+            wing.mesh = wing_mesh
+            wing.position = Vector3(side * 7.0, 2.5, -9.0)
+            wing.rotation.z = side * -0.35
+            var wing_material := StandardMaterial3D.new()
+            wing_material.albedo_color = accent
+            wing_material.emission_enabled = true
+            wing_material.emission = accent * 0.18
+            wing.material_override = wing_material
+            root.add_child(wing)
+
 func _apply_campaign_world_theme() -> void:
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and int(RPGState.profile.get("level", 1)) < 10:
+        return
     if not is_instance_valid(world_theme_manager):
         return
     var chapter_id := str(WorldExplorationManager.active_region_id)
@@ -153,6 +361,8 @@ func travel_to_world_region(chapter_id: String) -> bool:
         return false
     player.call("cancel_auto_move")
     player.velocity = Vector3.ZERO
+    if is_instance_valid(arena_world):
+        arena_world.visible = chapter_id == "galaxy_wars"
     var region: Dictionary = travel_result.get("region", {})
     player.global_position = region.get("spawn_position", Vector3(0.0, 0.15, 7.0))
     active_world_chapter_id = ""
@@ -164,13 +374,29 @@ func travel_to_world_region(chapter_id: String) -> bool:
 func _spawn_guide_npc() -> void:
     guide_npc = Node3D.new()
     guide_npc.set_script(GuideNpcScript)
-    guide_npc.position = Vector3(0, 0, 2)
+    if is_instance_valid(arena_world):
+        guide_npc.global_transform = arena_world.call("get_npc_anchor_transform", &"tournament_guide")
+    else:
+        guide_npc.position = player.global_position + Vector3(0, 0, 2)
     add_child(guide_npc)
+
+func _on_galaxy_arena_quest_triggered(trigger_id: StringName, actor: Node3D) -> void:
+    if actor != player:
+        return
+    if trigger_id == &"tournament_guide_intro":
+        show_notice("已抵达圣域训练引导员附近：靠近后点击交互按钮接取银河竞技场试炼。")
+
+func _spawn_hongmeng_guide_npc() -> void:
+    hongmeng_guide_npc = Node3D.new()
+    hongmeng_guide_npc.set_script(GuideNpcScript)
+    hongmeng_guide_npc.set("display_name_override", "紫霄宫接引仙官")
+    hongmeng_guide_npc.position = player.global_position + Vector3(8.0, 0.0, -7.0)
+    add_child(hongmeng_guide_npc)
 
 func _spawn_teleport_point() -> void:
     teleport_point = Node3D.new()
     teleport_point.set_script(TeleportPointScript)
-    teleport_point.position = Vector3(0, 0, -16)
+    teleport_point.position = player.global_position + Vector3(0, 0, -16)
     add_child(teleport_point)
 
 func use_teleport_point() -> void:
@@ -188,7 +414,29 @@ func navigate_to_objective() -> void:
     if not is_instance_valid(player):
         return
     var target: Node3D
-    if QuestManager.status == "not_started" or QuestManager.status == "ready_to_return" or QuestManager.status == "completed":
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        var tutorial: Dictionary = RPGState.profile.get("faction_tutorial", {})
+        var tutorial_status := str(tutorial.get("status", "not_started"))
+        if tutorial_status in ["not_started", "ready_to_return", "completed"]:
+            target = guide_npc
+            if is_instance_valid(hongmeng_guide_npc) and player.global_position.distance_to(hongmeng_guide_npc.global_position) < player.global_position.distance_to(guide_npc.global_position):
+                target = hongmeng_guide_npc
+        elif int(tutorial.get("defeated_normal", 0)) < FactionDatabase.TUTORIAL_NORMAL_TARGET:
+            var nearest_distance := INF
+            for enemy in enemies:
+                if is_instance_valid(enemy) and not bool(enemy.get("is_boss")):
+                    var distance: float = player.global_position.distance_to(enemy.global_position)
+                    if distance < nearest_distance:
+                        nearest_distance = distance
+                        target = enemy
+        elif not bool(tutorial.get("boss_defeated", false)):
+            for enemy in enemies:
+                if is_instance_valid(enemy) and bool(enemy.get("is_boss")):
+                    target = enemy
+                    break
+        else:
+            target = guide_npc
+    elif QuestManager.status == "not_started" or QuestManager.status == "ready_to_return" or QuestManager.status == "completed":
         target = guide_npc
     elif QuestManager.defeated_normal < 2:
         var nearest_distance := INF
@@ -214,11 +462,15 @@ func navigate_to_objective() -> void:
 func interact_with_guide() -> void:
     if not is_instance_valid(player) or not is_instance_valid(guide_npc):
         return
-    if player.global_position.distance_to(guide_npc.global_position) > 4.8:
-        show_notice("靠近圣域训练引导员后再交谈")
+    var use_hongmeng_entry := false
+    if is_instance_valid(hongmeng_guide_npc) and player.global_position.distance_to(hongmeng_guide_npc.global_position) <= 4.8:
+        use_hongmeng_entry = true
+    var near_sanctuary_entry := player.global_position.distance_to(guide_npc.global_position) <= 4.8
+    if not near_sanctuary_entry and not use_hongmeng_entry:
+        show_notice("靠近%s后再交谈" % FactionDatabase.get_tutorial_mentor_name())
         return
     SideQuestManager.record_event("talk_to_guide", {"chapter_id": active_world_chapter_id})
-    var dialogue: Dictionary = QuestManager.interact_with_guide()
+    var dialogue: Dictionary = QuestManager.interact_with_hongmeng_guide() if use_hongmeng_entry else QuestManager.interact_with_guide()
     var campaign_mission: Dictionary = CampaignManager.get_active_mission()
     if not campaign_mission.is_empty() and campaign_mission.get("encounter", {}).is_empty():
         var campaign_state := CampaignManager.get_mission_progress(str(campaign_mission.get("id", "")))
@@ -246,6 +498,14 @@ func _refresh_story_encounter() -> void:
         var next_wave := EncounterDirector.advance_wave()
         if not next_wave.is_empty():
             _spawn_encounter_wave(next_wave)
+            return
+    if bool(RPGState.profile.get("faction_tutorial_enabled", false)):
+        var tutorial_progress: Dictionary = RPGState.profile.get("faction_tutorial", {})
+        var tutorial_status := str(tutorial_progress.get("status", "not_started"))
+        if tutorial_status == "active":
+            _start_faction_tutorial_encounter()
+            return
+        if tutorial_status != "completed" or int(RPGState.profile.get("level", 1)) < 10:
             return
     var mission := CampaignManager.get_active_mission()
     var mission_id := str(mission.get("id", ""))
@@ -282,6 +542,30 @@ func _refresh_story_encounter() -> void:
                 show_notice("剧情推进：训练首领登场")
     elif not mission.is_empty():
         _start_data_driven_campaign_encounter(mission, mission_state)
+
+func _start_faction_tutorial_encounter() -> void:
+    if not is_instance_valid(player) or not enemies.is_empty() or EncounterDirector.active:
+        return
+    var progress: Dictionary = RPGState.profile.get("faction_tutorial", {})
+    if str(progress.get("status", "")) != "active":
+        return
+    var defeated_normal := int(progress.get("defeated_normal", 0))
+    var center := player.global_position + Vector3(0.0, 0.1, -7.0)
+    var waves: Array[Dictionary] = []
+    var encounter_id := "faction_trial_" + str(RPGState.profile.get("faction_id", "sanctuary"))
+    var faction_id := str(progress.get("faction_id", RPGState.profile.get("faction_id", "sanctuary")))
+    if defeated_normal < FactionDatabase.TUTORIAL_NORMAL_TARGET:
+        var guard_id := EnemyDatabase.get_tutorial_archetype_id(faction_id, false)
+        waves = [{"spawns":[{"archetype_id":guard_id,"count":FactionDatabase.TUTORIAL_NORMAL_TARGET-defeated_normal,"position":center}]}]
+    elif not bool(progress.get("boss_defeated", false)):
+        var boss_id := EnemyDatabase.get_tutorial_archetype_id(faction_id, true)
+        waves = [{"spawns":[{"archetype_id":boss_id,"count":1,"boss":true,"position":center}]}]
+    if not waves.is_empty() and EncounterDirector.start(encounter_id, waves):
+        _spawn_encounter_wave(EncounterDirector.get_current_wave())
+        if defeated_normal < FactionDatabase.TUTORIAL_NORMAL_TARGET:
+            show_notice("阵营新手试炼开始：" + FactionDatabase.get_tutorial_enemy_name())
+        else:
+            show_notice("阵营首领试炼：" + FactionDatabase.get_tutorial_boss_name())
 
 func _start_data_driven_campaign_encounter(mission: Dictionary, mission_state: Dictionary) -> void:
     var encounter: Dictionary = mission.get("encounter", {})
@@ -347,9 +631,13 @@ func _spawn_encounter_wave(wave: Dictionary) -> void:
         var archetype_id := str(spawn.get("archetype_id", "arena_guard"))
         var is_boss := bool(spawn.get("boss", archetype_id == "arena_boss"))
         var position: Vector3 = spawn.get("position", Vector3(0, 0.1, -5))
+        if is_instance_valid(arena_world) and archetype_id == "arena_boss":
+            position = arena_world.call("get_enemy_anchor_transform", &"opening_duel").origin
         for index in range(count):
             var offset := Vector3(float(index % 3) * 1.5, 0.0, float(index / 3) * 1.5)
             _spawn_enemy(position + offset, is_boss, archetype_id)
+            if bool(RPGState.profile.get("faction_tutorial_enabled", false)) and str(RPGState.profile.get("faction_tutorial", {}).get("status", "")) == "active" and not enemies.is_empty():
+                enemies.back().set("display_name", FactionDatabase.get_tutorial_boss_name() if is_boss else FactionDatabase.get_tutorial_enemy_name())
             total_spawned += 1
     EncounterDirector.register_enemy(total_spawned)
     if total_spawned > 0:

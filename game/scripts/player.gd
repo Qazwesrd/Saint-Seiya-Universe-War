@@ -1,6 +1,7 @@
 extends CharacterBody3D
 const CombatTargeting = preload("res://scripts/combat_targeting.gd")
 const CharacterVisualCatalog = preload("res://scripts/character_visual_catalog.gd")
+const CharacterStanceDatabase = preload("res://scripts/character_stance_database.gd")
 const SkillAnimationCatalog = preload("res://scripts/skill_animation_catalog.gd")
 const SkillVisualCatalog = preload("res://scripts/skill_visual_catalog.gd")
 var game: Variant
@@ -28,6 +29,7 @@ var camera_node: Camera3D
 var camera_pitch := -9.0
 var camera_presentation_tween: Tween
 var visual_root: Node3D
+var character_stance_profile: Dictionary = {}
 var visual_pose_tween: Tween
 var upper_arm_nodes: Array[MeshInstance3D] = []
 var forearm_nodes: Array[MeshInstance3D] = []
@@ -44,6 +46,8 @@ var combat_pose_timer := 0.0
 var combat_pose_duration := 0.0
 var combat_pose_strength := 0.0
 var combat_pose_motion := "strike"
+var current_action_state := "idle"
+var action_state_timer := 0.0
 var combat_feedback_node: MeshInstance3D
 var combat_feedback_material: StandardMaterial3D
 var combat_feedback_timer := 0.0
@@ -58,6 +62,7 @@ var body_mat: StandardMaterial3D
 var visual_flash_timer := 0.0
 var visual_flash_color := Color.WHITE
 var armor_root: Node3D
+var costume_root: Node3D
 var armor_visual_wear_profile: Dictionary = {}
 var armor_base_color := Color(0.18, 0.52, 0.95)
 var visual_class_id := ""
@@ -71,6 +76,7 @@ var authored_action_animation_timer := 0.0
 var training_down_timer := 0.0
 var authored_was_on_floor := true
 var authored_armor_model: Node3D
+var weapon_socket_nodes: Dictionary = {}
 var is_mounted := false
 var tenkishi_flight_active := false
 var mount_indicator: MeshInstance3D
@@ -191,6 +197,7 @@ func _ready() -> void:
     eye_band.material_override = eye_material
     visual_root.add_child(eye_band)
 
+    _refresh_character_stance_profile()
     _build_armor_visuals()
     _load_authored_character_model(str(RPGState.profile.get("class_id", "pegasus")))
     _load_authored_armor_model()
@@ -243,15 +250,25 @@ func _animate_visual_motion(delta: float) -> void:
             guard_shield_material.albedo_color = Color(1.0, 0.72, 0.24, 0.18 + shield_ratio * 0.24)
             guard_shield_material.emission_energy_multiplier = 0.8 + shield_ratio * 1.8
     var planar_speed := Vector2(velocity.x, velocity.z).length()
+    action_state_timer = maxf(0.0, action_state_timer - delta)
+    if action_state_timer <= 0.0 and current_action_state in ["attack", "hit", "death"]:
+        _set_action_state(_resolve_locomotion_action_state(planar_speed), 0.0)
+    elif current_action_state in ["idle", "walk", "run"]:
+        var locomotion_state := _resolve_locomotion_action_state(planar_speed)
+        if locomotion_state != current_action_state:
+            _set_action_state(locomotion_state, 0.0)
     authored_action_animation_timer = maxf(0.0, authored_action_animation_timer - delta)
     if authored_action_animation_timer <= 0.0:
-        var animation_name := "run" if planar_speed >= 5.0 else ("walk" if planar_speed >= 0.35 else "idle")
-        if not is_on_floor():
-            animation_name = "jump" if velocity.y > 0.5 else "fall"
+        var animation_name := current_action_state
+        if current_action_state == "death": animation_name = "defeat"
+        elif current_action_state == "attack": animation_name = "attack"
+        elif current_action_state == "hit": animation_name = "hit_light"
         _play_authored_animation(animation_name)
     var movement_ratio := clampf(planar_speed / 7.0, 0.0, 1.0)
+    var stance_gait_scale := float(character_stance_profile.get("gait_scale", 1.0))
+    var stance_breath_scale := float(character_stance_profile.get("idle_breath", 1.0))
     var clock := float(Time.get_ticks_msec()) * 0.012
-    var idle_breath := sin(clock * 0.72) * 0.012
+    var idle_breath := sin(clock * 0.72) * 0.012 * stance_breath_scale
     var bob := idle_breath + sin(clock) * 0.035 * movement_ratio
     if tenkishi_flight_active:
         bob += sin(clock * 0.72) * 0.045
@@ -292,8 +309,10 @@ func _animate_visual_motion(delta: float) -> void:
         if is_instance_valid(gem_material):
             gem_material.emission_energy_multiplier = gem_pulse
         gem.scale = Vector3.ONE * (0.96 + gem_pulse * 0.08)
-    var target_roll := -move_input.x * 0.10
-    var target_pitch := move_input.y * 0.055
+    var action_roll := 1.18 if current_action_state == "death" else (0.16 if current_action_state == "hit" else 0.0)
+    var action_pitch := -0.16 if current_action_state == "attack" else (0.12 if current_action_state == "hit" else 0.0)
+    var target_roll := -move_input.x * 0.10 + float(character_stance_profile.get("torso_roll", 0.0)) + action_roll
+    var target_pitch := move_input.y * 0.055 + float(character_stance_profile.get("torso_pitch", 0.0)) + action_pitch
     visual_root.rotation.z = lerp_angle(visual_root.rotation.z, target_roll, minf(1.0, delta * 8.0))
     visual_root.rotation.x = lerp_angle(visual_root.rotation.x, target_pitch, minf(1.0, delta * 8.0))
     combat_pose_timer = maxf(0.0, combat_pose_timer - delta)
@@ -301,10 +320,24 @@ func _animate_visual_motion(delta: float) -> void:
     var pose_weight := sin(clampf(pose_progress, 0.0, 1.0) * PI) * combat_pose_strength
     for limb_index in range(2):
         var side := -1.0 if limb_index == 0 else 1.0
-        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.42 * movement_ratio
-        var arm_target := gait
-        var forearm_target := -0.12 * movement_ratio
-        var leg_target := -gait * 0.9
+        var stance_arm_rest: Array = character_stance_profile.get("arm_rest", [0.0, 0.0])
+        var stance_forearm_rest: Array = character_stance_profile.get("forearm_rest", [0.0, 0.0])
+        var stance_leg_rest: Array = character_stance_profile.get("leg_rest", [0.0, 0.0])
+        var stance_arm_offset := float(stance_arm_rest[limb_index]) if stance_arm_rest.size() > limb_index else 0.0
+        var stance_forearm_offset := float(stance_forearm_rest[limb_index]) if stance_forearm_rest.size() > limb_index else 0.0
+        var stance_leg_offset := float(stance_leg_rest[limb_index]) if stance_leg_rest.size() > limb_index else 0.0
+        var gait := sin(clock + (PI if limb_index == 1 else 0.0)) * 0.42 * movement_ratio * stance_gait_scale
+        var arm_target := gait + stance_arm_offset
+        var forearm_target := -0.12 * movement_ratio + stance_forearm_offset
+        var leg_target := -gait * 0.9 + stance_leg_offset
+        if current_action_state == "death":
+            arm_target = -1.42 if limb_index == 1 else -1.18
+            forearm_target = -0.92
+            leg_target = 0.0
+        elif current_action_state == "hit":
+            arm_target += 0.22 if limb_index == 1 else 0.12
+        elif current_action_state == "attack":
+            arm_target = lerpf(arm_target, -0.98 if limb_index == 1 else -0.34, pose_weight)
         if combat_pose_motion == "dash":
             arm_target = lerpf(arm_target, 0.52 if limb_index == 1 else 0.34, pose_weight)
             forearm_target = lerpf(forearm_target, -0.62, pose_weight)
@@ -353,48 +386,62 @@ func _animate_visual_motion(delta: float) -> void:
         if limb_index < leg_nodes.size():
             leg_nodes[limb_index].rotation.x = lerp_angle(leg_nodes[limb_index].rotation.x, leg_target, minf(1.0, delta * 10.0))
 
+func _resolve_locomotion_action_state(planar_speed: float) -> String:
+    return CharacterStanceDatabase.resolve_locomotion_state(planar_speed)
+
+func _set_action_state(state_id: String, duration: float = 0.0) -> void:
+    if not CharacterStanceDatabase.can_transition_action_state(current_action_state, state_id, action_state_timer):
+        return
+    current_action_state = state_id
+    action_state_timer = maxf(0.0, duration)
+    var animation_name := state_id
+    if state_id == "death": animation_name = "defeat"
+    elif state_id == "attack": animation_name = "attack"
+    elif state_id == "hit": animation_name = "hit_light"
+    _play_authored_animation(animation_name)
+
 func _play_armor_damage_feedback(damage_result: Dictionary) -> void:
- if not is_instance_valid(visual_root) or not bool(damage_result.get("changed", false)):
-  return
- var part_id := str(damage_result.get("part", "chest"))
- var part_position := Vector3(0.0, 1.25, -0.43)
- match part_id:
-  "head":
-   part_position = Vector3(0.0, 2.02, -0.20)
-  "arms":
-   part_position = Vector3(0.48, 1.22, -0.16)
-  "waist":
-   part_position = Vector3(0.0, 0.68, -0.30)
-  "legs":
-   part_position = Vector3(0.20, 0.42, -0.25)
- var part_broken := int(damage_result.get("after", 100)) <= 0
- _play_combat_feedback(Color(1.0, 0.30, 0.16) if part_broken else Color(1.0, 0.48, 0.22), 0.28 if part_broken else 0.22)
- var severity := clampf(float(damage_result.get("before", 100) - damage_result.get("after", 100)) / 18.0, 0.2, 1.0)
- var shard_count := 5 if part_broken else 3
- for shard_index in range(shard_count):
-  var shard := MeshInstance3D.new()
-  shard.name = "ArmorImpactShard"
-  var shard_mesh := PrismMesh.new()
-  shard_mesh.size = Vector3(0.035 + severity * 0.025, 0.07 + severity * 0.045, 0.025)
-  shard.mesh = shard_mesh
-  shard.position = part_position + Vector3((float(shard_index) - float(shard_count - 1) * 0.5) * 0.075, float(shard_index % 2) * 0.06, 0.0)
-  shard.rotation = Vector3(0.2 * float(shard_index), 0.0, -0.35 + float(shard_index) * 0.35)
-  var shard_material := StandardMaterial3D.new()
-  shard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-  shard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-  shard_material.albedo_color = armor_base_color.lightened(0.32)
-  shard_material.emission_enabled = true
-  shard_material.emission = armor_base_color.lightened(0.5) * 0.8
-  shard.material_override = shard_material
-  visual_root.add_child(shard)
-  var shard_tween := create_tween()
-  var scatter := Vector3((float(shard_index) - 1.0) * 0.24, 0.16 + float(shard_index % 2) * 0.10, -0.12)
-  shard_tween.set_parallel(true)
-  shard_tween.tween_property(shard, "position", shard.position + scatter, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-  shard_tween.tween_property(shard, "rotation", shard.rotation + Vector3(0.8, 0.6, 0.9), 0.32)
-  shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.32).set_delay(0.12)
-  shard_tween.tween_property(shard_material, "albedo_color:a", 0.0, 0.24).set_delay(0.08)
-  shard_tween.chain().tween_callback(shard.queue_free)
+    if not is_instance_valid(visual_root) or not bool(damage_result.get("changed", false)):
+        return
+    var part_id := str(damage_result.get("part", "chest"))
+    var part_position := Vector3(0.0, 1.25, -0.43)
+    match part_id:
+        "head":
+            part_position = Vector3(0.0, 2.02, -0.20)
+        "arms":
+            part_position = Vector3(0.48, 1.22, -0.16)
+        "waist":
+            part_position = Vector3(0.0, 0.68, -0.30)
+        "legs":
+            part_position = Vector3(0.20, 0.42, -0.25)
+    var part_broken := int(damage_result.get("after", 100)) <= 0
+    _play_combat_feedback(Color(1.0, 0.30, 0.16) if part_broken else Color(1.0, 0.48, 0.22), 0.28 if part_broken else 0.22)
+    var severity := clampf(float(damage_result.get("before", 100) - damage_result.get("after", 100)) / 18.0, 0.2, 1.0)
+    var shard_count := 5 if part_broken else 3
+    for shard_index in range(shard_count):
+        var shard := MeshInstance3D.new()
+        shard.name = "ArmorImpactShard"
+        var shard_mesh := PrismMesh.new()
+        shard_mesh.size = Vector3(0.035 + severity * 0.025, 0.07 + severity * 0.045, 0.025)
+        shard.mesh = shard_mesh
+        shard.position = part_position + Vector3((float(shard_index) - float(shard_count - 1) * 0.5) * 0.075, float(shard_index % 2) * 0.06, 0.0)
+        shard.rotation = Vector3(0.2 * float(shard_index), 0.0, -0.35 + float(shard_index) * 0.35)
+        var shard_material := StandardMaterial3D.new()
+        shard_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        shard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+        shard_material.albedo_color = armor_base_color.lightened(0.32)
+        shard_material.emission_enabled = true
+        shard_material.emission = armor_base_color.lightened(0.5) * 0.8
+        shard.material_override = shard_material
+        visual_root.add_child(shard)
+        var shard_tween := create_tween()
+        var scatter := Vector3((float(shard_index) - 1.0) * 0.24, 0.16 + float(shard_index % 2) * 0.10, -0.12)
+        shard_tween.set_parallel(true)
+        shard_tween.tween_property(shard, "position", shard.position + scatter, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+        shard_tween.tween_property(shard, "rotation", shard.rotation + Vector3(0.8, 0.6, 0.9), 0.32)
+        shard_tween.tween_property(shard, "scale", Vector3.ZERO, 0.32).set_delay(0.12)
+        shard_tween.tween_property(shard_material, "albedo_color:a", 0.0, 0.24).set_delay(0.08)
+        shard_tween.chain().tween_callback(shard.queue_free)
 
 func _build_combat_feedback_visual() -> void:
     if not is_instance_valid(visual_root):
@@ -455,6 +502,7 @@ func _play_skill_pose(profile: Dictionary) -> void:
     var pose_scale := clampf(float(profile.get("pose_scale", 1.08)), 1.0, 1.24)
     combat_pose_duration = maxf(0.24, float(profile.get("total_duration", 0.7)))
     combat_pose_timer = combat_pose_duration
+    _set_action_state("attack", combat_pose_duration)
     combat_pose_strength = 1.0
     combat_pose_motion = str(profile.get("motion", "strike"))
     var rotation_target := base_yaw + deg_to_rad(float(profile.get("rotation_degrees", 0.0)))
@@ -488,7 +536,8 @@ func _get_visual_armor_signature() -> String:
         "class_id": RPGState.profile.get("class_id", "pegasus"),
         "equipped_relic": RPGState.profile.get("equipped_relic", ""),
         "equipment": RPGState.profile.get("equipment", {}),
-        "armor_state": RPGState.profile.get("armor_state", {})
+        "armor_state": RPGState.profile.get("armor_state", {}),
+        "appearance_state": RPGState.profile.get("appearance_state", {})
     })
 
 func _get_armor_transform_key() -> String:
@@ -502,6 +551,7 @@ func _get_armor_transform_key() -> String:
     })
 
 func _on_rpg_state_changed() -> void:
+    _refresh_character_stance_profile()
     if _get_visual_armor_signature() != visual_armor_signature:
         var previous_transform_key := visual_armor_transform_key
         _build_armor_visuals()
@@ -509,6 +559,12 @@ func _on_rpg_state_changed() -> void:
         _load_authored_armor_model()
         if not previous_transform_key.is_empty() and previous_transform_key != visual_armor_transform_key:
             _play_armor_transform_effect()
+
+func _refresh_character_stance_profile() -> void:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+    var is_hongjun := bool(RPGState.profile.get("is_supreme_deity", false))
+    character_stance_profile = CharacterStanceDatabase.get_profile(class_id, faction_id, is_hongjun)
 
 func _play_armor_transform_effect() -> void:
     if not is_instance_valid(visual_root):
@@ -692,6 +748,11 @@ func _build_armor_visuals() -> void:
     armor_visual_wear_profile = ArmorSystem.get_visual_wear_profile(ArmorSystem.get_condition_ratio())
     var stage_id := str(stage_state.get("current_stage", "bronze"))
     var stage_palette: Dictionary = CharacterVisualCatalog.get_stage_palette(stage_id, bool(stage_state.get("awakened", false)))
+    var faction_id := str(RPGState.profile.get("faction_id", "sanctuary"))
+    var faction_armor_profile: Dictionary = CharacterVisualCatalog.get_faction_armor_profile(faction_id, class_id)
+    stage_palette["metal"] = faction_armor_profile.get("metal", stage_palette.get("metal", armor_base_color))
+    stage_palette["trim"] = faction_armor_profile.get("trim", stage_palette.get("trim", accent))
+    accent = faction_armor_profile.get("accent", accent)
     var armor_part_profiles: Dictionary = CharacterVisualCatalog.get_class_armor_part_profiles(class_id, stage_id, bool(stage_state.get("awakened", false)))
     var head_part_scale: Vector3 = armor_part_profiles.get("head", {}).get("scale", Vector3.ONE)
     var chest_part_scale: Vector3 = armor_part_profiles.get("chest", {}).get("scale", Vector3.ONE)
@@ -1353,17 +1414,224 @@ func _build_armor_visuals() -> void:
         glow_material.emission = accent * stage_glow
         glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
+    _build_faction_armor_details(faction_id, faction_armor_profile, stage_metal_color, stage_trim_color, stage_metallic)
     _build_armor_wear_cracks()
+    _build_costume_visuals()
     if armor_was_repaired:
         _play_combat_feedback(Color(0.36, 1.0, 0.68), 0.34)
         _play_armor_repair_feedback()
 
 
+
+
+func _build_faction_armor_details(faction_id: String, profile: Dictionary, metal: Color, trim: Color, metallic: float) -> void:
+    if not is_instance_valid(armor_root):
+        return
+    var family := str(profile.get("family", "saint_cloth"))
+    var crest := PrismMesh.new()
+    var crest_size := Vector3(0.12, 0.34, 0.10)
+    var shoulder_size := Vector3(0.24, 0.34, 0.16)
+    var core_size := Vector3(0.12, 0.22, 0.08)
+    match family:
+        "dark_cloth":
+            crest_size = Vector3(0.10, 0.28, 0.09)
+            shoulder_size = Vector3(0.30, 0.42, 0.18)
+            core_size = Vector3(0.10, 0.24, 0.08)
+        "surplice":
+            crest_size = Vector3(0.16, 0.38, 0.11)
+            shoulder_size = Vector3(0.36, 0.46, 0.20)
+            core_size = Vector3(0.16, 0.30, 0.10)
+        "scale":
+            crest_size = Vector3(0.12, 0.40, 0.10)
+            shoulder_size = Vector3(0.18, 0.48, 0.16)
+        "steel_armor":
+            crest_size = Vector3(0.20, 0.20, 0.14)
+            shoulder_size = Vector3(0.34, 0.30, 0.24)
+            core_size = Vector3(0.20, 0.20, 0.12)
+        "god_robe", "god_cloth":
+            crest_size = Vector3(0.14, 0.42, 0.10)
+            shoulder_size = Vector3(0.38, 0.40, 0.16)
+        "primordial_armor":
+            crest_size = Vector3(0.18, 0.44, 0.12)
+            shoulder_size = Vector3(0.42, 0.42, 0.20)
+            core_size = Vector3(0.18, 0.32, 0.12)
+        "ice_armor":
+            crest_size = Vector3(0.12, 0.42, 0.10)
+            shoulder_size = Vector3(0.24, 0.44, 0.18)
+        "fallen_armor":
+            crest_size = Vector3(0.18, 0.42, 0.12)
+            shoulder_size = Vector3(0.42, 0.46, 0.20)
+            core_size = Vector3(0.16, 0.28, 0.10)
+        "chronotector":
+            crest_size = Vector3(0.18, 0.32, 0.12)
+            shoulder_size = Vector3(0.36, 0.36, 0.20)
+        "giant_plate":
+            crest_size = Vector3(0.24, 0.34, 0.16)
+            shoulder_size = Vector3(0.48, 0.50, 0.28)
+            core_size = Vector3(0.20, 0.30, 0.14)
+    crest.size = crest_size
+    var crown := _add_armor_piece(crest, Vector3(0.0, 2.08, -0.18), Vector3.ONE, trim, metallic, "head")
+    crown.rotation.x = deg_to_rad(-12.0)
+    var shoulder := PrismMesh.new()
+    shoulder.size = shoulder_size
+    for side in [-1.0, 1.0]:
+        var guard := _add_armor_piece(shoulder, Vector3(side * 0.53, 1.57, -0.015), Vector3(1.0, 1.0, 0.82), metal.lightened(0.10), metallic, "arms")
+        guard.rotation.z = -side * (0.18 if family in ["dark_cloth", "surplice", "fallen_armor"] else 0.08)
+    var chest_core := PrismMesh.new()
+    chest_core.size = core_size
+    var core := _add_armor_piece(chest_core, Vector3(0.0, 1.30, -0.485), Vector3.ONE, trim, metallic, "chest")
+    core.rotation.z = deg_to_rad(45.0) if family == "steel_armor" else 0.0
+    if family == "surplice":
+        for side in [-1.0, 1.0]:
+            var rib := PrismMesh.new()
+            rib.size = Vector3(0.07, 0.28, 0.045)
+            var rib_piece := _add_armor_piece(rib, Vector3(side * 0.30, 1.22, -0.47), Vector3.ONE, trim.darkened(0.12), metallic, "chest")
+            rib_piece.rotation.z = -side * 0.30
+    elif family == "dark_cloth":
+        for side in [-1.0, 1.0]:
+            var spike := PrismMesh.new()
+            spike.size = Vector3(0.075, 0.26, 0.08)
+            var spike_piece := _add_armor_piece(spike, Vector3(side * 0.56, 1.70, 0.0), Vector3.ONE, trim, metallic, "arms")
+            spike_piece.rotation.z = -side * 0.52
+    elif family == "scale":
+        for side in [-1.0, 1.0]:
+            var fin := PrismMesh.new()
+            fin.size = Vector3(0.12, 0.34, 0.06)
+            var fin_piece := _add_armor_piece(fin, Vector3(side * 0.62, 1.54, 0.0), Vector3.ONE, trim, metallic, "arms")
+            fin_piece.rotation.z = -side * 0.68
+    elif family == "steel_armor":
+        var reactor := TorusMesh.new()
+        reactor.inner_radius = 0.07
+        reactor.outer_radius = 0.13
+        var reactor_piece := _add_armor_piece(reactor, Vector3(0.0, 1.30, -0.53), Vector3.ONE, trim, 0.96, "chest")
+        reactor_piece.rotation.x = deg_to_rad(90.0)
+        for side in [-1.0, 1.0]:
+            var servo := BoxMesh.new()
+            servo.size = Vector3(0.12, 0.30, 0.12)
+            _add_armor_piece(servo, Vector3(side * 0.26, 0.48, -0.12), Vector3.ONE, metal, metallic, "legs")
+    elif family in ["god_robe", "god_cloth"]:
+        for side in [-1.0, 1.0]:
+            var rune := PrismMesh.new()
+            rune.size = Vector3(0.10, 0.38, 0.06)
+            var rune_piece := _add_armor_piece(rune, Vector3(side * 0.44, 1.66, 0.02), Vector3.ONE, trim, metallic, "arms")
+            rune_piece.rotation.z = -side * 0.42
+    elif family == "ice_armor":
+        for side in [-1.0, 1.0]:
+            var ice_spur := PrismMesh.new()
+            ice_spur.size = Vector3(0.09, 0.42, 0.08)
+            var spur_piece := _add_armor_piece(ice_spur, Vector3(side * 0.60, 1.55, -0.01), Vector3.ONE, trim, metallic, "arms")
+            spur_piece.rotation.z = -side * 0.38
+    elif family == "fallen_armor":
+        for side in [-1.0, 1.0]:
+            var fallen_spur := PrismMesh.new()
+            fallen_spur.size = Vector3(0.13, 0.48, 0.10)
+            var fallen_piece := _add_armor_piece(fallen_spur, Vector3(side * 0.58, 1.60, 0.04), Vector3.ONE, trim, metallic, "arms")
+            fallen_piece.rotation.z = -side * 0.62
+    elif family == "chronotector":
+        var time_ring := TorusMesh.new()
+        time_ring.inner_radius = 0.18
+        time_ring.outer_radius = 0.22
+        var time_piece := _add_armor_piece(time_ring, Vector3(0.0, 1.30, -0.52), Vector3(1.0, 1.0, 0.36), trim, 1.0, "chest")
+        time_piece.rotation.x = deg_to_rad(90.0)
+    elif family == "giant_plate":
+        for side in [-1.0, 1.0]:
+            var heavy_guard := BoxMesh.new()
+            heavy_guard.size = Vector3(0.30, 0.42, 0.24)
+            _add_armor_piece(heavy_guard, Vector3(side * 0.58, 1.50, 0.02), Vector3.ONE, metal, metallic, "arms")
+    elif family == "saint_cloth":
+        for side in [-1.0, 1.0]:
+            var saint_wing := PrismMesh.new()
+            saint_wing.size = Vector3(0.16, 0.32, 0.07)
+            var saint_piece := _add_armor_piece(saint_wing, Vector3(side * 0.58, 1.58, 0.02), Vector3.ONE, trim, metallic, "arms")
+            saint_piece.rotation.z = -side * 0.22
+    elif family == "primordial_armor":
+        var orbit := TorusMesh.new()
+        orbit.inner_radius = 0.34
+        orbit.outer_radius = 0.37
+        var orbit_piece := _add_armor_piece(orbit, Vector3(0.0, 1.40, 0.28), Vector3(1.0, 0.85, 0.35), trim, 1.0, "chest")
+        orbit_piece.rotation.x = deg_to_rad(72.0)
+
+
+func _build_costume_visuals() -> void:
+    if is_instance_valid(costume_root):
+        costume_root.queue_free()
+        costume_root = null
+    var appearance: Dictionary = RPGState.profile.get("appearance_state", {})
+    var costume_id := str(appearance.get("equipped_costume", ""))
+    if costume_id.is_empty() or not bool(appearance.get("costume_visible", true)):
+        if is_instance_valid(armor_root):
+            armor_root.visible = true
+        return
+    var costume: Dictionary = CharacterVisualCatalog.get_costume_profile(costume_id)
+    if costume.is_empty():
+        return
+    if is_instance_valid(armor_root):
+        armor_root.visible = false
+    costume_root = Node3D.new()
+    costume_root.name = "StandaloneCostume_" + costume_id
+    visual_root.add_child(costume_root)
+    var outfit_color: Color = costume.get("accent", Color(0.24, 0.32, 0.58))
+    var cloth := StandardMaterial3D.new()
+    cloth.albedo_color = outfit_color
+    cloth.roughness = 0.82
+    cloth.metallic = 0.02
+    var trim := StandardMaterial3D.new()
+    trim.albedo_color = outfit_color.lightened(0.28)
+    trim.roughness = 0.68
+    var torso := BoxMesh.new()
+    torso.size = Vector3(0.58, 0.66, 0.34)
+    var torso_piece := MeshInstance3D.new()
+    torso_piece.mesh = torso
+    torso_piece.position = Vector3(0.0, 1.22, -0.005)
+    torso_piece.material_override = cloth
+    costume_root.add_child(torso_piece)
+    for side in [-1.0, 1.0]:
+        var sleeve := BoxMesh.new()
+        sleeve.size = Vector3(0.22, 0.48, 0.24)
+        var sleeve_piece := MeshInstance3D.new()
+        sleeve_piece.mesh = sleeve
+        sleeve_piece.position = Vector3(side * 0.48, 1.12, 0.0)
+        sleeve_piece.rotation.z = -side * 0.12
+        sleeve_piece.material_override = cloth
+        costume_root.add_child(sleeve_piece)
+        var trouser := BoxMesh.new()
+        trouser.size = Vector3(0.22, 0.58, 0.28)
+        var trouser_piece := MeshInstance3D.new()
+        trouser_piece.mesh = trouser
+        trouser_piece.position = Vector3(side * 0.19, 0.42, 0.015)
+        trouser_piece.material_override = cloth
+        costume_root.add_child(trouser_piece)
+    var collar := PrismMesh.new()
+    collar.size = Vector3(0.42, 0.12, 0.28)
+    var collar_piece := MeshInstance3D.new()
+    collar_piece.mesh = collar
+    collar_piece.position = Vector3(0.0, 1.57, -0.015)
+    collar_piece.material_override = trim
+    costume_root.add_child(collar_piece)
+    if costume_id == "school" or costume_id == "royal":
+        var tie := PrismMesh.new()
+        tie.size = Vector3(0.10, 0.30, 0.035)
+        var tie_piece := MeshInstance3D.new()
+        tie_piece.mesh = tie
+        tie_piece.position = Vector3(0.0, 1.30, -0.19)
+        tie_piece.material_override = trim
+        costume_root.add_child(tie_piece)
+    if costume_id == "christmas":
+        var hem := BoxMesh.new()
+        hem.size = Vector3(0.62, 0.10, 0.36)
+        var hem_piece := MeshInstance3D.new()
+        hem_piece.mesh = hem
+        hem_piece.position = Vector3(0.0, 0.90, 0.0)
+        hem_piece.material_override = trim
+        costume_root.add_child(hem_piece)
+
 func _load_authored_character_model(class_id: String) -> void:
+    _clear_weapon_sockets()
     if is_instance_valid(authored_character_model):
         authored_character_model.queue_free()
         authored_character_model = null
     authored_animation_player = null
+    _build_weapon_sockets()
     authored_animation_state = ""
     var model_path := "res://assets/characters/%s/model/character.glb" % class_id
     if not ResourceLoader.exists(model_path):
@@ -1376,17 +1644,144 @@ func _load_authored_character_model(class_id: String) -> void:
     if instance == null:
         push_warning("Profession model could not be instantiated; keeping procedural fallback: " + model_path)
         return
+    var imported_skeleton := _find_skeleton_recursive(instance)
+    if not is_instance_valid(imported_skeleton):
+        push_warning("Profession model has no imported Skeleton3D; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var imported_animation_player := _find_animation_player(instance)
+    if not is_instance_valid(imported_animation_player):
+        push_warning("Profession model has no AnimationPlayer; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var required_bones := ["Head", "Chest", "LeftForearm", "RightForearm", "LeftHand", "RightHand"]
+    var missing_bones: Array[String] = []
+    for required_bone in required_bones:
+        if imported_skeleton.find_bone(required_bone) < 0:
+            missing_bones.append(required_bone)
+    if not missing_bones.is_empty():
+        push_warning("Profession model is missing attachment bones " + ", ".join(missing_bones) + "; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
+    var required_clips := ["idle", "walk", "run", "%s_basic_attack_1" % class_id]
+    var invalid_clips: Array[String] = []
+    for required_clip in required_clips:
+        if not _validate_authored_animation_clip(imported_animation_player, imported_skeleton, required_clip):
+            invalid_clips.append(required_clip)
+    if not invalid_clips.is_empty():
+        push_warning("Profession model has invalid or non-drivable animation clips " + ", ".join(invalid_clips) + "; keeping procedural fallback: " + model_path)
+        instance.free()
+        return
     authored_character_model = instance
     authored_character_model.name = "AuthoredProfessionModel"
-    authored_animation_player = _find_animation_player(authored_character_model)
+    authored_animation_player = imported_animation_player
     authored_animation_state = ""
     authored_character_model.position = Vector3.ZERO
     authored_character_model.scale = Vector3.ONE
     visual_root.add_child(authored_character_model)
+    _build_weapon_sockets()
     # Keep gameplay feedback nodes and modular armor; hide only the base mannequin meshes.
     for child in visual_root.get_children():
         if child is MeshInstance3D and child not in [combat_feedback_node, guard_shield_node, mount_indicator]:
             child.visible = false
+
+func _clear_weapon_sockets() -> void:
+    for socket in weapon_socket_nodes.values():
+        if is_instance_valid(socket):
+            socket.queue_free()
+    weapon_socket_nodes.clear()
+
+
+func _find_skeleton_recursive(root: Node) -> Skeleton3D:
+    if root is Skeleton3D:
+        return root as Skeleton3D
+    for child in root.get_children():
+        var found := _find_skeleton_recursive(child)
+        if is_instance_valid(found):
+            return found
+    return null
+
+
+func _build_weapon_sockets() -> void:
+    if not is_instance_valid(visual_root):
+        return
+    _clear_weapon_sockets()
+    var specs := {
+        "right_hand": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.92, -0.02)},
+        "left_hand": {"bone": "LeftHand", "fallback": Vector3(0.50, 0.92, -0.02)},
+        "shield_hand": {"bone": "LeftForearm", "fallback": Vector3(0.50, 1.10, -0.04)},
+        "chain_anchor": {"bone": "RightForearm", "fallback": Vector3(-0.50, 1.10, -0.04)},
+        "instrument_anchor": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.94, -0.08)},
+        "bow_hand": {"bone": "LeftHand", "fallback": Vector3(0.50, 0.94, -0.08)},
+        "aerial_core": {"bone": "Chest", "fallback": Vector3(0.0, 1.42, 0.0)},
+        "weapon_hand": {"bone": "RightHand", "fallback": Vector3(-0.50, 0.92, -0.02)}
+    }
+    var skeleton := _find_skeleton_recursive(authored_character_model) if is_instance_valid(authored_character_model) else null
+    for socket_id in specs:
+        var spec: Dictionary = specs[socket_id]
+        var bone_name := str(spec.get("bone", ""))
+        var socket: Node3D
+        if is_instance_valid(skeleton) and skeleton.find_bone(bone_name) >= 0:
+            var attachment := BoneAttachment3D.new()
+            attachment.name = "WeaponSocket_" + str(socket_id)
+            attachment.bone_name = bone_name
+            skeleton.add_child(attachment)
+            socket = attachment
+        else:
+            socket = Node3D.new()
+            socket.name = "WeaponSocket_" + str(socket_id)
+            var forearm_index := -1
+            match str(socket_id):
+                "right_hand", "weapon_hand", "instrument_anchor", "chain_anchor":
+                    forearm_index = 0
+                "left_hand", "shield_hand", "bow_hand":
+                    forearm_index = 1
+            if forearm_index >= 0 and forearm_index < forearm_nodes.size() and is_instance_valid(forearm_nodes[forearm_index]):
+                forearm_nodes[forearm_index].add_child(socket)
+                socket.position = Vector3(0.0, -0.34, 0.0)
+            else:
+                visual_root.add_child(socket)
+                socket.position = spec.get("fallback", Vector3.ZERO)
+        socket.set_meta("weapon_socket_id", str(socket_id))
+        weapon_socket_nodes[str(socket_id)] = socket
+
+
+func get_skill_weapon_socket(ability: Dictionary) -> Node3D:
+    var class_id := str(RPGState.profile.get("class_id", "pegasus"))
+    var profile := SkillAnimationCatalog.get_profile(class_id, ability)
+    var socket_id := str(profile.get("weapon_socket", "right_hand"))
+    return get_weapon_socket(socket_id)
+
+
+func get_weapon_socket(socket_id: String) -> Node3D:
+    var socket: Variant = weapon_socket_nodes.get(socket_id)
+    return socket as Node3D if is_instance_valid(socket) else null
+
+
+func _validate_authored_animation_clip(player: AnimationPlayer, skeleton: Skeleton3D, clip_name: String) -> bool:
+    if not is_instance_valid(player) or not is_instance_valid(skeleton) or not player.has_animation(clip_name):
+        return false
+    var clip := player.get_animation(clip_name)
+    if not is_instance_valid(clip) or clip.length <= 0.0 or clip.get_track_count() <= 0:
+        return false
+    var animation_root := player.get_node_or_null(player.root_node)
+    if not is_instance_valid(animation_root):
+        return false
+    var has_skeleton_track := false
+    for track_index in range(clip.get_track_count()):
+        if clip.track_get_key_count(track_index) <= 0:
+            continue
+        var track_path := clip.track_get_path(track_index)
+        var node_path := NodePath(track_path.get_concatenated_names())
+        var target := animation_root.get_node_or_null(node_path)
+        if not is_instance_valid(target):
+            return false
+        if target == skeleton:
+            for subname_index in range(track_path.get_subname_count()):
+                var subname := str(track_path.get_subname(subname_index))
+                if skeleton.find_bone(subname) >= 0:
+                    has_skeleton_track = true
+    return has_skeleton_track
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
     if root is AnimationPlayer:
@@ -1438,6 +1833,11 @@ func _play_authored_action_animation(animation_name: String, blend_time: float =
     _sync_authored_armor_animation(animation_name, blend_time)
 
 func _load_authored_armor_model() -> void:
+    var appearance: Dictionary = RPGState.profile.get("appearance_state", {})
+    if not str(appearance.get("equipped_costume", "")).is_empty() and bool(appearance.get("costume_visible", true)):
+        if is_instance_valid(armor_root):
+            armor_root.visible = false
+        return
     if is_instance_valid(authored_armor_model):
         authored_armor_model.queue_free()
         authored_armor_model = null
@@ -1665,6 +2065,8 @@ func tenkishi_flight_step(direction: float) -> void:
         game.call("show_notice", "天翼上升" if direction > 0.0 else "天翼俯冲")
 
 func attack() -> void:
+    if current_action_state == "death" or training_down_timer > 0.0:
+        return
     if attack_cd > 0.0:
         return
     if basic_combo_reset <= 0.0:
@@ -1871,6 +2273,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
             _play_armor_damage_feedback(armor_damage)
         _flash(Color(1.0, 0.12, 0.12))
         combat_pose_motion = "hit"
+        _set_action_state("hit", 0.28)
         combat_pose_duration = 0.26
         combat_pose_timer = combat_pose_duration
         combat_pose_strength = 0.9
@@ -1884,6 +2287,7 @@ func receive_damage(amount: float, attacker_position: Vector3 = Vector3.ZERO) ->
         health = max_health
         training_down_timer = 0.9
         velocity = Vector3.ZERO
+        _set_action_state("death", training_down_timer)
         _play_authored_action_animation("defeat", 0.06)
         game.call("show_notice", "角色倒地，正在恢复……")
 func absorb_divine_guard_damage(incoming_damage: float) -> float:
@@ -1910,15 +2314,15 @@ func _flash(color: Color) -> void:
     body_mat.albedo_color = color
 
 func toggle_mount() -> void:
- var state: Dictionary = CollectionSystem.get_state()
- var mount_id := str(state.get("active_mount",""))
- if mount_id == "":
-  game.call("show_notice","尚未拥有或装备坐骑，请先到伙伴图鉴查看")
-  return
- is_mounted = not is_mounted
- if is_instance_valid(mount_indicator):
-  mount_indicator.visible = is_mounted
- game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
+    var state: Dictionary = CollectionSystem.get_state()
+    var mount_id := str(state.get("active_mount",""))
+    if mount_id == "":
+        game.call("show_notice","尚未拥有或装备坐骑，请先到伙伴图鉴查看")
+        return
+    is_mounted = not is_mounted
+    if is_instance_valid(mount_indicator):
+        mount_indicator.visible = is_mounted
+    game.call("show_notice","已骑乘：" + str(CollectionSystem.MOUNTS.get(mount_id,{}).get("name","坐骑")) if is_mounted else "已下马")
 
 func apply_enemy_knockback(direction: Vector3, force: float) -> void:
     var flat_direction := direction
@@ -1928,6 +2332,7 @@ func apply_enemy_knockback(direction: Vector3, force: float) -> void:
     knockback_velocity = flat_direction.normalized() * force
 
 func guard() -> void:
+    _set_action_state("attack", 0.42)
     apply_temporary_buff(0.0, 0.35, 1.2)
     _play_authored_action_animation("block", 0.05)
     combat_pose_motion = "guard"

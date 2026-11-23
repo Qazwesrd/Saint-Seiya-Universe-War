@@ -43,11 +43,20 @@ jobs:
 
   godot-headless:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container:
       image: barichello/godot-ci:4.4.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Diagnose player script parser failure
+        shell: sh
+        run: |
+          set +e
+          godot --headless --path game --check-only --script res://scripts/player.gd 2>&1 | tee /tmp/player-parse.log
+          status=${PIPESTATUS:-}
+          grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/player-parse.log || true
+          exit 0
       - name: Import and parse project
         shell: sh
         run: |
@@ -56,6 +65,15 @@ jobs:
             echo "Godot script parse/import errors detected"
             exit 1
           fi
+      - name: Verify imported core hero animation playback
+        shell: sh
+        run: |
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/character-animation-runtime.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/character-animation-runtime.log; then
+            echo "Character animation runtime validation reported engine errors"
+            exit 1
+          fi
+          grep -Eq "CHARACTER_ANIMATION_RUNTIME_(PASS heroes=[1-5] checked=|SKIP reason=core_hero_glb_assets_not_present_in_checkout)" /tmp/character-animation-runtime.log
       - name: Build and mount a real chapter PCK
         shell: sh
         run: |
@@ -66,20 +84,30 @@ jobs:
           trap 'rm -f "$probe" "$output"' EXIT
           printf '%s' '{"probe":"chapter pck builder verified"}' > "$probe"
 
+          echo "PCK_DIAG invalid-chapter test: start"
           set +e
-          godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter invalid --output /tmp/invalid.pck > /tmp/pck-invalid.log 2>&1
+          timeout 120s godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter invalid --output /tmp/invalid.pck > /tmp/pck-invalid.log 2>&1
           invalid_status=$?
           set -e
           cat /tmp/pck-invalid.log
+          echo "PCK_DIAG invalid-chapter test: exit=$invalid_status"
+          if [ "$invalid_status" -eq 124 ]; then
+            echo "PCK builder timed out during invalid-chapter argument validation"
+            exit 1
+          fi
           if [ "$invalid_status" -eq 0 ]; then
             echo "PCK builder unexpectedly accepted an invalid chapter ID"
             exit 1
           fi
           grep -q "Missing or unsupported --chapter" /tmp/pck-invalid.log
 
-          godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter galaxy_wars --output "$output"
+          echo "PCK_DIAG chapter build: start"
+          timeout 120s godot --headless --path game --script res://tools/build_chapter_pck.gd -- --chapter galaxy_wars --output "$output"
+          echo "PCK_DIAG chapter build: completed"
           test -s "$output"
-          godot --headless --path game res://tools/verify_chapter_pck.gd -- --pck "$output"
+          echo "PCK_DIAG mount verification: start"
+          timeout 120s godot --headless --path game --script res://tools/verify_chapter_pck.gd -- --pck "$output"
+          echo "PCK_DIAG mount verification: completed"
       - name: Launch main scene headlessly
         shell: sh
         run: |

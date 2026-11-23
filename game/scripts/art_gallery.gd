@@ -7,6 +7,7 @@ const ITEMS := {
 		{"id": "pegasus", "name": "天马座人物原型", "path": "assets/characters/pegasus/model/character.glb"},
 		{"id": "dragon", "name": "天龙座人物原型", "path": "assets/characters/dragon/model/character.glb"},
 		{"id": "cygnus", "name": "天鹅座人物原型", "path": "assets/characters/cygnus/model/character.glb"},
+		{"id": "andromeda", "name": "仙女座人物原型", "path": "assets/characters/andromeda/model/character.glb"},
 		{"id": "phoenix", "name": "凤凰座人物原型", "path": "assets/characters/phoenix/model/character.glb"}
 	],
 	"圣衣": [
@@ -251,7 +252,7 @@ func _show_item() -> void:
 		var scale_factor := 2.6 / maxf(bounds.size.y, 0.1)
 		model.scale = Vector3.ONE * scale_factor
 		model.position.y = -bounds.position.y * scale_factor
-	status_label.text = "模型已加载。可旋转检查轮廓、比例、材质和模型细节。\n\n文件：%s\n\n正式验收还需检查骨骼、动画、贴图、LOD 和移动端表现。" % path
+	status_label.text = "证据等级：Godot 引擎场景预览（非安卓实机）。\n模型已加载，可旋转检查轮廓、比例、材质和模型细节。\n\n文件：%s\n\n正式验收还需检查骨骼、动画、贴图、LOD、战斗场景表现和目标手机性能。" % path
 
 func _calculate_bounds(root_node: Node) -> AABB:
 	var found := false

@@ -108,6 +108,212 @@ def add_weighted_ellipsoid(name, location, scale, bone_name, mat, rig, segments=
     obj.parent = rig
     return obj
 
+
+def add_core_hero_hair(rig, hero_id):
+    """Add a distinct, head-bone-weighted hair silhouette for each Bronze Saint prototype.
+
+    These authored silhouettes are an identity pass, not final sculpted hair assets.
+    """
+    profiles = {
+        "pegasus": {
+            "color": (0.34, 0.12, 0.055),
+            "spikes": [
+                ((-0.10, 0.02, 1.94), (-0.19, 0.10, 2.10)),
+                ((-0.04, 0.02, 1.98), (-0.07, 0.12, 2.17)),
+                ((0.03, 0.02, 1.98), (0.08, 0.12, 2.16)),
+                ((0.10, 0.02, 1.93), (0.20, 0.12, 2.08)),
+                ((-0.11, -0.08, 1.88), (-0.20, -0.17, 1.98)),
+                ((0.11, -0.08, 1.88), (0.20, -0.17, 1.98)),
+            ],
+        },
+        "dragon": {
+            "color": (0.035, 0.12, 0.075),
+            "spikes": [
+                ((-0.11, 0.03, 1.91), (-0.20, 0.18, 2.04)),
+                ((-0.05, 0.03, 1.98), (-0.09, 0.18, 2.14)),
+                ((0.02, 0.03, 1.99), (0.03, 0.19, 2.13)),
+                ((0.09, 0.03, 1.92), (0.18, 0.17, 2.04)),
+                ((-0.12, 0.00, 1.82), (-0.18, 0.16, 1.66)),
+                ((0.12, 0.00, 1.82), (0.18, 0.16, 1.66)),
+                ((-0.08, 0.06, 1.80), (-0.11, 0.18, 1.59)),
+                ((0.08, 0.06, 1.80), (0.11, 0.18, 1.59)),
+            ],
+        },
+        "cygnus": {
+            "color": (0.78, 0.58, 0.22),
+            "spikes": [
+                ((-0.10, 0.02, 1.94), (-0.18, 0.12, 2.08)),
+                ((-0.04, 0.02, 1.98), (-0.08, 0.13, 2.16)),
+                ((0.03, 0.02, 1.99), (0.04, 0.14, 2.17)),
+                ((0.10, 0.02, 1.93), (0.18, 0.13, 2.09)),
+                ((-0.10, -0.08, 1.88), (-0.19, -0.20, 1.91)),
+                ((0.10, -0.08, 1.88), (0.18, -0.19, 1.96)),
+            ],
+        },
+        "andromeda": {
+            "color": (0.08, 0.34, 0.19),
+            "spikes": [
+                ((-0.10, 0.03, 1.93), (-0.17, 0.15, 2.08)),
+                ((-0.04, 0.03, 1.98), (-0.06, 0.15, 2.15)),
+                ((0.04, 0.03, 1.98), (0.07, 0.15, 2.15)),
+                ((0.10, 0.03, 1.93), (0.18, 0.15, 2.08)),
+                ((-0.12, -0.02, 1.82), (-0.18, -0.02, 1.58)),
+                ((0.12, -0.02, 1.82), (0.18, -0.02, 1.58)),
+            ],
+        },
+        "phoenix": {
+            "color": (0.055, 0.045, 0.16),
+            "spikes": [
+                ((-0.11, 0.03, 1.93), (-0.23, 0.15, 2.06)),
+                ((-0.06, 0.03, 1.98), (-0.14, 0.16, 2.19)),
+                ((0.00, 0.03, 2.00), (0.00, 0.18, 2.22)),
+                ((0.06, 0.03, 1.98), (0.14, 0.16, 2.19)),
+                ((0.11, 0.03, 1.93), (0.23, 0.15, 2.06)),
+                ((-0.12, -0.06, 1.86), (-0.21, -0.16, 1.96)),
+                ((0.12, -0.06, 1.86), (0.21, -0.16, 1.96)),
+            ],
+        },
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    hair_mat = material("Core_Hero_Hair_" + hero_id, profile["color"], 0.02, 0.38)
+    created = []
+    for index, (base, tip) in enumerate(profile["spikes"], start=1):
+        direction = Vector(tip) - Vector(base)
+        bpy.ops.mesh.primitive_cone_add(
+            vertices=16, radius1=0.043, radius2=0.002,
+            depth=direction.length, location=(Vector(base) + Vector(tip)) * 0.5,
+        )
+        strand = bpy.context.object
+        strand.name = hero_id + "_Hair_Strand_" + str(index)
+        strand.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+        strand.data.materials.append(hair_mat)
+        group = strand.vertex_groups.new(name="Head")
+        group.add(list(range(len(strand.data.vertices))), 1.0, "REPLACE")
+        modifier = strand.modifiers.new("Head_Armature", "ARMATURE")
+        modifier.object = rig
+        strand.parent = rig
+        created.append(strand)
+    # Longer side locks distinguish the flowing silhouettes of Dragon and Andromeda.
+    if hero_id in ("dragon", "andromeda"):
+        for side, sign in (("Left", 1), ("Right", -1)):
+            lock = add_weighted_ellipsoid(
+                hero_id + "_" + side + "_Long_Hair_Lock",
+                (sign * 0.12, -0.015, 1.72),
+                (0.045, 0.055, 0.19 if hero_id == "andromeda" else 0.22),
+                "Head", hair_mat, rig, segments=20, rings=12,
+            )
+            created.append(lock)
+    return created
+
+
+def add_core_hero_eyes(rig, hero_id):
+    """Layer a canon-inspired iris palette and eye glints onto each Bronze Saint."""
+    palettes = {
+        "pegasus": (0.12, 0.34, 0.72),
+        "dragon": (0.12, 0.48, 0.27),
+        "cygnus": (0.24, 0.66, 0.92),
+        "andromeda": (0.16, 0.62, 0.32),
+        "phoenix": (0.18, 0.24, 0.48),
+    }
+    iris_color = palettes.get(hero_id)
+    if iris_color is None:
+        return []
+    iris_mat = material("Core_Hero_Iris_" + hero_id, iris_color, 0.12, 0.2)
+    highlight_mat = material("Core_Hero_Eye_Highlight_" + hero_id,
+                             (0.96, 0.98, 1.0), 0.0, 0.12)
+    created = []
+    for side, sign in (("Left", 1), ("Right", -1)):
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Iris",
+            (sign * 0.052, -0.146, 1.815),
+            (0.014, 0.007, 0.015), "Head", iris_mat, rig, 16, 10,
+        ))
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Pupil",
+            (sign * 0.052, -0.152, 1.815),
+            (0.0055, 0.0035, 0.010), "Head", EYE_PUPIL, rig, 12, 8,
+        ))
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Eye_Glint",
+            (sign * 0.047, -0.155, 1.821),
+            (0.0035, 0.0025, 0.0035), "Head", highlight_mat, rig, 10, 8,
+        ))
+    return created
+
+
+def add_core_hero_face_identity(rig, hero_id):
+    """Add subtle per-hero brow and cheek forms to the shared face blockout."""
+    profiles = {
+        "pegasus": {"brow": (0.040, 0.010, 0.010), "cheek": (0.043, 0.022, 0.031), "tilt": -0.10},
+        "dragon": {"brow": (0.042, 0.011, 0.009), "cheek": (0.050, 0.024, 0.036), "tilt": 0.02},
+        "cygnus": {"brow": (0.038, 0.009, 0.008), "cheek": (0.040, 0.020, 0.030), "tilt": 0.12},
+        "andromeda": {"brow": (0.036, 0.009, 0.008), "cheek": (0.046, 0.021, 0.034), "tilt": -0.04},
+        "phoenix": {"brow": (0.045, 0.012, 0.010), "cheek": (0.048, 0.023, 0.032), "tilt": 0.16},
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    created = []
+    brow_mat = material("Core_Hero_Brow_" + hero_id,
+                        (0.055, 0.038, 0.030), 0.0, 0.72)
+    cheek_mat = material("Core_Hero_Cheek_Shadow_" + hero_id,
+                         (0.39, 0.225, 0.17), 0.0, 0.82)
+    for side, sign in (("Left", 1), ("Right", -1)):
+        brow = add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Signature_Brow",
+            (sign * 0.053, -0.137, 1.851),
+            profile["brow"], "Head", brow_mat, rig, 16, 8,
+        )
+        brow.rotation_euler.y = profile["tilt"] * sign
+        created.append(brow)
+        created.append(add_weighted_ellipsoid(
+            hero_id + "_" + side + "_Cheek_Contour",
+            (sign * 0.091, -0.103, 1.765),
+            profile["cheek"], "Head", cheek_mat, rig, 16, 10,
+        ))
+    return created
+
+def add_core_hero_headband(rig, hero_id):
+    """Create a continuous, head-weighted forehead band and rear ties for Pegasus."""
+    if hero_id != "pegasus":
+        return []
+    red = material("Pegasus_Crimson_Headband", (0.72, 0.018, 0.045), 0.08, 0.42)
+    segments = 18
+    vertices = []
+    faces = []
+    for index in range(segments + 1):
+        angle = -0.92 + (1.84 * index / segments)
+        x = 0.145 * math.sin(angle)
+        y = -0.125 - 0.045 * math.cos(angle)
+        z = 1.855 + 0.012 * math.cos(angle)
+        vertices.extend(((x, y - 0.009, z - 0.018), (x, y - 0.009, z + 0.018)))
+        if index:
+            base = index * 2
+            faces.append((base - 2, base, base + 1, base - 1))
+    mesh = bpy.data.meshes.new("Pegasus_Red_Headband_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(red)
+    mesh.update()
+    band = bpy.data.objects.new("Pegasus_Red_Forehead_Headband", mesh)
+    bpy.context.collection.objects.link(band)
+    group = band.vertex_groups.new(name="Head")
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    modifier = band.modifiers.new("Headband_Head_Armature", "ARMATURE")
+    modifier.object = rig
+    band.parent = rig
+    created = [band]
+    for side, sign in (("Left", 1), ("Right", -1)):
+        created.append(add_weighted_armor_plate(
+            "Pegasus_" + side + "_Headband_Tail",
+            (sign * 0.135, 0.055, 1.805),
+            [(0, 0.045), (sign * 0.045, 0.015), (sign * 0.12, -0.22),
+             (sign * 0.075, -0.245), (sign * 0.025, -0.06), (-sign * 0.018, -0.02)],
+            0.012, "Head", red, rig, 0.004))
+    return created
+
+
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
     """Build a tapered, faceted anatomical limb from a ring-loft mesh.
 
@@ -865,7 +1071,7 @@ def export_glb(path, objects):
         raise RuntimeError("GLB export missing or unexpectedly small: " + str(path))
 
 def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
-                 require_independent_skinned_nodes=()):
+                 require_independent_skinned_nodes=(), required_materials=()):
     data = path.read_bytes()
     if len(data) < 20 or data[:4] != b"glTF":
         raise RuntimeError("Invalid GLB header: " + str(path))
@@ -874,6 +1080,74 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     if version != 2 or declared_length != len(data) or chunk_type != 0x4E4F534A or 20 + chunk_length > len(data):
         raise RuntimeError("Invalid GLB v2 JSON chunk: " + str(path))
     document = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    bin_header = 20 + chunk_length
+    binary_chunk = b""
+    if bin_header + 8 <= len(data):
+        binary_length, binary_type = struct.unpack_from("<II", data, bin_header)
+        if binary_type == 0x004E4942 and bin_header + 8 + binary_length <= len(data):
+            binary_chunk = data[bin_header + 8:bin_header + 8 + binary_length]
+
+    def read_vec4_accessor(accessor_index, semantic, source_path):
+        accessors = document.get("accessors", [])
+        views = document.get("bufferViews", [])
+        if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(accessors):
+            raise RuntimeError(f"{semantic} accessor index is invalid: {source_path}")
+        accessor = accessors[accessor_index]
+        view_index = accessor.get("bufferView")
+        if not isinstance(view_index, int) or not 0 <= view_index < len(views):
+            raise RuntimeError(f"{semantic} accessor has no supported bufferView: {source_path}")
+        view = views[view_index]
+        if view.get("buffer", 0) != 0 or not binary_chunk or accessor.get("sparse"):
+            raise RuntimeError(f"{semantic} accessor uses unsupported GLB storage: {source_path}")
+        component_type = accessor.get("componentType")
+        formats = {5121: ("B", 1), 5123: ("H", 2), 5126: ("f", 4)}
+        if component_type not in formats or accessor.get("type") != "VEC4":
+            raise RuntimeError(f"{semantic} accessor has unsupported component layout: {source_path}")
+        code, component_size = formats[component_type]
+        packed_size = component_size * 4
+        stride = view.get("byteStride", packed_size)
+        if not isinstance(stride, int) or stride < packed_size:
+            raise RuntimeError(f"{semantic} accessor has invalid byteStride: {source_path}")
+        start = view.get("byteOffset", 0) + accessor.get("byteOffset", 0)
+        count = accessor.get("count")
+        if not isinstance(count, int) or count <= 0:
+            raise RuntimeError(f"{semantic} accessor has invalid count: {source_path}")
+        end = start + (count - 1) * stride + packed_size
+        if start < 0 or end > len(binary_chunk):
+            raise RuntimeError(f"{semantic} accessor exceeds GLB binary data: {source_path}")
+        values = []
+        for vertex_index in range(count):
+            raw = struct.unpack_from("<" + code * 4, binary_chunk, start + vertex_index * stride)
+            if component_type != 5126 and accessor.get("normalized", False):
+                maximum = 255 if component_type == 5121 else 65535
+                raw = tuple(value / maximum for value in raw)
+            values.append(raw)
+        return values
+    materials = document.get("materials", [])
+    material_names = {str(item.get("name", "")) for item in materials}
+    missing_materials = sorted(set(required_materials) - material_names)
+    if missing_materials:
+        raise RuntimeError("GLB is missing required hero identity materials: " + ", ".join(missing_materials))
+    material_indices = {str(item.get("name", "")): index for index, item in enumerate(materials)}
+    used_material_indices = {
+        primitive.get("material")
+        for mesh in document.get("meshes", [])
+        for primitive in mesh.get("primitives", [])
+        if isinstance(primitive.get("material"), int)
+    }
+    unused_hero_materials = sorted(
+        name for name in required_materials
+        if material_indices[name] not in used_material_indices
+    )
+    if unused_hero_materials:
+        raise RuntimeError(
+            "GLB hero identity materials are present but not assigned to visible geometry: "
+            + ", ".join(unused_hero_materials)
+        )
+    if required_materials:
+        print("HERO_MATERIAL_ASSIGNMENTS_PASS",
+              path.parent.parent.name,
+              "materials=" + ",".join(sorted(required_materials)))
     node_names = {str(node.get("name", "")) for node in document.get("nodes", [])}
     missing_nodes = sorted(set(required_nodes) - node_names)
     if missing_nodes:
@@ -883,6 +1157,7 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
     nodes = document.get("nodes", [])
     meshes = document.get("meshes", [])
     skins = document.get("skins", [])
+    geometry_totals = {"vertices": 0, "triangles": 0, "primitives": 0}
     if require_skin:
         if not skins:
             raise RuntimeError("Rigged character/armor GLB has no skin: " + str(path))
@@ -898,6 +1173,109 @@ def validate_glb(path, required_nodes=(), require_skin=False, required_clips=(),
             joints = skins[skin_index].get("joints", [])
             if not joints or any(not isinstance(joint, int) or not 0 <= joint < len(nodes) for joint in joints):
                 raise RuntimeError(f"Mesh node {node_index} has invalid skin joints: {path}")
+            primitives = meshes[mesh_index].get("primitives", [])
+            if not primitives:
+                raise RuntimeError(f"Mesh node {node_index} has no glTF primitives: {path}")
+            materials = document.get("materials", [])
+            for primitive_index, primitive in enumerate(primitives):
+                attributes = primitive.get("attributes", {})
+                primitive_accessors = {}
+                for semantic in ("POSITION", "JOINTS_0", "WEIGHTS_0"):
+                    accessor_index = attributes.get(semantic)
+                    if not isinstance(accessor_index, int) or not 0 <= accessor_index < len(document.get("accessors", [])):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has no valid {semantic} accessor: {path}"
+                        )
+                    primitive_accessors[semantic] = document["accessors"][accessor_index]
+                position_accessor = primitive_accessors["POSITION"]
+                joints_accessor = primitive_accessors["JOINTS_0"]
+                weights_accessor = primitive_accessors["WEIGHTS_0"]
+                if position_accessor.get("type") != "VEC3":
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} POSITION is not VEC3: {path}")
+                if joints_accessor.get("type") != "VEC4" or weights_accessor.get("type") != "VEC4":
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} skin attributes are not VEC4: {path}")
+                vertex_count = position_accessor.get("count")
+                if not isinstance(vertex_count, int) or vertex_count <= 0:
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} has invalid vertex count: {path}")
+                if joints_accessor.get("count") != vertex_count or weights_accessor.get("count") != vertex_count:
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} skin attribute counts do not match POSITION: {path}")
+                if joints_accessor.get("componentType") not in (5121, 5123):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} JOINTS_0 has invalid component type: {path}")
+                if weights_accessor.get("componentType") not in (5121, 5123, 5126):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} WEIGHTS_0 has invalid component type: {path}")
+                if weights_accessor.get("componentType") in (5121, 5123) and not weights_accessor.get("normalized", False):
+                    raise RuntimeError(f"Mesh node {node_index} primitive {primitive_index} integer WEIGHTS_0 is not normalized: {path}")
+                # Every exported skinned primitive must contain actual triangle geometry.
+                # glTF defaults primitive mode to TRIANGLES (4).
+                primitive_mode = primitive.get("mode", 4)
+                if primitive_mode != 4:
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} is not TRIANGLES mode: {path}"
+                    )
+                indices_index = primitive.get("indices")
+                if indices_index is None:
+                    triangle_index_count = vertex_count
+                else:
+                    if (not isinstance(indices_index, int)
+                            or not 0 <= indices_index < len(document.get("accessors", []))):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has invalid indices accessor: {path}"
+                        )
+                    indices_accessor = document["accessors"][indices_index]
+                    if (indices_accessor.get("type") != "SCALAR"
+                            or indices_accessor.get("componentType") not in (5121, 5123, 5125)
+                            or not isinstance(indices_accessor.get("count"), int)):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} has malformed triangle indices: {path}"
+                        )
+                    triangle_index_count = indices_accessor["count"]
+                if triangle_index_count < 3 or triangle_index_count % 3:
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} has no complete triangles: {path}"
+                    )
+                joint_values = read_vec4_accessor(
+                    attributes["JOINTS_0"], "JOINTS_0", path
+                )
+                weight_values = read_vec4_accessor(
+                    attributes["WEIGHTS_0"], "WEIGHTS_0", path
+                )
+                if len(joint_values) != vertex_count or len(weight_values) != vertex_count:
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} skin data count mismatch: {path}"
+                    )
+                for vertex_index, (joint_row, weight_row) in enumerate(zip(joint_values, weight_values)):
+                    if any(not isinstance(value, (int, float)) or value < 0 or value >= len(joints)
+                           for value in joint_row):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"has a JOINTS_0 index outside its skin joint table: {path}"
+                        )
+                    if any(not math.isfinite(value) or value < 0 for value in weight_row):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"has a negative or non-finite skin weight: {path}"
+                        )
+                    if not math.isclose(sum(weight_row), 1.0, rel_tol=0.0, abs_tol=0.015):
+                        raise RuntimeError(
+                            f"Mesh node {node_index} primitive {primitive_index} vertex {vertex_index} "
+                            f"skin weights do not sum to 1.0: {path}"
+                        )
+                geometry_totals["vertices"] += vertex_count
+                geometry_totals["triangles"] += triangle_index_count // 3
+                geometry_totals["primitives"] += 1
+                material_index = primitive.get("material")
+                if not isinstance(material_index, int) or not 0 <= material_index < len(materials):
+                    raise RuntimeError(
+                        f"Mesh node {node_index} primitive {primitive_index} has an invalid material slot: {path}"
+                    )
+    if require_skin:
+        if geometry_totals["primitives"] == 0 or geometry_totals["triangles"] == 0:
+            raise RuntimeError("Rigged GLB contains no validated triangle primitives: " + str(path))
+        print("SKINNED_GEOMETRY_PASS",
+              path.name,
+              "primitives=" + str(geometry_totals["primitives"]),
+              "vertices=" + str(geometry_totals["vertices"]),
+              "triangles=" + str(geometry_totals["triangles"]))
     if require_independent_skinned_nodes:
         by_name = {str(node.get("name", "")): node for node in nodes}
         mesh_indices = []
@@ -1118,20 +1496,43 @@ def render_profession_turntable(profession_id, index, preview_category="characte
     area_light("Preview_Fill", (-4.0, -2.0, 2.8), 520, (0.35, 0.58, 1.0), 3.5)
     area_light("Preview_Rim", (0.5, 3.0, 4.0), 1000, (1.0, 0.58, 0.25), 3.0)
 
+    # Fit the complete character silhouette before rendering. Fixed camera scales
+    # clipped broad shields and Phoenix wings in some professions' side/back views.
+    bpy.context.view_layer.update()
+    bounds = []
+    for obj in scene.objects:
+        if obj.type != "MESH" or obj.name == "Preview_Studio_Floor":
+            continue
+        bounds.extend(obj.matrix_world @ Vector(corner) for corner in obj.bound_box)
+    if not bounds:
+        raise RuntimeError("Cannot frame empty profession preview: " + profession_id)
+    min_corner = Vector((min(point.x for point in bounds),
+                         min(point.y for point in bounds),
+                         min(point.z for point in bounds)))
+    max_corner = Vector((max(point.x for point in bounds),
+                         max(point.y for point in bounds),
+                         max(point.z for point in bounds)))
+    dimensions = max_corner - min_corner
+    preview_target = (min_corner + max_corner) * 0.5
+
     camera_data = bpy.data.cameras.new("Preview_Camera_" + profession_id)
     camera = bpy.data.objects.new("Preview_Camera_" + profession_id, camera_data)
     scene.collection.objects.link(camera)
     scene.camera = camera
     camera_data.type = "ORTHO"
-    camera_data.ortho_scale = 2.65
+    # Leave 14% breathing room around the widest silhouette in every view.
+    camera_data.ortho_scale = max(dimensions.x, dimensions.y, dimensions.z, 1.0) * 1.14
     camera_data.lens = 55
-    # User-facing acceptance preview: one representative profession image only.
+    # Three orthographic views are required for human review: front, side and back.
+    # The character faces -Y; the side camera is placed on +X.
     views = (
         ("front", (0.0, -6.5, 2.0)),
+        ("side", (6.5, 0.0, 2.0)),
+        ("back", (0.0, 6.5, 2.0)),
     )
     for view_name, position in views:
         camera.location = position
-        camera.rotation_euler = (Vector((0, 0, 1.0)) - camera.location).to_track_quat("-Z", "Y").to_euler()
+        camera.rotation_euler = (preview_target - camera.location).to_track_quat("-Z", "Y").to_euler()
         scene.render.filepath = str(preview_root / (profession_id + "_" + view_name + ".png"))
         bpy.ops.render.render(write_still=True)
     # Keep preview-only studio objects out of subsequent GLB exports.
@@ -1141,9 +1542,141 @@ def render_profession_turntable(profession_id, index, preview_category="characte
         bpy.data.worlds.remove(world)
 
 
-def build_profession_models(shard_index=0, shard_count=1):
-    """Export one distinct rigged silhouette per playable profession (prototype quality)."""
+
+def add_core_hero_armor_layers(rig, hero_id):
+    """Build individually weighted, layered Bronze Cloth plates for each core hero."""
+    profiles = {
+        "pegasus": {
+            "metal": (0.72, 0.78, 0.84), "inlay": (0.055, 0.13, 0.30),
+            "chest": [(-0.245,0.16),(-0.17,0.245),(0,0.21),(0.17,0.245),(0.245,0.16),(0.16,-0.12),(0,-0.23),(-0.16,-0.12)],
+            "motif": "Wing",
+        },
+        "dragon": {
+            "metal": (0.48, 0.58, 0.48), "inlay": (0.12, 0.43, 0.31),
+            "chest": [(-0.24,0.18),(-0.16,0.25),(-0.06,0.18),(0,0.12),(0.06,0.18),(0.16,0.25),(0.24,0.18),(0.18,-0.08),(0,-0.25),(-0.18,-0.08)],
+            "motif": "Scale",
+        },
+        "cygnus": {
+            "metal": (0.72, 0.88, 0.96), "inlay": (0.34, 0.78, 0.94),
+            "chest": [(-0.23,0.15),(-0.15,0.24),(0,0.29),(0.15,0.24),(0.23,0.15),(0.12,-0.10),(0,-0.24),(-0.12,-0.10)],
+            "motif": "Frost",
+        },
+        "andromeda": {
+            "metal": (0.78, 0.62, 0.72), "inlay": (0.78, 0.42, 0.58),
+            "chest": [(-0.24,0.17),(-0.14,0.24),(0,0.18),(0.14,0.24),(0.24,0.17),(0.17,-0.08),(0,-0.20),(-0.17,-0.08)],
+            "motif": "Chain",
+        },
+        "phoenix": {
+            "metal": (0.72, 0.25, 0.12), "inlay": (0.96, 0.52, 0.12),
+            "chest": [(-0.25,0.16),(-0.17,0.25),(-0.04,0.20),(0,0.31),(0.04,0.20),(0.17,0.25),(0.25,0.16),(0.15,-0.08),(0,-0.25),(-0.15,-0.08)],
+            "motif": "Flame",
+        },
+    }
+    profile = profiles.get(hero_id)
+    if profile is None:
+        return []
+    metal = material("Core_" + hero_id + "_Layered_Armor", profile["metal"], 0.90, 0.19)
+    inlay = material("Core_" + hero_id + "_Armor_Inlay", profile["inlay"], 0.78, 0.17)
+    parts = []
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Chest_Base", (0,-0.178,1.365),
+        profile["chest"], 0.105, "Chest", metal, rig, 0.022))
+    # Raised center panel makes the cuirass a true two-layer assembly.
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Chest_" + profile["motif"] + "_Inlay",
+        (0,-0.244,1.37),
+        [(-0.105,0.105),(-0.065,0.155),(0,0.18),(0.065,0.155),(0.105,0.105),
+         (0.065,-0.065),(0,-0.13),(-0.065,-0.065)],
+        0.032, "Chest", inlay, rig, 0.009))
+    for side, sign in (("Left",1),("Right",-1)):
+        shoulder_outline = (
+            [(0,-0.06),(sign*0.055,0.025),(sign*0.16,0.15),(sign*0.205,0.12),
+             (sign*0.15,-0.07),(sign*0.045,-0.13)] if hero_id == "phoenix" else
+            [(-0.105,0.015),(-0.065,0.105),(0.045,0.14),(0.16,0.055),
+             (0.12,-0.095),(0,-0.13),(-0.09,-0.075)]
+        )
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Outer_Pauldron",
+            (sign*0.345,-0.145,1.49), shoulder_outline, 0.105,
+            side + "Shoulder", metal, rig, 0.018))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Pauldron_Ridge",
+            (sign*0.365,-0.207,1.505),
+            [(0,0.075),(sign*0.045,0.035),(sign*0.095,-0.065),(0,-0.105),(-sign*0.035,-0.035)],
+            0.028, side + "Shoulder", inlay, rig, 0.007))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Forearm_Bracer",
+            (sign*0.49,-0.115,1.105),
+            [(-0.07,0.16),(0.035,0.19),(0.09,0.08),(0.065,-0.13),
+             (0,-0.19),(-0.075,-0.12),(-0.09,0.045)],
+            0.12, side + "Forearm", metal, rig, 0.016))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Shin_Greave",
+            (sign*0.15,-0.112,0.35),
+            [(-0.09,0.18),(0,0.235),(0.09,0.18),(0.075,0.015),
+             (0.045,-0.17),(0,-0.22),(-0.07,-0.15),(-0.085,0.02)],
+            0.12, side + "Shin", metal, rig, 0.016))
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Waist_Faulds", (0,-0.155,0.935),
+        [(-0.22,0.10),(-0.16,0.15),(0,0.13),(0.16,0.15),(0.22,0.10),
+         (0.16,-0.07),(0,-0.19),(-0.16,-0.07)],
+        0.10, "Hips", metal, rig, 0.016))
+    # Character-specific helmet crowns, cheek guards, knee cops and articulated boots.
+    helmet_shapes = {
+        "pegasus": [(-0.16,-0.04),(-0.13,0.09),(-0.06,0.17),(0,0.12),(0.06,0.17),(0.13,0.09),(0.16,-0.04),(0.07,-0.10),(0,-0.07),(-0.07,-0.10)],
+        "dragon": [(-0.16,-0.05),(-0.13,0.08),(-0.07,0.13),(0,0.19),(0.07,0.13),(0.13,0.08),(0.16,-0.05),(0.07,-0.13),(0,-0.16),(-0.07,-0.13)],
+        "cygnus": [(-0.15,-0.04),(-0.13,0.10),(-0.07,0.18),(0,0.23),(0.07,0.18),(0.13,0.10),(0.15,-0.04),(0.06,-0.12),(0,-0.09),(-0.06,-0.12)],
+        "andromeda": [(-0.15,-0.05),(-0.13,0.08),(-0.07,0.15),(0,0.12),(0.07,0.15),(0.13,0.08),(0.15,-0.05),(0.07,-0.13),(0,-0.17),(-0.07,-0.13)],
+        "phoenix": [(-0.16,-0.05),(-0.13,0.07),(-0.06,0.14),(0,0.27),(0.06,0.14),(0.13,0.07),(0.16,-0.05),(0.07,-0.12),(0,-0.18),(-0.07,-0.12)],
+    }
+    parts.append(add_weighted_armor_plate(
+        hero_id.title() + "_Armor_Signature_Helm_Crown",
+        (0,-0.105,1.885), helmet_shapes[hero_id], 0.105, "Head", metal, rig, 0.014))
+    # Forehead crest motif: wing, dragon horn, frost spike, chain jewel or flame.
+    crest_tip = {
+        "pegasus": (0,-0.17,2.055), "dragon": (0,-0.16,2.075),
+        "cygnus": (0,-0.17,2.105), "andromeda": (0,-0.17,2.045),
+        "phoenix": (0,-0.17,2.145),
+    }[hero_id]
+    crest_base = (0,-0.17,1.91)
+    parts.append(add_weighted_limb(
+        hero_id.title() + "_Armor_Signature_Helm_Crest",
+        crest_base, crest_tip, 0.026, "Head", inlay, rig, 12))
+    for side, sign in (("Left",1),("Right",-1)):
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Helm_Cheek_Guard",
+            (sign*0.125,-0.095,1.765),
+            [(0,0.08),(sign*0.055,0.045),(sign*0.065,-0.105),(0,-0.16),(-sign*0.035,-0.07)],
+            0.065, "Head", metal, rig, 0.009))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Knee_Cop",
+            (sign*0.15,-0.115,0.535),
+            [(-0.085,0.07),(-0.045,0.145),(0.045,0.145),(0.09,0.06),
+             (0.055,-0.075),(0,-0.115),(-0.06,-0.075)],
+            0.105, side + "Shin", inlay, rig, 0.012))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Boot_Sabatons",
+            (sign*0.15,-0.155,0.105),
+            [(-0.105,0.055),(-0.07,0.105),(0.055,0.105),(0.12,0.045),
+             (0.15,-0.045),(0.07,-0.09),(-0.08,-0.09),(-0.14,-0.04)],
+            0.16, side + "Foot", metal, rig, 0.014))
+        parts.append(add_weighted_armor_plate(
+            hero_id.title() + "_" + side + "_Armor_Waist_Side_Tasset",
+            (sign*0.205,-0.165,0.86),
+            [(-0.07,0.10),(0.055,0.13),(0.12,0.035),(0.08,-0.14),
+             (0,-0.20),(-0.075,-0.11)],
+            0.075, "Hips", metal, rig, 0.012))
+    return parts
+
+
+def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
+    """Export selected distinct rigged silhouettes; only_ids enables short, resumable hero jobs."""
     classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
+    if only_ids:
+        unknown = sorted(set(only_ids) - set(classes))
+        if unknown:
+            raise SystemExit(f"Unknown profession IDs: {unknown}")
+        classes = [class_id for class_id in classes if class_id in set(only_ids)]
     animation_source = ANIMATIONS / "animation_library.glb"
     if not animation_source.is_file():
         raise RuntimeError("shared animation library must be exported before profession models")
@@ -1151,9 +1684,54 @@ def build_profession_models(shard_index=0, shard_count=1):
     for index, class_id in enumerate(classes):
         if index % shard_count != shard_index:
             continue
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
+        skill_categories = ("melee", "projectile", "defense", "heal", "area", "mobility", "ultimate")
+        required_skill_clips = tuple(f"{class_id}_skill_{category}" for category in skill_categories) + tuple(profession_ability_ids(class_id))
+        required_all_clips = REQUIRED_CLIPS + required_profession_clips + required_skill_clips
+        hero_materials = {
+            "pegasus": ("Core_pegasus_Layered_Armor", "Core_pegasus_Armor_Inlay",
+                        "Pegasus_Crimson_Headband", "Pegasus_Crimson_Gem"),
+            "dragon": ("Dragon_Jade_Scale", "Dragon_Silver_Forging"),
+            "cygnus": ("Cygnus_Glacier_Crystal", "Cygnus_Frost_Silver"),
+            "andromeda": ("Andromeda_Rose_Chain", "Andromeda_Chain_Light"),
+            "phoenix": ("Phoenix_Flame_Ember", "Phoenix_Gold_Fire"),
+        }.get(class_id, ())
+        destination = output_root / class_id / "model/character.glb"
+        animation_dest = output_root / class_id / "animations/animation_library.glb"
+        preview_root = ROOT / "game" / "art_previews" / "characters"
+        hero_preview_ready = class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"} or all(
+            (preview_root / (class_id + "_" + view + ".png")).is_file()
+            and (preview_root / (class_id + "_" + view + ".png")).stat().st_size >= 128
+            for view in ("front", "side", "back")
+        )
+        # A shard retry must resume from completed, validated outputs rather than
+        # rebuilding every earlier profession after one late Blender timeout.
+        if destination.is_file() and animation_dest.is_file() and hero_preview_ready:
+            try:
+                validate_glb(
+                    destination,
+                    required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                    require_skin=True,
+                    required_clips=required_all_clips,
+                    required_materials=hero_materials,
+                )
+                validate_glb(animation_dest, required_clips=required_all_clips)
+            except Exception as error:
+                print("PROFESSION_RESUME_REBUILD", class_id, str(error), flush=True)
+            else:
+                print("PROFESSION_MODEL_REUSED", class_id,
+                      "model_bytes=" + str(destination.stat().st_size),
+                      "animation_bytes=" + str(animation_dest.stat().st_size), flush=True)
+                continue
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
+        identity_parts = []
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            identity_parts.extend(add_core_hero_hair(rig, class_id))
+            identity_parts.extend(add_core_hero_eyes(rig, class_id))
+            identity_parts.extend(add_core_hero_face_identity(rig, class_id))
+            identity_parts.extend(add_core_hero_headband(rig, class_id))
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
@@ -1169,109 +1747,167 @@ def build_profession_models(shard_index=0, shard_count=1):
         profession_mat = material("Profession_" + class_id, profession_color,
                                   0.90 if class_id == "hades" else 0.38 + (index % 5) * 0.1,
                                   0.20 if class_id == "hades" else 0.34)
-        ornaments = []
-        shoulder_factor = 0.78 + (index % 6) * 0.045
-        for side, sign in (("Left", 1), ("Right", -1)):
-            ornaments.append(add_weighted_pauldron(
-                class_id + "_" + side + "_Signature_Pauldron",
-                (sign * (0.34 * shoulder_factor), -0.105, 1.48),
-                0.142 * shoulder_factor, 0.072 * shoulder_factor, 0.078,
-                side + "Shoulder", profession_mat, rig, sign
-            ))
+        # Export every authored identity mesh as part of the final skinned model.
+        ornaments = identity_parts
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            ornaments.extend(add_core_hero_armor_layers(rig, class_id))
+        # Core Saints already have authored, layered shoulder armor; do not stack
+        # a second generic pauldron over their silhouette.
+        if class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            shoulder_factor = 0.78 + (index % 6) * 0.045
+            for side, sign in (("Left", 1), ("Right", -1)):
+                ornaments.append(add_weighted_pauldron(
+                    class_id + "_" + side + "_Signature_Pauldron",
+                    (sign * (0.34 * shoulder_factor), -0.105, 1.48),
+                    0.142 * shoulder_factor, 0.072 * shoulder_factor, 0.078,
+                    side + "Shoulder", profession_mat, rig, sign
+                ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
-        crest_radius = 0.045 + (index % 4) * 0.018
-        ornaments.append(add_weighted_ellipsoid(
-            class_id + "_Signature_Crest",
-            (0, -0.12, 1.96 + (index % 3) * 0.025),
-            (crest_radius, crest_radius * 0.7, 0.11 + (index % 4) * 0.035),
-            "Head", profession_mat, rig, segments=10, rings=8
-        ))
-        if index % 3 != 0:
-            span = 0.34 + (index % 6) * 0.10
-            for side, sign in (("Left", 1), ("Right", -1)):
-                ornaments.append(add_weighted_ellipsoid(
-                    class_id + "_" + side + "_Back_Wing",
-                    (sign * span * 0.52, 0.10, 1.40),
-                    (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
-                    "Chest", profession_mat, rig, segments=12, rings=8
-                ))
+        if class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            crest_radius = 0.045 + (index % 4) * 0.018
+            ornaments.append(add_weighted_ellipsoid(
+                class_id + "_Signature_Crest",
+                (0, -0.12, 1.96 + (index % 3) * 0.025),
+                (crest_radius, crest_radius * 0.7, 0.11 + (index % 4) * 0.035),
+                "Head", profession_mat, rig, segments=10, rings=8
+            ))
+            if index % 3 != 0:
+                span = 0.34 + (index % 6) * 0.10
+                for side, sign in (("Left", 1), ("Right", -1)):
+                    ornaments.append(add_weighted_ellipsoid(
+                        class_id + "_" + side + "_Back_Wing",
+                        (sign * span * 0.52, 0.10, 1.40),
+                        (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
+                        "Chest", profession_mat, rig, segments=12, rings=8
+                    ))
         if class_id == "pegasus":
-            # Dedicated Pegasus Bronze Cloth hero detailing for the first art review.
-            bronze = material("Pegasus_Bronze_Alloy", (0.62, 0.34, 0.16), 0.86, 0.24)
-            silver = material("Pegasus_Silver_Edges", (0.72, 0.79, 0.88), 0.9, 0.2)
-            enamel = material("Pegasus_Cobalt_Enamel", (0.035, 0.16, 0.42), 0.62, 0.2)
+            # The layered core-hero kit above owns the cuirass, pauldrons,
+            # gauntlets, greaves, helmet and waist plates. Add only the unique
+            # chest jewel here to avoid overlapping duplicate armor shells.
             crimson = material("Pegasus_Crimson_Gem", (0.68, 0.035, 0.075), 0.58, 0.16)
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Bronze_Chest_Cuirass", (0, -0.172, 1.365),
-                [(-0.245, 0.17), (-0.16, 0.245), (0, 0.205), (0.16, 0.245),
-                 (0.245, 0.17), (0.19, -0.08), (0.075, -0.19), (0, -0.22),
-                 (-0.075, -0.19), (-0.19, -0.08)],
-                0.10, "Chest", bronze, rig, 0.022))
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Chest_Enamel_Inlay", (0, -0.235, 1.37),
-                [(-0.12, 0.10), (-0.065, 0.15), (0, 0.12), (0.065, 0.15),
-                 (0.12, 0.10), (0.075, -0.075), (0, -0.12), (-0.075, -0.075)],
-                0.026, "Chest", enamel, rig, 0.008))
             ornaments.append(add_weighted_ellipsoid(
                 "Pegasus_Chest_Crimson_Cosmos_Gem", (0, -0.258, 1.39),
                 (0.042, 0.022, 0.052), "Chest", crimson, rig, 20, 12))
+        if class_id == "dragon":
+            # Dragon Bronze Cloth: a separate shield silhouette follows the left forearm.
+            jade = material("Dragon_Jade_Scale", (0.12, 0.43, 0.31), 0.78, 0.22)
+            silver = material("Dragon_Silver_Forging", (0.72, 0.82, 0.86), 0.91, 0.18)
+            ornaments.append(add_weighted_armor_plate(
+                "Dragon_Ancient_Shield", (0.535, -0.205, 1.105),
+                [(0, 0.30), (0.19, 0.18), (0.17, -0.13), (0, -0.34),
+                 (-0.17, -0.13), (-0.19, 0.18)],
+                0.105, "LeftForearm", jade, rig, 0.025))
+            ornaments.append(add_weighted_armor_plate(
+                "Dragon_Shield_Silver_Dragon_Ridge", (0.535, -0.268, 1.12),
+                [(0, 0.22), (0.055, 0.08), (0.025, -0.18), (0, -0.24),
+                 (-0.025, -0.18), (-0.055, 0.08)],
+                0.025, "LeftForearm", silver, rig, 0.008))
+            ornaments.append(add_weighted_pauldron(
+                "Dragon_Left_Dragon_Scale_Pauldron", (0.35, -0.10, 1.49),
+                0.205, 0.105, 0.10, "LeftShoulder", jade, rig, 1))
+        elif class_id == "cygnus":
+            # Cygnus Bronze Cloth: ice-crystal crest and layered frost pauldrons.
+            ice = material("Cygnus_Glacier_Crystal", (0.34, 0.78, 0.94), 0.72, 0.16)
+            frost = material("Cygnus_Frost_Silver", (0.72, 0.88, 0.96), 0.91, 0.14)
+            ornaments.append(add_weighted_armor_plate(
+                "Cygnus_Ice_Crystal_Helm_Crest", (0, -0.145, 1.965),
+                [(0, 0.25), (0.045, 0.09), (0.13, 0.015), (0.045, -0.035),
+                 (0, -0.16), (-0.045, -0.035), (-0.13, 0.015), (-0.045, 0.09)],
+                0.065, "Head", ice, rig, 0.012))
             for side, sign in (("Left", 1), ("Right", -1)):
                 ornaments.append(add_weighted_pauldron(
-                    "Pegasus_" + side + "_Winged_Pauldron",
-                    (sign * 0.345, -0.09, 1.49), 0.19, 0.09, 0.095,
-                    side + "Shoulder", silver, rig, sign))
+                    "Cygnus_" + side + "_Frost_Wing_Pauldron",
+                    (sign * 0.35, -0.115, 1.50), 0.19, 0.095, 0.095,
+                    side + "Shoulder", frost, rig, sign))
                 ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Bronze_Gauntlet",
-                    (sign * 0.49, -0.095, 1.105),
-                    [(-0.075, 0.16), (0.045, 0.18), (0.085, 0.07),
-                     (0.06, -0.14), (0, -0.19), (-0.07, -0.13), (-0.09, 0.04)],
-                    0.12, side + "Forearm", bronze, rig, 0.016))
-                ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Silver_Shin_Guard",
-                    (sign * 0.15, -0.092, 0.345),
-                    [(-0.09, 0.18), (0, 0.22), (0.09, 0.18),
-                     (0.075, 0.02), (0.05, -0.17), (0, -0.21),
-                     (-0.07, -0.15), (-0.085, 0.02)],
-                    0.13, side + "Shin", silver, rig, 0.016))
-                ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Helmet_Wing",
-                    (sign * 0.105, -0.105, 1.91),
-                    [(0, -0.045), (sign * 0.04, 0.015), (sign * 0.16, 0.17),
-                     (sign * 0.19, 0.22), (sign * 0.08, 0.19), (0, 0.09)],
-                    0.055, "Head", silver, rig, 0.01))
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Bronze_Waist_Tasset", (0, -0.16, 0.93),
-                [(-0.18, 0.10), (-0.12, 0.14), (0.12, 0.14), (0.18, 0.10),
-                 (0.13, -0.12), (0, -0.19), (-0.13, -0.12)],
-                0.075, "Hips", bronze, rig, 0.014))
-            for side, sign in (("Left", 1), ("Right", -1)):
+                    "Cygnus_" + side + "_Ice_Greave",
+                    (sign * 0.15, -0.115, 0.36),
+                    [(-0.075, 0.17), (0, 0.25), (0.075, 0.17),
+                     (0.045, -0.12), (0, -0.20), (-0.045, -0.12)],
+                    0.10, side + "Shin", ice, rig, 0.012))
+        elif class_id == "andromeda":
+            # Andromeda Bronze Cloth: articulated chain links are individually weighted
+            # to the forearm so the signature weapon remains attached during attacks.
+            chain = material("Andromeda_Rose_Chain", (0.78, 0.42, 0.58), 0.88, 0.18)
+            chain_highlight = material("Andromeda_Chain_Light", (0.92, 0.72, 0.82), 0.92, 0.14)
+            for link_index in range(7):
+                x = 0.405 + link_index * 0.043
+                z = 1.015 + (link_index % 2) * 0.035
                 ornaments.append(add_weighted_ellipsoid(
-                    "Pegasus_" + side + "_Pauldron_Enamel",
-                    (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
-                    side + "Shoulder", enamel, rig, 16, 10))
+                    "Andromeda_Chain_Link_" + str(link_index + 1),
+                    (x, -0.19, z), (0.026, 0.018, 0.042),
+                    "RightForearm", chain if link_index % 2 == 0 else chain_highlight,
+                    rig, segments=12, rings=8))
+            ornaments.append(add_weighted_ellipsoid(
+                "Andromeda_Chain_Wrist_Anchor", (0.50, -0.205, 1.12),
+                (0.075, 0.035, 0.065), "RightForearm", chain_highlight, rig, 16, 10))
+            ornaments.append(add_weighted_armor_plate(
+                "Andromeda_Chest_Star_Plate", (0, -0.235, 1.385),
+                [(0, 0.15), (0.045, 0.045), (0.15, 0), (0.045, -0.045),
+                 (0, -0.15), (-0.045, -0.045), (-0.15, 0), (-0.045, 0.045)],
+                0.035, "Chest", chain_highlight, rig, 0.008))
+        elif class_id == "phoenix":
+            # Phoenix Bronze Cloth: layered, flame-feather wings are skinned to the chest.
+            flame = material("Phoenix_Flame_Ember", (0.78, 0.16, 0.045), 0.68, 0.20)
+            ember = material("Phoenix_Gold_Fire", (0.96, 0.52, 0.12), 0.82, 0.16)
+            for side, sign in (("Left", 1), ("Right", -1)):
+                for feather_index in range(3):
+                    offset = feather_index * 0.105
+                    ornaments.append(add_weighted_armor_plate(
+                        "Phoenix_" + side + "_Flame_Feather_" + str(feather_index + 1),
+                        (sign * (0.30 + offset), 0.105, 1.42 + feather_index * 0.045),
+                        [(0, 0.22), (sign * 0.10, 0.10), (sign * 0.19, -0.12),
+                         (sign * 0.08, -0.06), (0, -0.24), (-sign * 0.025, -0.02)],
+                        0.055, "Chest", flame if feather_index % 2 == 0 else ember, rig, 0.01))
+            ornaments.append(add_weighted_ellipsoid(
+                "Phoenix_Fire_Cosmos_Gem", (0, -0.255, 1.39),
+                (0.055, 0.025, 0.07), "Chest", ember, rig, 20, 12))
+        if class_id == "pegasus":
+            ornament_names = [obj.name for obj in ornaments]
+            if len(ornament_names) != len(set(ornament_names)):
+                raise RuntimeError("Pegasus model contains duplicate ornament object names")
+            required_pegasus_parts = {
+                "Pegasus_Red_Forehead_Headband",
+                "Pegasus_Left_Headband_Tail",
+                "Pegasus_Right_Headband_Tail",
+                "Pegasus_Armor_Chest_Base",
+                "Pegasus_Armor_Chest_Wing_Inlay",
+                "Pegasus_Left_Armor_Outer_Pauldron",
+                "Pegasus_Right_Armor_Outer_Pauldron",
+                "Pegasus_Chest_Crimson_Cosmos_Gem",
+            }
+            missing_pegasus_parts = sorted(required_pegasus_parts - set(ornament_names))
+            if missing_pegasus_parts:
+                raise RuntimeError("Pegasus identity/armor parts missing from export set: " +
+                                   ", ".join(missing_pegasus_parts))
+            print("PEGASUS_ASSET_AUDIT",
+                  "ornament_objects=" + str(len(ornament_names)),
+                  "required_parts=passed", flush=True)
         make_animation_library(rig, class_id)
         make_signature_idle_pose(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
-        destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
-        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
         validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
-                      require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips)
-        animation_dest = output_root / class_id / "animations/animation_library.glb"
+                      require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips,
+                      required_materials=hero_materials)
         export_glb(animation_dest, [rig])
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
         validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
         print("PROFESSION_MODEL_EXPORTED", class_id, destination.stat().st_size,
               "combo_clips=" + ",".join(required_profession_clips),
               "skill_archetypes=7")
-        if index == 0:
+        # Render all five Bronze Saint protagonists for the first user-facing art review.
+        # These are still blockout prototypes; previews are evidence for visual review,
+        # not approval as final canon-accurate character art.
+        if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             render_profession_turntable(class_id, index)
-            preview_path = ROOT / "game" / "art_previews" / "characters" / (class_id + "_front.png")
-            if not preview_path.is_file() or preview_path.stat().st_size < 128:
-                raise RuntimeError("Representative character preview missing or too small: " + str(preview_path))
-            print("PROFESSION_PREVIEW_RENDERED", class_id, "views=front",
-                  "bytes=" + str(preview_path.stat().st_size))
+            preview_root = ROOT / "game" / "art_previews" / "characters"
+            for view_name in ("front", "side", "back"):
+                preview_path = preview_root / (class_id + "_" + view_name + ".png")
+                if not preview_path.is_file() or preview_path.stat().st_size < 128:
+                    raise RuntimeError("Core Bronze Saint " + view_name + " preview missing or too small: " + str(preview_path))
+            print("CORE_BRONZE_SAINT_PREVIEW_RENDERED", class_id, "views=front,side,back")
 
 def build_equipment_models(shard_index=0, shard_count=1):
     """Export every catalogued independent nine-piece skinned armor kit (stylized prototypes)."""
@@ -1280,6 +1916,29 @@ def build_equipment_models(shard_index=0, shard_count=1):
     for index, equipment_id in enumerate(equipment_ids):
         if index % shard_count != shard_index:
             continue
+        destination = output_root / equipment_id / "model/armor.glb"
+        preview_path = ROOT / "game" / "art_previews" / "armors" / (equipment_id + "_front.png")
+        preview_ready = index != 0 or (preview_path.is_file() and preview_path.stat().st_size >= 128)
+        armor_nodes = (
+            "Humanoid_Base_Rig", "Armor_Helmet", "Armor_Chest",
+            "Armor_Left_Shoulder", "Armor_Left_Forearm", "Armor_Left_Leg",
+            "Armor_Right_Shoulder", "Armor_Right_Forearm", "Armor_Right_Leg",
+            "Armor_Waist",
+        )
+        # Resume only from a fully validated nine-piece skinned armor export.
+        if destination.is_file() and preview_ready:
+            try:
+                validate_glb(
+                    destination, required_nodes=armor_nodes, require_skin=True,
+                    required_clips=REQUIRED_CLIPS,
+                    require_independent_skinned_nodes=armor_nodes[1:],
+                )
+            except Exception as error:
+                print("ARMOR_RESUME_REBUILD", equipment_id, str(error), flush=True)
+            else:
+                print("EQUIPMENT_MODEL_REUSED", equipment_id,
+                      "model_bytes=" + str(destination.stat().st_size), flush=True)
+                continue
         reset_scene()
         rig = create_rig()
         # Armor uses the exact same humanoid skeleton and baseline motion clips
@@ -1310,7 +1969,6 @@ def build_equipment_models(shard_index=0, shard_count=1):
             if not is_surplice and not is_dark_cloth and part_index % 2 == index % 2:
                 piece.data.materials.clear()
                 piece.data.materials.append(accent_mat)
-        destination = output_root / equipment_id / "model/armor.glb"
         export_glb(destination, [rig] + pieces)
         validate_glb(
             destination,
@@ -1343,6 +2001,24 @@ def build_enemy_models(shard_index=0, shard_count=1):
     for index, enemy_id in enumerate(enemy_ids):
         if index % shard_count != shard_index:
             continue
+        destination = output_root / enemy_id / "model/enemy.glb"
+        pope_preview = ROOT / "game" / "art_previews" / "bosses" / "pope_saga_front.png"
+        preview_ready = enemy_id != "pope_saga" or (pope_preview.is_file() and pope_preview.stat().st_size >= 10000)
+        # Preserve completed enemy and boss models across failed batch retries.
+        if destination.is_file() and preview_ready:
+            try:
+                validate_glb(
+                    destination,
+                    required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                    require_skin=True,
+                    required_clips=REQUIRED_CLIPS,
+                )
+            except Exception as error:
+                print("ENEMY_RESUME_REBUILD", enemy_id, str(error), flush=True)
+            else:
+                print("ENEMY_MODEL_REUSED", enemy_id,
+                      "model_bytes=" + str(destination.stat().st_size), flush=True)
+                continue
         block_match = re.search(r'"' + re.escape(enemy_id) + r'"' + r'\s*:\s*\{([^}]*)\}', source)
         if not block_match:
             raise RuntimeError("enemy archetype block missing: " + enemy_id)
@@ -1469,7 +2145,6 @@ def build_enemy_models(shard_index=0, shard_count=1):
                 0.022, "RightHand", saga_edge, rig, 12)
             add_weighted_ellipsoid("PopeSaga_ScepterOrb", (-0.56,-0.12,1.48),
                 (0.075,0.055,0.075), "RightHand", saga_gem, rig, 20, 12)
-        destination = output_root / enemy_id / "model/enemy.glb"
         export_glb(destination, [rig, body] + [
             obj for obj in bpy.context.scene.objects
             if obj.type == "MESH" and obj != body and obj.parent == rig
@@ -1492,12 +2167,41 @@ def build_enemy_models(shard_index=0, shard_count=1):
 def build_foundation_assets():
     """Build shared skeleton, animation, armor template and chapter environments once."""
     OUT.mkdir(parents=True, exist_ok=True)
+    character_model = CHARACTER / "humanoid_base.glb"
+    animation_library = ANIMATIONS / "animation_library.glb"
+    armor_model = ARMOR / "modular_armor_kit.glb"
+    environment_root = ROOT / "game" / "assets" / "environments"
+    environment_models = [environment_root / theme_id / "environment.glb" for theme_id in CHAPTER_THEMES]
+    foundation_outputs = (character_model, animation_library, armor_model, *environment_models)
+    # A failed later category must not force a full rebuild of the shared rig and
+    # seven chapter environments. Reuse only when every foundation GLB validates.
+    if all(path.is_file() for path in foundation_outputs):
+        try:
+            validate_glb(character_model, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                          require_skin=True, required_clips=REQUIRED_CLIPS)
+            validate_glb(animation_library, required_nodes=("Humanoid_Base_Rig",),
+                          required_clips=REQUIRED_CLIPS)
+            armor_nodes = ("Humanoid_Base_Rig", "Armor_Helmet", "Armor_Chest",
+                           "Armor_Left_Shoulder", "Armor_Right_Shoulder",
+                           "Armor_Left_Forearm", "Armor_Right_Forearm",
+                           "Armor_Left_Leg", "Armor_Right_Leg", "Armor_Waist")
+            validate_glb(armor_model, required_nodes=armor_nodes, require_skin=True,
+                         require_independent_skinned_nodes=armor_nodes[1:])
+            for environment_model in environment_models:
+                validate_glb(environment_model)
+        except Exception as error:
+            print("FOUNDATION_CACHE_REBUILD", str(error), flush=True)
+        else:
+            print("FOUNDATION_CACHE_REUSED",
+                  "models=" + str(len(foundation_outputs)),
+                  "total_bytes=" + str(sum(path.stat().st_size for path in foundation_outputs)),
+                  flush=True)
+            return
     reset_scene()
     rig = create_rig()
     body = build_body(rig)
     make_animation_library(rig)
 
-    character_model = CHARACTER / "humanoid_base.glb"
     export_glb(character_model, [rig, body])
     validate_glb(
         character_model,
@@ -1506,7 +2210,6 @@ def build_foundation_assets():
         required_clips=REQUIRED_CLIPS,
     )
 
-    animation_library = ANIMATIONS / "animation_library.glb"
     export_glb(animation_library, [rig])
     validate_glb(
         animation_library,
@@ -1515,7 +2218,6 @@ def build_foundation_assets():
     )
 
     armor_parts = build_armor(rig)
-    armor_model = ARMOR / "modular_armor_kit.glb"
     export_glb(armor_model, [rig] + armor_parts)
     validate_glb(
         armor_model,
@@ -1533,6 +2235,7 @@ def main():
     parser.add_argument("--stage", choices=("all", "foundation", "characters", "armors", "enemies"), default="all")
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--only-ids", nargs="+", default=None, help="Generate only these profession IDs")
     args_list = __import__("sys").argv
     args_list = args_list[args_list.index("--") + 1:] if "--" in args_list else []
     args = parser.parse_args(args_list)
@@ -1542,7 +2245,7 @@ def main():
     if args.stage in ("all", "foundation"):
         build_foundation_assets()
     if args.stage in ("all", "characters"):
-        build_profession_models(args.shard_index, args.shard_count)
+        build_profession_models(args.shard_index, args.shard_count, args.only_ids)
     if args.stage in ("all", "armors"):
         build_equipment_models(args.shard_index, args.shard_count)
     if args.stage in ("all", "enemies"):

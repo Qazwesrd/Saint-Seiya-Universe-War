@@ -5,6 +5,7 @@ var marker_material: StandardMaterial3D
 var robe_material: StandardMaterial3D
 var animation_clock := 0.0
 var visual_root: Node3D
+var display_name_override := ""
 
 func _ready() -> void:
 	visual_root = Node3D.new()
@@ -72,7 +73,7 @@ func _ready() -> void:
 	visual_root.add_child(marker)
 
 	var label := Label3D.new()
-	label.text = "！ 圣域训练引导员"
+	label.text = "！ " + (display_name_override if not display_name_override.is_empty() else FactionDatabase.get_tutorial_mentor_name())
 	label.position.y = 2.9
 	label.font_size = 36
 	label.outline_size = 8

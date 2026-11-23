@@ -1,6 +1,6 @@
 # 美术资产制作流水线
 
-此目录建立 32 个职业、49 套装备和 11 类技能元素的资源交付清单。
+此目录建立 32 个职业、82 套装备和 11 类技能元素的资源交付清单。装备数量以当前 EquipmentDatabase 与 Blender 导出验收清单为准。
 
 ## 生成与检查
 
@@ -91,7 +91,7 @@ py tools/art_pipeline/export_angelica_ski_json.py "D:\\Games\\SeiyaClient\\eleme
 先按上面的步骤生成 `pegasus_ski.json`，再在安装了 Blender 4.x 的电脑上执行：
 
 ```powershell
-blender --background --python tools/art_pipeline/blender/import_angelica_ski_json.py -- --input "D:\\SeiyaInventory\\pegasus_ski.json" --output "D:\\SeiyaInventory\\pegasus_preview.blend"
+blender --background --python tools/art_pipeline/blender/import_angelica_ski_json.py -- --input "D:\\SeiyaInventory\\pegasus_ski.json" --output "D:\\SeiyaInventory\\pegasus_preview.blend" --saint-seiya-basis
 ```
 
 该导入器会创建网格对象、UV、材质槽和顶点组（保留骨骼权重索引，供后续绑定使用）。当前是静态网格检查场景：尚未生成 BON 骨架、骨骼动作、材质贴图连接或完整 GLB；没有真实客户端样本前，也不能保证所有 SKI 版本都兼容。
@@ -170,3 +170,25 @@ py tools/art_pipeline/validate_angelica_ecm_json.py "D:\\SeiyaInventory\\pegasus
 ```
 
 如果要强制所有子 ECM 都必须出现在本次输入列表中，再添加 `--require-all-children`。默认模式会报告未随本次一起导出的子模型引用数量，不会把资源包中未导出的文件误判为不存在。
+
+
+## 五小强资源候选扫描（只分析清单，不提取资源）
+
+完成客户端或 PCK 只读盘点后，可按常见英文/中文角色名关键词筛选五小强相关文件：
+
+```powershell
+py tools/art_pipeline/find_saint_seiya_candidates.py "D:\\SeiyaInventory\\models\\pck_inventory.json" --output "D:\\SeiyaInventory\\five_bronze_candidates.json"
+```
+
+扫描星矢、紫龙、冰河、瞬、一辉的别名，列出路径中命中角色关键词的 SKI、SMD、BON、STCK、ECM、GFX、DDS、TGA 和 ANM 文件。结果仅是文件名候选，不代表角色身份已经确认；资源可能使用编号、缩写或共享路径，因此没有命中也不代表客户端没有该角色。候选必须继续通过模型预览、骨架和装备引用关系人工确认。工具不读取/解包归档内容，不修改客户端。
+
+
+## 五小强资源候选关联分组（只依据路径，不宣称已绑定）
+
+候选扫描完成后，可把同目录、同文件主名的 SKI/SMD/BON/STCK/ECM/贴图/特效归为待人工检查的资源组：
+
+```powershell
+py tools/art_pipeline/build_character_asset_bundles.py "D:\\SeiyaInventory\\five_bronze_candidates.json" --output "D:\\SeiyaInventory\\five_bronze_bundles.json"
+```
+
+输出会区分“同目录且同主名”与“单文件候选”，并按人物列出可能的网格、骨架、动画、装备组合、贴图和特效。它不会自动把文件强行配对；目录/主名相同只是线索，必须打开模型检查几何、骨骼、动画轨道、ECM 挂点和贴图，确认后才能登记为真实关联。

@@ -11,6 +11,7 @@ var delete_dialog: ConfirmationDialog
 var character_creation_panel: PanelContainer
 var character_name_input: LineEdit
 var character_class_picker: OptionButton
+var character_faction_picker: OptionButton
 var creation_notice: Label
 var pending_creation_slot := 0
 var download_button: Button
@@ -91,8 +92,8 @@ func _build_interface() -> void:
 	character_creation_panel = _build_character_creation_panel()
 	character_creation_panel.visible = false
 	character_creation_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	character_creation_panel.position = Vector2(-310, -230)
-	character_creation_panel.custom_minimum_size = Vector2(620, 460)
+	character_creation_panel.position = Vector2(-360, -300)
+	character_creation_panel.custom_minimum_size = Vector2(720, 600)
 	add_child(character_creation_panel)
 
 	delete_dialog = ConfirmationDialog.new()
@@ -294,15 +295,15 @@ func _on_reset_settings() -> void:
 func _build_character_creation_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 14)
+	outer.add_theme_constant_override("separation", 12)
 	panel.add_child(outer)
 	var heading := Label.new()
-	heading.text = "创建你的圣斗士"
+	heading.text = "创建角色 · 全阵营全职业开放"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 26)
 	outer.add_child(heading)
 	var description := Label.new()
-	description.text = "选择角色名称与初始职业。神明职业和天斗士将在达到解锁条件后开放。"
+	description.text = "选择阵营、出生地与职业。1—9级完成本阵营新手试炼，达到10级后接入动漫主线。鸿钧老祖可直接选择。"
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	outer.add_child(description)
 	var name_label := Label.new()
@@ -313,17 +314,21 @@ func _build_character_creation_panel() -> PanelContainer:
 	character_name_input.max_length = 16
 	character_name_input.text = "星之战士"
 	outer.add_child(character_name_input)
+	var faction_label := Label.new()
+	faction_label.text = "初始阵营 / 出生地"
+	outer.add_child(faction_label)
+	character_faction_picker = OptionButton.new()
+	for faction in FactionDatabase.get_factions():
+		character_faction_picker.add_item(str(faction.get("name", "")))
+		character_faction_picker.set_item_metadata(character_faction_picker.item_count - 1, str(faction.get("id", "")))
+	character_faction_picker.item_selected.connect(_on_creation_faction_selected)
+	outer.add_child(character_faction_picker)
 	var class_label := Label.new()
-	class_label.text = "初始职业（九大基础职业）"
+	class_label.text = "初始职业 / 角色"
 	outer.add_child(class_label)
 	character_class_picker = OptionButton.new()
-	for class_id in RPGState.CLASS_DATA:
-		var class_data: Dictionary = RPGState.CLASS_DATA[class_id]
-		var tier := str(class_data.get("tier", ""))
-		if tier in ["神明", "天斗士"]:
-			continue
-		character_class_picker.add_item(str(class_data.get("name", class_id)))
-		character_class_picker.set_item_metadata(character_class_picker.item_count - 1, str(class_id))
+	character_class_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	character_class_picker.item_selected.connect(_on_creation_class_selected)
 	outer.add_child(character_class_picker)
 	creation_notice = Label.new()
 	creation_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -345,12 +350,36 @@ func _build_character_creation_panel() -> PanelContainer:
 	outer.add_child(actions)
 	return panel
 
-func _open_character_creation(slot: int) -> void:
-	pending_creation_slot = slot
-	character_name_input.text = ""
-	creation_notice.text = ""
+func _on_creation_faction_selected(index: int) -> void:
+	var faction_id := str(character_faction_picker.get_item_metadata(index))
+	_refresh_creation_class_picker(faction_id)
+
+func _refresh_creation_class_picker(faction_id: String) -> void:
+	character_class_picker.clear()
+	for option in FactionDatabase.get_class_options(faction_id):
+		character_class_picker.add_item(str(option.get("name", option.get("class_id", ""))))
+		character_class_picker.set_item_metadata(character_class_picker.item_count - 1, option)
 	if character_class_picker.item_count > 0:
 		character_class_picker.select(0)
+		_on_creation_class_selected(0)
+
+func _on_creation_class_selected(index: int) -> void:
+	if index < 0 or index >= character_class_picker.item_count:
+		return
+	var option: Dictionary = character_class_picker.get_item_metadata(index)
+	if str(option.get("preset_id", "")) == "hongjun":
+		if character_name_input.text.is_empty() or character_name_input.text == "星之战士":
+			character_name_input.text = "鸿钧老祖"
+	elif character_name_input.text == "鸿钧老祖":
+		character_name_input.text = "星之战士"
+
+func _open_character_creation(slot: int) -> void:
+	pending_creation_slot = slot
+	character_name_input.text = "星之战士"
+	creation_notice.text = ""
+	if character_faction_picker.item_count > 0:
+		character_faction_picker.select(0)
+		_refresh_creation_class_picker(str(character_faction_picker.get_item_metadata(0)))
 	slots_panel.visible = false
 	character_creation_panel.visible = true
 	character_name_input.grab_focus()
@@ -368,30 +397,40 @@ func _confirm_character_creation() -> void:
 	if pending_creation_slot < 1 or pending_creation_slot > 3:
 		creation_notice.text = "存档槽选择无效，请返回重新选择。"
 		return
-	var selected_class := str(character_class_picker.get_item_metadata(character_class_picker.selected))
+	if character_class_picker.item_count == 0 or character_faction_picker.item_count == 0:
+		creation_notice.text = "当前阵营没有可选职业，请选择其他阵营。"
+		return
+	var selected_faction := str(character_faction_picker.get_item_metadata(character_faction_picker.selected))
+	var selected_option: Dictionary = character_class_picker.get_item_metadata(character_class_picker.selected)
+	var selected_class := str(selected_option.get("class_id", ""))
+	var preset_id := str(selected_option.get("preset_id", ""))
 	if not RPGState.create_new_slot(pending_creation_slot):
 		slot_notice.text = "创建失败：存档槽可能已被占用。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
 		return
-	if not RPGState.select_class(selected_class):
+	if not RPGState.select_class(selected_class, true):
 		slot_notice.text = "初始职业设置失败；已保留新存档，请重新读取后再试。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
 		return
-	var previous_name := str(RPGState.profile.get("character_name", "星之战士"))
+	FactionDatabase.initialize_character_profile(RPGState.profile, selected_faction, preset_id)
 	RPGState.profile["character_name"] = character_name
+	RPGState.profile["character_title"] = str(selected_option.get("title", FactionDatabase.get_faction(selected_faction).get("name", "圣域战士")))
+	if preset_id == "hongjun":
+		RPGState.profile["is_supreme_deity"] = true
+		RPGState.profile["character_title"] = "宇宙之战至高神"
 	if not RPGState.save_slot(pending_creation_slot):
-		RPGState.profile["character_name"] = previous_name
-		RPGState.save_slot(pending_creation_slot)
-		slot_notice.text = "角色名称保存失败；存档已保留，请检查本地存储空间。"
+		slot_notice.text = "角色数据保存失败；存档已保留，请检查存储空间。"
 		character_creation_panel.visible = false
 		slots_panel.visible = true
 		_refresh_slots()
 		return
-	_enter_game("欢迎，%s！已创建%s。" % [character_name, str(RPGState.CLASS_DATA.get(selected_class, {}).get("name", selected_class))])
+	var faction_name := str(FactionDatabase.get_faction(selected_faction).get("name", "阵营"))
+	_enter_game("欢迎，%s！已创建%s · %s。" % [character_name, str(selected_option.get("name", selected_class)), faction_name])
+
 
 func _build_slots_panel() -> PanelContainer:
 	var panel := PanelContainer.new()

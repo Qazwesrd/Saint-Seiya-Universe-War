@@ -10,6 +10,12 @@ on:
     paths:
       - "tools/art_pipeline/blender/**"
       - "tools/art_pipeline/batch_asset_factory.py"
+      - "tools/art_pipeline/build_manifests.py"
+      - "tools/art_pipeline/validate_authored_assets.py"
+      - "tools/art_pipeline/test_anime_character_art_direction.py"
+      - "tools/art_pipeline/test_validate_authored_assets.py"
+      - "game/scripts/equipment_database.gd"
+      - "game/scripts/skill_system.gd"
       - "game/scripts/enemy_database.gd"
       - "game/scripts/character_visual_catalog.gd"
       - "game/scripts/skill_animation_catalog.gd"
@@ -19,11 +25,19 @@ on:
     paths:
       - "tools/art_pipeline/blender/**"
       - "tools/art_pipeline/batch_asset_factory.py"
+      - "tools/art_pipeline/build_manifests.py"
+      - "tools/art_pipeline/validate_authored_assets.py"
+      - "tools/art_pipeline/test_anime_character_art_direction.py"
+      - "tools/art_pipeline/test_validate_authored_assets.py"
+      - "game/scripts/equipment_database.gd"
+      - "game/scripts/skill_system.gd"
       - ".github/workflows/blender-art-pipeline.yml"
   workflow_dispatch:
 
 concurrency:
-  group: blender-art-${{ github.workflow }}-${{ github.ref }}
+  # Push and pull_request events for the same branch must share one runner.
+  # Otherwise identical Blender batches compete for CPU and double wall-clock time.
+  group: blender-art-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -32,7 +46,7 @@ permissions:
 jobs:
   export-prototype-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 240
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,6 +54,11 @@ jobs:
         run: |
           sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libgl1-mesa-dri libgbm1
           blender --version
+      - name: Run character art and animation regression tests
+        run: |
+          python3 tools/art_pipeline/test_anime_character_art_direction.py
+          cd tools/art_pipeline
+          python3 -m unittest test_validate_authored_assets.py
       - name: Generate and structurally validate GLB prototypes
         shell: bash
         run: |
@@ -50,23 +69,38 @@ jobs:
           export BLENDER_BIN=blender
           export ART_FACTORY_WORKERS=2
           export ART_FACTORY_SHARDS=2
+          # Each profession exports a dense skinned model plus a separate animation library.
+          # The previous 30-minute task cap killed both character shards mid-export.
+          export ART_FACTORY_TASK_TIMEOUT_SECONDS=7200
+          export ART_FACTORY_RETRIES=1
           python3 tools/art_pipeline/batch_asset_factory.py 2>&1 | tee blender-export.log
           grep -q "ART_FACTORY_BATCHES_PASS" blender-export.log
           python3 - <<'PY'
           from pathlib import Path
           import struct
 
-          previews = list(Path("game/art_previews/characters").glob("*_front.png"))
-          if len(previews) != 1:
-              raise SystemExit(f"Expected exactly one representative character preview, found {len(previews)}")
-          preview = previews[0]
-          data = preview.read_bytes()
-          if len(data) < 128 or data[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
-              raise SystemExit(f"Character preview is not a valid PNG: {preview}")
-          width, height = struct.unpack(">II", data[16:24])
-          if width != 960 or height != 960:
-              raise SystemExit(f"Unexpected preview dimensions: {width}x{height}")
-          print(f"CHARACTER_PREVIEW_VALIDATED {preview} {width}x{height} bytes={len(data)}")
+          preview_root = Path("game/art_previews/characters")
+          expected_heroes = ("pegasus", "dragon", "cygnus", "andromeda", "phoenix")
+          expected_views = ("front", "side", "back")
+          expected_paths = {
+              preview_root / f"{hero}_{view}.png"
+              for hero in expected_heroes
+              for view in expected_views
+          }
+          actual_paths = set(preview_root.glob("*.png"))
+          if actual_paths != expected_paths:
+              missing = sorted(str(path) for path in expected_paths - actual_paths)
+              extra = sorted(str(path) for path in actual_paths - expected_paths)
+              raise SystemExit(f"Core Bronze Saint three-view previews mismatch; missing={missing}, extra={extra}")
+          for preview in sorted(expected_paths):
+              data = preview.read_bytes()
+              if len(data) < 128 or data[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
+                  raise SystemExit(f"Character preview is not a valid PNG: {preview}")
+              width, height = struct.unpack(">II", data[16:24])
+              if width != 960 or height != 960:
+                  raise SystemExit(f"Unexpected preview dimensions for {preview}: {width}x{height}")
+              print(f"CORE_BRONZE_SAINT_PREVIEW_VALIDATED {preview} {width}x{height} bytes={len(data)}")
+          print(f"CORE_BRONZE_SAINT_THREE_VIEW_SET_PASS heroes={len(expected_heroes)} views={len(expected_views)} total={len(expected_paths)}")
           armor_previews = list(Path("game/art_previews/armors").glob("*_front.png"))
           if len(armor_previews) != 1:
               raise SystemExit(f"Expected exactly one representative armor preview, found {len(armor_previews)}")
@@ -142,6 +176,17 @@ jobs:
           if errors:
               raise SystemExit("\\n".join(errors))
           PY
+      - name: Upload available art previews and Blender logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saint-seiya-art-previews-${{ github.run_id }}
+          path: |
+            game/art_previews/**/*.png
+            build/art_factory_logs/**/*.log
+            blender-export.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Validate all 32 profession models and 52 animation clips
         shell: bash
         run: |
@@ -187,8 +232,18 @@ jobs:
                   raise SystemExit(f"{class_id}: expected 24 skill-specific clips, found {len(ability_clips)}")
               audited_ability_total += len(ability_clips)
               expected_clips = list(required_clips) + combo_clips + skill_clips + ability_clips
-              check_glb(model, require_skin=True, clips=expected_clips)
-              animation_data = check_glb(animation_library, clips=expected_clips, require_meshes=False)
+              model_data = check_glb(model, require_skin=True, clips=expected_clips)
+              model_joint_names = {
+                  str(model_data["nodes"][joint].get("name", ""))
+                  for skin in model_data.get("skins", [])
+                  for joint in skin.get("joints", [])
+              }
+              if not model_joint_names:
+                  raise SystemExit(f"{class_id}: character model has no named skin joints")
+              animation_data = check_glb(
+                  animation_library, clips=expected_clips, require_meshes=False,
+                  compatible_joint_names=model_joint_names,
+              )
               animation_by_name = {item.get("name"): item for item in animation_data["animations"]}
               # Combo attacks use a full-body chain (at least 8 animated bones).
               # Skill archetypes and individual abilities are intentionally more focused:
@@ -231,3 +286,39 @@ jobs:
             game/assets/armors/*/manifest.json
           if-no-files-found: error
           retention-days: 14
+
+  godot-runtime-artifact-validation:
+    needs: export-prototype-assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Download generated GLB assets from this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: blender-art-prototypes-${{ github.sha }}
+          path: game
+      - name: Import generated GLB assets into Godot
+        shell: sh
+        run: |
+          set -eu
+          godot --headless --editor --path game --quit 2>&1 | tee /tmp/generated-art-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load script|ERROR: Condition" /tmp/generated-art-import.log; then
+            echo "Generated art failed Godot import"
+            exit 1
+          fi
+      - name: Verify five core heroes animate on their imported skeletons
+        shell: sh
+        run: |
+          set -eu
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/generated-art-animation.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR:" /tmp/generated-art-animation.log; then
+            echo "Generated character animation runtime validation reported engine errors"
+            exit 1
+          fi
+          grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=5" /tmp/generated-art-animation.log
