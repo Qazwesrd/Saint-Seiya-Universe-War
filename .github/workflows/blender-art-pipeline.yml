@@ -38,7 +38,7 @@ concurrency:
   # Push and pull_request events for the same branch must share one runner.
   # Otherwise identical Blender batches compete for CPU and double wall-clock time.
   group: blender-art-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
