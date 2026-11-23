@@ -1630,9 +1630,14 @@ def add_core_hero_armor_layers(rig, hero_id):
     return parts
 
 
-def build_profession_models(shard_index=0, shard_count=1):
-    """Export one distinct rigged silhouette per playable profession (prototype quality)."""
+def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
+    """Export selected distinct rigged silhouettes; only_ids enables short, resumable hero jobs."""
     classes = catalog_ids(ROOT / "game/scripts/character_visual_catalog.gd", "const PROFILES := {")
+    if only_ids:
+        unknown = sorted(set(only_ids) - set(classes))
+        if unknown:
+            raise SystemExit(f"Unknown profession IDs: {unknown}")
+        classes = [class_id for class_id in classes if class_id in set(only_ids)]
     animation_source = ANIMATIONS / "animation_library.glb"
     if not animation_source.is_file():
         raise RuntimeError("shared animation library must be exported before profession models")
@@ -2209,6 +2214,7 @@ def main():
     parser.add_argument("--stage", choices=("all", "foundation", "characters", "armors", "enemies"), default="all")
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--only-ids", nargs="+", default=None, help="Generate only these profession IDs")
     args_list = __import__("sys").argv
     args_list = args_list[args_list.index("--") + 1:] if "--" in args_list else []
     args = parser.parse_args(args_list)
@@ -2218,7 +2224,7 @@ def main():
     if args.stage in ("all", "foundation"):
         build_foundation_assets()
     if args.stage in ("all", "characters"):
-        build_profession_models(args.shard_index, args.shard_count)
+        build_profession_models(args.shard_index, args.shard_count, args.only_ids)
     if args.stage in ("all", "armors"):
         build_equipment_models(args.shard_index, args.shard_count)
     if args.stage in ("all", "enemies"):
