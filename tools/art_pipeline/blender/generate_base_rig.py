@@ -1887,6 +1887,29 @@ def build_equipment_models(shard_index=0, shard_count=1):
     for index, equipment_id in enumerate(equipment_ids):
         if index % shard_count != shard_index:
             continue
+        destination = output_root / equipment_id / "model/armor.glb"
+        preview_path = ROOT / "game" / "art_previews" / "armors" / (equipment_id + "_front.png")
+        preview_ready = index != 0 or (preview_path.is_file() and preview_path.stat().st_size >= 128)
+        armor_nodes = (
+            "Humanoid_Base_Rig", "Armor_Helmet", "Armor_Chest",
+            "Armor_Left_Shoulder", "Armor_Left_Forearm", "Armor_Left_Leg",
+            "Armor_Right_Shoulder", "Armor_Right_Forearm", "Armor_Right_Leg",
+            "Armor_Waist",
+        )
+        # Resume only from a fully validated nine-piece skinned armor export.
+        if destination.is_file() and preview_ready:
+            try:
+                validate_glb(
+                    destination, required_nodes=armor_nodes, require_skin=True,
+                    required_clips=REQUIRED_CLIPS,
+                    require_independent_skinned_nodes=armor_nodes[1:],
+                )
+            except Exception as error:
+                print("ARMOR_RESUME_REBUILD", equipment_id, str(error), flush=True)
+            else:
+                print("EQUIPMENT_MODEL_REUSED", equipment_id,
+                      "model_bytes=" + str(destination.stat().st_size), flush=True)
+                continue
         reset_scene()
         rig = create_rig()
         # Armor uses the exact same humanoid skeleton and baseline motion clips
@@ -1917,7 +1940,6 @@ def build_equipment_models(shard_index=0, shard_count=1):
             if not is_surplice and not is_dark_cloth and part_index % 2 == index % 2:
                 piece.data.materials.clear()
                 piece.data.materials.append(accent_mat)
-        destination = output_root / equipment_id / "model/armor.glb"
         export_glb(destination, [rig] + pieces)
         validate_glb(
             destination,
@@ -1950,6 +1972,24 @@ def build_enemy_models(shard_index=0, shard_count=1):
     for index, enemy_id in enumerate(enemy_ids):
         if index % shard_count != shard_index:
             continue
+        destination = output_root / enemy_id / "model/enemy.glb"
+        pope_preview = ROOT / "game" / "art_previews" / "bosses" / "pope_saga_front.png"
+        preview_ready = enemy_id != "pope_saga" or (pope_preview.is_file() and pope_preview.stat().st_size >= 10000)
+        # Preserve completed enemy and boss models across failed batch retries.
+        if destination.is_file() and preview_ready:
+            try:
+                validate_glb(
+                    destination,
+                    required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                    require_skin=True,
+                    required_clips=REQUIRED_CLIPS,
+                )
+            except Exception as error:
+                print("ENEMY_RESUME_REBUILD", enemy_id, str(error), flush=True)
+            else:
+                print("ENEMY_MODEL_REUSED", enemy_id,
+                      "model_bytes=" + str(destination.stat().st_size), flush=True)
+                continue
         block_match = re.search(r'"' + re.escape(enemy_id) + r'"' + r'\s*:\s*\{([^}]*)\}', source)
         if not block_match:
             raise RuntimeError("enemy archetype block missing: " + enemy_id)
@@ -2076,7 +2116,6 @@ def build_enemy_models(shard_index=0, shard_count=1):
                 0.022, "RightHand", saga_edge, rig, 12)
             add_weighted_ellipsoid("PopeSaga_ScepterOrb", (-0.56,-0.12,1.48),
                 (0.075,0.055,0.075), "RightHand", saga_gem, rig, 20, 12)
-        destination = output_root / enemy_id / "model/enemy.glb"
         export_glb(destination, [rig, body] + [
             obj for obj in bpy.context.scene.objects
             if obj.type == "MESH" and obj != body and obj.parent == rig
