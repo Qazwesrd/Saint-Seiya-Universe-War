@@ -91,7 +91,7 @@ py tools/art_pipeline/export_angelica_ski_json.py "D:\\Games\\SeiyaClient\\eleme
 先按上面的步骤生成 `pegasus_ski.json`，再在安装了 Blender 4.x 的电脑上执行：
 
 ```powershell
-blender --background --python tools/art_pipeline/blender/import_angelica_ski_json.py -- --input "D:\\SeiyaInventory\\pegasus_ski.json" --output "D:\\SeiyaInventory\\pegasus_preview.blend"
+blender --background --python tools/art_pipeline/blender/import_angelica_ski_json.py -- --input "D:\\SeiyaInventory\\pegasus_ski.json" --output "D:\\SeiyaInventory\\pegasus_preview.blend" --saint-seiya-basis
 ```
 
 该导入器会创建网格对象、UV、材质槽和顶点组（保留骨骼权重索引，供后续绑定使用）。当前是静态网格检查场景：尚未生成 BON 骨架、骨骼动作、材质贴图连接或完整 GLB；没有真实客户端样本前，也不能保证所有 SKI 版本都兼容。
