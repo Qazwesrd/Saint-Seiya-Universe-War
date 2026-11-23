@@ -1,0 +1,58 @@
+name: Core Hero - Pegasus First
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-hero-pegasus-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pegasus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libgl1-mesa-dri libgbm1
+          blender --version
+
+      - name: Build shared character foundation
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          EGL_PLATFORM: surfaceless
+        run: |
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage foundation
+
+      - name: Export Pegasus only
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          EGL_PLATFORM: surfaceless
+        run: |
+          set -euo pipefail
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage characters --only-ids pegasus
+          test -s game/assets/characters/pegasus/model/character.glb
+          test -s game/assets/characters/pegasus/animations/animation_library.glb
+          for view in front side back; do
+            test -s "game/art_previews/characters/pegasus_${view}.png"
+          done
+          ls -lh game/assets/characters/pegasus/model/character.glb game/assets/characters/pegasus/animations/animation_library.glb game/art_previews/characters/pegasus_*.png
+
+      - name: Upload Pegasus model and previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pegasus-character-first-${{ github.run_id }}
+          path: |
+            game/assets/characters/pegasus/model/character.glb
+            game/assets/characters/pegasus/animations/animation_library.glb
+            game/art_previews/characters/pegasus_*.png
+          if-no-files-found: warn
+          retention-days: 14
