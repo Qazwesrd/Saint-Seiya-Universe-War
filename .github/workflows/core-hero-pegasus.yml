@@ -76,3 +76,45 @@ jobs:
             build-evidence/*.txt
           if-no-files-found: warn
           retention-days: 14
+
+  godot-import:
+    needs: pegasus
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Download Pegasus model bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: pegasus-character-first-${{ github.run_id }}
+          path: .
+
+      - name: Verify exported files exist
+        shell: sh
+        run: |
+          test -s game/assets/characters/pegasus/model/character.glb
+          test -s game/assets/characters/pegasus/animations/animation_library.glb
+          test -s game/art_previews/characters/pegasus_front.png
+          test -s game/art_previews/characters/pegasus_side.png
+          test -s game/art_previews/characters/pegasus_back.png
+
+      - name: Import GLB into Godot 4.4.1
+        shell: sh
+        run: |
+          set -o pipefail
+          godot --headless --editor --path game --quit 2>&1 | tee /tmp/pegasus-godot-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ERROR: Failed to load|GLTF:.*(error|failed)" /tmp/pegasus-godot-import.log; then
+            echo "Pegasus GLB failed Godot import"
+            exit 1
+          fi
+
+      - name: Verify Pegasus skeleton and animation playback
+        shell: sh
+        run: |
+          set -o pipefail
+          timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/pegasus-animation-runtime.log
+          grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=1 checked=pegasus" /tmp/pegasus-animation-runtime.log
