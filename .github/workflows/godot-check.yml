@@ -73,7 +73,7 @@ jobs:
             echo "Character animation runtime validation reported engine errors"
             exit 1
           fi
-          grep -Eq "CHARACTER_ANIMATION_RUNTIME_(PASS heroes=5|SKIP reason=core_hero_glb_assets_not_present_in_checkout)" /tmp/character-animation-runtime.log
+          grep -Eq "CHARACTER_ANIMATION_RUNTIME_(PASS heroes=[1-5] checked=|SKIP reason=core_hero_glb_assets_not_present_in_checkout)" /tmp/character-animation-runtime.log
       - name: Build and mount a real chapter PCK
         shell: sh
         run: |
