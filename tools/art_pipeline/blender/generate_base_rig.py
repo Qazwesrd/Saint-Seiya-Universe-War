@@ -1641,6 +1641,9 @@ def build_profession_models(shard_index=0, shard_count=1):
         if index % shard_count != shard_index:
             continue
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
+        skill_categories = ("melee", "projectile", "defense", "heal", "area", "mobility", "ultimate")
+        required_skill_clips = tuple(f"{class_id}_skill_{category}" for category in skill_categories) + tuple(profession_ability_ids(class_id))
+        required_all_clips = REQUIRED_CLIPS + required_profession_clips + required_skill_clips
         hero_materials = {
             "pegasus": ("Pegasus_Bronze_Alloy", "Pegasus_Silver_Edges",
                         "Pegasus_Cobalt_Enamel", "Pegasus_Crimson_Gem"),
@@ -1665,10 +1668,10 @@ def build_profession_models(shard_index=0, shard_count=1):
                     destination,
                     required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
                     require_skin=True,
-                    required_clips=REQUIRED_CLIPS + required_profession_clips,
+                    required_clips=required_all_clips,
                     required_materials=hero_materials,
                 )
-                validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
+                validate_glb(animation_dest, required_clips=required_all_clips)
             except Exception as error:
                 print("PROFESSION_RESUME_REBUILD", class_id, str(error), flush=True)
             else:
