@@ -1726,11 +1726,12 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
+        identity_parts = []
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
-            add_core_hero_hair(rig, class_id)
-            add_core_hero_eyes(rig, class_id)
-            add_core_hero_face_identity(rig, class_id)
-            add_core_hero_headband(rig, class_id)
+            identity_parts.extend(add_core_hero_hair(rig, class_id))
+            identity_parts.extend(add_core_hero_eyes(rig, class_id))
+            identity_parts.extend(add_core_hero_face_identity(rig, class_id))
+            identity_parts.extend(add_core_hero_headband(rig, class_id))
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
@@ -1746,7 +1747,8 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
         profession_mat = material("Profession_" + class_id, profession_color,
                                   0.90 if class_id == "hades" else 0.38 + (index % 5) * 0.1,
                                   0.20 if class_id == "hades" else 0.34)
-        ornaments = []
+        # Export every authored identity mesh as part of the final skinned model.
+        ornaments = identity_parts
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             ornaments.extend(add_core_hero_armor_layers(rig, class_id))
         # Core Saints already have authored, layered shoulder armor; do not stack
@@ -1762,22 +1764,23 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
                 ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
-        crest_radius = 0.045 + (index % 4) * 0.018
-        ornaments.append(add_weighted_ellipsoid(
-            class_id + "_Signature_Crest",
-            (0, -0.12, 1.96 + (index % 3) * 0.025),
-            (crest_radius, crest_radius * 0.7, 0.11 + (index % 4) * 0.035),
-            "Head", profession_mat, rig, segments=10, rings=8
-        ))
-        if index % 3 != 0:
-            span = 0.34 + (index % 6) * 0.10
-            for side, sign in (("Left", 1), ("Right", -1)):
-                ornaments.append(add_weighted_ellipsoid(
-                    class_id + "_" + side + "_Back_Wing",
-                    (sign * span * 0.52, 0.10, 1.40),
-                    (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
-                    "Chest", profession_mat, rig, segments=12, rings=8
-                ))
+        if class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            crest_radius = 0.045 + (index % 4) * 0.018
+            ornaments.append(add_weighted_ellipsoid(
+                class_id + "_Signature_Crest",
+                (0, -0.12, 1.96 + (index % 3) * 0.025),
+                (crest_radius, crest_radius * 0.7, 0.11 + (index % 4) * 0.035),
+                "Head", profession_mat, rig, segments=10, rings=8
+            ))
+            if index % 3 != 0:
+                span = 0.34 + (index % 6) * 0.10
+                for side, sign in (("Left", 1), ("Right", -1)):
+                    ornaments.append(add_weighted_ellipsoid(
+                        class_id + "_" + side + "_Back_Wing",
+                        (sign * span * 0.52, 0.10, 1.40),
+                        (span * 0.52, 0.055, 0.22 + (index % 4) * 0.04),
+                        "Chest", profession_mat, rig, segments=12, rings=8
+                    ))
         if class_id == "pegasus":
             # The layered core-hero kit above owns the cuirass, pauldrons,
             # gauntlets, greaves, helmet and waist plates. Add only the unique
