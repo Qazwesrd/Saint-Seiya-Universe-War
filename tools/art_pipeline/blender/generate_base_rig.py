@@ -1863,6 +1863,27 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
             ornaments.append(add_weighted_ellipsoid(
                 "Phoenix_Fire_Cosmos_Gem", (0, -0.255, 1.39),
                 (0.055, 0.025, 0.07), "Chest", ember, rig, 20, 12))
+        if class_id == "pegasus":
+            ornament_names = [obj.name for obj in ornaments]
+            if len(ornament_names) != len(set(ornament_names)):
+                raise RuntimeError("Pegasus model contains duplicate ornament object names")
+            required_pegasus_parts = {
+                "Pegasus_Red_Forehead_Headband",
+                "Pegasus_Left_Headband_Tail",
+                "Pegasus_Right_Headband_Tail",
+                "Pegasus_Armor_Chest_Base",
+                "Pegasus_Armor_Chest_Wing_Inlay",
+                "Pegasus_Left_Armor_Outer_Pauldron",
+                "Pegasus_Right_Armor_Outer_Pauldron",
+                "Pegasus_Chest_Crimson_Cosmos_Gem",
+            }
+            missing_pegasus_parts = sorted(required_pegasus_parts - set(ornament_names))
+            if missing_pegasus_parts:
+                raise RuntimeError("Pegasus identity/armor parts missing from export set: " +
+                                   ", ".join(missing_pegasus_parts))
+            print("PEGASUS_ASSET_AUDIT",
+                  "ornament_objects=" + str(len(ornament_names)),
+                  "required_parts=passed", flush=True)
         make_animation_library(rig, class_id)
         make_signature_idle_pose(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
