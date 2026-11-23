@@ -1689,8 +1689,8 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
         required_skill_clips = tuple(f"{class_id}_skill_{category}" for category in skill_categories) + tuple(profession_ability_ids(class_id))
         required_all_clips = REQUIRED_CLIPS + required_profession_clips + required_skill_clips
         hero_materials = {
-            "pegasus": ("Pegasus_Bronze_Alloy", "Pegasus_Silver_Edges",
-                        "Pegasus_Cobalt_Enamel", "Pegasus_Crimson_Gem"),
+            "pegasus": ("Core_pegasus_Layered_Armor", "Core_pegasus_Armor_Inlay",
+                        "Pegasus_Crimson_Headband", "Pegasus_Crimson_Gem"),
             "dragon": ("Dragon_Jade_Scale", "Dragon_Silver_Forging"),
             "cygnus": ("Cygnus_Glacier_Crystal", "Cygnus_Frost_Silver"),
             "andromeda": ("Andromeda_Rose_Chain", "Andromeda_Chain_Light"),
