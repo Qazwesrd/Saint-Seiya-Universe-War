@@ -44,7 +44,7 @@ def build_report(package: Any, autoangel: Any, roots: list[str]) -> dict[str, An
     folded_paths = {item.casefold(): item for item in available}
 
     def enqueue(reference: str, parent: str, relation: str) -> None:
-        raw = str(reference or "").replace("\\\\", "/").strip()
+        raw = str(reference or "").strip()
         if not raw:
             return
         # Angelica references are commonly archive-root-relative. Prefer that
