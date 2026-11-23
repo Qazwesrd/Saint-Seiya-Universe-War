@@ -35,8 +35,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: blender-art-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  # Push and pull_request events for the same branch must share one runner.
+  # Otherwise identical Blender batches compete for CPU and double wall-clock time.
+  group: blender-art-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -170,6 +172,17 @@ jobs:
           if errors:
               raise SystemExit("\\n".join(errors))
           PY
+      - name: Upload available art previews and Blender logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saint-seiya-art-previews-${{ github.run_id }}
+          path: |
+            game/art_previews/**/*.png
+            build/art_factory_logs/**/*.log
+            blender-export.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Validate all 32 profession models and 52 animation clips
         shell: bash
         run: |
