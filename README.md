@@ -153,3 +153,11 @@ art/                  自制或已获授权的美术源文件（不提交大型�
 - 接取新手任务后会生成两名训练对手与阵营训练首领；鸿钧老祖在圣域与鸿蒙神域各有一个可交互导师入口，共享任务进度。起始区域采用阵营配色和程序化地标原型，尚不是最终独立地图。
 - 详细实现边界和后续验收见 `docs/MULTI_FACTION_CHARACTER_CREATION.md`。
 - 当前是角色创建和任务进度框架；12套独立地图、阵营导师NPC实体、专属角色模型/技能动作仍待后续制作和实机验收。
+
+
+## 五小强资源扫描工具测试
+
+- 新增 `tools/art_pipeline/tests/test_character_asset_pipeline.py`，覆盖 PCK inventory 与客户端 inventory 两种输入结构、中文角色路径、资源扩展名筛选、同目录同主名分组和异常输入。
+- 在仓库根目录运行：`py -m unittest discover -s tools/art_pipeline/tests -v`。
+- 测试使用临时 JSON 样本，不需要真实客户端，也不会修改或解包原始 PCK/PKX。
+- 通过单元测试只证明清单解析与候选分组逻辑符合模拟样本；不代表已识别出真实五小强模型或完成 Angelica 文件格式验证。
