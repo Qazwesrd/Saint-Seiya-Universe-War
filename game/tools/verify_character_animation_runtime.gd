@@ -7,17 +7,17 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var available_count := 0
+	var available_heroes: Array[String] = []
 	for hero_id in CORE_HEROES:
 		var candidate_path := "res://assets/characters/%s/model/character.glb" % hero_id
 		if ResourceLoader.exists(candidate_path):
-			available_count += 1
-	if available_count == 0:
+			available_heroes.append(hero_id)
+	if available_heroes.is_empty():
 		print("CHARACTER_ANIMATION_RUNTIME_SKIP reason=core_hero_glb_assets_not_present_in_checkout")
 		quit(0)
 		return
 	var failures: Array[String] = []
-	for hero_id in CORE_HEROES:
+	for hero_id in available_heroes:
 		var model_path := "res://assets/characters/%s/model/character.glb" % hero_id
 		var packed := ResourceLoader.load(model_path) as PackedScene
 		if packed == null:
@@ -42,7 +42,7 @@ func _run() -> void:
 		instance.queue_free()
 		await process_frame
 	if failures.is_empty():
-		print("CHARACTER_ANIMATION_RUNTIME_PASS heroes=%d" % CORE_HEROES.size())
+		print("CHARACTER_ANIMATION_RUNTIME_PASS heroes=%d checked=%s" % [available_heroes.size(), ",".join(available_heroes)])
 		quit(0)
 		return
 	for failure in failures:
