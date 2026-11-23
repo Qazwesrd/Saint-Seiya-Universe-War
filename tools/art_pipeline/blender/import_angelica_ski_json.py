@@ -19,7 +19,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--saint-seiya-basis", action="store_true", help="Convert Angelica left-handed Y-up vertices to Blender coordinates")
     return parser.parse_args(argv)
+
+
+def angelica_to_blender(vector: list[float] | tuple[float, ...]) -> tuple[float, float, float]:
+    """Convert the Saint Seiya Angelica basis (left-handed, Y-up) to Blender."""
+    x, y, z = (float(value) for value in vector)
+    return (-x, -z, y)
 
 
 def make_material(data: dict) -> bpy.types.Material:
@@ -37,13 +44,18 @@ def make_material(data: dict) -> bpy.types.Material:
 
 
 def make_mesh_object(data: dict, collection: bpy.types.Collection,
-                     materials: list[bpy.types.Material], bone_names: list[str]) -> bpy.types.Object:
+                     materials: list[bpy.types.Material], bone_names: list[str], *,
+                     saint_seiya_basis: bool = False) -> bpy.types.Object:
     positions = data["positions"]
-    vertices = [tuple(positions[i:i + 3]) for i in range(0, len(positions), 3)]
+    source_vertices = [tuple(positions[i:i + 3]) for i in range(0, len(positions), 3)]
+    vertices = [angelica_to_blender(vertex) for vertex in source_vertices] if saint_seiya_basis else source_vertices
     indices = data["indices"]
     if len(indices) % 3:
         raise ValueError(f"Mesh {data.get('name')} index count is not divisible by three")
     faces = [tuple(indices[i:i + 3]) for i in range(0, len(indices), 3)]
+    # The basis conversion has a negative determinant, so reverse triangle winding.
+    if saint_seiya_basis:
+        faces = [(face[0], face[2], face[1]) for face in faces]
     mesh = bpy.data.meshes.new(data.get("name") or "AngelicaMesh")
     mesh.from_pydata(vertices, [], faces)
     mesh.update()
@@ -74,7 +86,9 @@ def make_mesh_object(data: dict, collection: bpy.types.Collection,
             polygon.use_smooth = True
         try:
             mesh.normals_split_custom_set_from_vertices(
-                [tuple(normals[i:i + 3]) for i in range(0, len(normals), 3)]
+                ([angelica_to_blender(normals[i:i + 3]) for i in range(0, len(normals), 3)]
+                 if saint_seiya_basis else
+                 [tuple(normals[i:i + 3]) for i in range(0, len(normals), 3)])
             )
         except (AttributeError, RuntimeError):
             pass
@@ -120,7 +134,7 @@ def main() -> int:
 
     objects = []
     for item in payload.get("skin_meshes", []):
-        objects.append(make_mesh_object(item, collection, materials, bone_names))
+        objects.append(make_mesh_object(item, collection, materials, bone_names, saint_seiya_basis=args.saint_seiya_basis))
     for item in payload.get("rigid_meshes", []):
         objects.append(make_mesh_object(item, collection, materials, bone_names))
 
