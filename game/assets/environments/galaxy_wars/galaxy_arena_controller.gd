@@ -35,7 +35,7 @@ func _configure_navigation_mesh() -> void:
 	navigation_mesh.agent_max_climb = 0.35
 	navigation_mesh.agent_max_slope = 42.0
 	navigation_mesh.cell_size = 0.25
-	navigation_mesh.cell_height = 0.2
+	navigation_mesh.cell_height = 0.25
 	$NavigationRegion3D.navigation_mesh = navigation_mesh
 
 func get_spawn_transform(spawn_id: StringName) -> Transform3D:
