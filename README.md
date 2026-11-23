@@ -161,3 +161,17 @@ art/                  自制或已获授权的美术源文件（不提交大型�
 - 在仓库根目录运行：`py -m unittest discover -s tools/art_pipeline/tests -v`。
 - 测试使用临时 JSON 样本，不需要真实客户端，也不会修改或解包原始 PCK/PKX。
 - 通过单元测试只证明清单解析与候选分组逻辑符合模拟样本；不代表已识别出真实五小强模型或完成 Angelica 文件格式验证。
+
+
+## Angelica 角色资源依赖追踪
+
+- 新增 `tools/art_pipeline/trace_character_dependencies.py`：直接只读打开 PCK/PKX，在内存中追踪 ECM → SMD → SKI/BON/STCK，并记录贴图、子模型挂点和持续 GFX 引用。
+- 示例（把 ECM 路径替换成实际清单中的路径）：
+
+```powershell
+py tools/art_pipeline/trace_character_dependencies.py "D:\\SeiyaClient\\models.pck" --pkx "D:\\SeiyaClient\\models.pkx" --root "角色\\星矢\\body.ecm" --output "D:\\SeiyaReport\\seiya_dependencies.json"
+```
+
+- 依赖路径优先按 PCK 内部根路径解析，再尝试相对目录；大小写差异会进行兼容匹配。
+- 缺失引用与解析异常会单独记录。工具不解包、不改写 PCK/PKX，也不会把文件名或路径关联直接认定为真实角色身份。
+- 自动化模拟测试：`py -m unittest discover -s tools/art_pipeline/tests -v`。必须在本地执行后才能报告测试结果；真实模型仍需 Blender 可视化验收。
