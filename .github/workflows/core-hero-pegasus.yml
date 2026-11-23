@@ -5,6 +5,7 @@ on:
     paths:
       - "tools/art_pipeline/blender/generate_base_rig.py"
       - ".github/workflows/core-hero-pegasus.yml"
+      - "docs/ART_QUALITY_STANDARD.md"
   workflow_dispatch:
 
 permissions:
