@@ -2141,12 +2141,41 @@ def build_enemy_models(shard_index=0, shard_count=1):
 def build_foundation_assets():
     """Build shared skeleton, animation, armor template and chapter environments once."""
     OUT.mkdir(parents=True, exist_ok=True)
+    character_model = CHARACTER / "humanoid_base.glb"
+    animation_library = ANIMATIONS / "animation_library.glb"
+    armor_model = ARMOR / "modular_armor_kit.glb"
+    environment_root = ROOT / "game" / "assets" / "environments"
+    environment_models = [environment_root / theme_id / "environment.glb" for theme_id in CHAPTER_THEMES]
+    foundation_outputs = (character_model, animation_library, armor_model, *environment_models)
+    # A failed later category must not force a full rebuild of the shared rig and
+    # seven chapter environments. Reuse only when every foundation GLB validates.
+    if all(path.is_file() for path in foundation_outputs):
+        try:
+            validate_glb(character_model, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                          require_skin=True, required_clips=REQUIRED_CLIPS)
+            validate_glb(animation_library, required_nodes=("Humanoid_Base_Rig",),
+                          required_clips=REQUIRED_CLIPS)
+            armor_nodes = ("Humanoid_Base_Rig", "Armor_Helmet", "Armor_Chest",
+                           "Armor_Left_Shoulder", "Armor_Right_Shoulder",
+                           "Armor_Left_Forearm", "Armor_Right_Forearm",
+                           "Armor_Left_Leg", "Armor_Right_Leg", "Armor_Waist")
+            validate_glb(armor_model, required_nodes=armor_nodes, require_skin=True,
+                         require_independent_skinned_nodes=armor_nodes[1:])
+            for environment_model in environment_models:
+                validate_glb(environment_model)
+        except Exception as error:
+            print("FOUNDATION_CACHE_REBUILD", str(error), flush=True)
+        else:
+            print("FOUNDATION_CACHE_REUSED",
+                  "models=" + str(len(foundation_outputs)),
+                  "total_bytes=" + str(sum(path.stat().st_size for path in foundation_outputs)),
+                  flush=True)
+            return
     reset_scene()
     rig = create_rig()
     body = build_body(rig)
     make_animation_library(rig)
 
-    character_model = CHARACTER / "humanoid_base.glb"
     export_glb(character_model, [rig, body])
     validate_glb(
         character_model,
@@ -2155,7 +2184,6 @@ def build_foundation_assets():
         required_clips=REQUIRED_CLIPS,
     )
 
-    animation_library = ANIMATIONS / "animation_library.glb"
     export_glb(animation_library, [rig])
     validate_glb(
         animation_library,
@@ -2164,7 +2192,6 @@ def build_foundation_assets():
     )
 
     armor_parts = build_armor(rig)
-    armor_model = ARMOR / "modular_armor_kit.glb"
     export_glb(armor_model, [rig] + armor_parts)
     validate_glb(
         armor_model,
