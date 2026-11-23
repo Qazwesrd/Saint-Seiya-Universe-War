@@ -170,3 +170,14 @@ py tools/art_pipeline/validate_angelica_ecm_json.py "D:\\SeiyaInventory\\pegasus
 ```
 
 如果要强制所有子 ECM 都必须出现在本次输入列表中，再添加 `--require-all-children`。默认模式会报告未随本次一起导出的子模型引用数量，不会把资源包中未导出的文件误判为不存在。
+
+
+## 五小强资源候选扫描（只分析清单，不提取资源）
+
+完成客户端或 PCK 只读盘点后，可按常见英文/中文角色名关键词筛选五小强相关文件：
+
+```powershell
+py tools/art_pipeline/find_saint_seiya_candidates.py "D:\\SeiyaInventory\\models\\pck_inventory.json" --output "D:\\SeiyaInventory\\five_bronze_candidates.json"
+```
+
+扫描星矢、紫龙、冰河、瞬、一辉的别名，列出路径中命中角色关键词的 SKI、SMD、BON、STCK、ECM、GFX、DDS、TGA 和 ANM 文件。结果仅是文件名候选，不代表角色身份已经确认；资源可能使用编号、缩写或共享路径，因此没有命中也不代表客户端没有该角色。候选必须继续通过模型预览、骨架和装备引用关系人工确认。工具不读取/解包归档内容，不修改客户端。
