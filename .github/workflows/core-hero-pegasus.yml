@@ -118,3 +118,14 @@ jobs:
           set -o pipefail
           timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/pegasus-animation-runtime.log
           grep -q "CHARACTER_ANIMATION_RUNTIME_PASS heroes=1 checked=pegasus" /tmp/pegasus-animation-runtime.log
+
+      - name: Upload Godot import and runtime logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pegasus-godot-validation-${{ github.run_id }}
+          path: |
+            /tmp/pegasus-godot-import.log
+            /tmp/pegasus-animation-runtime.log
+          if-no-files-found: warn
+          retention-days: 14
