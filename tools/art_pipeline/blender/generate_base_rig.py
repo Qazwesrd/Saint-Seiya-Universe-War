@@ -275,6 +275,45 @@ def add_core_hero_face_identity(rig, hero_id):
         ))
     return created
 
+def add_core_hero_headband(rig, hero_id):
+    """Create a continuous, head-weighted forehead band and rear ties for Pegasus."""
+    if hero_id != "pegasus":
+        return []
+    red = material("Pegasus_Crimson_Headband", (0.72, 0.018, 0.045), 0.08, 0.42)
+    segments = 18
+    vertices = []
+    faces = []
+    for index in range(segments + 1):
+        angle = -0.92 + (1.84 * index / segments)
+        x = 0.145 * math.sin(angle)
+        y = -0.125 - 0.045 * math.cos(angle)
+        z = 1.855 + 0.012 * math.cos(angle)
+        vertices.extend(((x, y - 0.009, z - 0.018), (x, y - 0.009, z + 0.018)))
+        if index:
+            base = index * 2
+            faces.append((base - 2, base, base + 1, base - 1))
+    mesh = bpy.data.meshes.new("Pegasus_Red_Headband_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.materials.append(red)
+    mesh.update()
+    band = bpy.data.objects.new("Pegasus_Red_Forehead_Headband", mesh)
+    bpy.context.collection.objects.link(band)
+    group = band.vertex_groups.new(name="Head")
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    modifier = band.modifiers.new("Headband_Head_Armature", "ARMATURE")
+    modifier.object = rig
+    band.parent = rig
+    created = [band]
+    for side, sign in (("Left", 1), ("Right", -1)):
+        created.append(add_weighted_armor_plate(
+            "Pegasus_" + side + "_Headband_Tail",
+            (sign * 0.135, 0.055, 1.805),
+            [(0, 0.045), (sign * 0.045, 0.015), (sign * 0.12, -0.22),
+             (sign * 0.075, -0.245), (sign * 0.025, -0.06), (-sign * 0.018, -0.02)],
+            0.012, "Head", red, rig, 0.004))
+    return created
+
+
 def add_weighted_limb(name, start, end, radius, bone_name, mat, rig, vertices=12):
     """Build a tapered, faceted anatomical limb from a ring-loft mesh.
 
@@ -1508,7 +1547,7 @@ def add_core_hero_armor_layers(rig, hero_id):
     """Build individually weighted, layered Bronze Cloth plates for each core hero."""
     profiles = {
         "pegasus": {
-            "metal": (0.62, 0.34, 0.16), "inlay": (0.035, 0.16, 0.42),
+            "metal": (0.72, 0.78, 0.84), "inlay": (0.055, 0.13, 0.30),
             "chest": [(-0.245,0.16),(-0.17,0.245),(0,0.21),(0.17,0.245),(0.245,0.16),(0.16,-0.12),(0,-0.23),(-0.16,-0.12)],
             "motif": "Wing",
         },
@@ -1691,6 +1730,7 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
             add_core_hero_hair(rig, class_id)
             add_core_hero_eyes(rig, class_id)
             add_core_hero_face_identity(rig, class_id)
+            add_core_hero_headband(rig, class_id)
         # Profession-specific proportions are baked into each mesh, not merely a tint.
         width = 0.88 + (index % 5) * 0.075
         height = 0.94 + ((index * 3) % 7) * 0.035
@@ -1709,14 +1749,17 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
         ornaments = []
         if class_id in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
             ornaments.extend(add_core_hero_armor_layers(rig, class_id))
-        shoulder_factor = 0.78 + (index % 6) * 0.045
-        for side, sign in (("Left", 1), ("Right", -1)):
-            ornaments.append(add_weighted_pauldron(
-                class_id + "_" + side + "_Signature_Pauldron",
-                (sign * (0.34 * shoulder_factor), -0.105, 1.48),
-                0.142 * shoulder_factor, 0.072 * shoulder_factor, 0.078,
-                side + "Shoulder", profession_mat, rig, sign
-            ))
+        # Core Saints already have authored, layered shoulder armor; do not stack
+        # a second generic pauldron over their silhouette.
+        if class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"}:
+            shoulder_factor = 0.78 + (index % 6) * 0.045
+            for side, sign in (("Left", 1), ("Right", -1)):
+                ornaments.append(add_weighted_pauldron(
+                    class_id + "_" + side + "_Signature_Pauldron",
+                    (sign * (0.34 * shoulder_factor), -0.105, 1.48),
+                    0.142 * shoulder_factor, 0.072 * shoulder_factor, 0.078,
+                    side + "Shoulder", profession_mat, rig, sign
+                ))
         # Every profession receives a unique crest; winged archetypes receive
         # additional back silhouettes with geometry and bone weights.
         crest_radius = 0.045 + (index % 4) * 0.018
@@ -1736,59 +1779,13 @@ def build_profession_models(shard_index=0, shard_count=1, only_ids=None):
                     "Chest", profession_mat, rig, segments=12, rings=8
                 ))
         if class_id == "pegasus":
-            # Dedicated Pegasus Bronze Cloth hero detailing for the first art review.
-            bronze = material("Pegasus_Bronze_Alloy", (0.62, 0.34, 0.16), 0.86, 0.24)
-            silver = material("Pegasus_Silver_Edges", (0.72, 0.79, 0.88), 0.9, 0.2)
-            enamel = material("Pegasus_Cobalt_Enamel", (0.035, 0.16, 0.42), 0.62, 0.2)
+            # The layered core-hero kit above owns the cuirass, pauldrons,
+            # gauntlets, greaves, helmet and waist plates. Add only the unique
+            # chest jewel here to avoid overlapping duplicate armor shells.
             crimson = material("Pegasus_Crimson_Gem", (0.68, 0.035, 0.075), 0.58, 0.16)
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Bronze_Chest_Cuirass", (0, -0.172, 1.365),
-                [(-0.245, 0.17), (-0.16, 0.245), (0, 0.205), (0.16, 0.245),
-                 (0.245, 0.17), (0.19, -0.08), (0.075, -0.19), (0, -0.22),
-                 (-0.075, -0.19), (-0.19, -0.08)],
-                0.10, "Chest", bronze, rig, 0.022))
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Chest_Enamel_Inlay", (0, -0.235, 1.37),
-                [(-0.12, 0.10), (-0.065, 0.15), (0, 0.12), (0.065, 0.15),
-                 (0.12, 0.10), (0.075, -0.075), (0, -0.12), (-0.075, -0.075)],
-                0.026, "Chest", enamel, rig, 0.008))
             ornaments.append(add_weighted_ellipsoid(
                 "Pegasus_Chest_Crimson_Cosmos_Gem", (0, -0.258, 1.39),
                 (0.042, 0.022, 0.052), "Chest", crimson, rig, 20, 12))
-            for side, sign in (("Left", 1), ("Right", -1)):
-                ornaments.append(add_weighted_pauldron(
-                    "Pegasus_" + side + "_Winged_Pauldron",
-                    (sign * 0.345, -0.09, 1.49), 0.19, 0.09, 0.095,
-                    side + "Shoulder", silver, rig, sign))
-                ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Bronze_Gauntlet",
-                    (sign * 0.49, -0.095, 1.105),
-                    [(-0.075, 0.16), (0.045, 0.18), (0.085, 0.07),
-                     (0.06, -0.14), (0, -0.19), (-0.07, -0.13), (-0.09, 0.04)],
-                    0.12, side + "Forearm", bronze, rig, 0.016))
-                ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Silver_Shin_Guard",
-                    (sign * 0.15, -0.092, 0.345),
-                    [(-0.09, 0.18), (0, 0.22), (0.09, 0.18),
-                     (0.075, 0.02), (0.05, -0.17), (0, -0.21),
-                     (-0.07, -0.15), (-0.085, 0.02)],
-                    0.13, side + "Shin", silver, rig, 0.016))
-                ornaments.append(add_weighted_armor_plate(
-                    "Pegasus_" + side + "_Helmet_Wing",
-                    (sign * 0.105, -0.105, 1.91),
-                    [(0, -0.045), (sign * 0.04, 0.015), (sign * 0.16, 0.17),
-                     (sign * 0.19, 0.22), (sign * 0.08, 0.19), (0, 0.09)],
-                    0.055, "Head", silver, rig, 0.01))
-            ornaments.append(add_weighted_armor_plate(
-                "Pegasus_Bronze_Waist_Tasset", (0, -0.16, 0.93),
-                [(-0.18, 0.10), (-0.12, 0.14), (0.12, 0.14), (0.18, 0.10),
-                 (0.13, -0.12), (0, -0.19), (-0.13, -0.12)],
-                0.075, "Hips", bronze, rig, 0.014))
-            for side, sign in (("Left", 1), ("Right", -1)):
-                ornaments.append(add_weighted_ellipsoid(
-                    "Pegasus_" + side + "_Pauldron_Enamel",
-                    (sign * 0.39, -0.145, 1.50), (0.065, 0.018, 0.035),
-                    side + "Shoulder", enamel, rig, 16, 10))
         if class_id == "dragon":
             # Dragon Bronze Cloth: a separate shield silhouette follows the left forearm.
             jade = material("Dragon_Jade_Scale", (0.12, 0.43, 0.31), 0.78, 0.22)
