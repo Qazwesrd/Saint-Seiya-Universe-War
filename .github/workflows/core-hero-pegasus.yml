@@ -29,12 +29,16 @@ jobs:
           sudo apt-get install --no-install-recommends -y blender python3-numpy libegl1 libgl1 libgles2 libgl1-mesa-dri libgbm1
           blender --version
 
+      - name: Prepare evidence directory
+        run: mkdir -p build-evidence
+
       - name: Build shared character foundation
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
           EGL_PLATFORM: surfaceless
         run: |
-          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage foundation
+          set -o pipefail
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage foundation 2>&1 | tee build-evidence/foundation.log
 
       - name: Export Pegasus only
         env:
@@ -42,15 +46,24 @@ jobs:
           EGL_PLATFORM: surfaceless
         run: |
           set -euo pipefail
-          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage characters --only-ids pegasus
+          blender --background --python tools/art_pipeline/blender/generate_base_rig.py -- --stage characters --only-ids pegasus 2>&1 | tee build-evidence/pegasus-export.log
           test -s game/assets/characters/pegasus/model/character.glb
           test -s game/assets/characters/pegasus/animations/animation_library.glb
           for view in front side back; do
             test -s "game/art_previews/characters/pegasus_${view}.png"
           done
+          {
+            echo "evidence_level=Blender model preview (not Godot, not Android device)"
+            echo "commit=${GITHUB_SHA}"
+            echo "runner=${RUNNER_OS}"
+            blender --version | head -n 1
+            echo "model_bytes=$(stat -c %s game/assets/characters/pegasus/model/character.glb)"
+            echo "animation_bytes=$(stat -c %s game/assets/characters/pegasus/animations/animation_library.glb)"
+            sha256sum game/assets/characters/pegasus/model/character.glb game/assets/characters/pegasus/animations/animation_library.glb game/art_previews/characters/pegasus_*.png
+          } | tee build-evidence/pegasus-evidence.txt
           ls -lh game/assets/characters/pegasus/model/character.glb game/assets/characters/pegasus/animations/animation_library.glb game/art_previews/characters/pegasus_*.png
 
-      - name: Upload Pegasus model and previews
+      - name: Upload Pegasus model, previews and build evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -59,5 +72,7 @@ jobs:
             game/assets/characters/pegasus/model/character.glb
             game/assets/characters/pegasus/animations/animation_library.glb
             game/art_previews/characters/pegasus_*.png
+            build-evidence/*.log
+            build-evidence/*.txt
           if-no-files-found: warn
           retention-days: 14
