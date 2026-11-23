@@ -134,9 +134,15 @@ def main() -> int:
 
     objects = []
     for item in payload.get("skin_meshes", []):
-        objects.append(make_mesh_object(item, collection, materials, bone_names, saint_seiya_basis=args.saint_seiya_basis))
+        objects.append(make_mesh_object(
+            item, collection, materials, bone_names,
+            saint_seiya_basis=args.saint_seiya_basis,
+        ))
     for item in payload.get("rigid_meshes", []):
-        objects.append(make_mesh_object(item, collection, materials, bone_names))
+        objects.append(make_mesh_object(
+            item, collection, materials, bone_names,
+            saint_seiya_basis=args.saint_seiya_basis,
+        ))
 
     if objects:
         bpy.ops.object.select_all(action="DESELECT")
