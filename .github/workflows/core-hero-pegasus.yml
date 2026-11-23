@@ -1,6 +1,10 @@
 name: Core Hero - Pegasus First
 
 on:
+  push:
+    paths:
+      - "tools/art_pipeline/blender/generate_base_rig.py"
+      - ".github/workflows/core-hero-pegasus.yml"
   workflow_dispatch:
 
 permissions:
