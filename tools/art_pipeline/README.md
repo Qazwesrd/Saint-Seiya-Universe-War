@@ -181,3 +181,14 @@ py tools/art_pipeline/find_saint_seiya_candidates.py "D:\\SeiyaInventory\\models
 ```
 
 扫描星矢、紫龙、冰河、瞬、一辉的别名，列出路径中命中角色关键词的 SKI、SMD、BON、STCK、ECM、GFX、DDS、TGA 和 ANM 文件。结果仅是文件名候选，不代表角色身份已经确认；资源可能使用编号、缩写或共享路径，因此没有命中也不代表客户端没有该角色。候选必须继续通过模型预览、骨架和装备引用关系人工确认。工具不读取/解包归档内容，不修改客户端。
+
+
+## 五小强资源候选关联分组（只依据路径，不宣称已绑定）
+
+候选扫描完成后，可把同目录、同文件主名的 SKI/SMD/BON/STCK/ECM/贴图/特效归为待人工检查的资源组：
+
+```powershell
+py tools/art_pipeline/build_character_asset_bundles.py "D:\\SeiyaInventory\\five_bronze_candidates.json" --output "D:\\SeiyaInventory\\five_bronze_bundles.json"
+```
+
+输出会区分“同目录且同主名”与“单文件候选”，并按人物列出可能的网格、骨架、动画、装备组合、贴图和特效。它不会自动把文件强行配对；目录/主名相同只是线索，必须打开模型检查几何、骨骼、动画轨道、ECM 挂点和贴图，确认后才能登记为真实关联。
