@@ -103,7 +103,7 @@ jobs:
           test -s game/art_previews/characters/pegasus_back.png
 
       - name: Import GLB into Godot 4.4.1
-        shell: sh
+        shell: bash
         run: |
           set -o pipefail
           godot --headless --editor --path game --quit 2>&1 | tee /tmp/pegasus-godot-import.log
@@ -113,7 +113,7 @@ jobs:
           fi
 
       - name: Verify Pegasus skeleton and animation playback
-        shell: sh
+        shell: bash
         run: |
           set -o pipefail
           timeout 120s godot --headless --path game --script res://tools/verify_character_animation_runtime.gd 2>&1 | tee /tmp/pegasus-animation-runtime.log
