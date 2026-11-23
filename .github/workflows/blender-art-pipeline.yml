@@ -46,7 +46,7 @@ permissions:
 jobs:
   export-prototype-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,6 +69,10 @@ jobs:
           export BLENDER_BIN=blender
           export ART_FACTORY_WORKERS=2
           export ART_FACTORY_SHARDS=2
+          # Each profession exports a dense skinned model plus a separate animation library.
+          # The previous 30-minute task cap killed both character shards mid-export.
+          export ART_FACTORY_TASK_TIMEOUT_SECONDS=7200
+          export ART_FACTORY_RETRIES=1
           python3 tools/art_pipeline/batch_asset_factory.py 2>&1 | tee blender-export.log
           grep -q "ART_FACTORY_BATCHES_PASS" blender-export.log
           python3 - <<'PY'
