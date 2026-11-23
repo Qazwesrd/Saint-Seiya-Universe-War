@@ -205,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"DEPENDENCY_SCAN_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"CHARACTER_DEPENDENCY_SCAN_PASS nodes={report['node_count']} missing={len(report['missing_references'])} errors={len(report['parse_errors'])}")
     print(f"JSON {output}")
     return 0
