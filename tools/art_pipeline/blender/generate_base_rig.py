@@ -1640,6 +1640,42 @@ def build_profession_models(shard_index=0, shard_count=1):
     for index, class_id in enumerate(classes):
         if index % shard_count != shard_index:
             continue
+        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
+        hero_materials = {
+            "pegasus": ("Pegasus_Bronze_Alloy", "Pegasus_Silver_Edges",
+                        "Pegasus_Cobalt_Enamel", "Pegasus_Crimson_Gem"),
+            "dragon": ("Dragon_Jade_Scale", "Dragon_Silver_Forging"),
+            "cygnus": ("Cygnus_Glacier_Crystal", "Cygnus_Frost_Silver"),
+            "andromeda": ("Andromeda_Rose_Chain", "Andromeda_Chain_Light"),
+            "phoenix": ("Phoenix_Flame_Ember", "Phoenix_Gold_Fire"),
+        }.get(class_id, ())
+        destination = output_root / class_id / "model/character.glb"
+        animation_dest = output_root / class_id / "animations/animation_library.glb"
+        preview_root = ROOT / "game" / "art_previews" / "characters"
+        hero_preview_ready = class_id not in {"pegasus", "dragon", "cygnus", "andromeda", "phoenix"} or all(
+            (preview_root / (class_id + "_" + view + ".png")).is_file()
+            and (preview_root / (class_id + "_" + view + ".png")).stat().st_size >= 128
+            for view in ("front", "side", "back")
+        )
+        # A shard retry must resume from completed, validated outputs rather than
+        # rebuilding every earlier profession after one late Blender timeout.
+        if destination.is_file() and animation_dest.is_file() and hero_preview_ready:
+            try:
+                validate_glb(
+                    destination,
+                    required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
+                    require_skin=True,
+                    required_clips=REQUIRED_CLIPS + required_profession_clips,
+                    required_materials=hero_materials,
+                )
+                validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
+            except Exception as error:
+                print("PROFESSION_RESUME_REBUILD", class_id, str(error), flush=True)
+            else:
+                print("PROFESSION_MODEL_REUSED", class_id,
+                      "model_bytes=" + str(destination.stat().st_size),
+                      "animation_bytes=" + str(animation_dest.stat().st_size), flush=True)
+                continue
         reset_scene()
         rig = create_rig()
         body = build_body(rig)
@@ -1822,21 +1858,10 @@ def build_profession_models(shard_index=0, shard_count=1):
         make_animation_library(rig, class_id)
         make_signature_idle_pose(rig, class_id)
         merged = join_meshes([body] + ornaments, "Humanoid_Base_Mesh", rig)
-        destination = output_root / class_id / "model/character.glb"
         export_glb(destination, [rig, merged])
-        required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
-        hero_materials = {
-            "pegasus": ("Pegasus_Bronze_Alloy", "Pegasus_Silver_Edges",
-                        "Pegasus_Cobalt_Enamel", "Pegasus_Crimson_Gem"),
-            "dragon": ("Dragon_Jade_Scale", "Dragon_Silver_Forging"),
-            "cygnus": ("Cygnus_Glacier_Crystal", "Cygnus_Frost_Silver"),
-            "andromeda": ("Andromeda_Rose_Chain", "Andromeda_Chain_Light"),
-            "phoenix": ("Phoenix_Flame_Ember", "Phoenix_Gold_Fire"),
-        }.get(class_id, ())
         validate_glb(destination, required_nodes=("Humanoid_Base_Rig", "Humanoid_Base_Mesh"),
                       require_skin=True, required_clips=REQUIRED_CLIPS + required_profession_clips,
                       required_materials=hero_materials)
-        animation_dest = output_root / class_id / "animations/animation_library.glb"
         export_glb(animation_dest, [rig])
         required_profession_clips = tuple(f"{class_id}_basic_attack_{step}" for step in (1, 2, 3)) + (f"{class_id}_signature_idle",)
         validate_glb(animation_dest, required_clips=REQUIRED_CLIPS + required_profession_clips)
