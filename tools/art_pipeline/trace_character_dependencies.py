@@ -41,26 +41,27 @@ def build_report(package: Any, autoangel: Any, roots: list[str]) -> dict[str, An
     nodes: list[dict[str, Any]] = []
     missing: set[str] = set()
 
+    folded_paths = {item.casefold(): item for item in available}
+
     def enqueue(reference: str, parent: str, relation: str) -> None:
-        target = norm(reference, parent)
-        if target:
-            queue.append((target, relation))
+        raw = str(reference or "").replace("\\\\", "/").strip()
+        if not raw:
+            return
+        # Angelica references are commonly archive-root-relative. Prefer that
+        # exact path; fall back to the referencing file's directory.
+        direct = norm(raw)
+        relative = norm(raw, parent)
+        target = (folded_paths.get(direct.casefold()) or
+                  folded_paths.get(relative.casefold()) or direct)
+        queue.append((target, relation))
 
     while queue:
         path, relation = queue.popleft()
         if not path or path in visited:
             continue
         visited.add(path)
+        path = folded_paths.get(path.casefold(), path)
         blob = package.get_file(path)
-        if blob is None:
-            # Some client archives store case-variant paths.
-            matches = [item for item in available if item.casefold() == path.casefold()]
-            if len(matches) == 1:
-                path = matches[0]
-                if path in visited:
-                    continue
-                visited.add(path)
-                blob = package.get_file(path)
         if blob is None:
             missing.add(path)
             continue
